@@ -27,6 +27,7 @@ llama_memory_hybrid_iswa::llama_memory_hybrid_iswa(
                  uint32_t   n_rs_seq,
                      bool   offload,
                      bool   unified,
+    const llama_hetero_kv_contract & kv_contract,
                             /* layer filters */
     const layer_filter_cb & filter_attn,
     const layer_filter_cb & filter_recr) :
@@ -43,6 +44,7 @@ llama_memory_hybrid_iswa::llama_memory_hybrid_iswa(
         n_seq_max,
         n_ubatch,
         n_pad,
+        kv_contract,
         filter_attn == nullptr ?
             [&](int32_t il) { return !hparams.is_recurrent(il); }
             : filter_attn,

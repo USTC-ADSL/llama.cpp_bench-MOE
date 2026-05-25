@@ -6,17 +6,25 @@
 #include "llama-impl.h"
 #include "llama-batch.h"
 #include "llama-io.h"
+#include "llama-kv-cache-iswa.h"
 #include "llama-memory.h"
+#include "llama-memory-hybrid.h"
+#include "llama-memory-hybrid-iswa.h"
 #include "llama-mmap.h"
 #include "llama-model.h"
 #include "llama-ext.h"
 #include "llama.h"
 
+#include <algorithm>
+#include <array>
 #include <cinttypes>
 #include <cmath>
+#include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <limits>
 #include <stdexcept>
+#include <utility>
 
 //
 // llama_context
@@ -28,6 +36,228 @@ static llm_graph_type ctx_type_to_graph_type(llama_context_type ctx_type) {
         case LLAMA_CONTEXT_TYPE_MTP    : return LLM_GRAPH_TYPE_DECODER_MTP;
     }
     throw std::runtime_error("Unsupported ctx type");
+}
+
+static bool llama_context_hetero_route_requests_qnn(const llama_hetero_route_spec & route) {
+    static constexpr std::array<llama_hetero_route_stage, 5> k_stages = {{
+        llama_hetero_route_stage::ATTN_PROJ,
+        llama_hetero_route_stage::ATTN_CORE,
+        llama_hetero_route_stage::ATTN_OUT,
+        llama_hetero_route_stage::FFN,
+        llama_hetero_route_stage::OUTPUT,
+    }};
+
+    for (const auto stage : k_stages) {
+        if (llama_hetero_is_qnn_backend(route.backend_for(stage))) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+using ggml_backend_qnn_aot_has_pending_generic_kv_writeback_t = bool (*)(ggml_backend_t backend);
+using ggml_backend_qnn_aot_flush_pending_generic_kv_writeback_t = bool (*)(ggml_backend_t backend);
+
+static bool llama_context_env_flag_enabled(const char * name) {
+    const char * value = std::getenv(name);
+    return value != nullptr && value[0] != '\0' && std::strcmp(value, "0") != 0;
+}
+
+static bool llama_context_hetero_dynamic_trace_timing_enabled() {
+    static int enabled = -1;
+    if (enabled < 0) {
+        enabled = llama_context_env_flag_enabled("GGML_HETERO_DYNAMIC_TRACE_TIMING") ? 1 : 0;
+    }
+
+    return enabled != 0;
+}
+
+static const char * llama_context_hetero_phase_name(uint32_t n_tokens) {
+    return n_tokens > 1 ? "prefill" : "decode";
+}
+
+bool llama_context_qnn_accel_backend_requested(
+        const std::vector<std::string> & device_names,
+        const llama_hetero_route_spec & hetero_route,
+        const llama_hetero_route_spec & dynamic_prefill_route,
+        const llama_hetero_route_spec & dynamic_decode_route,
+        const llama_hetero_route_spec & dynamic_fallback_route) {
+    bool model_requests_qnn_accel = false;
+
+    for (const std::string & name : device_names) {
+        const std::string normalized = llama_hetero_canonical_backend(name);
+        if (normalized == "qnn-npu" || normalized == "qnn-cpu") {
+            model_requests_qnn_accel = true;
+            break;
+        }
+    }
+
+    return model_requests_qnn_accel ||
+           llama_context_hetero_route_requests_qnn(hetero_route) ||
+           llama_context_hetero_route_requests_qnn(dynamic_prefill_route) ||
+           llama_context_hetero_route_requests_qnn(dynamic_decode_route) ||
+           llama_context_hetero_route_requests_qnn(dynamic_fallback_route);
+}
+
+bool llama_context_should_disable_cpu_qnn_host_fallback(
+        bool first_device_is_qnn,
+        bool routes_use_opencl,
+        bool routes_use_cpu) {
+    return first_device_is_qnn && (routes_use_opencl || routes_use_cpu);
+}
+
+llama_hetero_kv_contract llama_dynamic_phase_migration_kv_contract(
+        const std::string & producer_backend,
+        const std::string & consumer_backend,
+        const char * reason) {
+    const std::string producer = llama_hetero_canonical_backend(producer_backend);
+    const std::string consumer = llama_hetero_canonical_backend(consumer_backend);
+
+    llama_hetero_kv_contract contract;
+    contract.producer_backend = producer;
+    contract.consumer_backend = consumer;
+    contract.implemented = true;
+    contract.reason = reason != nullptr ? reason : "dynamic-phase-migration";
+
+    if (llama_hetero_is_qnn_backend(producer) &&
+        (consumer == "cpu" || consumer == "opencl")) {
+        contract.layout = llama_hetero_kv_layout_kind::STAGE_SHARED;
+        contract.transfer = llama_hetero_kv_transfer_mode::QNN_RPCMEM;
+        contract.storage_backend = "qnn-npu-host";
+        contract.shared_buffer_required = true;
+        contract.buffer_available = false;
+        contract.zero_copy = false;
+        return contract;
+    }
+
+    contract.storage_backend = consumer;
+    contract.transfer = llama_hetero_kv_transfer_mode::NONE;
+    contract.shared_buffer_required = false;
+    contract.buffer_available = true;
+    contract.zero_copy = false;
+    return contract;
+}
+
+bool llama_context_should_attempt_qnn_phase_kv_migration(
+        const std::string & current_attn_backend,
+        const std::string & target_attn_backend,
+        uint32_t            n_tokens,
+        bool                generic_kv_enabled) {
+    if (!generic_kv_enabled || n_tokens != 1) {
+        return false;
+    }
+
+    const std::string current = llama_hetero_canonical_backend(current_attn_backend);
+    const std::string target  = llama_hetero_canonical_backend(target_attn_backend);
+    if (!llama_hetero_is_qnn_backend(current)) {
+        return false;
+    }
+
+    return target == "cpu" || target == "opencl";
+}
+
+llama_hetero_kv_contract llama_dynamic_phase_shared_qnn_kv_contract(
+        const std::string & prefill_attn_backend,
+        const std::string & decode_attn_backend,
+        bool                qnn_host_buffer_available,
+        bool                opencl_can_alias_qnn_host) {
+    const std::string prefill = llama_hetero_canonical_backend(prefill_attn_backend);
+    const std::string decode  = llama_hetero_canonical_backend(decode_attn_backend);
+
+    llama_hetero_kv_contract contract;
+
+    if (!llama_hetero_is_qnn_backend(prefill) || decode != "opencl") {
+        contract.reason = "dynamic-phase-shared-qnn-kv-not-applicable";
+        return contract;
+    }
+
+    if (!qnn_host_buffer_available || !opencl_can_alias_qnn_host) {
+        contract.reason = !qnn_host_buffer_available
+            ? "qnn-host-buffer-unavailable"
+            : "opencl-cannot-alias-qnn-host";
+        return contract;
+    }
+
+    contract.producer_backend = prefill;
+    contract.consumer_backend = decode;
+    contract.storage_backend = "qnn-npu-host";
+    contract.layout = llama_hetero_kv_layout_kind::STAGE_SHARED;
+    contract.transfer = llama_hetero_kv_transfer_mode::QNN_RPCMEM;
+    contract.shared_buffer_required = true;
+    contract.implemented = true;
+    contract.buffer_available = true;
+    contract.zero_copy = true;
+    contract.reason = "dynamic-qnn-prefill-opencl-decode-shared-kv";
+    return contract;
+}
+
+bool llama_context_should_use_qnn_shared_phase_kv(
+        const std::string & current_attn_backend,
+        const std::string & target_attn_backend,
+        uint32_t            n_tokens,
+        bool                generic_kv_enabled,
+        const llama_hetero_kv_contract & allocated_kv_contract) {
+    if (!llama_context_should_attempt_qnn_phase_kv_migration(
+                current_attn_backend,
+                target_attn_backend,
+                n_tokens,
+                generic_kv_enabled)) {
+        return false;
+    }
+
+    if (llama_hetero_canonical_backend(target_attn_backend) != "opencl") {
+        return false;
+    }
+
+    return allocated_kv_contract.stage_boundary_active() &&
+           llama_hetero_is_qnn_backend(allocated_kv_contract.producer_backend) &&
+           llama_hetero_canonical_backend(allocated_kv_contract.consumer_backend) == "opencl" &&
+           allocated_kv_contract.storage_backend == "qnn-npu-host" &&
+           allocated_kv_contract.layout == llama_hetero_kv_layout_kind::STAGE_SHARED &&
+           allocated_kv_contract.transfer == llama_hetero_kv_transfer_mode::QNN_RPCMEM &&
+           allocated_kv_contract.shared_buffer_required &&
+           allocated_kv_contract.implemented &&
+           allocated_kv_contract.buffer_available &&
+           allocated_kv_contract.zero_copy;
+}
+
+bool llama_context_should_try_qnn_opencl_direct_host_ptr_visibility(
+        const std::string & current_attn_backend,
+        const std::string & target_attn_backend,
+        uint32_t            n_tokens,
+        bool                generic_kv_enabled,
+        const llama_hetero_kv_contract & allocated_kv_contract,
+        bool                experimental_enabled) {
+    return experimental_enabled &&
+           llama_context_should_use_qnn_shared_phase_kv(
+                   current_attn_backend,
+                   target_attn_backend,
+                   n_tokens,
+                   generic_kv_enabled,
+                   allocated_kv_contract);
+}
+
+bool llama_context_should_use_dynamic_decode_tg_only_sched_reserve(
+        bool     dynamic_route_enabled,
+        uint32_t n_tokens,
+        bool     experimental_enabled) {
+    return experimental_enabled && dynamic_route_enabled && n_tokens == 1;
+}
+
+bool llama_context_should_prewarm_dynamic_qnn_opencl_kv_aliases(
+        const std::string & prefill_attn_backend,
+        const std::string & decode_attn_backend,
+        bool                generic_kv_enabled,
+        const llama_hetero_kv_contract & allocated_kv_contract,
+        bool                experimental_enabled) {
+    (void) prefill_attn_backend;
+    (void) decode_attn_backend;
+    (void) generic_kv_enabled;
+    (void) allocated_kv_contract;
+    (void) experimental_enabled;
+
+    return false;
 }
 
 llama_context::llama_context(
@@ -197,6 +427,63 @@ llama_context::llama_context(
         }
     }
 
+    kv_type_k = params.type_k;
+    kv_type_v = params.type_v;
+    kv_swa_full = params.swa_full;
+    kv_attn_v_trans = !cparams.flash_attn;
+
+    const bool hetero_plan_from_params =
+        params.hetero_phase_route != nullptr || params.hetero_kv_layout != nullptr;
+    hetero_plan = hetero_plan_from_params
+        ? llama_hetero_build_execution_plan(params.hetero_phase_route, params.hetero_kv_layout)
+        : model.get_hetero_plan();
+    hetero_plan_base = hetero_plan;
+    aot_active_route_requests_qnn = llama_context_hetero_route_requests_qnn(hetero_plan.route);
+    hetero_kv_contract_allocated = hetero_plan.attn_kv;
+    dynamic_route_config = llama_dynamic_route_config_from_env();
+    const auto & hetero_route = hetero_plan.route;
+    const bool dynamic_cpu_opencl_zero_copy =
+        llama_hetero_route_has_cpu_opencl_adjacent_boundary(dynamic_route_config.prefill.plan.route) ||
+        llama_hetero_route_has_cpu_opencl_adjacent_boundary(dynamic_route_config.decode.plan.route) ||
+        llama_hetero_route_has_cpu_opencl_adjacent_boundary(dynamic_route_config.fallback.plan.route);
+    const bool dynamic_qnn_shared_host =
+        llama_hetero_route_has_qnn_adjacent_boundary(dynamic_route_config.prefill.plan.route) ||
+        llama_hetero_route_has_qnn_adjacent_boundary(dynamic_route_config.decode.plan.route) ||
+        llama_hetero_route_has_qnn_adjacent_boundary(dynamic_route_config.fallback.plan.route);
+    const bool hetero_cpu_opencl_zero_copy =
+        llama_hetero_route_has_cpu_opencl_adjacent_boundary(hetero_route) ||
+        dynamic_cpu_opencl_zero_copy;
+    const bool enable_cpu_opencl_shared_host_experimental =
+        llama_context_env_flag_enabled("GGML_HETERO_ENABLE_CPU_OPENCL_SHARED_HOST");
+    const bool disable_cpu_opencl_shared_host =
+        llama_context_env_flag_enabled("GGML_HETERO_DISABLE_CPU_OPENCL_SHARED_HOST");
+    const bool qnn_shared_host_experimental =
+        llama_context_env_flag_enabled("GGML_HETERO_QNN_SHARED_HOST");
+    const bool hetero_trace_share =
+        llama_context_env_flag_enabled("GGML_HETERO_TRACE_SHARE");
+    const bool hetero_qnn_shared_host_requested =
+        qnn_shared_host_experimental && (
+            llama_hetero_route_has_qnn_adjacent_boundary(hetero_route) ||
+            dynamic_qnn_shared_host);
+    bool hetero_qnn_shared_host_compute = false;
+    const bool enable_cpu_opencl_shared_host =
+        hetero_cpu_opencl_zero_copy &&
+        enable_cpu_opencl_shared_host_experimental &&
+        !disable_cpu_opencl_shared_host;
+    bool hetero_shared_host_compute = enable_cpu_opencl_shared_host;
+    ggml_backend_buffer_type_t shared_host_buft = nullptr;
+    std::vector<std::string> model_device_names;
+    model_device_names.reserve(model.devices.size());
+    for (const auto & dev : model.devices) {
+        model_device_names.emplace_back(dev.dev != nullptr ? ggml_backend_dev_name(dev.dev) : "");
+    }
+    const bool qnn_backend_requested = llama_context_qnn_accel_backend_requested(
+        model_device_names,
+        hetero_route,
+        dynamic_route_config.prefill.plan.route,
+        dynamic_route_config.decode.plan.route,
+        dynamic_route_config.fallback.plan.route);
+
     // ref: https://github.com/ggml-org/llama.cpp/pull/17046#discussion_r2503085732
     cparams.n_ctx = GGML_PAD(cparams.n_ctx, 256);
 
@@ -239,6 +526,12 @@ llama_context::llama_context(
     }
 
     if (!hparams.vocab_only) {
+        const auto backend_device_already_added = [&](ggml_backend_dev_t dev) {
+            return std::any_of(backends.begin(), backends.end(), [&](const ggml_backend_ptr & backend) {
+                return ggml_backend_get_device(backend.get()) == dev;
+            });
+        };
+
         // GPU backends
         for (const auto & dev : model.devices) {
             ggml_backend_t backend = ggml_backend_dev_init(dev.dev, nullptr);
@@ -252,6 +545,12 @@ llama_context::llama_context(
         for (size_t i = 0; i < ggml_backend_dev_count(); ++i) {
             ggml_backend_dev_t dev = ggml_backend_dev_get(i);
             if (ggml_backend_dev_type(dev) == GGML_BACKEND_DEVICE_TYPE_ACCEL) {
+                if (!qnn_backend_requested && llama_hetero_is_qnn_backend(ggml_backend_dev_name(dev))) {
+                    continue;
+                }
+                if (backend_device_already_added(dev)) {
+                    continue;
+                }
                 ggml_backend_t backend = ggml_backend_dev_init(dev, nullptr);
                 if (backend == nullptr) {
                     throw std::runtime_error(format("failed to initialize %s backend", ggml_backend_dev_name(dev)));
@@ -266,6 +565,185 @@ llama_context::llama_context(
             throw std::runtime_error("failed to initialize CPU backend");
         }
         backends.emplace_back(backend_cpu);
+
+        ensure_hetero_backends_for_route(hetero_route, "hetero");
+        ensure_dynamic_route_backends_ready(dynamic_route_config);
+
+        const auto find_opencl_host_buft = [&]() -> ggml_backend_buffer_type_t {
+            for (const auto & backend : backends) {
+                ggml_backend_dev_t dev = ggml_backend_get_device(backend.get());
+                if (dev != nullptr && std::strcmp(ggml_backend_dev_name(dev), "GPUOpenCL") == 0) {
+                    return ggml_backend_dev_host_buffer_type(dev);
+                }
+            }
+
+            return nullptr;
+        };
+
+        const auto find_qnn_host_buft = [&]() -> ggml_backend_buffer_type_t {
+            for (const auto & backend : backends) {
+                ggml_backend_dev_t dev = ggml_backend_get_device(backend.get());
+                if (dev != nullptr && std::strcmp(ggml_backend_dev_name(dev), "qnn-npu") == 0) {
+                    return ggml_backend_dev_host_buffer_type(dev);
+                }
+            }
+
+            return nullptr;
+        };
+
+        ggml_backend_buffer_type_t opencl_shared_host_buft = find_opencl_host_buft();
+        ggml_backend_buffer_type_t qnn_shared_host_buft = find_qnn_host_buft();
+        const bool opencl_host_buffer_available = opencl_shared_host_buft != nullptr;
+        const bool qnn_host_buffer_available = qnn_shared_host_buft != nullptr;
+        const auto opencl_supports_buft = [&](ggml_backend_buffer_type_t buft) -> bool {
+            if (buft == nullptr) {
+                return false;
+            }
+
+            ggml_backend_dev_t opencl_dev = ggml_backend_dev_by_name("GPUOpenCL");
+            return opencl_dev != nullptr && ggml_backend_dev_supports_buft(opencl_dev, buft);
+        };
+
+        const bool opencl_can_alias_qnn_host = opencl_supports_buft(qnn_shared_host_buft);
+
+        if (hetero_qnn_shared_host_requested) {
+            if (enable_cpu_opencl_shared_host) {
+                if (qnn_host_buffer_available && opencl_can_alias_qnn_host) {
+                    shared_host_buft = qnn_shared_host_buft;
+                    hetero_qnn_shared_host_compute = true;
+                    LLAMA_LOG_INFO("%s: enabling unified CPU/QNN/OpenCL shared-host compute buffers with %s for hetero decode stages\n",
+                            __func__,
+                            ggml_backend_buft_name(shared_host_buft));
+                } else {
+                    shared_host_buft = opencl_shared_host_buft;
+                    hetero_qnn_shared_host_compute = false;
+                    LLAMA_LOG_WARN("%s: requested unified CPU/QNN/OpenCL shared-host compute buffers, but qnn-npu-host is unavailable or not OpenCL-compatible in this context. Falling back to %s for compute tensors; the attn KV contract may still allocate qnn-npu-host separately.\n",
+                            __func__,
+                            shared_host_buft ? ggml_backend_buft_name(shared_host_buft) : "<null>");
+                }
+            } else {
+                shared_host_buft = qnn_shared_host_buft;
+                hetero_qnn_shared_host_compute = qnn_host_buffer_available;
+            }
+        } else if (enable_cpu_opencl_shared_host) {
+            shared_host_buft = opencl_shared_host_buft;
+        }
+
+        hetero_shared_host_compute =
+            shared_host_buft != nullptr &&
+            (enable_cpu_opencl_shared_host || hetero_qnn_shared_host_compute);
+
+        if (hetero_cpu_opencl_zero_copy && !enable_cpu_opencl_shared_host) {
+            if (disable_cpu_opencl_shared_host) {
+                LLAMA_LOG_INFO("%s: disabling CPU/OpenCL shared-host compute buffers via GGML_HETERO_DISABLE_CPU_OPENCL_SHARED_HOST\n",
+                        __func__);
+            } else {
+                LLAMA_LOG_WARN("%s: CPU/OpenCL shared-host compute buffers are disabled by default because the current OpenCL shared-host path can corrupt decode semantics. Set GGML_HETERO_ENABLE_CPU_OPENCL_SHARED_HOST=1 to re-enable it experimentally.\n",
+                        __func__);
+            }
+        }
+
+        hetero_kv_contract_allocated = llama_hetero_finalize_kv_contract(
+                hetero_plan.attn_kv,
+                opencl_host_buffer_available,
+                qnn_host_buffer_available);
+
+        const auto maybe_promote_allocated_kv = [&](const llama_dynamic_route_candidate & candidate) {
+            if (!candidate.configured ||
+                llama_hetero_kv_contract_can_satisfy(hetero_kv_contract_allocated, candidate.plan.attn_kv)) {
+                return;
+            }
+
+            llama_hetero_kv_contract upgraded = llama_hetero_finalize_kv_contract(
+                    candidate.plan.attn_kv,
+                    opencl_host_buffer_available,
+                    qnn_host_buffer_available);
+
+            if (llama_hetero_kv_contract_can_satisfy(upgraded, hetero_kv_contract_allocated)) {
+                LLAMA_LOG_INFO("%s: promoting allocated attn KV contract for %s to layout=%s transfer=%s\n",
+                        __func__,
+                        candidate.label.empty() ? "<unnamed>" : candidate.label.c_str(),
+                        llama_hetero_kv_layout_name(upgraded.layout),
+                        llama_hetero_kv_transfer_mode_name(upgraded.transfer));
+                hetero_kv_contract_allocated = std::move(upgraded);
+                return;
+            }
+
+            LLAMA_LOG_WARN("%s: dynamic route %s requests attn KV contract layout=%s transfer=%s, which is incompatible with the current allocated contract layout=%s transfer=%s. This candidate will remain runtime-rejected until the context is rebuilt with a compatible contract.\n",
+                    __func__,
+                    candidate.label.empty() ? "<unnamed>" : candidate.label.c_str(),
+                    llama_hetero_kv_layout_name(candidate.plan.attn_kv.layout),
+                    llama_hetero_kv_transfer_mode_name(candidate.plan.attn_kv.transfer),
+                    llama_hetero_kv_layout_name(hetero_kv_contract_allocated.layout),
+                    llama_hetero_kv_transfer_mode_name(hetero_kv_contract_allocated.transfer));
+        };
+
+        maybe_promote_allocated_kv(dynamic_route_config.prefill);
+        maybe_promote_allocated_kv(dynamic_route_config.decode);
+        maybe_promote_allocated_kv(dynamic_route_config.fallback);
+
+        if (dynamic_route_config.prefill.configured &&
+            dynamic_route_config.decode.configured &&
+            llama_hetero_route_is_phase_homogeneous(dynamic_route_config.prefill.plan.route) &&
+            llama_hetero_route_is_phase_homogeneous(dynamic_route_config.decode.plan.route)) {
+            llama_hetero_kv_contract upgraded = llama_dynamic_phase_shared_qnn_kv_contract(
+                    llama_hetero_phase_backend_for_route(dynamic_route_config.prefill.plan.route),
+                    llama_hetero_phase_backend_for_route(dynamic_route_config.decode.plan.route),
+                    qnn_host_buffer_available,
+                    opencl_can_alias_qnn_host);
+
+            if (upgraded.stage_boundary_active() &&
+                !llama_hetero_kv_contract_can_satisfy(hetero_kv_contract_allocated, upgraded)) {
+                if (llama_hetero_kv_contract_can_satisfy(upgraded, hetero_kv_contract_allocated)) {
+                    LLAMA_LOG_INFO("%s: promoting allocated attn KV contract for dynamic qnn-prefill/opencl-decode to layout=%s transfer=%s\n",
+                            __func__,
+                            llama_hetero_kv_layout_name(upgraded.layout),
+                            llama_hetero_kv_transfer_mode_name(upgraded.transfer));
+                    hetero_kv_contract_allocated = std::move(upgraded);
+                } else {
+                    LLAMA_LOG_WARN("%s: dynamic qnn-prefill/opencl-decode shared KV requires layout=%s transfer=%s, which is incompatible with the current allocated contract layout=%s transfer=%s. The direct shared-KV fast path will stay disabled until the context is rebuilt with a compatible contract.\n",
+                            __func__,
+                            llama_hetero_kv_layout_name(upgraded.layout),
+                            llama_hetero_kv_transfer_mode_name(upgraded.transfer),
+                            llama_hetero_kv_layout_name(hetero_kv_contract_allocated.layout),
+                            llama_hetero_kv_transfer_mode_name(hetero_kv_contract_allocated.transfer));
+                }
+            }
+        }
+
+        if (hetero_plan.attn_kv.stage_boundary_active()) {
+            LLAMA_LOG_INFO("%s: hetero attn KV contract requested layout=%s transfer=%s producer=%s consumer=%s storage=%s reason=%s\n",
+                    __func__,
+                    llama_hetero_kv_layout_name(hetero_plan.attn_kv.layout),
+                    llama_hetero_kv_transfer_mode_name(hetero_plan.attn_kv.transfer),
+                    hetero_plan.attn_kv.producer_backend.c_str(),
+                    hetero_plan.attn_kv.consumer_backend.c_str(),
+                    hetero_plan.attn_kv.storage_backend.empty() ? "<unset>" : hetero_plan.attn_kv.storage_backend.c_str(),
+                    hetero_plan.attn_kv.reason.empty() ? "<none>" : hetero_plan.attn_kv.reason.c_str());
+            LLAMA_LOG_INFO("%s: hetero attn KV contract allocated layout=%s transfer=%s zero_copy=%s available=%s reason=%s\n",
+                    __func__,
+                    llama_hetero_kv_layout_name(hetero_kv_contract_allocated.layout),
+                    llama_hetero_kv_transfer_mode_name(hetero_kv_contract_allocated.transfer),
+                    hetero_kv_contract_allocated.zero_copy ? "true" : "false",
+                    hetero_kv_contract_allocated.buffer_available ? "true" : "false",
+                    hetero_kv_contract_allocated.reason.empty() ? "<none>" : hetero_kv_contract_allocated.reason.c_str());
+        }
+
+        if (dynamic_route_config.enabled()) {
+            const auto route_string_or = [](const llama_dynamic_route_candidate & candidate) {
+                const std::string route = llama_hetero_format_route_spec(candidate.plan.route);
+                return route.empty() ? std::string("<unset>") : route;
+            };
+
+            LLAMA_LOG_INFO("%s: dynamic route mode=%s prefill=%s decode=%s fallback=%s slo_us=%" PRId64 " allow_qnn=%s\n",
+                    __func__,
+                    llama_dynamic_route_mode_name(dynamic_route_config.mode),
+                    route_string_or(dynamic_route_config.prefill).c_str(),
+                    route_string_or(dynamic_route_config.decode).c_str(),
+                    route_string_or(dynamic_route_config.fallback).c_str(),
+                    dynamic_route_config.slo_us,
+                    dynamic_route_config.allow_qnn ? "true" : "false");
+        }
 
         // create a list of the set_n_threads functions in the backends
         for (auto & backend : backends) {
@@ -300,6 +778,9 @@ llama_context::llama_context(
             /*.type_v   =*/ params.type_v,
             /*.swa_full =*/ params.swa_full,
             /*.ctx_type= */ cparams.ctx_type,
+            /*.attn_v_trans =*/ kv_attn_v_trans,
+            /*.attn_v_trans_pinned =*/ true,
+            /*.kv_contract =*/ hetero_kv_contract_allocated,
         };
 
         memory.reset(model.create_memory(params_mem, cparams));
@@ -313,11 +794,97 @@ llama_context::llama_context(
         backend_ptrs.clear();
         backend_buf_exp_size.clear();
 
+        ggml_backend_buffer_type_t shared_host_compute_buft = nullptr;
+        const bool first_device_is_opencl_local =
+            !model.devices.empty() &&
+            model.devices[0].dev != nullptr &&
+            std::strcmp(ggml_backend_dev_name(model.devices[0].dev), "GPUOpenCL") == 0;
+        const bool first_device_is_qnn_local =
+            !model.devices.empty() &&
+            model.devices[0].dev != nullptr &&
+            llama_hetero_is_qnn_backend(ggml_backend_dev_name(model.devices[0].dev));
+        const bool allow_cpu_opencl_host_fallback_local =
+            enable_cpu_opencl_shared_host_experimental && !disable_cpu_opencl_shared_host;
+        const bool routes_use_opencl_local =
+            llama_hetero_is_opencl_backend(llama_hetero_phase_backend_for_route(hetero_route)) ||
+            llama_dynamic_route_uses_opencl(dynamic_route_config.prefill.plan) ||
+            llama_dynamic_route_uses_opencl(dynamic_route_config.decode.plan) ||
+            llama_dynamic_route_uses_opencl(dynamic_route_config.fallback.plan);
+        const auto plan_uses_cpu = [](const llama_hetero_execution_plan & plan) {
+            return plan.has_any_route() &&
+                   llama_hetero_is_cpu_backend(llama_hetero_phase_backend_for_route(plan.route));
+        };
+        const bool routes_use_cpu_local =
+            llama_hetero_is_cpu_backend(llama_hetero_phase_backend_for_route(hetero_route)) ||
+            plan_uses_cpu(dynamic_route_config.prefill.plan) ||
+            plan_uses_cpu(dynamic_route_config.decode.plan) ||
+            plan_uses_cpu(dynamic_route_config.fallback.plan);
+        const bool disable_cpu_qnn_host_fallback_local =
+            llama_context_should_disable_cpu_qnn_host_fallback(
+                    first_device_is_qnn_local,
+                    routes_use_opencl_local,
+                    routes_use_cpu_local);
+
+        if (hetero_shared_host_compute) {
+            shared_host_compute_buft = shared_host_buft;
+            if (shared_host_compute_buft != nullptr) {
+                LLAMA_LOG_INFO("%s: enabling shared host compute buffers with %s for hetero decode stages (cpu/opencl=%s, qnn-mixed=%s)\n",
+                        __func__,
+                        ggml_backend_buft_name(shared_host_compute_buft),
+                        enable_cpu_opencl_shared_host ? "true" : "false",
+                        hetero_qnn_shared_host_compute ? "true" : "false");
+                if (hetero_trace_share) {
+                    std::fprintf(stderr,
+                            "ggml_hetero_buft: shared_host=%s cpu_opencl=%d qnn_mixed=%d\n",
+                            ggml_backend_buft_name(shared_host_compute_buft),
+                            (int) enable_cpu_opencl_shared_host,
+                            (int) hetero_qnn_shared_host_compute);
+                }
+            } else {
+                LLAMA_LOG_WARN("%s: requested hetero shared-host compute buffers (cpu/opencl=%s, qnn-mixed=%s), but the selected host buffer type is unavailable\n",
+                        __func__,
+                        enable_cpu_opencl_shared_host ? "true" : "false",
+                        hetero_qnn_shared_host_requested ? "true" : "false");
+                if (hetero_trace_share) {
+                    std::fprintf(stderr,
+                            "ggml_hetero_buft: shared_host=<null> cpu_opencl=%d qnn_mixed=%d requested_qnn=%d\n",
+                            (int) enable_cpu_opencl_shared_host,
+                            (int) hetero_qnn_shared_host_compute,
+                            (int) hetero_qnn_shared_host_requested);
+                }
+            }
+        }
+
         for (auto & backend : backends) {
             auto * buft = ggml_backend_get_default_buffer_type(backend.get());
-            auto backend_type = ggml_backend_dev_type(ggml_backend_get_device(backend.get()));
+            ggml_backend_dev_t dev = ggml_backend_get_device(backend.get());
+            auto backend_type = ggml_backend_dev_type(dev);
 
-            if (backend_type == GGML_BACKEND_DEVICE_TYPE_CPU && !model.devices.empty()) {
+            if (hetero_shared_host_compute && shared_host_compute_buft != nullptr) {
+                const char * backend_name = dev ? ggml_backend_dev_name(dev) : nullptr;
+                const bool is_opencl_backend =
+                    backend_name != nullptr && std::strcmp(backend_name, "GPUOpenCL") == 0;
+                const bool is_qnn_backend =
+                    backend_name != nullptr && llama_hetero_is_qnn_backend(backend_name);
+                const bool use_shared_host_buft =
+                    (backend_type == GGML_BACKEND_DEVICE_TYPE_CPU &&
+                     (enable_cpu_opencl_shared_host || hetero_qnn_shared_host_compute)) ||
+                    (is_opencl_backend && (enable_cpu_opencl_shared_host || hetero_qnn_shared_host_compute)) ||
+                    (is_qnn_backend && hetero_qnn_shared_host_compute);
+
+                if (use_shared_host_buft) {
+                    buft = shared_host_compute_buft;
+                }
+            }
+
+            const bool allow_cpu_device_host_fallback =
+                (!first_device_is_opencl_local || allow_cpu_opencl_host_fallback_local) &&
+                !disable_cpu_qnn_host_fallback_local;
+
+            if (backend_type == GGML_BACKEND_DEVICE_TYPE_CPU &&
+                !(hetero_shared_host_compute && shared_host_compute_buft != nullptr) &&
+                allow_cpu_device_host_fallback &&
+                !model.devices.empty()) {
                 // use the host buffer of the first device CPU for faster transfer of the intermediate state
                 const auto & dev = model.devices[0];
                 auto * host_buft = ggml_backend_dev_host_buffer_type(dev.dev);
@@ -695,6 +1262,10 @@ const llama_cparams & llama_context::get_cparams() const {
 
 ggml_backend_sched_t llama_context::get_sched() const {
     return sched.get();
+}
+
+const std::vector<ggml_backend_t> & llama_context::get_backend_ptrs() const {
+    return backend_ptrs;
 }
 
 uint32_t llama_context::n_ctx() const {
@@ -1246,6 +1817,480 @@ bool llama_context::set_adapter_cvec(
     return res;
 }
 
+bool llama_context::backend_available_for_route(const std::string & backend_name) const {
+    return find_backend_for_route(backend_name) != nullptr;
+}
+
+ggml_backend_t llama_context::find_backend_for_route(const std::string & backend_name) const {
+    const std::string canonical = llama_hetero_canonical_backend(backend_name);
+    if (canonical.empty()) {
+        return nullptr;
+    }
+
+    if (canonical == "cpu") {
+        return backend_cpu;
+    }
+
+    for (const auto & backend : backends) {
+        ggml_backend_t backend_ptr = backend.get();
+        if (backend_ptr == nullptr) {
+            continue;
+        }
+
+        const char * backend_reg_name = ggml_backend_name(backend_ptr);
+        if (backend_reg_name != nullptr &&
+            llama_hetero_canonical_backend(backend_reg_name) == canonical) {
+            return backend_ptr;
+        }
+
+        ggml_backend_dev_t dev = ggml_backend_get_device(backend_ptr);
+        const char * dev_name = dev != nullptr ? ggml_backend_dev_name(dev) : nullptr;
+        if (dev_name != nullptr &&
+            llama_hetero_canonical_backend(dev_name) == canonical) {
+            return backend_ptr;
+        }
+    }
+
+    return nullptr;
+}
+
+bool llama_context::ensure_hetero_backend_ready(const std::string & backend_name, const char * route_name) {
+    const std::string canonical = llama_hetero_canonical_backend(backend_name);
+    if (canonical.empty()) {
+        return true;
+    }
+
+    if (find_backend_for_route(canonical) != nullptr) {
+        return true;
+    }
+
+    LLAMA_LOG_WARN("%s: backend '%s' requested by %s route is unavailable in this context\n",
+            __func__, canonical.c_str(), route_name != nullptr ? route_name : "hetero");
+    return false;
+}
+
+bool llama_context::ensure_hetero_backends_for_route(const llama_hetero_route_spec & route, const char * label_prefix) {
+    static constexpr std::array<llama_hetero_route_stage, 5> stages = {{
+        llama_hetero_route_stage::ATTN_PROJ,
+        llama_hetero_route_stage::ATTN_CORE,
+        llama_hetero_route_stage::ATTN_OUT,
+        llama_hetero_route_stage::FFN,
+        llama_hetero_route_stage::OUTPUT,
+    }};
+
+    bool ok = true;
+    for (const auto stage : stages) {
+        ok = ensure_hetero_backend_ready(route.backend_for(stage), label_prefix) && ok;
+    }
+    return ok;
+}
+
+bool llama_context::ensure_dynamic_route_backends_ready(const llama_dynamic_route_runtime_config & config) {
+    bool ok = true;
+    if (config.prefill.configured) {
+        ok = ensure_hetero_backends_for_route(config.prefill.plan.route, "dynamic-prefill") && ok;
+    }
+    if (config.decode.configured) {
+        ok = ensure_hetero_backends_for_route(config.decode.plan.route, "dynamic-decode") && ok;
+    }
+    if (config.fallback.configured) {
+        ok = ensure_hetero_backends_for_route(config.fallback.plan.route, "dynamic-fallback") && ok;
+    }
+    return ok;
+}
+
+void llama_context::maybe_prewarm_dynamic_qnn_opencl_kv_aliases() {
+    // Alias creation also publishes host contents in the current OpenCL API.
+    // During context construction QNN has not produced prefill KV yet, so the
+    // correct path is on-demand sync during the first qnn->opencl phase switch.
+}
+
+bool llama_context::sync_dynamic_cpu_opencl_kv(
+        bool host_to_device,
+        llama_opencl_external_host_sync_timing * timing) {
+    if (memory == nullptr) {
+        return true;
+    }
+
+    ggml_backend_t opencl_backend = find_backend_for_route("opencl");
+    if (opencl_backend == nullptr) {
+        LLAMA_LOG_ERROR("%s: dynamic CPU/OpenCL KV sync requested, but GPUOpenCL backend is unavailable\n", __func__);
+        return false;
+    }
+
+    std::vector<llama_kv_cache *> kv_caches;
+    const auto append_kv_cache = [&](llama_kv_cache * kv_cache) {
+        if (kv_cache != nullptr) {
+            kv_caches.push_back(kv_cache);
+        }
+    };
+
+    if (auto * kv_cache = dynamic_cast<llama_kv_cache *>(memory.get())) {
+        append_kv_cache(kv_cache);
+    } else if (auto * kv_cache_iswa = dynamic_cast<llama_kv_cache_iswa *>(memory.get())) {
+        append_kv_cache(kv_cache_iswa->get_base());
+        append_kv_cache(kv_cache_iswa->get_swa());
+    } else if (auto * hybrid_memory = dynamic_cast<llama_memory_hybrid *>(memory.get())) {
+        append_kv_cache(hybrid_memory->get_mem_attn());
+    } else if (auto * hybrid_iswa_memory = dynamic_cast<llama_memory_hybrid_iswa *>(memory.get())) {
+        auto * attn_cache = hybrid_iswa_memory->get_mem_attn();
+        append_kv_cache(attn_cache != nullptr ? attn_cache->get_base() : nullptr);
+        append_kv_cache(attn_cache != nullptr ? attn_cache->get_swa() : nullptr);
+    }
+
+    if (timing != nullptr) {
+        timing->clear();
+    }
+
+    for (llama_kv_cache * kv_cache : kv_caches) {
+        llama_opencl_external_host_sync_timing cache_timing;
+        if (!kv_cache->sync_external_opencl_host_aliases(opencl_backend, host_to_device, &cache_timing)) {
+            return false;
+        }
+        if (timing != nullptr) {
+            timing->accumulate(cache_timing);
+        }
+    }
+
+    return true;
+}
+
+void llama_context::maybe_debug_dump_powerserve_prefix_before_qnn_switch() {
+    // Kept as a hook for parity with the source QNN workflow. The target port
+    // does not add the optional debug dump path unless requested explicitly.
+}
+
+void llama_context::validate_dynamic_seq0_token_history() {
+    if (qnn_prefix_replay_active || memory == nullptr) {
+        return;
+    }
+
+    const llama_pos seq0_max = memory->seq_pos_max(0);
+    const size_t prefix_tokens = seq0_max < 0 ? 0 : static_cast<size_t>(seq0_max) + 1;
+    if (prefix_tokens != dynamic_seq0_token_history.size()) {
+        dynamic_seq0_token_history.clear();
+    }
+}
+
+void llama_context::record_dynamic_seq0_token_history(const llama_batch & batch_inp, size_t prefix_tokens_before_decode) {
+    if (qnn_prefix_replay_active || batch_inp.token == nullptr || batch_inp.n_tokens <= 0) {
+        return;
+    }
+
+    if (dynamic_seq0_token_history.size() != prefix_tokens_before_decode) {
+        dynamic_seq0_token_history.clear();
+        if (prefix_tokens_before_decode != 0) {
+            return;
+        }
+    }
+
+    for (int32_t i = 0; i < batch_inp.n_tokens; ++i) {
+        const int32_t n_seq_id = batch_inp.n_seq_id != nullptr ? batch_inp.n_seq_id[i] : 1;
+        const llama_seq_id seq_id = batch_inp.seq_id != nullptr ? batch_inp.seq_id[i][0] : 0;
+        const llama_pos pos = batch_inp.pos != nullptr ? batch_inp.pos[i] : static_cast<llama_pos>(prefix_tokens_before_decode + i);
+        if (n_seq_id != 1 || seq_id != 0 || pos != static_cast<llama_pos>(prefix_tokens_before_decode + i)) {
+            dynamic_seq0_token_history.clear();
+            return;
+        }
+        dynamic_seq0_token_history.push_back(batch_inp.token[i]);
+    }
+}
+
+bool llama_context::replay_dynamic_qnn_prefix() {
+    LLAMA_LOG_WARN("%s: QNN prefix replay is not enabled in this target port; keeping the current route\n", __func__);
+    qnn_prefix_replay_pending = false;
+    qnn_prefix_replay_restore_plan_valid = false;
+    qnn_prefix_replay_active = false;
+    qnn_prefix_replay_rebuild_live_memory = false;
+    return false;
+}
+
+bool llama_context::apply_hetero_plan(llama_hetero_execution_plan plan, bool update_base_plan, const char * source) {
+    if (!ensure_hetero_backends_for_route(plan.route, source != nullptr ? source : "hetero")) {
+        return false;
+    }
+
+    if (!llama_hetero_kv_contract_can_satisfy(hetero_kv_contract_allocated, plan.attn_kv)) {
+        LLAMA_LOG_WARN("%s: rejecting hetero route from %s: requested KV layout=%s transfer=%s is incompatible with allocated layout=%s transfer=%s\n",
+                __func__,
+                source != nullptr ? source : "unknown",
+                llama_hetero_kv_layout_name(plan.attn_kv.layout),
+                llama_hetero_kv_transfer_mode_name(plan.attn_kv.transfer),
+                llama_hetero_kv_layout_name(hetero_kv_contract_allocated.layout),
+                llama_hetero_kv_transfer_mode_name(hetero_kv_contract_allocated.transfer));
+        return false;
+    }
+
+    if (llama_hetero_execution_plan_equals(hetero_plan, plan)) {
+        if (update_base_plan) {
+            hetero_plan_base = hetero_plan;
+        }
+        aot_active_route_requests_qnn = llama_context_hetero_route_requests_qnn(hetero_plan.route);
+        return true;
+    }
+
+    hetero_plan = std::move(plan);
+    aot_active_route_requests_qnn = llama_context_hetero_route_requests_qnn(hetero_plan.route);
+    if (update_base_plan) {
+        hetero_plan_base = hetero_plan;
+    }
+
+    if (gf_res_prev) {
+        gf_res_prev->reset();
+    }
+    if (gf_res_reserve) {
+        gf_res_reserve->reset();
+    }
+    sched_need_reserve = true;
+
+    LLAMA_LOG_INFO("%s: applied hetero route from %s: %s\n",
+            __func__,
+            source != nullptr ? source : "unknown",
+            llama_hetero_format_route_spec(hetero_plan.route).c_str());
+    return true;
+}
+
+bool llama_context::set_hetero_plan(llama_hetero_execution_plan plan) {
+    return apply_hetero_plan(std::move(plan), /* update_base_plan = */ true, "manual");
+}
+
+const llama_hetero_execution_plan & llama_context::get_hetero_plan() const {
+    return hetero_plan;
+}
+
+bool llama_context::set_dynamic_route_config(const llama_dynamic_route_config & config) {
+    llama_dynamic_route_runtime_config runtime_config;
+    std::string error;
+    if (!llama_dynamic_route_build_runtime_config(config, runtime_config, &error)) {
+        LLAMA_LOG_ERROR("%s: invalid dynamic route config: %s\n", __func__, error.c_str());
+        return false;
+    }
+
+    if (!ensure_dynamic_route_backends_ready(runtime_config)) {
+        return false;
+    }
+
+    dynamic_route_config = std::move(runtime_config);
+    dynamic_route_state = {};
+    return true;
+}
+
+std::string llama_context::get_dynamic_route_mode() const {
+    return llama_dynamic_route_mode_name(dynamic_route_config.mode);
+}
+
+void llama_context::maybe_apply_dynamic_route(uint32_t n_tokens) {
+    if (n_tokens > 1) {
+        dynamic_route_state.prefill_calls++;
+    } else {
+        dynamic_route_state.decode_calls++;
+    }
+
+    if (!dynamic_route_config.enabled()) {
+        return;
+    }
+
+    const llama_dynamic_route_request request = {
+        /*.n_tokens =*/ n_tokens,
+        /*.opencl_backend_available =*/ backend_available_for_route("opencl"),
+        /*.qnn_backend_available =*/
+            backend_available_for_route("qnn-npu") ||
+            backend_available_for_route("qnn-gpu") ||
+            backend_available_for_route("qnn-cpu"),
+        /*.current_plan =*/ &hetero_plan,
+        /*.base_plan =*/ &hetero_plan_base,
+        /*.allocated_kv_contract =*/ &hetero_kv_contract_allocated,
+    };
+
+    const bool trace_timing = llama_context_hetero_dynamic_trace_timing_enabled();
+    const int64_t t_decide_start_us = trace_timing ? ggml_time_us() : 0;
+    llama_dynamic_route_decision decision = llama_dynamic_route_decide(dynamic_route_config, request);
+    const int64_t t_decide_end_us = trace_timing ? ggml_time_us() : 0;
+
+    if (trace_timing && hetero_phase_trace.active) {
+        hetero_phase_trace.route_decide_us = t_decide_end_us - t_decide_start_us;
+        hetero_phase_trace.route_reason = decision.reason;
+    }
+
+    if (!decision.should_apply) {
+        if (dynamic_route_config.trace_enabled && !decision.reason.empty()) {
+            LLAMA_LOG_INFO("%s: dynamic route kept current route for n_tokens=%u reason=%s\n",
+                    __func__, n_tokens, decision.reason.c_str());
+        }
+        if (trace_timing) {
+            LLAMA_LOG_INFO("%s: timing phase=%s n_tokens=%u route_apply=false reason=%s decide_us=%" PRId64 "\n",
+                    __func__,
+                    llama_context_hetero_phase_name(n_tokens),
+                    n_tokens,
+                    decision.reason.empty() ? "<none>" : decision.reason.c_str(),
+                    t_decide_end_us - t_decide_start_us);
+        }
+        return;
+    }
+
+    const std::string target_route = llama_hetero_format_route_spec(decision.plan.route);
+    const std::string current_attn_backend =
+        llama_hetero_canonical_backend(hetero_plan.route.backend_for(llama_hetero_route_stage::ATTN_CORE));
+    const std::string target_attn_backend =
+        llama_hetero_canonical_backend(decision.plan.route.backend_for(llama_hetero_route_stage::ATTN_CORE));
+    const bool switching_out_of_qnn_decode =
+        n_tokens == 1 &&
+        llama_context_hetero_route_requests_qnn(hetero_plan.route) &&
+        !llama_context_hetero_route_requests_qnn(decision.plan.route);
+    const bool generic_qnn_kv_enabled =
+        llama_context_env_flag_enabled("GGML_QNN_AOT_WRITE_GENERIC_KV");
+    const bool should_attempt_qnn_kv_migration =
+        llama_context_should_attempt_qnn_phase_kv_migration(
+                current_attn_backend,
+                target_attn_backend,
+                n_tokens,
+                generic_qnn_kv_enabled);
+    const bool should_use_qnn_shared_phase_kv =
+        llama_context_should_use_qnn_shared_phase_kv(
+                current_attn_backend,
+                target_attn_backend,
+                n_tokens,
+                generic_qnn_kv_enabled,
+                hetero_kv_contract_allocated);
+    const bool should_migrate_cpu_opencl_kv =
+        n_tokens == 1 &&
+        ((current_attn_backend == "cpu" && target_attn_backend == "opencl") ||
+         (current_attn_backend == "opencl" && target_attn_backend == "cpu"));
+
+    bool migrated_qnn_kv = false;
+
+    if (switching_out_of_qnn_decode) {
+        ggml_backend_t qnn_backend = find_backend_for_route("qnn-npu");
+        if (qnn_backend != nullptr) {
+            ggml_backend_dev_t qnn_dev = ggml_backend_get_device(qnn_backend);
+            ggml_backend_reg_t qnn_reg = qnn_dev != nullptr ? ggml_backend_dev_backend_reg(qnn_dev) : nullptr;
+            auto * has_pending_fn =
+                qnn_reg != nullptr
+                    ? (ggml_backend_qnn_aot_has_pending_generic_kv_writeback_t)
+                          ggml_backend_reg_get_proc_address(qnn_reg, "ggml_backend_qnn_aot_has_pending_generic_kv_writeback")
+                    : nullptr;
+            auto * flush_pending_fn =
+                qnn_reg != nullptr
+                    ? (ggml_backend_qnn_aot_flush_pending_generic_kv_writeback_t)
+                          ggml_backend_reg_get_proc_address(qnn_reg, "ggml_backend_qnn_aot_flush_pending_generic_kv_writeback")
+                    : nullptr;
+
+            if (has_pending_fn != nullptr && flush_pending_fn != nullptr && has_pending_fn(qnn_backend)) {
+                LLAMA_LOG_INFO("%s: starting QNN pending KV flush before decode route switch\n", __func__);
+                const int64_t t_kv_start_us = trace_timing ? ggml_time_us() : 0;
+                const bool flushed = flush_pending_fn(qnn_backend);
+                const int64_t t_kv_end_us = trace_timing ? ggml_time_us() : 0;
+                if (trace_timing && hetero_phase_trace.active) {
+                    hetero_phase_trace.kv_migration_us += t_kv_end_us - t_kv_start_us;
+                }
+                if (!flushed) {
+                    LLAMA_LOG_ERROR("%s: deferred QNN KV flush failed; keeping existing route and skipping decode backend switch\n",
+                            __func__);
+                    return;
+                }
+            }
+        }
+    }
+
+    if (should_migrate_cpu_opencl_kv) {
+        LLAMA_LOG_INFO("%s: starting CPU/OpenCL KV migration before decode route switch (%s -> %s)\n",
+                __func__,
+                current_attn_backend.c_str(),
+                target_attn_backend.c_str());
+        const int64_t t_kv_start_us = trace_timing ? ggml_time_us() : 0;
+        const bool migrated = migrate_dynamic_cpu_opencl_kv(current_attn_backend, target_attn_backend);
+        const int64_t t_kv_end_us = trace_timing ? ggml_time_us() : 0;
+        if (trace_timing && hetero_phase_trace.active) {
+            hetero_phase_trace.kv_migration_us += t_kv_end_us - t_kv_start_us;
+        }
+        if (!migrated) {
+            LLAMA_LOG_ERROR("%s: CPU/OpenCL KV migration failed; keeping existing route and skipping backend switch\n",
+                    __func__);
+            return;
+        }
+    }
+
+    if (should_use_qnn_shared_phase_kv) {
+        LLAMA_LOG_INFO("%s: reusing shared QNN KV directly for decode route switch (%s -> %s)\n",
+                __func__,
+                current_attn_backend.c_str(),
+                target_attn_backend.c_str());
+        const int64_t t_kv_start_us = trace_timing ? ggml_time_us() : 0;
+        llama_opencl_external_host_sync_timing opencl_sync_timing;
+        migrated_qnn_kv =
+            target_attn_backend == "opencl"
+                ? sync_dynamic_cpu_opencl_kv(/* host_to_device = */ true, &opencl_sync_timing)
+                : true;
+        const int64_t t_kv_end_us = trace_timing ? ggml_time_us() : 0;
+        if (trace_timing && hetero_phase_trace.active) {
+            hetero_phase_trace.kv_migration_us += t_kv_end_us - t_kv_start_us;
+            hetero_phase_trace.kv_alias_us += opencl_sync_timing.alias_us;
+            hetero_phase_trace.kv_backend_sync_us += opencl_sync_timing.backend_sync_us;
+            hetero_phase_trace.kv_transfer_us += opencl_sync_timing.transfer_us;
+        }
+        if (!migrated_qnn_kv) {
+            LLAMA_LOG_WARN("%s: direct shared QNN KV handoff failed; falling back to state rebuild for %s -> %s\n",
+                    __func__,
+                    current_attn_backend.c_str(),
+                    target_attn_backend.c_str());
+        }
+    }
+
+    if (should_attempt_qnn_kv_migration && !migrated_qnn_kv) {
+        LLAMA_LOG_INFO("%s: starting QNN KV migration before decode route switch (%s -> %s)\n",
+                __func__,
+                current_attn_backend.c_str(),
+                target_attn_backend.c_str());
+        const int64_t t_kv_start_us = trace_timing ? ggml_time_us() : 0;
+        migrated_qnn_kv = rebuild_dynamic_consumer_kv_from_state(
+                current_attn_backend,
+                target_attn_backend,
+                "qnn-phase-state-migration");
+        const int64_t t_kv_end_us = trace_timing ? ggml_time_us() : 0;
+        if (trace_timing && hetero_phase_trace.active) {
+            hetero_phase_trace.kv_migration_us += t_kv_end_us - t_kv_start_us;
+        }
+        if (!migrated_qnn_kv) {
+            LLAMA_LOG_ERROR("%s: QNN KV migration failed; keeping existing route and skipping backend switch\n",
+                    __func__);
+            return;
+        }
+    }
+
+    const int64_t t_apply_start_us = trace_timing ? ggml_time_us() : 0;
+    const bool applied = apply_hetero_plan(std::move(decision.plan), /* update_base_plan = */ false, decision.plan_label.c_str());
+    const int64_t t_apply_end_us = trace_timing ? ggml_time_us() : 0;
+
+    if (trace_timing && hetero_phase_trace.active) {
+        hetero_phase_trace.route_applied = applied;
+        hetero_phase_trace.route_noop = !sched_need_reserve;
+        hetero_phase_trace.route_apply_us = t_apply_end_us - t_apply_start_us;
+        hetero_phase_trace.route_label = decision.plan_label;
+        hetero_phase_trace.target_route = target_route;
+    }
+
+    if (applied) {
+        dynamic_route_state.route_switches++;
+    } else if (dynamic_route_config.fallback.configured) {
+        apply_hetero_plan(dynamic_route_config.fallback.plan, /* update_base_plan = */ false, "dynamic-fallback");
+    } else {
+        apply_hetero_plan(hetero_plan_base, /* update_base_plan = */ false, "dynamic-base");
+    }
+
+    if (trace_timing) {
+        LLAMA_LOG_INFO("%s: timing phase=%s n_tokens=%u route_apply=%s label=%s reason=%s decide_us=%" PRId64 " apply_us=%" PRId64 " target=%s\n",
+                __func__,
+                llama_context_hetero_phase_name(n_tokens),
+                n_tokens,
+                applied ? "true" : "false",
+                decision.plan_label.empty() ? "<none>" : decision.plan_label.c_str(),
+                decision.reason.empty() ? "<none>" : decision.reason.c_str(),
+                t_decide_end_us - t_decide_start_us,
+                t_apply_end_us - t_apply_start_us,
+                target_route.empty() ? "<default>" : target_route.c_str());
+    }
+}
+
 llm_graph_result * llama_context::process_ubatch(const llama_ubatch & ubatch, llm_graph_type gtype, llama_memory_context_i * mctx, ggml_status & ret) {
     if (mctx && !mctx->apply()) {
         LLAMA_LOG_ERROR("%s: failed to apply memory context\n", __func__);
@@ -1696,18 +2741,40 @@ int llama_context::decode(const llama_batch & batch_inp) {
     if (t_compute_start_us == 0) {
         t_compute_start_us = ggml_time_us();
     }
+
+    if (llama_context_hetero_dynamic_trace_timing_enabled()) {
+        if (hetero_phase_trace.active) {
+            LLAMA_LOG_WARN("%s: overwriting pending hetero phase trace for phase=%s n_tokens=%u before synchronize() completed\n",
+                    __func__,
+                    llama_context_hetero_phase_name(hetero_phase_trace.n_tokens),
+                    hetero_phase_trace.n_tokens);
+        }
+        hetero_phase_trace.reset();
+        hetero_phase_trace.active = true;
+        hetero_phase_trace.n_tokens = n_tokens_all;
+        hetero_phase_trace.batch_start_us = t_compute_start_us;
+    }
+
     n_queued_tokens += n_tokens_all;
 
     // TODO: this clear of the buffer can easily be forgotten - need something better
     embd_seq.clear();
     output_swaps.clear();
 
+    sched_reserve_request_tokens = n_tokens_all;
+    maybe_apply_dynamic_route(n_tokens_all);
+
     sched_reserve();
 
     bool did_optimize = false;
 
     // handle any pending shifts/copies
+    const int64_t t_memory_update_start_us =
+        (llama_context_hetero_dynamic_trace_timing_enabled() && hetero_phase_trace.active) ? ggml_time_us() : 0;
     memory_update(false);
+    if (llama_context_hetero_dynamic_trace_timing_enabled() && hetero_phase_trace.active) {
+        hetero_phase_trace.memory_update_us += ggml_time_us() - t_memory_update_start_us;
+    }
 
     llama_memory_context_ptr mctx;
 
@@ -2293,6 +3360,8 @@ llm_graph_params llama_context::graph_params(
         /*.gtype       =*/ gtype,
         /*.sched       =*/ sched.get(),
         /*.backend_cpu =*/ backend_cpu,
+        /*.model       =*/ &model,
+        /*.hetero_route =*/ hetero_plan.route,
         /*.cvec        =*/ cvec.get(),
         /*.loras       =*/ loras.get(),
         /*.mctx        =*/ mctx,
@@ -2307,6 +3376,16 @@ llm_graph_params llama_context::graph_params(
 ggml_status llama_context::graph_compute(
             ggml_cgraph * gf,
                    bool   batched) {
+    const llama_ubatch empty_ubatch = {};
+    return graph_compute(gf, empty_ubatch, batched);
+}
+
+ggml_status llama_context::graph_compute(
+            ggml_cgraph * gf,
+      const llama_ubatch & ubatch,
+                   bool   batched) {
+    GGML_UNUSED(ubatch);
+
     int n_threads        = batched ? cparams.n_threads_batch : cparams.n_threads;
     ggml_threadpool_t tp = batched ? threadpool_batch        : threadpool;
 
@@ -2355,6 +3434,34 @@ llm_graph_cb llama_context::graph_get_cb() const {
                     }
                 }
             }
+        }
+
+        const auto route_backend_for_tensor = [&](const char * tensor_name) -> std::string {
+            if (tensor_name == nullptr || !hetero_plan.route.has_any_route()) {
+                return {};
+            }
+            if (llama_hetero_is_output_tensor_name(tensor_name)) {
+                return hetero_plan.route.backend_for(llama_hetero_route_stage::OUTPUT);
+            }
+            if (llama_hetero_is_ffn_tensor_name(tensor_name)) {
+                return hetero_plan.route.backend_for(llama_hetero_route_stage::FFN);
+            }
+            if (llama_hetero_is_attn_out_tensor_name(tensor_name)) {
+                return hetero_plan.route.backend_for(llama_hetero_route_stage::ATTN_OUT);
+            }
+            if (llama_hetero_is_attn_core_tensor_name(tensor_name)) {
+                return hetero_plan.route.backend_for(llama_hetero_route_stage::ATTN_CORE);
+            }
+            if (llama_hetero_is_attn_proj_tensor_name(tensor_name)) {
+                return hetero_plan.route.backend_for(llama_hetero_route_stage::ATTN_PROJ);
+            }
+            return {};
+        };
+
+        const std::string route_backend = route_backend_for_tensor(ggml_get_name(cur));
+        ggml_backend_t backend = find_backend_for_route(route_backend);
+        if (backend != nullptr && ggml_backend_supports_op(backend, cur)) {
+            ggml_backend_sched_set_tensor_backend(sched.get(), cur, backend);
         }
     };
 }
@@ -3057,6 +4164,127 @@ size_t llama_context::state_seq_read_data(llama_io_read_i & io, llama_seq_id seq
     return io.n_bytes();
 }
 
+bool llama_context::rebuild_dynamic_consumer_kv_from_state(
+        const std::string & producer_backend,
+        const std::string & consumer_backend,
+        const char * reason) {
+    if (memory == nullptr) {
+        return true;
+    }
+
+    const std::string producer = llama_hetero_canonical_backend(producer_backend);
+    const std::string consumer = llama_hetero_canonical_backend(consumer_backend);
+
+    const bool producer_supported =
+        producer == "cpu" || producer == "opencl" || llama_hetero_is_qnn_backend(producer);
+    const bool consumer_supported = consumer == "cpu" || consumer == "opencl";
+
+    if (!producer_supported || !consumer_supported || producer == consumer) {
+        LLAMA_LOG_ERROR("%s: unsupported dynamic KV rebuild request producer=%s consumer=%s\n",
+                __func__,
+                producer.empty() ? "<unset>" : producer.c_str(),
+                consumer.empty() ? "<unset>" : consumer.c_str());
+        return false;
+    }
+
+    if (producer == "opencl" && !sync_dynamic_cpu_opencl_kv(/* host_to_device = */ false)) {
+        LLAMA_LOG_ERROR("%s: failed to synchronize OpenCL-backed KV buffers before migration to %s\n",
+                __func__,
+                consumer.c_str());
+        return false;
+    }
+
+    try {
+        llama_io_write_dummy io_size(false);
+        state_write_data(io_size);
+
+        std::vector<uint8_t> state(io_size.n_bytes());
+        size_t n_written = 0;
+        {
+            llama_io_write_host io_write(state.data(), state.size());
+            n_written = state_write_data(io_write);
+        }
+        if (n_written != state.size()) {
+            throw std::runtime_error(format("unexpected state size during dynamic KV migration: %zu != %zu", n_written, state.size()));
+        }
+
+        llama_hetero_kv_contract migration_contract =
+            llama_dynamic_phase_migration_kv_contract(producer, consumer, reason);
+
+        llama_memory_params params_mem = {
+            /*.type_k   =*/ kv_type_k,
+            /*.type_v   =*/ kv_type_v,
+            /*.swa_full =*/ kv_swa_full,
+            /*.ctx_type =*/ cparams.ctx_type,
+            /*.attn_v_trans =*/ kv_attn_v_trans,
+            /*.attn_v_trans_pinned =*/ true,
+            /*.kv_contract =*/ migration_contract,
+        };
+
+        llama_memory_ptr migrated_memory(model.create_memory(params_mem, cparams));
+        if (!migrated_memory) {
+            throw std::runtime_error("failed to create migrated memory module");
+        }
+
+        llama_memory_ptr old_memory = std::move(memory);
+        memory = std::move(migrated_memory);
+
+        try {
+            size_t n_read = 0;
+            {
+                llama_io_read_host io_read(state.data(), state.size());
+                n_read = state_read_data(io_read);
+            }
+            if (n_read != state.size()) {
+                throw std::runtime_error(format("unexpected restored state size during dynamic KV migration: %zu != %zu", n_read, state.size()));
+            }
+        } catch (...) {
+            memory = std::move(old_memory);
+            throw;
+        }
+
+        gf_res_prev.reset();
+        gf_res_reserve.reset();
+        aot_saved_sched.reset();
+        hetero_dynamic_pre_reserved_plans.clear();
+        sched_need_reserve = true;
+
+        LLAMA_LOG_INFO("%s: rebuilt KV-backed memory for dynamic phase migration %s -> %s using consumer-owned placement (reason=%s)\n",
+                __func__,
+                producer.c_str(),
+                consumer.c_str(),
+                migration_contract.reason.c_str());
+    } catch (const std::exception & err) {
+        LLAMA_LOG_ERROR("%s: dynamic KV rebuild failed for %s -> %s: %s\n",
+                __func__,
+                producer.c_str(),
+                consumer.c_str(),
+                err.what());
+        return false;
+    }
+
+    return true;
+}
+
+bool llama_context::migrate_dynamic_cpu_opencl_kv(
+        const std::string & producer_backend,
+        const std::string & consumer_backend) {
+    const std::string producer = llama_hetero_canonical_backend(producer_backend);
+    const std::string consumer = llama_hetero_canonical_backend(consumer_backend);
+
+    if ((producer != "cpu" && producer != "opencl") ||
+        (consumer != "cpu" && consumer != "opencl") ||
+        producer == consumer) {
+        LLAMA_LOG_ERROR("%s: unsupported CPU/OpenCL KV migration request producer=%s consumer=%s\n",
+                __func__,
+                producer.empty() ? "<unset>" : producer.c_str(),
+                consumer.empty() ? "<unset>" : consumer.c_str());
+        return false;
+    }
+
+    return rebuild_dynamic_consumer_kv_from_state(producer, consumer, "cpu-opencl-phase-migration");
+}
+
 //
 // perf
 //
@@ -3358,6 +4586,8 @@ llama_context_params llama_context_default_params() {
         /*.type_v                      =*/ GGML_TYPE_F16,
         /*.abort_callback              =*/ nullptr,
         /*.abort_callback_data         =*/ nullptr,
+        /*.hetero_phase_route          =*/ nullptr,
+        /*.hetero_kv_layout            =*/ nullptr,
         /*.embeddings                  =*/ false,
         /*.offload_kqv                 =*/ true,
         /*.no_perf                     =*/ true,
@@ -3366,6 +4596,22 @@ llama_context_params llama_context_default_params() {
         /*.kv_unified                  =*/ false,
         /*.sampler                     =*/ nullptr,
         /*.n_sampler                   =*/ 0,
+    };
+
+    return result;
+}
+
+llama_dynamic_route_config llama_dynamic_route_default_config() {
+    llama_dynamic_route_config result = {
+        /*.mode               =*/ "disabled",
+        /*.prefill_route      =*/ nullptr,
+        /*.prefill_kv_layout  =*/ nullptr,
+        /*.decode_route       =*/ nullptr,
+        /*.decode_kv_layout   =*/ nullptr,
+        /*.fallback_route     =*/ nullptr,
+        /*.fallback_kv_layout =*/ nullptr,
+        /*.slo_us             =*/ 0,
+        /*.allow_qnn          =*/ true,
     };
 
     return result;
@@ -3528,6 +4774,98 @@ int32_t llama_n_threads_batch(llama_context * ctx) {
 
 void llama_set_abort_callback(llama_context * ctx, bool (*abort_callback)(void * data), void * abort_callback_data) {
     ctx->set_abort_callback(abort_callback, abort_callback_data);
+}
+
+bool llama_set_hetero_phase_route(
+        llama_context * ctx,
+        const char * route_spec,
+        const char * kv_layout) {
+    if (ctx == nullptr) {
+        LLAMA_LOG_ERROR("%s: ctx cannot be NULL\n", __func__);
+        return false;
+    }
+
+    return ctx->set_hetero_plan(llama_hetero_build_execution_plan(route_spec, kv_layout));
+}
+
+int32_t llama_get_hetero_phase_route(
+        const llama_context * ctx,
+        char * buf,
+        size_t buf_size) {
+    if (ctx == nullptr) {
+        if (buf != nullptr && buf_size > 0) {
+            buf[0] = '\0';
+        }
+        return -1;
+    }
+
+    const std::string route = llama_hetero_format_route_spec(ctx->get_hetero_plan().route);
+    const char * value = route.empty() ? "<default>" : route.c_str();
+    if (buf == nullptr) {
+        return int32_t(std::strlen(value));
+    }
+    return snprintf(buf, buf_size, "%s", value);
+}
+
+int32_t llama_get_hetero_kv_layout(
+        const llama_context * ctx,
+        char * buf,
+        size_t buf_size) {
+    if (ctx == nullptr) {
+        if (buf != nullptr && buf_size > 0) {
+            buf[0] = '\0';
+        }
+        return -1;
+    }
+
+    const auto & contract = ctx->get_hetero_plan().attn_kv;
+    const char * value = nullptr;
+    switch (contract.transfer) {
+        case llama_hetero_kv_transfer_mode::NONE:
+            value = contract.layout == llama_hetero_kv_layout_kind::LEGACY ? "legacy" : "stage-shared";
+            break;
+        case llama_hetero_kv_transfer_mode::CPU_OPENCL_ZERO_COPY:
+            value = "cpu-opencl-zero-copy";
+            break;
+        case llama_hetero_kv_transfer_mode::QNN_RPCMEM:
+            value = "qnn-rpcmem";
+            break;
+    }
+
+    value = value != nullptr ? value : "unknown";
+    if (buf == nullptr) {
+        return int32_t(std::strlen(value));
+    }
+    return snprintf(buf, buf_size, "%s", value);
+}
+
+bool llama_set_dynamic_route_config(
+        llama_context * ctx,
+        llama_dynamic_route_config config) {
+    if (ctx == nullptr) {
+        LLAMA_LOG_ERROR("%s: ctx cannot be NULL\n", __func__);
+        return false;
+    }
+
+    return ctx->set_dynamic_route_config(config);
+}
+
+int32_t llama_get_dynamic_route_mode(
+        const llama_context * ctx,
+        char * buf,
+        size_t buf_size) {
+    if (ctx == nullptr) {
+        if (buf != nullptr && buf_size > 0) {
+            buf[0] = '\0';
+        }
+        return -1;
+    }
+
+    const std::string mode = ctx->get_dynamic_route_mode();
+    if (buf == nullptr) {
+        return int32_t(mode.size());
+    }
+    return snprintf(buf, buf_size, "%s", mode.c_str());
 }
 
 void llama_set_embeddings(llama_context * ctx, bool embeddings) {

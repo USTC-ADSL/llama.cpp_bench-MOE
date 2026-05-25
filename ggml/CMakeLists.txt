@@ -268,6 +268,10 @@ set   (GGML_OPENCL_TARGET_VERSION "300" CACHE STRING
 option(GGML_HEXAGON                         "ggml: enable Hexagon backend"                    OFF)
 set(GGML_HEXAGON_FP32_QUANTIZE_GROUP_SIZE 128 CACHE STRING "ggml: quantize group size (32, 64, or 128)")
 
+option(GGML_QNN                             "ggml: enable QNN backend"                        OFF)
+set(GGML_QNN_SDK_PATH "" CACHE PATH         "ggml: path to QNN SDK root directory")
+set(GGML_QNN_SDK_ROOT "" CACHE PATH         "ggml: path to QNN SDK root directory (alias for GGML_QNN_SDK_PATH)")
+
 # toolchain for vulkan-shaders-gen
 set   (GGML_VULKAN_SHADERS_GEN_TOOLCHAIN "" CACHE FILEPATH "ggml: toolchain file for vulkan-shaders-gen")
 
@@ -336,6 +340,7 @@ set(GGML_PUBLIC_HEADERS
     include/ggml-sycl.h
     include/ggml-vulkan.h
     include/ggml-webgpu.h
+    include/ggml-qnn.h
     include/ggml-zendnn.h
     include/ggml-openvino.h
     include/gguf.h)

@@ -4,11 +4,16 @@
 #include "llama-io.h"
 #include "llama-model.h"
 #include "llama-context.h"
+#include "llama-hetero-route.h"
 
 #include <algorithm>
 #include <cassert>
+#include <cinttypes>
 #include <cmath>
+#include <cstdlib>
 #include <cstring>
+#include <filesystem>
+#include <fstream>
 #include <limits>
 #include <map>
 #include <stdexcept>
@@ -89,10 +94,12 @@ llama_kv_cache::llama_kv_cache(
                  uint32_t   n_pad,
                  uint32_t   n_swa,
            llama_swa_type   swa_type,
+    const llama_hetero_kv_contract & kv_contract,
     const layer_filter_cb & filter,
     const  layer_reuse_cb & reuse) :
     model(model), hparams(model.hparams), v_trans(v_trans),
-    n_seq_max(n_seq_max), n_stream(unified ? 1 : n_seq_max), n_pad(n_pad), n_swa(n_swa), swa_type(swa_type) {
+    n_seq_max(n_seq_max), n_stream(unified ? 1 : n_seq_max), n_pad(n_pad), n_swa(n_swa),
+    kv_contract(kv_contract), swa_type(swa_type) {
 
     GGML_ASSERT(kv_size % n_pad == 0);
 
@@ -157,7 +164,260 @@ llama_kv_cache::llama_kv_cache(
                 __func__, hparams.n_embd_v_gqa_max());
     }
 
+    ggml_backend_buffer_type_t shared_kv_buft = nullptr;
+    if (llama_hetero_kv_contract_needs_shared_buft(this->kv_contract)) {
+        switch (this->kv_contract.transfer) {
+            case llama_hetero_kv_transfer_mode::CPU_OPENCL_ZERO_COPY: {
+                ggml_backend_dev_t opencl_dev = ggml_backend_dev_by_name("GPUOpenCL");
+                if (opencl_dev != nullptr) {
+                    shared_kv_buft = ggml_backend_dev_host_buffer_type(opencl_dev);
+                }
+                if (shared_kv_buft != nullptr) {
+                    LLAMA_LOG_INFO("%s: attn KV contract layout=%s transfer=%s producer=%s consumer=%s storage=%s buft=%s\n",
+                            __func__,
+                            llama_hetero_kv_layout_name(this->kv_contract.layout),
+                            llama_hetero_kv_transfer_mode_name(this->kv_contract.transfer),
+                            this->kv_contract.producer_backend.c_str(),
+                            this->kv_contract.consumer_backend.c_str(),
+                            this->kv_contract.storage_backend.empty() ? "<unset>" : this->kv_contract.storage_backend.c_str(),
+                            ggml_backend_buft_name(shared_kv_buft));
+                } else {
+                    LLAMA_LOG_WARN("%s: attn KV contract requested %s but OpenCL host buffer type is unavailable; falling back to legacy per-layer KV placement\n",
+                            __func__,
+                            llama_hetero_kv_transfer_mode_name(this->kv_contract.transfer));
+                }
+            } break;
+            case llama_hetero_kv_transfer_mode::QNN_RPCMEM: {
+                ggml_backend_dev_t qnn_dev = ggml_backend_dev_by_name("qnn-npu");
+                if (qnn_dev != nullptr) {
+                    shared_kv_buft = ggml_backend_dev_host_buffer_type(qnn_dev);
+                }
+                if (shared_kv_buft != nullptr) {
+                    LLAMA_LOG_INFO("%s: attn KV contract layout=%s transfer=%s producer=%s consumer=%s storage=%s buft=%s\n",
+                            __func__,
+                            llama_hetero_kv_layout_name(this->kv_contract.layout),
+                            llama_hetero_kv_transfer_mode_name(this->kv_contract.transfer),
+                            this->kv_contract.producer_backend.c_str(),
+                            this->kv_contract.consumer_backend.c_str(),
+                            this->kv_contract.storage_backend.empty() ? "<unset>" : this->kv_contract.storage_backend.c_str(),
+                            ggml_backend_buft_name(shared_kv_buft));
+                } else {
+                    LLAMA_LOG_WARN("%s: attn KV contract requested %s but the QNN host buffer type is unavailable; falling back to legacy per-layer KV placement\n",
+                            __func__,
+                            llama_hetero_kv_transfer_mode_name(this->kv_contract.transfer));
+                }
+            } break;
+            case llama_hetero_kv_transfer_mode::NONE:
+                break;
+        }
+    }
+
+    ggml_backend_buffer_type_t consumer_kv_buft = nullptr;
+    const char * consumer_kv_dev_name = nullptr;
+    ggml_backend_buffer_type_t producer_kv_buft = nullptr;
+    const char * producer_kv_dev_name = nullptr;
+    if (shared_kv_buft == nullptr && this->kv_contract.stage_boundary_active()) {
+        const std::string consumer_backend = llama_hetero_canonical_backend(this->kv_contract.consumer_backend);
+        if (consumer_backend == "cpu") {
+            consumer_kv_buft = ggml_backend_cpu_buffer_type();
+            consumer_kv_dev_name = "CPU";
+        } else if (!consumer_backend.empty()) {
+            ggml_backend_dev_t consumer_dev = ggml_backend_dev_by_name(consumer_backend.c_str());
+            if (consumer_dev == nullptr && consumer_backend == "opencl") {
+                consumer_dev = ggml_backend_dev_by_name("GPUOpenCL");
+            }
+            if (consumer_dev != nullptr) {
+                consumer_kv_buft = ggml_backend_dev_buffer_type(consumer_dev);
+                consumer_kv_dev_name = ggml_backend_dev_name(consumer_dev);
+            }
+        }
+
+        if (consumer_kv_buft != nullptr) {
+            LLAMA_LOG_INFO("%s: attn KV contract fallback keeps legacy placement on the consumer backend=%s for %s -> %s (layout=%s transfer=%s reason=%s)\n",
+                    __func__,
+                    consumer_kv_dev_name != nullptr ? consumer_kv_dev_name : ggml_backend_buft_name(consumer_kv_buft),
+                    this->kv_contract.producer_backend.c_str(),
+                    this->kv_contract.consumer_backend.c_str(),
+                    llama_hetero_kv_layout_name(this->kv_contract.layout),
+                    llama_hetero_kv_transfer_mode_name(this->kv_contract.transfer),
+                    this->kv_contract.reason.empty() ? "<none>" : this->kv_contract.reason.c_str());
+        } else {
+            LLAMA_LOG_WARN("%s: attn KV split %s -> %s requested consumer-owned legacy placement, but the consumer buffer type is unavailable; falling back to model offload placement\n",
+                    __func__,
+                    this->kv_contract.producer_backend.c_str(),
+                    this->kv_contract.consumer_backend.c_str());
+        }
+    }
+
+    ggml_backend_buffer_type_t mixed_attn_shared_kv_buft = nullptr;
+    const auto env_flag_enabled = [](const char * name) {
+        const char * value = std::getenv(name);
+        return value != nullptr && value[0] != '\0' && std::strcmp(value, "0") != 0;
+    };
+    const auto route_requests_qnn = [](const llama_hetero_route_spec & route) {
+        static constexpr std::array<llama_hetero_route_stage, 5> kStages = {{
+            llama_hetero_route_stage::ATTN_PROJ,
+            llama_hetero_route_stage::ATTN_CORE,
+            llama_hetero_route_stage::ATTN_OUT,
+            llama_hetero_route_stage::FFN,
+            llama_hetero_route_stage::OUTPUT,
+        }};
+
+        for (const auto stage : kStages) {
+            if (llama_hetero_is_qnn_backend(route.backend_for(stage))) {
+                return true;
+            }
+        }
+
+        return false;
+    };
+    const auto route_attn_uses_opencl = [](const llama_hetero_route_spec & route) {
+        return llama_hetero_is_opencl_backend(route.backend_for(llama_hetero_route_stage::ATTN_PROJ)) ||
+               llama_hetero_is_opencl_backend(route.backend_for(llama_hetero_route_stage::ATTN_CORE)) ||
+               llama_hetero_is_opencl_backend(route.backend_for(llama_hetero_route_stage::ATTN_OUT));
+    };
+    const auto route_attn_consumer_backend = [](const llama_hetero_route_spec & route) {
+        return llama_hetero_canonical_backend(route.backend_for(llama_hetero_route_stage::ATTN_CORE));
+    };
+    const auto & hetero_route = model.get_hetero_plan().route;
+    const llama_hetero_route_spec dynamic_prefill_route =
+        llama_hetero_parse_route_spec(std::getenv("GGML_HETERO_DYNAMIC_PREFILL_ROUTE"));
+    const llama_hetero_route_spec dynamic_decode_route =
+        llama_hetero_parse_route_spec(std::getenv("GGML_HETERO_DYNAMIC_DECODE_ROUTE"));
+    const std::string dynamic_prefill_consumer_backend = route_attn_consumer_backend(dynamic_prefill_route);
+    const std::string dynamic_decode_consumer_backend  = route_attn_consumer_backend(dynamic_decode_route);
+    const bool dynamic_phase_switch_active =
+        dynamic_prefill_route.has_any_route() &&
+        dynamic_decode_route.has_any_route() &&
+        !dynamic_prefill_consumer_backend.empty() &&
+        !dynamic_decode_consumer_backend.empty() &&
+        dynamic_prefill_consumer_backend != dynamic_decode_consumer_backend;
+    const bool dynamic_phase_cpu_opencl_switch =
+        ((dynamic_prefill_consumer_backend == "cpu" && dynamic_decode_consumer_backend == "opencl") ||
+         (dynamic_prefill_consumer_backend == "opencl" && dynamic_decode_consumer_backend == "cpu"));
+    const bool dynamic_phase_qnn_opencl_switch =
+        (route_requests_qnn(dynamic_prefill_route) && route_attn_uses_opencl(dynamic_decode_route)) ||
+        (route_attn_uses_opencl(dynamic_prefill_route) && route_requests_qnn(dynamic_decode_route));
+    const bool hetero_qnn_shared_host_requested =
+        env_flag_enabled("GGML_HETERO_QNN_SHARED_HOST") &&
+        (llama_hetero_route_has_qnn_adjacent_boundary(hetero_route) || dynamic_phase_qnn_opencl_switch);
+    const bool attn_uses_opencl =
+        route_attn_uses_opencl(hetero_route) ||
+        route_attn_uses_opencl(dynamic_prefill_route) ||
+        route_attn_uses_opencl(dynamic_decode_route);
+
+    if (shared_kv_buft == nullptr &&
+        consumer_kv_buft == nullptr &&
+        producer_kv_buft == nullptr &&
+        !this->kv_contract.stage_boundary_active() &&
+        dynamic_phase_cpu_opencl_switch) {
+        ggml_backend_dev_t opencl_dev = ggml_backend_dev_by_name("GPUOpenCL");
+        ggml_backend_buffer_type_t opencl_host_buft =
+            opencl_dev != nullptr ? ggml_backend_dev_host_buffer_type(opencl_dev) : nullptr;
+        if (opencl_host_buft != nullptr) {
+            mixed_attn_shared_kv_buft = opencl_host_buft;
+            LLAMA_LOG_INFO("%s: phase-level CPU/OpenCL switch keeps legacy KV cache on %s for %s -> %s\n",
+                    __func__,
+                    ggml_backend_buft_name(mixed_attn_shared_kv_buft),
+                    dynamic_prefill_consumer_backend.c_str(),
+                    dynamic_decode_consumer_backend.c_str());
+        } else {
+            LLAMA_LOG_WARN("%s: phase-level CPU/OpenCL switch requested host-visible KV placement, but OpenCL host buffer type is unavailable; falling back to legacy placement\n",
+                    __func__);
+        }
+    }
+
+    if (shared_kv_buft == nullptr &&
+        consumer_kv_buft == nullptr &&
+        !this->kv_contract.stage_boundary_active() &&
+        dynamic_phase_switch_active) {
+        const bool prefill_qnn = llama_hetero_is_qnn_backend(dynamic_prefill_consumer_backend);
+        const bool decode_qnn  = llama_hetero_is_qnn_backend(dynamic_decode_consumer_backend);
+
+        if (prefill_qnn && !decode_qnn) {
+            if (dynamic_decode_consumer_backend == "cpu") {
+                consumer_kv_buft = ggml_backend_cpu_buffer_type();
+                consumer_kv_dev_name = "CPU";
+            } else if (dynamic_decode_consumer_backend == "opencl") {
+                consumer_kv_buft = nullptr;
+                consumer_kv_dev_name = nullptr;
+            } else if (!dynamic_decode_consumer_backend.empty()) {
+                ggml_backend_dev_t consumer_dev = ggml_backend_dev_by_name(dynamic_decode_consumer_backend.c_str());
+                if (consumer_dev == nullptr && dynamic_decode_consumer_backend == "opencl") {
+                    consumer_dev = ggml_backend_dev_by_name("GPUOpenCL");
+                }
+                if (consumer_dev != nullptr) {
+                    consumer_kv_buft = ggml_backend_dev_buffer_type(consumer_dev);
+                    consumer_kv_dev_name = ggml_backend_dev_name(consumer_dev);
+                }
+            }
+
+            if (consumer_kv_buft != nullptr) {
+                LLAMA_LOG_INFO("%s: phase-level KV placement keeps legacy cache on future decode consumer backend=%s for %s -> %s\n",
+                        __func__,
+                        consumer_kv_dev_name != nullptr ? consumer_kv_dev_name : ggml_backend_buft_name(consumer_kv_buft),
+                        dynamic_prefill_consumer_backend.c_str(),
+                        dynamic_decode_consumer_backend.c_str());
+            }
+        } else if (!prefill_qnn && decode_qnn) {
+            if (dynamic_prefill_consumer_backend == "cpu") {
+                producer_kv_buft = ggml_backend_cpu_buffer_type();
+                producer_kv_dev_name = "CPU";
+            } else if (!dynamic_prefill_consumer_backend.empty()) {
+                ggml_backend_dev_t producer_dev = ggml_backend_dev_by_name(dynamic_prefill_consumer_backend.c_str());
+                if (producer_dev == nullptr && dynamic_prefill_consumer_backend == "opencl") {
+                    producer_dev = ggml_backend_dev_by_name("GPUOpenCL");
+                }
+                if (producer_dev != nullptr) {
+                    producer_kv_buft = ggml_backend_dev_buffer_type(producer_dev);
+                    producer_kv_dev_name = ggml_backend_dev_name(producer_dev);
+                }
+            }
+
+            if (producer_kv_buft != nullptr) {
+                LLAMA_LOG_INFO("%s: phase-level KV placement keeps legacy cache on prefill producer backend=%s for %s -> %s so decode-side QNN can import from generic KV at phase switch\n",
+                        __func__,
+                        producer_kv_dev_name != nullptr ? producer_kv_dev_name : ggml_backend_buft_name(producer_kv_buft),
+                        dynamic_prefill_consumer_backend.c_str(),
+                        dynamic_decode_consumer_backend.c_str());
+            }
+        }
+    }
+
+    if (shared_kv_buft == nullptr &&
+        consumer_kv_buft == nullptr &&
+        !this->kv_contract.stage_boundary_active() &&
+        hetero_qnn_shared_host_requested &&
+        attn_uses_opencl) {
+        ggml_backend_dev_t opencl_dev = ggml_backend_dev_by_name("GPUOpenCL");
+        ggml_backend_buffer_type_t opencl_host_buft =
+            opencl_dev != nullptr ? ggml_backend_dev_host_buffer_type(opencl_dev) : nullptr;
+
+        ggml_backend_dev_t qnn_dev = ggml_backend_dev_by_name("qnn-npu");
+        ggml_backend_buffer_type_t qnn_host_buft =
+            qnn_dev != nullptr ? ggml_backend_dev_host_buffer_type(qnn_dev) : nullptr;
+
+        if (qnn_host_buft != nullptr &&
+            opencl_dev != nullptr &&
+            ggml_backend_dev_supports_buft(opencl_dev, qnn_host_buft)) {
+            mixed_attn_shared_kv_buft = qnn_host_buft;
+            LLAMA_LOG_INFO("%s: mixed OpenCL-attn/QNN route keeps legacy KV cache on %s so OpenCL SET_ROWS/GET_ROWS can alias the cache without CPU fallback copies\n",
+                    __func__,
+                    ggml_backend_buft_name(mixed_attn_shared_kv_buft));
+        } else if (opencl_host_buft != nullptr) {
+            mixed_attn_shared_kv_buft = opencl_host_buft;
+            LLAMA_LOG_WARN("%s: mixed OpenCL-attn/QNN route requested qnn shared-host KV placement, but qnn-npu-host is unavailable or not OpenCL-compatible; falling back to %s for the legacy KV cache\n",
+                    __func__,
+                    ggml_backend_buft_name(mixed_attn_shared_kv_buft));
+        } else {
+            LLAMA_LOG_WARN("%s: mixed OpenCL-attn/QNN route requested host-visible KV placement, but neither qnn-npu-host nor OpenCL host buffer types are available; keeping legacy KV placement\n",
+                    __func__);
+        }
+    }
+
     const bool is_mla = hparams.is_mla();
+    bool logged_qnn_host_kv_placement = false;
+    bool warned_qnn_host_kv_unavailable = false;
 
     for (uint32_t il = 0; il < hparams.n_layer; il++) {
         if (!hparams.has_kv(il)) {
@@ -190,11 +450,48 @@ llama_kv_cache::llama_kv_cache(
 
         ggml_backend_buffer_type_t buft = ggml_backend_cpu_buffer_type();
 
-        if (offload) {
+        if (shared_kv_buft != nullptr) {
+            buft = shared_kv_buft;
+            dev_name = ggml_backend_buft_name(shared_kv_buft);
+        } else if (mixed_attn_shared_kv_buft != nullptr) {
+            buft = mixed_attn_shared_kv_buft;
+            dev_name = ggml_backend_buft_name(mixed_attn_shared_kv_buft);
+        } else if (producer_kv_buft != nullptr) {
+            buft = producer_kv_buft;
+            dev_name = producer_kv_dev_name != nullptr ? producer_kv_dev_name : ggml_backend_buft_name(producer_kv_buft);
+        } else if (consumer_kv_buft != nullptr) {
+            buft = consumer_kv_buft;
+            dev_name = consumer_kv_dev_name != nullptr ? consumer_kv_dev_name : ggml_backend_buft_name(consumer_kv_buft);
+        } else if (offload) {
             auto * dev = model.dev_layer(il);
-            buft = ggml_backend_dev_buffer_type(dev);
+            const char * offload_dev_name = dev != nullptr ? ggml_backend_dev_name(dev) : nullptr;
 
-            dev_name = ggml_backend_dev_name(dev);
+            if (dev != nullptr &&
+                offload_dev_name != nullptr &&
+                std::strcmp(offload_dev_name, "qnn-npu") == 0) {
+                ggml_backend_buffer_type_t qnn_host_buft = ggml_backend_dev_host_buffer_type(dev);
+                if (qnn_host_buft != nullptr) {
+                    buft = qnn_host_buft;
+                    dev_name = ggml_backend_buft_name(qnn_host_buft);
+                    if (!logged_qnn_host_kv_placement) {
+                        LLAMA_LOG_INFO("%s: static qnn-npu KV cache uses %s so cache SET_ROWS/GET_ROWS can stay on a host-visible buffer while preserving qnn-npu decode offload\n",
+                                __func__,
+                                dev_name);
+                        logged_qnn_host_kv_placement = true;
+                    }
+                } else {
+                    buft = ggml_backend_dev_buffer_type(dev);
+                    dev_name = offload_dev_name;
+                    if (!warned_qnn_host_kv_unavailable) {
+                        LLAMA_LOG_WARN("%s: qnn-npu KV cache requested host-visible placement, but qnn-npu-host is unavailable; falling back to legacy device KV placement\n",
+                                __func__);
+                        warned_qnn_host_kv_unavailable = true;
+                    }
+                }
+            } else {
+                buft = ggml_backend_dev_buffer_type(dev);
+                dev_name = offload_dev_name != nullptr ? offload_dev_name : "CPU";
+            }
         }
 
         LLAMA_LOG_DEBUG("%s: layer %3d: dev = %s\n", __func__, il, dev_name);
@@ -815,6 +1112,102 @@ bool llama_kv_cache::update(llama_context * lctx, bool do_shift, const stream_co
     return updated;
 }
 
+bool llama_kv_cache::sync_external_opencl_host_aliases(
+        ggml_backend_t opencl_backend,
+        bool host_to_device,
+        llama_opencl_external_host_sync_timing * timing) const {
+    using ggml_backend_opencl_sync_external_host_buffer_t =
+        bool (*)(ggml_backend_t backend, ggml_backend_buffer_t buffer, bool host_to_device);
+    using ggml_backend_opencl_sync_external_host_buffer_timed_t =
+        bool (*)(ggml_backend_t backend,
+                 ggml_backend_buffer_t buffer,
+                 bool host_to_device,
+                 int64_t * alias_us,
+                 int64_t * backend_sync_us,
+                 int64_t * transfer_us);
+
+    if (opencl_backend == nullptr) {
+        return false;
+    }
+
+    ggml_backend_dev_t opencl_dev = ggml_backend_get_device(opencl_backend);
+    ggml_backend_reg_t opencl_reg = opencl_dev != nullptr ? ggml_backend_dev_backend_reg(opencl_dev) : nullptr;
+    auto * sync_buffer_fn =
+        opencl_reg != nullptr
+            ? (ggml_backend_opencl_sync_external_host_buffer_t)
+                  ggml_backend_reg_get_proc_address(opencl_reg, "ggml_backend_opencl_sync_external_host_buffer")
+            : nullptr;
+    auto * sync_buffer_timed_fn =
+        opencl_reg != nullptr
+            ? (ggml_backend_opencl_sync_external_host_buffer_timed_t)
+                  ggml_backend_reg_get_proc_address(opencl_reg, "ggml_backend_opencl_sync_external_host_buffer_timed")
+            : nullptr;
+    if (sync_buffer_fn == nullptr && sync_buffer_timed_fn == nullptr) {
+        LLAMA_LOG_ERROR("%s: OpenCL backend does not expose external host-buffer sync support\n", __func__);
+        return false;
+    }
+
+    llama_opencl_external_host_sync_timing total_timing;
+    if (timing != nullptr) {
+        timing->clear();
+    }
+
+    size_t synced_buffers = 0;
+    size_t synced_bytes = 0;
+
+    for (const auto & [ctx, buf] : ctxs_bufs) {
+        GGML_UNUSED(ctx);
+
+        if (buf == nullptr || !ggml_backend_buffer_is_host(buf.get())) {
+            continue;
+        }
+        const char * buffer_name = ggml_backend_buffer_name(buf.get());
+
+        llama_opencl_external_host_sync_timing buffer_timing;
+        const bool ok = sync_buffer_timed_fn != nullptr
+            ? sync_buffer_timed_fn(
+                    opencl_backend,
+                    buf.get(),
+                    host_to_device,
+                    &buffer_timing.alias_us,
+                    &buffer_timing.backend_sync_us,
+                    &buffer_timing.transfer_us)
+            : sync_buffer_fn(opencl_backend, buf.get(), host_to_device);
+        if (!ok) {
+            LLAMA_LOG_ERROR("%s: failed to synchronize KV buffer %s for CPU/OpenCL phase switch (%s)\n",
+                    __func__,
+                    buffer_name != nullptr ? buffer_name : "<unnamed>",
+                    host_to_device ? "host->device" : "device->host");
+            return false;
+        }
+
+        synced_buffers++;
+        synced_bytes += ggml_backend_buffer_get_size(buf.get());
+        total_timing.accumulate(buffer_timing);
+    }
+
+    if (synced_buffers > 0) {
+        LLAMA_LOG_INFO("%s: synchronized %zu KV buffer(s) for CPU/OpenCL phase switch (%s), total %.2f MiB\n",
+                __func__,
+                synced_buffers,
+                host_to_device ? "host->device" : "device->host",
+                synced_bytes / 1024.0 / 1024.0);
+        if (sync_buffer_timed_fn != nullptr) {
+            LLAMA_LOG_INFO("%s: timing alias_us=%" PRId64 " backend_sync_us=%" PRId64 " transfer_us=%" PRId64 "\n",
+                    __func__,
+                    total_timing.alias_us,
+                    total_timing.backend_sync_us,
+                    total_timing.transfer_us);
+        }
+    }
+
+    if (timing != nullptr) {
+        timing->accumulate(total_timing);
+    }
+
+    return true;
+}
+
 llama_kv_cache::slot_info llama_kv_cache::find_slot(const llama_ubatch & ubatch, bool cont) const {
 
     if (debug > 0) {
@@ -1145,6 +1538,14 @@ uint32_t llama_kv_cache::get_n_kv(const slot_info & sinfo) const {
 ggml_tensor * llama_kv_cache::get_k(ggml_context * ctx, int32_t il, uint32_t n_kv, const slot_info & sinfo) const {
     const int32_t ikv = map_layer_ids.at(il);
 
+    return get_k(ctx, layers[ikv].k, il, n_kv, sinfo);
+}
+
+ggml_tensor * llama_kv_cache::get_k(ggml_context * ctx, ggml_tensor * cache_k, int32_t il, uint32_t n_kv, const slot_info & sinfo) const {
+    GGML_ASSERT(cache_k != nullptr);
+
+    const int32_t ikv = map_layer_ids.at(il);
+
     auto * k = layers[ikv].k;
 
     const uint64_t kv_size      = get_size();
@@ -1154,7 +1555,7 @@ ggml_tensor * llama_kv_cache::get_k(ggml_context * ctx, int32_t il, uint32_t n_k
 
     const uint32_t ns = sinfo.s1 - sinfo.s0 + 1;
 
-    return ggml_view_4d(ctx, k,
+    return ggml_view_4d(ctx, cache_k,
             hparams.n_embd_head_k(il), hparams.n_head_kv(il), n_kv, ns,
             ggml_row_size(k->type, hparams.n_embd_head_k(il)),
             ggml_row_size(k->type, n_embd_k_gqa),
@@ -1163,6 +1564,14 @@ ggml_tensor * llama_kv_cache::get_k(ggml_context * ctx, int32_t il, uint32_t n_k
 }
 
 ggml_tensor * llama_kv_cache::get_v(ggml_context * ctx, int32_t il, uint32_t n_kv, const slot_info & sinfo) const {
+    const int32_t ikv = map_layer_ids.at(il);
+
+    return get_v(ctx, layers[ikv].v, il, n_kv, sinfo);
+}
+
+ggml_tensor * llama_kv_cache::get_v(ggml_context * ctx, ggml_tensor * cache_v, int32_t il, uint32_t n_kv, const slot_info & sinfo) const {
+    GGML_ASSERT(cache_v != nullptr);
+
     const int32_t ikv = map_layer_ids.at(il);
 
     auto * v = layers[ikv].v;
@@ -1177,7 +1586,7 @@ ggml_tensor * llama_kv_cache::get_v(ggml_context * ctx, int32_t il, uint32_t n_k
 
     if (!v_trans) {
         // note: v->nb[1] <= v->nb[2]
-        return ggml_view_4d(ctx, v,
+        return ggml_view_4d(ctx, cache_v,
                 hparams.n_embd_head_v(il), hparams.n_head_kv(il), n_kv, ns,
                 ggml_row_size(v->type, hparams.n_embd_head_v(il)),          // v->nb[1]
                 ggml_row_size(v->type, n_embd_v_gqa),                   // v->nb[2]
@@ -1186,7 +1595,7 @@ ggml_tensor * llama_kv_cache::get_v(ggml_context * ctx, int32_t il, uint32_t n_k
     }
 
     // note: v->nb[1] > v->nb[2]
-    return ggml_view_4d(ctx, v,
+    return ggml_view_4d(ctx, cache_v,
             n_kv, hparams.n_head_kv(il), hparams.n_embd_head_v(il), ns,
             ggml_row_size(v->type, kv_size*hparams.n_embd_head_v(il)),  // v->nb[1]
             ggml_row_size(v->type, kv_size),                        // v->nb[2]
@@ -1686,6 +2095,106 @@ void llama_kv_cache::set_input_v_rot(ggml_tensor * dst) const {
     GGML_ASSERT(attn_rot_hadamard.count(dst->ne[0]));
 
     memcpy(dst->data, attn_rot_hadamard.at(n_rot).data(), ggml_nbytes(dst));
+}
+
+bool llama_kv_cache::dump_powerserve_seed_kv(const std::string & dir, uint32_t n_tokens) const {
+    if (n_stream != 1) {
+        LLAMA_LOG_ERROR("%s: only unified KV cache export is supported (n_stream=%u)\n", __func__, n_stream);
+        return false;
+    }
+
+    if (n_tokens == 0 || n_tokens > get_size()) {
+        LLAMA_LOG_ERROR("%s: invalid seed token count %u (cache size %u)\n", __func__, n_tokens, get_size());
+        return false;
+    }
+
+    std::filesystem::create_directories(dir);
+
+    auto write_rows = [&](const std::filesystem::path & path, const std::vector<float> & rows) -> bool {
+        std::ofstream out(path, std::ios::binary);
+        if (!out.is_open()) {
+            LLAMA_LOG_ERROR("%s: failed to open %s for writing\n", __func__, path.string().c_str());
+            return false;
+        }
+
+        out.write(reinterpret_cast<const char *>(rows.data()), rows.size() * sizeof(float));
+        if (!out.good()) {
+            LLAMA_LOG_ERROR("%s: failed to write %s\n", __func__, path.string().c_str());
+            return false;
+        }
+        return true;
+    };
+
+    auto to_float = [](ggml_type type, const char * src) -> float {
+        switch (type) {
+            case GGML_TYPE_F16:
+                return ggml_fp16_to_fp32(*reinterpret_cast<const ggml_fp16_t *>(src));
+            case GGML_TYPE_F32:
+                return *reinterpret_cast<const float *>(src);
+            default:
+                GGML_ABORT("unsupported KV tensor type for PowerServe export");
+        }
+    };
+
+    for (const auto & layer : layers) {
+        const uint32_t il = layer.il;
+        const uint32_t n_head_kv = hparams.n_head_kv(il);
+        const uint32_t head_dim_k = hparams.n_embd_head_k(il);
+        const uint32_t head_dim_v = hparams.n_embd_head_v(il);
+
+        auto * k = layer.k_stream[0];
+        auto * v = layer.v_stream[0];
+        if (!k || !v) {
+            LLAMA_LOG_ERROR("%s: missing KV tensors for layer %u\n", __func__, il);
+            return false;
+        }
+
+        std::vector<uint8_t> k_buf(ggml_nbytes(k));
+        std::vector<uint8_t> v_buf(ggml_nbytes(v));
+        ggml_backend_tensor_get(k, k_buf.data(), 0, k_buf.size());
+        ggml_backend_tensor_get(v, v_buf.data(), 0, v_buf.size());
+
+        const size_t k_row_bytes = ggml_row_size(k->type, hparams.n_embd_k_gqa(il));
+        const size_t k_elem_size = ggml_type_size(k->type);
+        const size_t v_elem_size = ggml_type_size(v->type);
+        const uint32_t kv_size = get_size();
+
+        for (uint32_t head = 0; head < n_head_kv; ++head) {
+            std::vector<float> key_rows((size_t) n_tokens * head_dim_k);
+            std::vector<float> value_rows((size_t) n_tokens * head_dim_v);
+
+            for (uint32_t token = 0; token < n_tokens; ++token) {
+                const char * k_row = reinterpret_cast<const char *>(k_buf.data()) + (size_t) token * k_row_bytes;
+                for (uint32_t d = 0; d < head_dim_k; ++d) {
+                    const size_t src_idx = (size_t) head * head_dim_k + d;
+                    key_rows[(size_t) token * head_dim_k + d] = to_float(k->type, k_row + src_idx * k_elem_size);
+                }
+
+                if (!v_trans) {
+                    const size_t v_row_bytes = ggml_row_size(v->type, hparams.n_embd_v_gqa(il));
+                    const char * v_row = reinterpret_cast<const char *>(v_buf.data()) + (size_t) token * v_row_bytes;
+                    for (uint32_t d = 0; d < head_dim_v; ++d) {
+                        const size_t src_idx = (size_t) head * head_dim_v + d;
+                        value_rows[(size_t) token * head_dim_v + d] = to_float(v->type, v_row + src_idx * v_elem_size);
+                    }
+                } else {
+                    for (uint32_t d = 0; d < head_dim_v; ++d) {
+                        const size_t src_idx = ((size_t) head * head_dim_v + d) * kv_size + token;
+                        value_rows[(size_t) token * head_dim_v + d] =
+                            to_float(v->type, reinterpret_cast<const char *>(v_buf.data()) + src_idx * v_elem_size);
+                    }
+                }
+            }
+
+            const auto key_path = std::filesystem::path(dir) / ("layer_" + std::to_string(il) + "_key_" + std::to_string(head) + ".raw");
+            const auto value_path = std::filesystem::path(dir) / ("layer_" + std::to_string(il) + "_value_" + std::to_string(head) + ".raw");
+            if (!write_rows(key_path, key_rows) || !write_rows(value_path, value_rows)) {
+                return false;
+            }
+        }
+    }
+
+    return true;
 }
 
 size_t llama_kv_cache::total_size() const {
@@ -2445,8 +2954,16 @@ ggml_tensor * llama_kv_cache_context::get_k(ggml_context * ctx, int32_t il) cons
     return kv->get_k(ctx, il, n_kv, sinfos[i_cur]);
 }
 
+ggml_tensor * llama_kv_cache_context::get_k(ggml_context * ctx, ggml_tensor * cache_k, int32_t il) const {
+    return kv->get_k(ctx, cache_k, il, n_kv, sinfos[i_cur]);
+}
+
 ggml_tensor * llama_kv_cache_context::get_v(ggml_context * ctx, int32_t il) const {
     return kv->get_v(ctx, il, n_kv, sinfos[i_cur]);
+}
+
+ggml_tensor * llama_kv_cache_context::get_v(ggml_context * ctx, ggml_tensor * cache_v, int32_t il) const {
+    return kv->get_v(ctx, cache_v, il, n_kv, sinfos[i_cur]);
 }
 
 ggml_tensor * llama_kv_cache_context::cpy_k(ggml_context * ctx, ggml_tensor * k_cur, ggml_tensor * k_idxs, int32_t il) const {

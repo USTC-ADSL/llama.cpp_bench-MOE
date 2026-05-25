@@ -4,6 +4,7 @@
 
 #include "llama-chat.h"
 #include "llama-context.h"
+#include "llama-hetero-route.h"
 #include "llama-mmap.h"
 #include "llama-vocab.h"
 #include "llama-model-loader.h"
@@ -24,6 +25,7 @@
 #include <cstring>
 #include <ctime>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 #if defined(_MSC_VER)
@@ -276,8 +278,10 @@ static bool llama_prepare_model_devices(const llama_model_params & params, llama
 static std::pair<int, llama_model *> llama_model_load(struct gguf_context * metadata, llama_model_set_tensor_data_t set_tensor_data, void * set_tensor_data_ud,
         const std::string & fname, std::vector<std::string> & splits, FILE * file, llama_model_params & params) {
     try {
+        llama_hetero_execution_plan hetero_plan =
+            llama_hetero_build_execution_plan(params.hetero_phase_route, params.hetero_kv_layout);
         llama_model_loader ml(metadata, set_tensor_data, set_tensor_data_ud, fname, splits, file, params.use_mmap, params.use_direct_io,
-            params.check_tensors, params.no_alloc, params.kv_overrides, params.tensor_buft_overrides);
+            params.check_tensors, params.no_alloc, params.kv_overrides, params.tensor_buft_overrides, std::move(hetero_plan));
 
         ml.print_info();
         std::unique_ptr<llama_model> model_ptr(llama_model_create(ml, params));
@@ -575,4 +579,3 @@ const char * llama_print_system_info(void) {
 
     return s.c_str();
 }
-

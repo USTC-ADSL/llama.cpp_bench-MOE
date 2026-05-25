@@ -37,6 +37,7 @@ public:
                  uint32_t   n_rs_seq,
                      bool   offload,
                      bool   unified,
+    const llama_hetero_kv_contract & kv_contract,
                             /* layer filters */
     const layer_filter_cb & filter_attn = nullptr,
     const layer_filter_cb & filter_recr = nullptr);

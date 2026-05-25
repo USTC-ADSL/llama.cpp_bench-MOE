@@ -315,6 +315,19 @@ extern "C" {
         // override key-value pairs of the model meta data
         const struct llama_model_kv_override * kv_overrides;
 
+        // [EXPERIMENTAL]
+        // workflow2 phase-level route, for example:
+        //   "opencl", "qnn-npu", "cpu"
+        // Set this before model load if you want weight placement / residency to
+        // follow the same phase backend plan.
+        const char * hetero_phase_route;
+
+        // [EXPERIMENTAL]
+        // workflow2 attention KV layout / transfer policy, for example:
+        //   "auto", "legacy", "cpu-opencl-zero-copy", "qnn-rpcmem"
+        // QNN values currently reserve the interface only.
+        const char * hetero_kv_layout;
+
         // Keep the booleans together to avoid misalignment during copy-by-value.
         bool vocab_only;      // only load the vocabulary, no weights
         bool use_mmap;        // use mmap if possible
@@ -329,6 +342,45 @@ extern "C" {
     struct llama_sampler_seq_config {
         llama_seq_id           seq_id;
         struct llama_sampler * sampler;
+    };
+
+    struct llama_dynamic_route_config {
+        // [EXPERIMENTAL]
+        // "disabled" keeps the current static route.
+        // "phase-heuristic" switches between prefill/decode candidate routes.
+        // "cost-model" enables the experimental SLO-aware candidate selector.
+        const char * mode;
+
+        // [EXPERIMENTAL]
+        // Candidate route used when llama_decode() receives a prefill batch
+        // (typically n_tokens > 1).
+        const char * prefill_route;
+        const char * prefill_kv_layout;
+
+        // [EXPERIMENTAL]
+        // Candidate route used when llama_decode() receives a decode batch
+        // (typically n_tokens == 1).
+        const char * decode_route;
+        const char * decode_kv_layout;
+
+        // [EXPERIMENTAL]
+        // Optional fallback route tried after phase-specific route rejection
+        // (for example because of backend availability or KV contract limits).
+        // If unset, the context falls back to its static/manual base route.
+        const char * fallback_route;
+        const char * fallback_kv_layout;
+
+        // [EXPERIMENTAL]
+        // Optional latency target used by "cost-model". The runtime will pick
+        // the fastest compatible candidate that is estimated to satisfy this
+        // budget; if none fit, it falls back to the best-effort candidate.
+        int64_t slo_us;
+
+        // [EXPERIMENTAL]
+        // If false, candidates that mention QNN backends are skipped. This
+        // reserves a clean interface for future dynamic QNN stage scheduling
+        // without forcing it on current CPU/OpenCL-only experiments.
+        bool allow_qnn;
     };
 
     // NOTE: changing the default values of parameters marked as [EXPERIMENTAL] may cause crashes or incorrect results in certain configurations
@@ -369,6 +421,18 @@ extern "C" {
         // currently works only with CPU execution
         ggml_abort_callback abort_callback;
         void *              abort_callback_data;
+
+        // [EXPERIMENTAL]
+        // workflow2 phase-level route. This controls graph-side phase routing
+        // for the context. For the lowest overhead, prefer setting the same plan
+        // in llama_model_params before model load as well.
+        const char * hetero_phase_route;
+
+        // [EXPERIMENTAL]
+        // workflow2 attention KV layout / transfer policy. This can request
+        // stage-shared CPU/OpenCL zero-copy KV placement and reserve future
+        // QNN/RPCMEM integration paths.
+        const char * hetero_kv_layout;
 
         // Keep the booleans together and at the end of the struct to avoid misalignment during copy-by-value.
         bool embeddings;  // if true, extract embeddings (together with logits)
@@ -440,6 +504,7 @@ extern "C" {
     // TODO: update API to start accepting pointers to params structs (https://github.com/ggml-org/llama.cpp/discussions/9172)
     LLAMA_API struct llama_model_params          llama_model_default_params(void);
     LLAMA_API struct llama_context_params        llama_context_default_params(void);
+    LLAMA_API struct llama_dynamic_route_config  llama_dynamic_route_default_config(void);
     LLAMA_API struct llama_sampler_chain_params  llama_sampler_chain_default_params(void);
     LLAMA_API struct llama_model_quantize_params llama_model_quantize_default_params(void);
 
@@ -978,6 +1043,53 @@ extern "C" {
 
     // Set abort callback
     LLAMA_API void llama_set_abort_callback(struct llama_context * ctx, ggml_abort_callback abort_callback, void * abort_callback_data);
+
+    // [EXPERIMENTAL]
+    // Update workflow2 phase-level routing for an existing context using the
+    // same grammar as llama_model_params::hetero_phase_route.
+    // Returns false if the requested route requires a KV layout / transport
+    // contract that the current context cannot satisfy without rebuild/migration.
+    LLAMA_API bool llama_set_hetero_phase_route(
+            struct llama_context * ctx,
+            const char * route_spec,
+            const char * kv_layout);
+
+    // [EXPERIMENTAL]
+    // Serialize the current workflow2 phase route into buf and return the
+    // number of characters that would have been written (excluding the NUL), as
+    // with snprintf().
+    LLAMA_API int32_t llama_get_hetero_phase_route(
+            const struct llama_context * ctx,
+            char * buf,
+            size_t buf_size);
+
+    // [EXPERIMENTAL]
+    // Serialize the current workflow2 KV layout / transfer policy into buf and
+    // return the number of characters that would have been written (excluding
+    // the NUL), as with snprintf().
+    LLAMA_API int32_t llama_get_hetero_kv_layout(
+            const struct llama_context * ctx,
+            char * buf,
+            size_t buf_size);
+
+    // [EXPERIMENTAL]
+    // Configure a dynamic route decider skeleton for workflow2. The current
+    // implementation is phase-aware: it can choose one candidate route for
+    // prefill (n_tokens > 1), one for decode (n_tokens == 1), and optionally a
+    // fallback route. Route changes are applied only when the requested plan is
+    // compatible with the context's already-allocated KV contract.
+    LLAMA_API bool llama_set_dynamic_route_config(
+            struct llama_context * ctx,
+            struct llama_dynamic_route_config config);
+
+    // [EXPERIMENTAL]
+    // Serialize the configured dynamic route mode into buf and return the
+    // number of characters that would have been written (excluding the NUL), as
+    // with snprintf().
+    LLAMA_API int32_t llama_get_dynamic_route_mode(
+            const struct llama_context * ctx,
+            char * buf,
+            size_t buf_size);
 
     // Wait until all computations are finished
     // This is automatically done when using one of the functions below to obtain the computation results

@@ -2,9 +2,12 @@
 
 #include "llama-batch.h"
 #include "llama-graph.h"
+#include "llama-hetero-route.h"
 #include "llama-kv-cells.h"
 #include "llama-memory.h"
 
+#include <string>
+#include <cstdint>
 #include <unordered_map>
 #include <vector>
 
@@ -12,6 +15,26 @@ struct llama_cparams;
 struct llama_hparams;
 struct llama_model;
 struct llama_context;
+
+struct llama_opencl_external_host_sync_timing {
+    int64_t alias_us = 0;
+    int64_t backend_sync_us = 0;
+    int64_t transfer_us = 0;
+
+    void clear() {
+        *this = {};
+    }
+
+    void accumulate(const llama_opencl_external_host_sync_timing & other) {
+        alias_us += other.alias_us;
+        backend_sync_us += other.backend_sync_us;
+        transfer_us += other.transfer_us;
+    }
+
+    int64_t accounted_us() const {
+        return alias_us + backend_sync_us + transfer_us;
+    }
+};
 
 //
 // llama_kv_cache
@@ -105,6 +128,7 @@ public:
                      uint32_t   n_pad,
                      uint32_t   n_swa,
                llama_swa_type   swa_type,
+        const llama_hetero_kv_contract & kv_contract,
         const layer_filter_cb & filter,
         const  layer_reuse_cb & reuse);
 
@@ -163,7 +187,9 @@ public:
 
     // get views of the current state of the cache
     ggml_tensor * get_k(ggml_context * ctx, int32_t il, uint32_t n_kv, const slot_info & sinfo) const;
+    ggml_tensor * get_k(ggml_context * ctx, ggml_tensor * cache_k, int32_t il, uint32_t n_kv, const slot_info & sinfo) const;
     ggml_tensor * get_v(ggml_context * ctx, int32_t il, uint32_t n_kv, const slot_info & sinfo) const;
+    ggml_tensor * get_v(ggml_context * ctx, ggml_tensor * cache_v, int32_t il, uint32_t n_kv, const slot_info & sinfo) const;
 
     // store k_cur and v_cur in the cache based on the provided head location
     ggml_tensor * cpy_k(ggml_context * ctx, ggml_tensor * k_cur, ggml_tensor * k_idxs, int32_t il, const slot_info & sinfo) const;
@@ -208,6 +234,12 @@ public:
     void set_input_k_rot(ggml_tensor * dst) const;
     void set_input_v_rot(ggml_tensor * dst) const;
 
+    bool dump_powerserve_seed_kv(const std::string & dir, uint32_t n_tokens) const;
+    bool sync_external_opencl_host_aliases(
+            ggml_backend_t opencl_backend,
+            bool host_to_device,
+            llama_opencl_external_host_sync_timing * timing = nullptr) const;
+
 private:
     const llama_model & model;
     const llama_hparams & hparams;
@@ -249,6 +281,8 @@ private:
 
     // env: LLAMA_KV_CACHE_DEBUG
     int debug = 0;
+
+    const llama_hetero_kv_contract kv_contract;
 
     // this is the SWA type of the cache - not to be confused with the model SWA type
     const llama_swa_type swa_type = LLAMA_SWA_TYPE_NONE;
@@ -355,7 +389,9 @@ public:
 
     // get views of the current state of the cache
     ggml_tensor * get_k(ggml_context * ctx, int32_t il) const;
+    ggml_tensor * get_k(ggml_context * ctx, ggml_tensor * cache_k, int32_t il) const;
     ggml_tensor * get_v(ggml_context * ctx, int32_t il) const;
+    ggml_tensor * get_v(ggml_context * ctx, ggml_tensor * cache_v, int32_t il) const;
 
     // store k_cur and v_cur in the cache based on the provided head location
     // note: the heads in k_cur and v_cur should be laid out contiguously in memory

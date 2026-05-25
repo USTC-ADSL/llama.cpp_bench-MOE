@@ -34,6 +34,18 @@
 #include <string>
 #include <vector>
 
+const ggml_tensor * llama_model_resolve_weight_for_cpu_copy(
+        const ggml_tensor * original,
+        const ggml_tensor * cpu_copy,
+        llama_hetero_route_stage stage,
+        const llama_hetero_route_spec & route) {
+    if (original == nullptr || cpu_copy == nullptr) {
+        return original;
+    }
+
+    return llama_hetero_is_cpu_backend(route.backend_for(stage)) ? cpu_copy : original;
+}
+
 static llama_model * llama_model_mapping(llm_arch arch, const llama_model_params & params) {
     switch (arch) {
         case LLM_ARCH_LLAMA:
@@ -959,6 +971,7 @@ struct llama_model::impl {
 
 llama_model::llama_model(const llama_model_params & params) : params(params), pimpl(std::make_unique<impl>()) {
     pimpl->has_tensor_overrides = params.tensor_buft_overrides && params.tensor_buft_overrides[0].pattern;
+    hetero_plan = llama_hetero_build_execution_plan(params.hetero_phase_route, params.hetero_kv_layout);
 }
 
 llama_model::~llama_model() {
@@ -1885,6 +1898,43 @@ bool llama_model::has_tensor_overrides() const {
     return pimpl->has_tensor_overrides;
 }
 
+const llama_hetero_execution_plan & llama_model::get_hetero_plan() const {
+    return hetero_plan;
+}
+
+void llama_model::register_opencl_cpu_extra_cpu_copy(
+        ggml_tensor * original,
+        ggml_tensor * cpu_copy,
+        llama_hetero_route_stage stage) {
+    if (original == nullptr || cpu_copy == nullptr || original == cpu_copy) {
+        return;
+    }
+
+    opencl_cpu_extra_cpu_copies[original] = cpu_copy;
+    opencl_cpu_extra_cpu_copy_stages[original] = stage;
+}
+
+ggml_tensor * llama_model::resolve_weight_for_route(
+        ggml_tensor * weight,
+        const llama_hetero_route_spec & route) const {
+    if (weight == nullptr) {
+        return nullptr;
+    }
+
+    auto copy_it = opencl_cpu_extra_cpu_copies.find(weight);
+    if (copy_it == opencl_cpu_extra_cpu_copies.end()) {
+        return weight;
+    }
+
+    auto stage_it = opencl_cpu_extra_cpu_copy_stages.find(weight);
+    if (stage_it == opencl_cpu_extra_cpu_copy_stages.end()) {
+        return weight;
+    }
+
+    return const_cast<ggml_tensor *>(
+            llama_model_resolve_weight_for_cpu_copy(weight, copy_it->second, stage_it->second, route));
+}
+
 const ggml_tensor * llama_model::get_tensor(const char * name) const {
     auto it = std::find_if(tensors_by_name.begin(), tensors_by_name.end(),
             [name](const std::pair<std::string, ggml_tensor *> & it) {
@@ -2006,6 +2056,7 @@ llama_memory_i * llama_model::create_memory(const llama_memory_params & params, 
                             /* n_rs_seq          */ cparams.n_rs_seq,
                             /* offload           */ cparams.offload_kqv,
                             /* unified           */ cparams.kv_unified,
+                            /* kv_contract       */ params.kv_contract,
                             /* filter_attn       */ std::move(filter_attn),
                             /* filter_recr       */ std::move(filter_recr));
                     } else {
@@ -2025,6 +2076,7 @@ llama_memory_i * llama_model::create_memory(const llama_memory_params & params, 
                             /* n_rs_seq          */ cparams.n_rs_seq,
                             /* offload           */ cparams.offload_kqv,
                             /* unified           */ cparams.kv_unified,
+                            /* kv_contract       */ params.kv_contract,
                             /* filter_attn       */ std::move(filter_attn),
                             /* filter_recr       */ std::move(filter_recr));
                     }
@@ -2062,6 +2114,7 @@ llama_memory_i * llama_model::create_memory(const llama_memory_params & params, 
                                 cparams.n_seq_max,
                                 cparams.n_ubatch,
                                 1,
+                                params.kv_contract,
                                 filter,
                                 reuse);
                     } else {
@@ -2079,6 +2132,7 @@ llama_memory_i * llama_model::create_memory(const llama_memory_params & params, 
                                 1,
                                 hparams.n_swa,
                                 hparams.swa_type,
+                                params.kv_contract,
                                 filter,
                                 nullptr);
                     }
@@ -2125,6 +2179,8 @@ llama_model_params llama_model_default_params() {
         /*.progress_callback           =*/ nullptr,
         /*.progress_callback_user_data =*/ nullptr,
         /*.kv_overrides                =*/ nullptr,
+        /*.hetero_phase_route          =*/ nullptr,
+        /*.hetero_kv_layout            =*/ nullptr,
         /*.vocab_only                  =*/ false,
         /*.use_mmap                    =*/ true,
         /*.use_direct_io               =*/ false,

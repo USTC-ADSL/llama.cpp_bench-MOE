@@ -3,6 +3,7 @@
 #include "llama.h"
 #include "llama-arch.h"
 #include "llama-graph.h"
+#include "llama-hetero-route.h"
 #include "llama-hparams.h"
 #include "llama-memory.h"
 #include "llama-vocab.h"
@@ -570,11 +571,17 @@ struct llama_model {
     // list of devices used in this model
     std::vector<llama_device> devices;
 
+    // workflow2 stage-level hetero execution plan chosen at model-load time.
+    // Tensor residency and later context routing should share this source of truth.
+    llama_hetero_execution_plan hetero_plan;
+
     // for quantize-stats only
     std::vector<std::pair<std::string, struct ggml_tensor *>> tensors_by_name;
 
     // for keeping track of associated LoRA adapters
     std::unordered_set<llama_adapter_lora *> loras;
+    std::unordered_map<const ggml_tensor *, ggml_tensor *> opencl_cpu_extra_cpu_copies;
+    std::unordered_map<const ggml_tensor *, llama_hetero_route_stage> opencl_cpu_extra_cpu_copy_stages;
 
     // statically allocated context for assigning
     struct llama_meta_device_get_split_state_userdata get_split_state_ud;
@@ -611,8 +618,16 @@ struct llama_model {
     ggml_backend_buffer_type_t select_buft(int il) const;
 
     bool has_tensor_overrides() const;
+    const llama_hetero_execution_plan & get_hetero_plan() const;
 
     const struct ggml_tensor * get_tensor(const char * name) const;
+    void register_opencl_cpu_extra_cpu_copy(
+            ggml_tensor * original,
+            ggml_tensor * cpu_copy,
+            llama_hetero_route_stage stage);
+    ggml_tensor * resolve_weight_for_route(
+            ggml_tensor * weight,
+            const llama_hetero_route_spec & route) const;
 
     float get_rope_freq_base (const llama_cparams & cparams, int il) const;
     float get_rope_freq_scale(const llama_cparams & cparams, int il) const;

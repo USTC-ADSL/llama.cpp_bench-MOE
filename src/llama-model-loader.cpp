@@ -3,15 +3,18 @@
 #include "ggml-alloc.h"
 #include "ggml.h"
 #include "gguf.h"
+#include "llama-hetero-route.h"
 #include "llama-hparams.h"
 
 #include <algorithm>
 #include <array>
+#include <cctype>
 #include <cinttypes>
 #include <cstdint>
 #include <cstring>
 #include <future>
 #include <regex>
+#include <utility>
 
 static const size_t kiB = 1024;
 static const size_t MiB = 1024*kiB;
@@ -519,8 +522,9 @@ llama_model_loader::llama_model_loader(
         bool check_tensors,
         bool no_alloc,
         const llama_model_kv_override * param_overrides_p,
-        const llama_model_tensor_buft_override * param_tensor_buft_overrides_p)
-        : metadata(meta), set_tensor_data(set_tensor_data), set_tensor_data_ud(set_tensor_data_ud) {
+        const llama_model_tensor_buft_override * param_tensor_buft_overrides_p,
+        llama_hetero_execution_plan hetero_plan)
+        : metadata(meta), set_tensor_data(set_tensor_data), set_tensor_data_ud(set_tensor_data_ud), hetero_plan(std::move(hetero_plan)) {
     int trace = 0;
     if (getenv("LLAMA_TRACE")) {
         trace = atoi(getenv("LLAMA_TRACE"));
@@ -851,6 +855,19 @@ struct ggml_tensor * llama_model_loader::get_tensor_meta(const char * name) cons
     return weight->tensor;
 }
 
+const struct ggml_tensor * llama_model_loader::get_opencl_cpu_extra_cpu_copy(const char * name) const {
+    if (name == nullptr) {
+        return nullptr;
+    }
+
+    auto it = opencl_cpu_extra_cpu_copies_by_name.find(name);
+    if (it == opencl_cpu_extra_cpu_copies_by_name.end()) {
+        return nullptr;
+    }
+
+    return it->second;
+}
+
 struct ggml_tensor * llama_model_loader::require_tensor_meta(const std::string & name) const {
     struct ggml_tensor * tensor = get_tensor_meta(name.c_str());
     if (!tensor) {
@@ -1042,9 +1059,321 @@ static ggml_backend_buffer_type_t select_weight_buft(const llama_hparams & hpara
     return nullptr;
 }
 
+static ggml_backend_buffer_type_t select_weight_host_buft(const llama_hparams & hparams, ggml_tensor * tensor, ggml_op op, const buft_list_t * buft_list) {
+    GGML_ASSERT(!buft_list->empty());
+    for (const auto & cur : *buft_list) {
+        ggml_backend_dev_t cur_dev = cur.first;
+        ggml_backend_buffer_type_t cur_buft = cur.second;
+        if (!ggml_backend_buft_is_host(cur_buft)) {
+            continue;
+        }
+        if (weight_buft_supported(hparams, tensor, op, cur_buft, cur_dev)) {
+            return cur_buft;
+        }
+    }
+
+    return nullptr;
+}
+
+static ggml_backend_buffer_type_t select_weight_cpu_buft(const llama_hparams & hparams, ggml_tensor * tensor, ggml_op op, const buft_list_t * buft_list) {
+    GGML_ASSERT(!buft_list->empty());
+    for (const auto & cur : *buft_list) {
+        ggml_backend_dev_t cur_dev = cur.first;
+        if (cur_dev == nullptr || ggml_backend_dev_type(cur_dev) != GGML_BACKEND_DEVICE_TYPE_CPU) {
+            continue;
+        }
+
+        ggml_backend_buffer_type_t cur_buft = cur.second;
+        if (weight_buft_supported(hparams, tensor, op, cur_buft, cur_dev)) {
+            return cur_buft;
+        }
+    }
+
+    return nullptr;
+}
+
+static ggml_backend_buffer_type_t select_weight_cpu_default_buft(const llama_hparams & hparams, ggml_tensor * tensor, ggml_op op) {
+    ggml_backend_dev_t cpu_dev = ggml_backend_dev_by_type(GGML_BACKEND_DEVICE_TYPE_CPU);
+    if (cpu_dev == nullptr) {
+        return nullptr;
+    }
+
+    ggml_backend_buffer_type_t cpu_buft = ggml_backend_dev_buffer_type(cpu_dev);
+    if (cpu_buft == nullptr) {
+        return nullptr;
+    }
+
+    return weight_buft_supported(hparams, tensor, op, cpu_buft, cpu_dev) ? cpu_buft : nullptr;
+}
+
+static ggml_backend_buffer_type_t select_weight_device_buft(const llama_hparams & hparams, ggml_tensor * tensor, ggml_op op, const char * device_name, bool use_host_buft) {
+    ggml_backend_dev_t dev = ggml_backend_dev_by_name(device_name);
+    if (dev == nullptr) {
+        return nullptr;
+    }
+
+    ggml_backend_buffer_type_t buft = use_host_buft ? ggml_backend_dev_host_buffer_type(dev) : ggml_backend_dev_buffer_type(dev);
+    if (buft == nullptr) {
+        return nullptr;
+    }
+
+    return weight_buft_supported(hparams, tensor, op, buft, dev) ? buft : nullptr;
+}
+
+bool llama_model_loader_requires_opencl_weight_portability(
+        bool hetero_phase_route_active,
+        int hetero_phase_backend_kind,
+        const llama_hetero_route_spec & dynamic_prefill_route,
+        const llama_hetero_route_spec & dynamic_decode_route,
+        const llama_hetero_route_spec & dynamic_fallback_route);
+
+bool llama_model_loader_should_enable_opencl_cpu_extra_cpu_copy(
+        const llama_hetero_route_spec & dynamic_prefill_route,
+        const llama_hetero_route_spec & dynamic_decode_route,
+        bool enable_extra_cpu_copy);
+
+bool llama_model_loader_should_preserve_opencl_host_buft_for_mmap(
+        bool hetero_phase_route_active,
+        bool hetero_portable_cpu_weights_for_opencl_dynamic_stage,
+        const char * buft_dev_name,
+        bool buft_is_dev_host);
+
+static ggml_backend_buffer_type_t select_weight_opencl_portable_buft(const llama_hparams & hparams, ggml_tensor * tensor, ggml_op op) {
+    ggml_backend_buffer_type_t buft = select_weight_device_buft(hparams, tensor, op, "GPUOpenCL", /* use_host_buft = */ true);
+    if (buft != nullptr) {
+        return buft;
+    }
+
+    return select_weight_cpu_default_buft(hparams, tensor, op);
+}
+
+bool llama_model_loader_requires_opencl_weight_portability(
+        bool hetero_phase_route_active,
+        int hetero_phase_backend_kind,
+        const llama_hetero_route_spec & dynamic_prefill_route,
+        const llama_hetero_route_spec & dynamic_decode_route,
+        const llama_hetero_route_spec & dynamic_fallback_route) {
+    (void) hetero_phase_route_active;
+
+    if (hetero_phase_backend_kind == 2) {
+        return false;
+    }
+
+    const auto route_uses_opencl = [](const llama_hetero_route_spec & route) {
+        return route.has_any_route() &&
+               llama_hetero_backend_kind(llama_hetero_phase_backend_for_route(route)) == 2;
+    };
+
+    return route_uses_opencl(dynamic_prefill_route) ||
+           route_uses_opencl(dynamic_decode_route) ||
+           route_uses_opencl(dynamic_fallback_route);
+}
+
+bool llama_model_loader_should_enable_opencl_cpu_extra_cpu_copy(
+        const llama_hetero_route_spec & dynamic_prefill_route,
+        const llama_hetero_route_spec & dynamic_decode_route,
+        bool enable_extra_cpu_copy) {
+    if (!enable_extra_cpu_copy) {
+        return false;
+    }
+
+    const int dynamic_prefill_backend_kind =
+        llama_hetero_backend_kind(llama_hetero_phase_backend_for_route(dynamic_prefill_route));
+    const int dynamic_decode_backend_kind =
+        llama_hetero_backend_kind(llama_hetero_phase_backend_for_route(dynamic_decode_route));
+
+    return (dynamic_prefill_backend_kind == 1 && dynamic_decode_backend_kind == 2) ||
+           (dynamic_prefill_backend_kind == 2 && dynamic_decode_backend_kind == 1);
+}
+
+bool llama_model_loader_should_preserve_opencl_host_buft_for_mmap(
+        bool hetero_phase_route_active,
+        bool hetero_portable_cpu_weights_for_opencl_dynamic_stage,
+        const char * buft_dev_name,
+        bool buft_is_dev_host) {
+    return buft_is_dev_host &&
+           buft_dev_name != nullptr &&
+           std::strcmp(buft_dev_name, "GPUOpenCL") == 0 &&
+           (hetero_phase_route_active || hetero_portable_cpu_weights_for_opencl_dynamic_stage);
+}
+
 struct ggml_tensor * llama_model_loader::create_tensor(
         const llama_hparams & hparams, const buft_list_t * buft_list_cpu, const buft_list_t * buft_list_input, const buft_list_t * buft_list_output,
         const buft_list_t * buft_list_layer, const LLM_TN_IMPL & tn, const std::initializer_list<int64_t> & ne, int flags) {
+    const auto env_flag_enabled = [](const char * name) {
+        const char * value = std::getenv(name);
+        return value != nullptr && value[0] != '\0' && std::strcmp(value, "0") != 0;
+    };
+
+    const auto & hetero_route = hetero_plan.route;
+    const bool hetero_phase_route_active = hetero_route.has_any_route();
+    const int hetero_phase_backend_kind =
+        llama_hetero_backend_kind(llama_hetero_phase_backend_for_route(hetero_route));
+    const llama_hetero_route_spec dynamic_prefill_route =
+        llama_hetero_parse_route_spec(std::getenv("GGML_HETERO_DYNAMIC_PREFILL_ROUTE"));
+    const llama_hetero_route_spec dynamic_decode_route =
+        llama_hetero_parse_route_spec(std::getenv("GGML_HETERO_DYNAMIC_DECODE_ROUTE"));
+    const llama_hetero_route_spec dynamic_fallback_route =
+        llama_hetero_parse_route_spec(std::getenv("GGML_HETERO_DYNAMIC_FALLBACK_ROUTE"));
+    const int dynamic_prefill_backend_kind =
+        llama_hetero_backend_kind(llama_hetero_phase_backend_for_route(dynamic_prefill_route));
+    const int dynamic_decode_backend_kind =
+        llama_hetero_backend_kind(llama_hetero_phase_backend_for_route(dynamic_decode_route));
+    const bool dynamic_opencl_prefill_active =
+        dynamic_prefill_route.has_any_route() && dynamic_prefill_backend_kind == 2;
+    const bool dynamic_cpu_opencl_switch_active =
+        (dynamic_prefill_backend_kind == 1 && dynamic_decode_backend_kind == 2) ||
+        (dynamic_prefill_backend_kind == 2 && dynamic_decode_backend_kind == 1);
+    const bool dynamic_opencl_prefill_qnn_decode_weights =
+        dynamic_opencl_prefill_active &&
+        dynamic_decode_backend_kind == 3 &&
+        hetero_phase_backend_kind != 2;
+    const bool hetero_portable_cpu_weights_for_opencl_dynamic_stage =
+        llama_model_loader_requires_opencl_weight_portability(
+                hetero_phase_route_active,
+                hetero_phase_backend_kind,
+                dynamic_prefill_route,
+                dynamic_decode_route,
+                dynamic_fallback_route);
+    const bool enable_opencl_cpu_extra_cpu_copy =
+        llama_model_loader_should_enable_opencl_cpu_extra_cpu_copy(
+                dynamic_prefill_route,
+                dynamic_decode_route,
+                env_flag_enabled("GGML_HETERO_ENABLE_OPENCL_CPU_EXTRA_CPU_COPY"));
+    const bool enable_cpu_opencl_shared_host_weights =
+        env_flag_enabled("GGML_HETERO_ENABLE_CPU_OPENCL_SHARED_HOST_WEIGHTS");
+    const bool hetero_shared_opencl_host_weights_for_dynamic_cpu_opencl =
+        dynamic_cpu_opencl_switch_active &&
+        enable_cpu_opencl_shared_host_weights;
+
+    const bool hetero_ffn_cpu_weights =
+        hetero_phase_route_active && hetero_phase_backend_kind == 1;
+    const bool hetero_attn_proj_cpu_weights =
+        hetero_phase_route_active && hetero_phase_backend_kind == 1;
+    const bool hetero_attn_out_cpu_weights =
+        hetero_phase_route_active && hetero_phase_backend_kind == 1;
+    const bool hetero_output_cpu_weights =
+        hetero_phase_route_active && hetero_phase_backend_kind == 1;
+
+    const bool hetero_ffn_qnn_host_weights =
+        hetero_phase_route_active && hetero_phase_backend_kind == 3;
+    const bool hetero_attn_proj_qnn_host_weights =
+        hetero_phase_route_active && hetero_phase_backend_kind == 3;
+    const bool hetero_attn_out_qnn_host_weights =
+        hetero_phase_route_active && hetero_phase_backend_kind == 3;
+
+    const bool hetero_ffn_opencl_weights =
+        hetero_phase_route_active && hetero_phase_backend_kind == 2;
+    const bool hetero_attn_proj_opencl_weights =
+        hetero_phase_route_active && hetero_phase_backend_kind == 2;
+    const bool hetero_attn_out_opencl_weights =
+        hetero_phase_route_active && hetero_phase_backend_kind == 2;
+    const bool hetero_output_opencl_weights =
+        hetero_phase_route_active && hetero_phase_backend_kind == 2;
+
+    static bool logged_hetero_cpu_opencl_ffn_cpu_weights = false;
+    if (hetero_ffn_cpu_weights && !logged_hetero_cpu_opencl_ffn_cpu_weights) {
+        LLAMA_LOG_INFO("%s: auto-routing FFN weights to CPU buffer types for CPU/OpenCL hetero decode\n", __func__);
+        logged_hetero_cpu_opencl_ffn_cpu_weights = true;
+    }
+
+    static bool logged_hetero_cpu_opencl_attn_proj_cpu_weights = false;
+    if (hetero_attn_proj_cpu_weights && !logged_hetero_cpu_opencl_attn_proj_cpu_weights) {
+        LLAMA_LOG_INFO("%s: auto-routing attention projection weights to CPU buffer types for CPU/OpenCL hetero decode\n", __func__);
+        logged_hetero_cpu_opencl_attn_proj_cpu_weights = true;
+    }
+
+    static bool logged_hetero_cpu_opencl_attn_out_cpu_weights = false;
+    if (hetero_attn_out_cpu_weights && !logged_hetero_cpu_opencl_attn_out_cpu_weights) {
+        LLAMA_LOG_INFO("%s: auto-routing attention output weights to CPU buffer types for CPU/OpenCL hetero decode\n", __func__);
+        logged_hetero_cpu_opencl_attn_out_cpu_weights = true;
+    }
+
+    static bool logged_hetero_output_cpu_weights = false;
+    if (hetero_output_cpu_weights && !logged_hetero_output_cpu_weights) {
+        LLAMA_LOG_INFO("%s: auto-routing output stage weights to CPU buffer types for hetero decode\n", __func__);
+        logged_hetero_output_cpu_weights = true;
+    }
+
+    static bool logged_hetero_ffn_qnn_host_weights = false;
+    if (hetero_ffn_qnn_host_weights && !logged_hetero_ffn_qnn_host_weights) {
+        LLAMA_LOG_INFO("%s: auto-routing FFN weights to host-readable buffer types for QNN hetero decode\n", __func__);
+        logged_hetero_ffn_qnn_host_weights = true;
+    }
+
+    static bool logged_hetero_attn_proj_qnn_host_weights = false;
+    if (hetero_attn_proj_qnn_host_weights && !logged_hetero_attn_proj_qnn_host_weights) {
+        LLAMA_LOG_INFO("%s: auto-routing attention projection weights to host-readable buffer types for QNN hetero decode\n", __func__);
+        logged_hetero_attn_proj_qnn_host_weights = true;
+    }
+
+    static bool logged_hetero_attn_out_qnn_host_weights = false;
+    if (hetero_attn_out_qnn_host_weights && !logged_hetero_attn_out_qnn_host_weights) {
+        LLAMA_LOG_INFO("%s: auto-routing attention output weights to host-readable buffer types for QNN hetero decode\n", __func__);
+        logged_hetero_attn_out_qnn_host_weights = true;
+    }
+
+    static bool logged_hetero_cpu_opencl_ffn_opencl_weights = false;
+    if (hetero_ffn_opencl_weights && !logged_hetero_cpu_opencl_ffn_opencl_weights) {
+        LLAMA_LOG_INFO("%s: preferring OpenCL buffer types for FFN weights under CPU/OpenCL hetero decode\n", __func__);
+        logged_hetero_cpu_opencl_ffn_opencl_weights = true;
+    }
+
+    static bool logged_hetero_cpu_opencl_attn_proj_opencl_weights = false;
+    if (hetero_attn_proj_opencl_weights && !logged_hetero_cpu_opencl_attn_proj_opencl_weights) {
+        LLAMA_LOG_INFO("%s: preferring OpenCL buffer types for attention projection weights under CPU/OpenCL hetero decode\n", __func__);
+        logged_hetero_cpu_opencl_attn_proj_opencl_weights = true;
+    }
+
+    static bool logged_hetero_cpu_opencl_attn_out_opencl_weights = false;
+    if (hetero_attn_out_opencl_weights && !logged_hetero_cpu_opencl_attn_out_opencl_weights) {
+        LLAMA_LOG_INFO("%s: preferring OpenCL buffer types for attention output weights under CPU/OpenCL hetero decode\n", __func__);
+        logged_hetero_cpu_opencl_attn_out_opencl_weights = true;
+    }
+
+    static bool logged_hetero_output_opencl_weights = false;
+    if (hetero_output_opencl_weights && !logged_hetero_output_opencl_weights) {
+        LLAMA_LOG_INFO("%s: preferring OpenCL buffer types for output stage weights under hetero decode\n", __func__);
+        logged_hetero_output_opencl_weights = true;
+    }
+
+    static bool logged_hetero_portable_cpu_weights_for_opencl_dynamic_stage = false;
+    if (hetero_portable_cpu_weights_for_opencl_dynamic_stage && !logged_hetero_portable_cpu_weights_for_opencl_dynamic_stage) {
+        LLAMA_LOG_INFO("%s: forcing portable shared-host/CPU buffer types for stage weights because a dynamic stage route requests OpenCL while the model-load phase route is non-OpenCL\n",
+                __func__);
+        logged_hetero_portable_cpu_weights_for_opencl_dynamic_stage = true;
+    }
+
+    static bool logged_hetero_shared_opencl_host_weights_for_dynamic_cpu_opencl = false;
+    if (hetero_shared_opencl_host_weights_for_dynamic_cpu_opencl && !logged_hetero_shared_opencl_host_weights_for_dynamic_cpu_opencl) {
+        LLAMA_LOG_INFO("%s: preferring GPUOpenCL host buffer types for repeating/output weights because dynamic phase routes request CPU <-> OpenCL switching\n",
+                __func__);
+        logged_hetero_shared_opencl_host_weights_for_dynamic_cpu_opencl = true;
+    }
+
+    static bool logged_dynamic_opencl_prefill_qnn_decode_weights = false;
+    if (dynamic_opencl_prefill_qnn_decode_weights && !logged_dynamic_opencl_prefill_qnn_decode_weights) {
+        LLAMA_LOG_INFO("%s: preferring OpenCL-capable original-layout weight buffers for repeating/output tensors because dynamic phase routes request OpenCL prefill before qnn-npu decode\n",
+                __func__);
+        logged_dynamic_opencl_prefill_qnn_decode_weights = true;
+    }
+
+    static bool logged_dynamic_cpu_opencl_shared_host_weights_disabled = false;
+    if (dynamic_cpu_opencl_switch_active &&
+        !enable_cpu_opencl_shared_host_weights &&
+        !logged_dynamic_cpu_opencl_shared_host_weights_disabled) {
+        LLAMA_LOG_WARN("%s: CPU/OpenCL shared-host weight buffers are disabled by default because the current OpenCL_Host weight path can corrupt decode semantics. Set GGML_HETERO_ENABLE_CPU_OPENCL_SHARED_HOST_WEIGHTS=1 to re-enable it experimentally.\n",
+                __func__);
+        logged_dynamic_cpu_opencl_shared_host_weights_disabled = true;
+    }
+
+    static bool logged_opencl_cpu_extra_cpu_copy = false;
+    if (enable_opencl_cpu_extra_cpu_copy && !logged_opencl_cpu_extra_cpu_copy) {
+        LLAMA_LOG_INFO("%s: keeping an extra CPU-friendly duplicate of selected OpenCL decode weights for dynamic CPU/OpenCL switching\n",
+                __func__);
+        logged_opencl_cpu_extra_cpu_copy = true;
+    }
+
     auto ctx_for_buft = [&](ggml_backend_buffer_type_t buft) -> ggml_context * {
         auto it = ctx_map.find(buft);
         if (it == ctx_map.end()) {
@@ -1151,10 +1480,10 @@ struct ggml_tensor * llama_model_loader::create_tensor(
         }
 
         ggml_backend_buffer_type_t buft = nullptr;
+        const std::string tensor_name = tn.str();
 
         // check overrides
         if (tensor_buft_overrides) {
-            std::string tensor_name = tn.str();
             for (const auto * overrides = tensor_buft_overrides; overrides->pattern != nullptr; ++overrides) {
                 std::regex pattern(overrides->pattern);
                 if (std::regex_search(tensor_name, pattern)) {
@@ -1180,6 +1509,171 @@ struct ggml_tensor * llama_model_loader::create_tensor(
             }
         }
 
+        if (!buft && info.layer == LLM_TENSOR_LAYER_REPEATING) {
+            const bool is_ffn_tensor =
+                tn_tensor == LLM_TENSOR_FFN_NORM ||
+                tn_tensor == LLM_TENSOR_FFN_GATE ||
+                tn_tensor == LLM_TENSOR_FFN_UP   ||
+                tn_tensor == LLM_TENSOR_FFN_DOWN;
+
+            const bool is_attn_proj_tensor =
+                tn_tensor == LLM_TENSOR_ATTN_NORM      ||
+                tn_tensor == LLM_TENSOR_ATTN_NORM_2    ||
+                tn_tensor == LLM_TENSOR_ATTN_POST_NORM ||
+                tn_tensor == LLM_TENSOR_ATTN_ROT_EMBD  ||
+                tn_tensor == LLM_TENSOR_ATTN_Q         ||
+                tn_tensor == LLM_TENSOR_ATTN_K         ||
+                tn_tensor == LLM_TENSOR_ATTN_V         ||
+                tn_tensor == LLM_TENSOR_ATTN_QKV       ||
+                tn_tensor == LLM_TENSOR_ATTN_Q_NORM    ||
+                tn_tensor == LLM_TENSOR_ATTN_K_NORM    ||
+                tn_tensor == LLM_TENSOR_ATTN_Q_A       ||
+                tn_tensor == LLM_TENSOR_ATTN_Q_B       ||
+                tn_tensor == LLM_TENSOR_ATTN_KV_A_MQA  ||
+                tn_tensor == LLM_TENSOR_ATTN_KV_B      ||
+                tn_tensor == LLM_TENSOR_ATTN_K_B       ||
+                tn_tensor == LLM_TENSOR_ATTN_V_B       ||
+                tn_tensor == LLM_TENSOR_ATTN_Q_A_NORM  ||
+                tn_tensor == LLM_TENSOR_ATTN_KV_A_NORM ||
+                tn_tensor == LLM_TENSOR_ATTN_SUB_NORM;
+
+            const bool is_attn_out_tensor =
+                tn_tensor == LLM_TENSOR_ATTN_OUT      ||
+                tn_tensor == LLM_TENSOR_ATTN_OUT_NORM ||
+                tn_tensor == LLM_TENSOR_ATTN_GATE;
+
+            const bool needs_cpu_stage_weights =
+                (hetero_ffn_cpu_weights && is_ffn_tensor) ||
+                (hetero_attn_proj_cpu_weights && is_attn_proj_tensor) ||
+                (hetero_attn_out_cpu_weights && is_attn_out_tensor);
+
+            const bool needs_qnn_stage_host_weights =
+                (hetero_ffn_qnn_host_weights && is_ffn_tensor) ||
+                (hetero_attn_proj_qnn_host_weights && is_attn_proj_tensor) ||
+                (hetero_attn_out_qnn_host_weights && is_attn_out_tensor);
+
+            const bool needs_dynamic_opencl_portable_weights =
+                hetero_portable_cpu_weights_for_opencl_dynamic_stage &&
+                (is_ffn_tensor || is_attn_proj_tensor || is_attn_out_tensor);
+
+            if (needs_cpu_stage_weights || needs_qnn_stage_host_weights || needs_dynamic_opencl_portable_weights) {
+                // QNN AoT stages consume precompiled weights from the context binary, so the ggml weights
+                // only need to remain host-readable and scheduler-safe. Pin them to CPU bufts here rather
+                // than any accelerator or QNN RPCMEM buft to avoid token-sized mixed-route buffer hazards.
+                buft = hetero_portable_cpu_weights_for_opencl_dynamic_stage
+                    ? select_weight_opencl_portable_buft(hparams, t_meta, op)
+                    : select_weight_cpu_buft(hparams, t_meta, op, buft_list_cpu);
+                if (!buft) {
+                    throw std::runtime_error(format("failed to auto-route hetero tensor %s to a shared-host/CPU-readable buffer type", tensor_name.c_str()));
+                }
+
+                const char * reason =
+                    is_ffn_tensor ? (hetero_ffn_qnn_host_weights ? "QNN FFN stage" : "CPU FFN stage") :
+                    is_attn_proj_tensor ? (hetero_attn_proj_qnn_host_weights ? "QNN attention projection stage" : "CPU attention projection stage") :
+                    (hetero_attn_out_qnn_host_weights ? "QNN attention output stage" : "CPU attention output stage");
+
+                if (needs_dynamic_opencl_portable_weights &&
+                    !needs_cpu_stage_weights &&
+                    !needs_qnn_stage_host_weights) {
+                    reason =
+                        is_ffn_tensor ? "dynamic OpenCL FFN stage portability" :
+                        is_attn_proj_tensor ? "dynamic OpenCL attention projection portability" :
+                        "dynamic OpenCL attention output portability";
+                }
+
+                LLAMA_LOG_DEBUG("tensor %s (%zu MiB %s) auto-routed to %s for %s\n",
+                        tensor_name.c_str(),
+                        ggml_nbytes(t_meta) / 1024 / 1024, ggml_type_name(t_meta->type),
+                        ggml_backend_buft_name(buft),
+                        reason);
+            }
+        }
+
+        if (!buft && info.layer == LLM_TENSOR_LAYER_OUTPUT) {
+            if (hetero_output_cpu_weights) {
+                buft = hetero_portable_cpu_weights_for_opencl_dynamic_stage
+                    ? select_weight_opencl_portable_buft(hparams, t_meta, op)
+                    : select_weight_cpu_buft(hparams, t_meta, op, buft_list_cpu);
+                if (!buft) {
+                    throw std::runtime_error(format("failed to auto-route hetero output tensor %s to a shared-host/CPU-readable buffer type", tensor_name.c_str()));
+                }
+
+                LLAMA_LOG_DEBUG("tensor %s (%zu MiB %s) auto-routed to %s for CPU output stage\n",
+                        tensor_name.c_str(),
+                        ggml_nbytes(t_meta) / 1024 / 1024, ggml_type_name(t_meta->type),
+                        ggml_backend_buft_name(buft));
+            } else if (hetero_output_opencl_weights) {
+                buft = select_weight_device_buft(hparams, t_meta, op, "GPUOpenCL", true);
+                if (buft == nullptr) {
+                    buft = select_weight_device_buft(hparams, t_meta, op, "GPUOpenCL", false);
+                }
+                if (buft == nullptr) {
+                    buft = select_weight_host_buft(hparams, t_meta, op, buft_list_cpu);
+                }
+                if (buft == nullptr) {
+                    throw std::runtime_error(format("failed to auto-route hetero output tensor %s to an OpenCL-capable or host-readable buffer type", tensor_name.c_str()));
+                }
+
+                LLAMA_LOG_DEBUG("tensor %s (%zu MiB %s) auto-routed to %s for OpenCL output stage\n",
+                        tensor_name.c_str(),
+                        ggml_nbytes(t_meta) / 1024 / 1024, ggml_type_name(t_meta->type),
+                        ggml_backend_buft_name(buft));
+            }
+        }
+
+        if (!buft &&
+            info.layer == LLM_TENSOR_LAYER_OUTPUT &&
+            hetero_portable_cpu_weights_for_opencl_dynamic_stage) {
+            buft = select_weight_opencl_portable_buft(hparams, t_meta, op);
+            if (!buft) {
+                throw std::runtime_error(format("failed to auto-route hetero output tensor %s to a portable shared-host/CPU buffer type for dynamic OpenCL stage switching", tensor_name.c_str()));
+            }
+
+            LLAMA_LOG_DEBUG("tensor %s (%zu MiB %s) auto-routed to %s for dynamic OpenCL stage portability\n",
+                    tensor_name.c_str(),
+                    ggml_nbytes(t_meta) / 1024 / 1024, ggml_type_name(t_meta->type),
+                    ggml_backend_buft_name(buft));
+        }
+
+        if (!buft &&
+            hetero_shared_opencl_host_weights_for_dynamic_cpu_opencl &&
+            (info.layer == LLM_TENSOR_LAYER_OUTPUT ||
+             info.layer == LLM_TENSOR_LAYER_REPEATING)) {
+            buft = select_weight_device_buft(hparams, t_meta, op, "GPUOpenCL", true);
+            if (!buft) {
+                throw std::runtime_error(format("failed to auto-route tensor %s to a GPUOpenCL host buffer type for dynamic CPU/OpenCL switching", tensor_name.c_str()));
+            }
+
+            LLAMA_LOG_DEBUG("tensor %s (%zu MiB %s) auto-routed to %s for dynamic CPU/OpenCL shared-host weights\n",
+                    tensor_name.c_str(),
+                    ggml_nbytes(t_meta) / 1024 / 1024, ggml_type_name(t_meta->type),
+                    ggml_backend_buft_name(buft));
+        }
+
+        if (!buft &&
+            dynamic_opencl_prefill_qnn_decode_weights &&
+            (info.layer == LLM_TENSOR_LAYER_OUTPUT ||
+             info.layer == LLM_TENSOR_LAYER_REPEATING)) {
+            buft = select_weight_device_buft(hparams, t_meta, op, "GPUOpenCL", false);
+            if (buft == nullptr) {
+                buft = select_weight_device_buft(hparams, t_meta, op, "GPUOpenCL", true);
+            }
+            if (buft == nullptr) {
+                buft = select_weight_cpu_default_buft(hparams, t_meta, op);
+            }
+            if (buft == nullptr) {
+                buft = select_weight_host_buft(hparams, t_meta, op, buft_list_cpu);
+            }
+            if (buft == nullptr) {
+                throw std::runtime_error(format("failed to auto-route tensor %s to an OpenCL-capable or host-readable buffer type for dynamic OpenCL prefill before qnn-npu decode", tensor_name.c_str()));
+            }
+
+            LLAMA_LOG_DEBUG("tensor %s (%zu MiB %s) auto-routed to %s for dynamic OpenCL-prefill -> qnn-npu-decode weight portability\n",
+                    tensor_name.c_str(),
+                    ggml_nbytes(t_meta) / 1024 / 1024, ggml_type_name(t_meta->type),
+                    ggml_backend_buft_name(buft));
+        }
+
         if (!buft) {
             buft = select_weight_buft(hparams, t_meta, op, buft_list);
             if (!buft) {
@@ -1187,9 +1681,94 @@ struct ggml_tensor * llama_model_loader::create_tensor(
             }
         }
 
+        if (hetero_phase_route_active && info.layer == LLM_TENSOR_LAYER_REPEATING) {
+            const bool is_ffn_tensor =
+                tn_tensor == LLM_TENSOR_FFN_NORM ||
+                tn_tensor == LLM_TENSOR_FFN_GATE ||
+                tn_tensor == LLM_TENSOR_FFN_UP   ||
+                tn_tensor == LLM_TENSOR_FFN_DOWN;
+
+            const bool is_attn_proj_tensor =
+                tn_tensor == LLM_TENSOR_ATTN_NORM      ||
+                tn_tensor == LLM_TENSOR_ATTN_NORM_2    ||
+                tn_tensor == LLM_TENSOR_ATTN_POST_NORM ||
+                tn_tensor == LLM_TENSOR_ATTN_ROT_EMBD  ||
+                tn_tensor == LLM_TENSOR_ATTN_Q         ||
+                tn_tensor == LLM_TENSOR_ATTN_K         ||
+                tn_tensor == LLM_TENSOR_ATTN_V         ||
+                tn_tensor == LLM_TENSOR_ATTN_QKV       ||
+                tn_tensor == LLM_TENSOR_ATTN_Q_NORM    ||
+                tn_tensor == LLM_TENSOR_ATTN_K_NORM    ||
+                tn_tensor == LLM_TENSOR_ATTN_Q_A       ||
+                tn_tensor == LLM_TENSOR_ATTN_Q_B       ||
+                tn_tensor == LLM_TENSOR_ATTN_KV_A_MQA  ||
+                tn_tensor == LLM_TENSOR_ATTN_KV_B      ||
+                tn_tensor == LLM_TENSOR_ATTN_K_B       ||
+                tn_tensor == LLM_TENSOR_ATTN_V_B       ||
+                tn_tensor == LLM_TENSOR_ATTN_Q_A_NORM  ||
+                tn_tensor == LLM_TENSOR_ATTN_KV_A_NORM ||
+                tn_tensor == LLM_TENSOR_ATTN_SUB_NORM;
+
+            const bool is_attn_out_tensor =
+                tn_tensor == LLM_TENSOR_ATTN_OUT      ||
+                tn_tensor == LLM_TENSOR_ATTN_OUT_NORM ||
+                tn_tensor == LLM_TENSOR_ATTN_GATE;
+
+            const bool needs_opencl_stage_buft =
+                (hetero_ffn_opencl_weights && is_ffn_tensor) ||
+                (hetero_attn_proj_opencl_weights && is_attn_proj_tensor) ||
+                (hetero_attn_out_opencl_weights && is_attn_out_tensor);
+
+            if (needs_opencl_stage_buft) {
+                ggml_backend_dev_t selected_dev = ggml_backend_buft_get_device(buft);
+                const char * selected_dev_name = selected_dev ? ggml_backend_dev_name(selected_dev) : nullptr;
+                const bool selected_is_opencl =
+                    selected_dev_name != nullptr && std::strcmp(selected_dev_name, "GPUOpenCL") == 0;
+
+                if (!selected_is_opencl) {
+                    ggml_backend_buffer_type_t opencl_buft = select_weight_device_buft(hparams, t_meta, op, "GPUOpenCL", true);
+                    if (opencl_buft == nullptr) {
+                        opencl_buft = select_weight_device_buft(hparams, t_meta, op, "GPUOpenCL", false);
+                    }
+
+                    if (opencl_buft != nullptr) {
+                        LLAMA_LOG_DEBUG("tensor %s (%zu MiB %s) remapped from %s to %s for OpenCL stage residency\n",
+                                tensor_name.c_str(),
+                                ggml_nbytes(t_meta) / 1024 / 1024, ggml_type_name(t_meta->type),
+                                ggml_backend_buft_name(buft),
+                                ggml_backend_buft_name(opencl_buft));
+                        buft = opencl_buft;
+                    } else if (!ggml_backend_buft_is_host(buft)) {
+                        ggml_backend_buffer_type_t host_buft = select_weight_host_buft(hparams, t_meta, op, buft_list_cpu);
+                        if (!host_buft) {
+                            throw std::runtime_error(format("failed to find an OpenCL-capable or host-readable buffer type for hetero tensor %s", tensor_name.c_str()));
+                        }
+
+                        LLAMA_LOG_DEBUG("tensor %s (%zu MiB %s) remapped from %s to %s for OpenCL stage fallback portability\n",
+                                tensor_name.c_str(),
+                                ggml_nbytes(t_meta) / 1024 / 1024, ggml_type_name(t_meta->type),
+                                ggml_backend_buft_name(buft),
+                                ggml_backend_buft_name(host_buft));
+                        buft = host_buft;
+                    }
+                }
+            }
+        }
+
         // avoid using a host buffer when using mmap
         auto * buft_dev = ggml_backend_buft_get_device(buft);
-        if (use_mmap && buft_dev && buft == ggml_backend_dev_host_buffer_type(buft_dev)) {
+        const char * buft_dev_name = buft_dev != nullptr ? ggml_backend_dev_name(buft_dev) : nullptr;
+        const bool buft_is_dev_host =
+            buft_dev != nullptr &&
+            buft == ggml_backend_dev_host_buffer_type(buft_dev);
+        const bool preserve_opencl_host_buft_for_hetero =
+            llama_model_loader_should_preserve_opencl_host_buft_for_mmap(
+                    hetero_phase_route_active,
+                    hetero_portable_cpu_weights_for_opencl_dynamic_stage,
+                    buft_dev_name,
+                    buft_is_dev_host);
+
+        if (use_mmap && buft_dev && buft == ggml_backend_dev_host_buffer_type(buft_dev) && !preserve_opencl_host_buft_for_hetero) {
             auto * cpu_dev = ggml_backend_dev_by_type(GGML_BACKEND_DEVICE_TYPE_CPU);
             if (!cpu_dev) {
                 throw std::runtime_error("no CPU backend found");
@@ -1208,6 +1787,91 @@ struct ggml_tensor * llama_model_loader::create_tensor(
         }
 
         return buft;
+    };
+
+    auto maybe_create_opencl_cpu_extra_cpu_copy = [&](const ggml_tensor * cur, ggml_backend_buffer_type_t primary_buft) {
+        if (!enable_opencl_cpu_extra_cpu_copy || cur == nullptr || primary_buft == nullptr) {
+            return;
+        }
+
+        const char * primary_dev_name = nullptr;
+        if (auto * primary_dev = ggml_backend_buft_get_device(primary_buft)) {
+            primary_dev_name = ggml_backend_dev_name(primary_dev);
+        }
+        if (primary_dev_name == nullptr || std::strcmp(primary_dev_name, "GPUOpenCL") != 0) {
+            return;
+        }
+
+        if (tn.suffix == nullptr || std::strcmp(tn.suffix, "weight") != 0) {
+            return;
+        }
+
+        llm_tensor tn_tensor = tn.tensor;
+        if (tn.tensor == LLM_TENSOR_TOKEN_EMBD && (flags & TENSOR_DUPLICATED)) {
+            tn_tensor = LLM_TENSOR_OUTPUT;
+        }
+
+        bool needs_extra_cpu_copy = false;
+        switch (tn_tensor) {
+            case LLM_TENSOR_OUTPUT:
+            case LLM_TENSOR_ATTN_Q:
+            case LLM_TENSOR_ATTN_K:
+            case LLM_TENSOR_ATTN_V:
+            case LLM_TENSOR_ATTN_QKV:
+            case LLM_TENSOR_ATTN_Q_A:
+            case LLM_TENSOR_ATTN_Q_B:
+            case LLM_TENSOR_ATTN_KV_A_MQA:
+            case LLM_TENSOR_ATTN_KV_B:
+            case LLM_TENSOR_ATTN_K_B:
+            case LLM_TENSOR_ATTN_V_B:
+            case LLM_TENSOR_ATTN_OUT:
+            case LLM_TENSOR_ATTN_GATE:
+            case LLM_TENSOR_FFN_GATE:
+            case LLM_TENSOR_FFN_DOWN:
+            case LLM_TENSOR_FFN_UP:
+            case LLM_TENSOR_FFN_GATE_INP:
+            case LLM_TENSOR_FFN_GATE_EXPS:
+            case LLM_TENSOR_FFN_DOWN_EXPS:
+            case LLM_TENSOR_FFN_UP_EXPS:
+            case LLM_TENSOR_FFN_GATE_UP_EXPS:
+            case LLM_TENSOR_FFN_LATENT_DOWN:
+            case LLM_TENSOR_FFN_LATENT_UP:
+            case LLM_TENSOR_FFN_GATE_SHEXP:
+            case LLM_TENSOR_FFN_DOWN_SHEXP:
+            case LLM_TENSOR_FFN_UP_SHEXP:
+            case LLM_TENSOR_FFN_GATE_CHEXPS:
+            case LLM_TENSOR_FFN_DOWN_CHEXPS:
+            case LLM_TENSOR_FFN_UP_CHEXPS:
+                needs_extra_cpu_copy = true;
+                break;
+            default:
+                break;
+        }
+
+        if (!needs_extra_cpu_copy) {
+            return;
+        }
+
+        const llm_tensor_info info = llm_tensor_info_for(tn_tensor);
+        ggml_op op = info.op;
+        if (tn.suffix != nullptr && std::strcmp(tn.suffix, "bias") == 0) {
+            op = (info.op == GGML_OP_MUL_MAT_ID) ? GGML_OP_ADD_ID : GGML_OP_ADD;
+        }
+
+        ggml_backend_buffer_type_t cpu_copy_buft = select_weight_cpu_buft(hparams, const_cast<ggml_tensor *>(cur), op, buft_list_cpu);
+        if (cpu_copy_buft == nullptr || cpu_copy_buft == primary_buft) {
+            return;
+        }
+
+        ggml_context * cpu_ctx = ctx_for_buft(cpu_copy_buft);
+        ggml_tensor * cpu_copy = ggml_get_tensor(cpu_ctx, ggml_get_name(cur));
+        if (cpu_copy == nullptr) {
+            cpu_copy = ggml_dup_tensor(cpu_ctx, cur);
+            ggml_set_name(cpu_copy, ggml_get_name(cur));
+            size_data += ggml_nbytes(cur);
+        }
+
+        opencl_cpu_extra_cpu_copies_by_name[ggml_get_name(cur)] = cpu_copy;
     };
 
     if (files.empty()) {
@@ -1255,14 +1919,6 @@ struct ggml_tensor * llama_model_loader::create_tensor(
     }
     ggml_context * ctx = ctx_for_buft(buft);
 
-    // if duplicated, check if the original tensor was allocated in the same buffer type context and avoid creating a new one
-    if (flags & TENSOR_DUPLICATED) {
-        ggml_tensor * t = ggml_get_tensor(ctx, tn.str().c_str());
-        if (t) {
-            return t;
-        }
-    }
-
     LLAMA_LOG_DEBUG("%s: loading tensor %s\n", __func__, tn.str().c_str());
     const struct ggml_tensor * cur = check_tensor_dims(tn.str(), ne, !(flags & TENSOR_NOT_REQUIRED));
 
@@ -1272,6 +1928,15 @@ struct ggml_tensor * llama_model_loader::create_tensor(
 
     const bool duplicated = flags & TENSOR_DUPLICATED;
 
+    // if duplicated, check if the original tensor was allocated in the same buffer type context and avoid creating a new one
+    if (duplicated) {
+        ggml_tensor * t = ggml_get_tensor(ctx, tn.str().c_str());
+        if (t) {
+            maybe_create_opencl_cpu_extra_cpu_copy(cur, buft);
+            return t;
+        }
+    }
+
     struct ggml_tensor * tensor = ggml_dup_tensor(ctx, cur);
     ggml_set_name(tensor, ggml_get_name(cur));
 
@@ -1280,6 +1945,8 @@ struct ggml_tensor * llama_model_loader::create_tensor(
     } else {
         n_created++;
     }
+
+    maybe_create_opencl_cpu_extra_cpu_copy(cur, buft);
 
     return tensor;
 }

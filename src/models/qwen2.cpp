@@ -101,10 +101,13 @@ llama_model_qwen2::graph::graph(const llama_model & model, const llm_graph_param
             cur = build_attn(inp_attn,
                     model.layers[il].wo, model.layers[il].wo_b, model.layers[il].wo_s,
                     Qcur, Kcur, Vcur, nullptr, nullptr, nullptr, 1.0f/sqrtf(float(n_embd_head)), il);
+            cb(cur, "attn_out", il);
         }
         if (il == n_layer - 1 && inp_out_ids) {
             cur   = ggml_get_rows(ctx0,   cur, inp_out_ids);
+            cb(cur, "attn_out-tail", il);
             inpSA = ggml_get_rows(ctx0, inpSA, inp_out_ids);
+            cb(inpSA, "l_out-tail", il);
         }
         ggml_tensor * ffn_inp = ggml_add(ctx0, cur, inpSA);
         cb(ffn_inp, "ffn_inp", il);

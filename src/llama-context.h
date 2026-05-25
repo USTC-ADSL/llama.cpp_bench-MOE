@@ -3,6 +3,8 @@
 #include "llama.h"
 #include "llama-ext.h"
 #include "llama-cparams.h"
+#include "llama-dyn-route.h"
+#include "llama-hetero-route.h"
 #include "llama-graph.h"
 #include "llama-adapter.h"
 #include "llama-impl.h"
@@ -11,6 +13,7 @@
 #include "ggml-opt.h"
 
 #include <map>
+#include <string>
 #include <vector>
 
 struct llama_model;
@@ -18,6 +21,7 @@ class llama_batch_allocr;
 
 class llama_io_read_i;
 class llama_io_write_i;
+struct llama_opencl_external_host_sync_timing;
 
 // "memory" as in abstract memory for the context
 struct llama_memory_i;
@@ -37,6 +41,30 @@ struct llama_memory_buffer {
 };
 
 using llama_memory_buffers = std::map<ggml_backend_buffer_type_t, llama_memory_buffer>;
+
+struct llama_sched_reserve_timing {
+    int64_t sched_new_us = 0;
+    int64_t memory_init_us = 0;
+    int64_t feature_probe_us = 0;
+    int64_t plan_reserve_us = 0;
+    int64_t finalize_us = 0;
+
+    void clear() {
+        *this = {};
+    }
+
+    void accumulate(const llama_sched_reserve_timing & other) {
+        sched_new_us += other.sched_new_us;
+        memory_init_us += other.memory_init_us;
+        feature_probe_us += other.feature_probe_us;
+        plan_reserve_us += other.plan_reserve_us;
+        finalize_us += other.finalize_us;
+    }
+
+    int64_t accounted_us() const {
+        return sched_new_us + memory_init_us + feature_probe_us + plan_reserve_us + finalize_us;
+    }
+};
 
 struct llama_context {
     // init scheduler and compute buffers, reserve worst-case graphs
@@ -60,6 +88,7 @@ struct llama_context {
     const llama_cparams & get_cparams() const;
 
     ggml_backend_sched_t get_sched() const;
+    const std::vector<ggml_backend_t> & get_backend_ptrs() const;
 
     uint32_t n_ctx()     const;
     uint32_t n_ctx_seq() const;
@@ -237,12 +266,22 @@ public:
 
     // returns the result of ggml_backend_sched_graph_compute_async execution
     ggml_status graph_compute(ggml_cgraph * gf, bool batched);
+    ggml_status graph_compute(ggml_cgraph * gf, const llama_ubatch & ubatch, bool batched);
 
     // reserve a graph with a dummy ubatch of the specified size
     ggml_cgraph * graph_reserve(
         uint32_t n_tokens, uint32_t n_seqs, uint32_t n_outputs, const llama_memory_context_i * mctx, bool split_only = false, size_t * sizes = nullptr);
 
     bool set_sampler(llama_seq_id seq_id, llama_sampler * sampler);
+
+    // Internal workflow2 / dynamic-stage-scheduling hook.
+    // The current implementation only updates routing plans that are compatible
+    // with the already-allocated KV contract; incompatible plans require
+    // context rebuild or future KV migration support.
+    bool set_hetero_plan(llama_hetero_execution_plan plan);
+    const llama_hetero_execution_plan & get_hetero_plan() const;
+    bool set_dynamic_route_config(const llama_dynamic_route_config & config);
+    std::string get_dynamic_route_mode() const;
 
 private:
     llm_graph_params graph_params(
@@ -260,6 +299,27 @@ private:
     size_t state_seq_write_data(llama_io_write_i & io, llama_seq_id seq_id, llama_state_seq_flags flags);
     size_t state_seq_read_data (llama_io_read_i  & io, llama_seq_id seq_id, llama_state_seq_flags flags);
 
+    bool apply_hetero_plan(llama_hetero_execution_plan plan, bool update_base_plan, const char * source);
+    bool ensure_hetero_backend_ready(const std::string & backend_name, const char * route_name);
+    bool ensure_hetero_backends_for_route(const llama_hetero_route_spec & route, const char * label_prefix);
+    bool ensure_dynamic_route_backends_ready(const llama_dynamic_route_runtime_config & config);
+    bool backend_available_for_route(const std::string & backend_name) const;
+    ggml_backend_t find_backend_for_route(const std::string & backend_name) const;
+    void maybe_prewarm_dynamic_qnn_opencl_kv_aliases();
+    bool sync_dynamic_cpu_opencl_kv(
+            bool host_to_device,
+            llama_opencl_external_host_sync_timing * timing = nullptr);
+    bool rebuild_dynamic_consumer_kv_from_state(
+            const std::string & producer_backend,
+            const std::string & consumer_backend,
+            const char * reason);
+    void maybe_debug_dump_powerserve_prefix_before_qnn_switch();
+    bool migrate_dynamic_cpu_opencl_kv(const std::string & producer_backend, const std::string & consumer_backend);
+    void validate_dynamic_seq0_token_history();
+    void record_dynamic_seq0_token_history(const llama_batch & batch_inp, size_t prefix_tokens_before_decode);
+    bool replay_dynamic_qnn_prefix();
+    void maybe_apply_dynamic_route(uint32_t n_tokens);
+
     //
     // members
     //
@@ -267,6 +327,10 @@ private:
     const llama_model & model;
 
     llama_cparams cparams;
+    ggml_type kv_type_k = GGML_TYPE_F16;
+    ggml_type kv_type_v = GGML_TYPE_F16;
+    bool kv_swa_full = false;
+    bool kv_attn_v_trans = true;
 
     llama_adapter_cvec_ptr  cvec;
     llama_adapter_loras_ptr loras;
@@ -325,8 +389,11 @@ private:
     std::vector<swap_info> output_swaps;
 
     ggml_backend_sched_ptr sched;
+    ggml_backend_sched_ptr aot_saved_sched;
 
     bool sched_need_reserve = true;
+    uint32_t sched_reserve_request_tokens = 0;
+    std::vector<llama_hetero_execution_plan> hetero_dynamic_pre_reserved_plans;
 
     ggml_backend_t backend_cpu = nullptr;
     std::vector<ggml_backend_ptr> backends;
@@ -360,6 +427,70 @@ private:
 
     // env: LLAMA_GRAPH_REUSE_DISABLE
     bool graph_reuse_disable = false;
+
+    // Force the next graph build onto the non-QNN fallback path used by the
+    // AoT bootstrap correction after seeding the initial token. When all model
+    // weights remain on CPU this becomes a CPU-only correction graph; when
+    // weights are already pre-allocated on another backend, the correction
+    // keeps those backends alive and only reroutes QNN-owned stages.
+    bool aot_force_cpu_graph = false;
+    bool aot_bootstrap_cpu_sched_active = false;
+    bool aot_active_route_requests_qnn = false;
+    bool aot_skip_bootstrap_for_next_decode = false;
+    std::vector<llama_token> dynamic_seq0_token_history;
+    llama_hetero_execution_plan qnn_prefix_replay_restore_plan;
+    bool qnn_prefix_replay_restore_plan_valid = false;
+    bool qnn_prefix_replay_pending = false;
+    bool qnn_prefix_replay_active = false;
+    bool qnn_prefix_replay_rebuild_live_memory = false;
+
+    llama_hetero_execution_plan hetero_plan;
+    llama_hetero_execution_plan hetero_plan_base;
+    llama_hetero_kv_contract    hetero_kv_contract_allocated;
+    llama_dynamic_route_runtime_config dynamic_route_config;
+    llama_dynamic_route_runtime_state  dynamic_route_state;
+
+    struct hetero_phase_timing_trace {
+        bool active = false;
+        bool route_applied = false;
+        bool route_noop = false;
+        bool bootstrap_ran = false;
+
+        uint32_t n_tokens = 0;
+
+        int64_t batch_start_us = 0;
+        int64_t route_decide_us = 0;
+        int64_t route_apply_us = 0;
+        int64_t reserve_us = 0;
+        int64_t reserve_sched_new_us = 0;
+        int64_t reserve_memory_init_us = 0;
+        int64_t reserve_feature_probe_us = 0;
+        int64_t reserve_plan_reserve_us = 0;
+        int64_t reserve_finalize_us = 0;
+        int64_t memory_update_us = 0;
+        int64_t kv_migration_us = 0;
+        int64_t kv_alias_us = 0;
+        int64_t kv_backend_sync_us = 0;
+        int64_t kv_transfer_us = 0;
+        int64_t process_ubatch_us = 0;
+        int64_t bootstrap_sync_us = 0;
+        int64_t bootstrap_sched_rebuild_us = 0;
+
+        int32_t process_ubatches = 0;
+        int32_t graph_runs_reused = 0;
+        int32_t graph_runs_rebuilt = 0;
+
+        std::string route_label;
+        std::string route_reason;
+        std::string target_route;
+
+        void reset() {
+            *this = {};
+        }
+    };
+
+    hetero_phase_timing_trace hetero_phase_trace;
+    bool hetero_phase_trace_suppress_sync_log = false;
 
     // perf
     mutable int64_t t_start_us  = 0;

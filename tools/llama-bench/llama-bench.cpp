@@ -16,8 +16,8 @@
 #include <sstream>
 #include <string>
 #include <thread>
-#include <vector>
 #include <unordered_set>
+#include <vector>
 
 #include "build-info.h"
 #include "common.h"
@@ -25,6 +25,9 @@
 #include "fit.h"
 #include "ggml.h"
 #include "llama.h"
+#include "llama-bench-utils.h"
+
+#include "../../src/llama-context.h"
 
 #ifdef _WIN32
 #    define WIN32_LEAN_AND_MEAN
@@ -38,6 +41,51 @@
 static uint64_t get_time_ns() {
     using clock = std::chrono::high_resolution_clock;
     return std::chrono::nanoseconds(clock::now().time_since_epoch()).count();
+}
+
+using ggml_backend_qnn_aot_reset_state_t = bool (*)(ggml_backend_t backend);
+
+static bool llama_bench_fast_exit_requested() {
+    const char * value = std::getenv("LLAMA_BENCH_FAST_EXIT");
+    return value != nullptr && value[0] != '\0' && std::strcmp(value, "0") != 0;
+}
+
+static std::vector<llama_bench_round_reset_entry> collect_qnn_aot_reset_entries(llama_context * ctx) {
+    std::vector<llama_bench_round_reset_entry> entries;
+    if (ctx == nullptr) {
+        return entries;
+    }
+
+    std::unordered_set<ggml_backend_t> seen;
+    const auto & backend_ptrs = ctx->get_backend_ptrs();
+    entries.reserve(backend_ptrs.size());
+
+    for (ggml_backend_t backend : backend_ptrs) {
+        if (backend == nullptr || !seen.insert(backend).second) {
+            continue;
+        }
+
+        ggml_backend_dev_t dev = ggml_backend_get_device(backend);
+        ggml_backend_reg_t reg = dev != nullptr ? ggml_backend_dev_backend_reg(dev) : nullptr;
+        const std::string backend_name =
+                ggml_backend_name(backend) != nullptr ? ggml_backend_name(backend) : "<unknown>";
+        auto * reset_state_fn =
+                reg != nullptr
+                        ? (ggml_backend_qnn_aot_reset_state_t)
+                              ggml_backend_reg_get_proc_address(reg, "ggml_backend_qnn_aot_reset_state")
+                        : nullptr;
+        const bool has_qnn_aot_reset = reset_state_fn != nullptr && backend_name == "qnn-npu";
+
+        entries.push_back({
+                backend_name,
+                has_qnn_aot_reset,
+                [backend, reset_state_fn]() {
+                    return reset_state_fn != nullptr && reset_state_fn(backend);
+                },
+        });
+    }
+
+    return entries;
 }
 
 static bool tensor_buft_override_equal(const llama_model_tensor_buft_override& a, const llama_model_tensor_buft_override& b) {
@@ -324,6 +372,7 @@ struct cmd_params {
     std::vector<int>                 n_gen;
     std::vector<std::pair<int, int>> n_pg;
     std::vector<int>                 n_depth;
+    std::vector<int>                 n_ctx;
     std::vector<int>                 n_batch;
     std::vector<int>                 n_ubatch;
     std::vector<ggml_type>           type_k;
@@ -368,6 +417,7 @@ static const cmd_params cmd_params_defaults = {
     /* n_gen                */ { 128 },
     /* n_pg                 */ {},
     /* n_depth              */ { 0 },
+    /* n_ctx                */ { 0 },
     /* n_batch              */ { 2048 },
     /* n_ubatch             */ { 512 },
     /* type_k               */ { GGML_TYPE_F16 },
@@ -438,6 +488,7 @@ static void print_usage(int /* argc */, char ** argv) {
     printf("  -n, --n-gen <n>                             (default: %s)\n", join(cmd_params_defaults.n_gen, ",").c_str());
     printf("  -pg <pp,tg>                                 (default: %s)\n", join(transform_to_str(cmd_params_defaults.n_pg, pair_str), ",").c_str());
     printf("  -d, --n-depth <n>                           (default: %s)\n", join(cmd_params_defaults.n_depth, ",").c_str());
+    printf("  -c, --ctx-size <n>                          (default: derived from n_prompt + n_gen + n_depth)\n");
     printf("  -b, --batch-size <n>                        (default: %s)\n", join(cmd_params_defaults.n_batch, ",").c_str());
     printf("  -ub, --ubatch-size <n>                      (default: %s)\n", join(cmd_params_defaults.n_ubatch, ",").c_str());
     printf("  -ctk, --cache-type-k <t>                    (default: %s)\n", join(transform_to_str(cmd_params_defaults.type_k, ggml_type_name), ",").c_str());
@@ -469,6 +520,9 @@ static void print_usage(int /* argc */, char ** argv) {
 }
 
 static ggml_type ggml_type_from_name(const std::string & s) {
+    if (s == "f32") {
+        return GGML_TYPE_F32;
+    }
     if (s == "f16") {
         return GGML_TYPE_F16;
     }
@@ -587,6 +641,13 @@ static cmd_params parse_cmd_params(int argc, char ** argv) {
                 }
                 auto p = parse_int_range(argv[i]);
                 params.n_depth.insert(params.n_depth.end(), p.begin(), p.end());
+            } else if (arg == "-c" || arg == "--ctx-size") {
+                if (++i >= argc) {
+                    invalid_param = true;
+                    break;
+                }
+                auto p = parse_int_range(argv[i]);
+                params.n_ctx.insert(params.n_ctx.end(), p.begin(), p.end());
             } else if (arg == "-b" || arg == "--batch-size") {
                 if (++i >= argc) {
                     invalid_param = true;
@@ -1044,6 +1105,9 @@ static cmd_params parse_cmd_params(int argc, char ** argv) {
     if (params.n_depth.empty()) {
         params.n_depth = cmd_params_defaults.n_depth;
     }
+    if (params.n_ctx.empty()) {
+        params.n_ctx = cmd_params_defaults.n_ctx;
+    }
     if (params.n_batch.empty()) {
         params.n_batch = cmd_params_defaults.n_batch;
     }
@@ -1125,6 +1189,7 @@ struct cmd_params_instance {
     int                n_prompt;
     int                n_gen;
     int                n_depth;
+    int                n_ctx;
     int                n_batch;
     int                n_ubatch;
     ggml_type          type_k;
@@ -1216,7 +1281,7 @@ struct cmd_params_instance {
     llama_context_params to_llama_cparams() const {
         llama_context_params cparams = llama_context_default_params();
 
-        cparams.n_ctx           = n_prompt + n_gen + n_depth;
+        cparams.n_ctx           = n_ctx;
         cparams.n_batch         = n_batch;
         cparams.n_ubatch        = n_ubatch;
         cparams.type_k          = type_k;
@@ -1261,6 +1326,7 @@ static std::vector<cmd_params_instance> get_cmd_params_instances(const cmd_param
     for (const auto & cm : params.cpu_mask)
     for (const auto & cs : params.cpu_strict)
     for (const auto & nd : params.n_depth)
+    for (const auto & nc : params.n_ctx)
     for (const auto & pl : params.poll) {
         for (const auto & n_prompt : params.n_prompt) {
             if (n_prompt == 0) {
@@ -1271,6 +1337,7 @@ static std::vector<cmd_params_instance> get_cmd_params_instances(const cmd_param
                 /* .n_prompt     = */ n_prompt,
                 /* .n_gen        = */ 0,
                 /* .n_depth      = */ nd,
+                /* .n_ctx        = */ nc > 0 ? nc : n_prompt + nd,
                 /* .n_batch      = */ nb,
                 /* .n_ubatch     = */ nub,
                 /* .type_k       = */ tk,
@@ -1308,6 +1375,7 @@ static std::vector<cmd_params_instance> get_cmd_params_instances(const cmd_param
                 /* .n_prompt     = */ 0,
                 /* .n_gen        = */ n_gen,
                 /* .n_depth      = */ nd,
+                /* .n_ctx        = */ nc > 0 ? nc : n_gen + nd,
                 /* .n_batch      = */ nb,
                 /* .n_ubatch     = */ nub,
                 /* .type_k       = */ tk,
@@ -1345,6 +1413,7 @@ static std::vector<cmd_params_instance> get_cmd_params_instances(const cmd_param
                 /* .n_prompt     = */ n_pg.first,
                 /* .n_gen        = */ n_pg.second,
                 /* .n_depth      = */ nd,
+                /* .n_ctx        = */ nc > 0 ? nc : n_pg.first + n_pg.second + nd,
                 /* .n_batch      = */ nb,
                 /* .n_ubatch     = */ nub,
                 /* .type_k       = */ tk,
@@ -1414,6 +1483,7 @@ struct test {
     int                      n_prompt;
     int                      n_gen;
     int                      n_depth;
+    int                      n_ctx;
     std::string              test_time;
     std::vector<uint64_t>    samples_ns;
 
@@ -1454,6 +1524,7 @@ struct test {
         n_prompt       = inst.n_prompt;
         n_gen          = inst.n_gen;
         n_depth        = inst.n_depth;
+        n_ctx          = inst.n_ctx;
         // RFC 3339 date-time format
         time_t t       = time(NULL);
         std::strftime(buf, sizeof(buf), "%FT%TZ", gmtime(&t));
@@ -1510,6 +1581,7 @@ struct test {
             "tensor_buft_overrides",            "use_mmap",      "use_direct_io",  "embeddings",
             "no_op_offload",  "no_host",        "fit_target",     "fit_min_ctx",
             "n_prompt",       "n_gen",          "n_depth",
+            "n_ctx",
             "test_time",      "avg_ns",         "stddev_ns",     "avg_ts",         "stddev_ts"
         };
         return fields;
@@ -1520,7 +1592,7 @@ struct test {
     static field_type get_field_type(const std::string & field) {
         if (field == "build_number" || field == "n_batch" || field == "n_ubatch" || field == "n_threads" ||
             field == "poll" || field == "model_size" || field == "model_n_params" || field == "n_gpu_layers" ||
-            field == "main_gpu" || field == "n_prompt" || field == "n_gen" || field == "n_depth" || field == "avg_ns" ||
+            field == "main_gpu" || field == "n_prompt" || field == "n_gen" || field == "n_depth" || field == "n_ctx" || field == "avg_ns" ||
             field == "stddev_ns" || field == "no_op_offload" || field == "n_cpu_moe" ||
             field == "fit_target" || field == "fit_min_ctx") {
             return INT;
@@ -1608,6 +1680,7 @@ struct test {
                                             std::to_string(n_prompt),
                                             std::to_string(n_gen),
                                             std::to_string(n_depth),
+                                            std::to_string(n_ctx),
                                             test_time,
                                             std::to_string(avg_ns()),
                                             std::to_string(stdev_ns()),
@@ -2329,7 +2402,28 @@ int llama_bench(int argc, char ** argv) {
         }
 
         for (int i = 0; i < params.reps; i++) {
+            const int round_idx = i + 1;
+            const bool print_round_events = params.progress || params.verbose;
+
+            const auto qnn_reset_result = llama_bench_reset_qnn_aot_backends(collect_qnn_aot_reset_entries(ctx));
+            if (!qnn_reset_result.ok()) {
+                fprintf(stderr,
+                        "%s: error: failed to reset qnn AoT state before %s (failed backends: %s)\n",
+                        __func__,
+                        llama_bench_format_round_event(params_idx, params_count, round_idx, params.reps, "starting").c_str(),
+                        join(qnn_reset_result.failed_backends, ", ").c_str());
+                llama_free(ctx);
+                llama_model_free(lmodel);
+                exit(1);
+            }
+
             llama_memory_clear(llama_get_memory(ctx), false);
+
+            if (print_round_events) {
+                fprintf(stderr,
+                        "%s\n",
+                        llama_bench_format_round_event(params_idx, params_count, round_idx, params.reps, "starting").c_str());
+            }
 
             if (t.n_depth > 0) {
                 bool is_cached = t.n_depth == cstate.depth;
@@ -2399,6 +2493,13 @@ int llama_bench(int argc, char ** argv) {
 
             uint64_t t_ns = get_time_ns() - t_start;
             t.samples_ns.push_back(t_ns);
+
+            if (print_round_events) {
+                fprintf(stderr,
+                        "%s (%.2f ms)\n",
+                        llama_bench_format_round_event(params_idx, params_count, round_idx, params.reps, "finished").c_str(),
+                        t_ns / 1e6);
+            }
         }
 
         if (p) {
@@ -2426,6 +2527,14 @@ int llama_bench(int argc, char ** argv) {
 
     if (p_err) {
         p_err->print_footer();
+    }
+
+    // Android/QNN can still abort in shared-library finalizers after the benchmark
+    // output has already been printed. This opt-in escape hatch keeps the result
+    // usable for device-side baseline collection while we debug the runtime teardown.
+    if (llama_bench_fast_exit_requested()) {
+        fflush(nullptr);
+        std::_Exit(0);
     }
 
     llama_backend_free();

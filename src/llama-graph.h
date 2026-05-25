@@ -4,6 +4,7 @@
 #include "llama-batch.h"
 #include "llama-hparams.h"
 #include "llama-adapter.h"
+#include "llama-hetero-route.h"
 
 #include <cstdint>
 #include <vector>
@@ -18,6 +19,7 @@ struct ggml_tensor;
 
 struct llama_cparams;
 struct llama_layer;
+struct llama_model;
 
 struct llama_memory_context_i;
 
@@ -540,6 +542,8 @@ struct llm_graph_params {
 
     ggml_backend_sched_t sched;
     ggml_backend_t backend_cpu;
+    const llama_model * model = nullptr;
+    llama_hetero_route_spec hetero_route;
 
     const llama_adapter_cvec     * cvec;
     const llama_adapter_loras    * loras;
@@ -630,6 +634,8 @@ struct llm_graph_params {
             cparams.causal_attn == other.cparams.causal_attn &&
             arch  == other.arch  &&
             gtype == other.gtype &&
+            model == other.model &&
+            llama_hetero_route_spec_equals(hetero_route, other.hetero_route) &&
             cvec  == other.cvec  &&
             loras == other.loras &&
             cross == other.cross;
@@ -668,6 +674,7 @@ public:
     llm_graph_input_i * add_input(llm_graph_input_ptr input);
 
     void set_params(const llm_graph_params & params);
+    void invalidate_reuse();
 
     // important graph nodes
     ggml_tensor * t_inp_tokens  = nullptr;
@@ -757,6 +764,8 @@ struct llm_graph_context {
     ggml_backend_sched_t sched;
 
     ggml_backend_t backend_cpu; // TODO: needed by build_attn_mha, figure out a way to remove?
+    const llama_model * model;
+    const llama_hetero_route_spec hetero_route;
 
     const llama_adapter_cvec     * cvec;
     const llama_adapter_loras    * loras;
