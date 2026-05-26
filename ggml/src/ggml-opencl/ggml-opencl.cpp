@@ -4074,7 +4074,31 @@ static void transpose_2d_as_32b(
 //------------------------------------------------------------------------------
 // Tensor extra management
 //------------------------------------------------------------------------------
+static constexpr uint32_t GGML_OPENCL_EXTRA_MAGIC_BASE = 0x4f434c42u; // OCLB
+static constexpr uint32_t GGML_OPENCL_EXTRA_MAGIC_Q4_0 = 0x4f435134u; // OCQ4
+
+struct ggml_opencl_extra_header {
+    uint32_t magic = GGML_OPENCL_EXTRA_MAGIC_BASE;
+    ggml_backend_buffer_t owner_buffer = nullptr;
+};
+
+static void ggml_opencl_extra_header_reset(ggml_opencl_extra_header & header, uint32_t magic) {
+    header.magic = magic;
+    header.owner_buffer = nullptr;
+}
+
+static void ggml_opencl_extra_header_bind(ggml_opencl_extra_header & header, ggml_backend_buffer_t owner_buffer) {
+    header.owner_buffer = owner_buffer;
+}
+
+static bool ggml_opencl_extra_header_matches_owner(
+        const ggml_opencl_extra_header & header,
+        ggml_backend_buffer_t owner_buffer) {
+    return header.owner_buffer == owner_buffer;
+}
+
 struct ggml_tensor_extra_cl {
+    ggml_opencl_extra_header header{};
     // The buffer object that holds the data.
     cl_mem data_device = nullptr;
     // The offset into the buffer object. This is primarily for scratch buffer
@@ -4090,6 +4114,7 @@ struct ggml_tensor_extra_cl {
     ggml_backend_opencl_context * backend_ctx = nullptr;
 
     void reset() {
+        ggml_opencl_extra_header_reset(header, GGML_OPENCL_EXTRA_MAGIC_BASE);
         data_device = nullptr;
         offset = 0;
         actual_size = 0;
@@ -4295,6 +4320,7 @@ static ggml_tensor_extra_cl * ggml_backend_opencl_ensure_tensor_extra_from_host_
     extra->owner_buffer = tensor->buffer;
     extra->external_host_alias = true;
     extra->backend_ctx = backend_ctx;
+    ggml_opencl_extra_header_bind(extra->header, tensor->buffer);
 
     backend_ctx->external_tensor_extras.push_back(extra);
     tensor->extra = extra;
@@ -4306,6 +4332,7 @@ static ggml_tensor_extra_cl * ggml_backend_opencl_ensure_tensor_extra_from_host_
 // they should always be allocated from the pool. Hence, they do not have an
 // `offset`, which indicate their locations in the scratch buffer.
 struct ggml_tensor_extra_cl_q4_0 {
+    ggml_opencl_extra_header header{};
     // Quantized values.
     cl_mem q = nullptr;
     // Quantized values in image1d_buffer_t.
@@ -4324,9 +4351,14 @@ struct ggml_tensor_extra_cl_q4_0 {
     }
 
     void reset() {
+        ggml_opencl_extra_header_reset(header, GGML_OPENCL_EXTRA_MAGIC_Q4_0);
         // q and d are subbuffers into the bigger buffer allocated in ggml_backend_buffer.
         // They must be properly released so that the original buffer can be
         // properly released to avoid memory leak.
+        if (q_img != nullptr) {
+            CL_CHECK(clReleaseMemObject(q_img));
+            q_img = nullptr;
+        }
         if (q != nullptr) {
             CL_CHECK(clReleaseMemObject(q));
             q = nullptr;
@@ -4334,10 +4366,6 @@ struct ggml_tensor_extra_cl_q4_0 {
         if (d != nullptr) {
             CL_CHECK(clReleaseMemObject(d));
             d = nullptr;
-        }
-        if (q_img != nullptr) {
-            CL_CHECK(clReleaseMemObject(q_img));
-            q_img = nullptr;
         }
         // Currently, q_img and d_img are only initialized when SMALL_ALLOC is
         // enabled. They point to the images in ggml_backend_opencl_buffer_context.
@@ -4377,6 +4405,10 @@ struct ggml_tensor_extra_cl_q4_1 {
         // q and d are subbuffers into the bigger buffer allocated in ggml_backend_buffer.
         // They must be properly released so that the original buffer can be
         // properly released to avoid memory leak.
+        if (q_img != nullptr) {
+            CL_CHECK(clReleaseMemObject(q_img));
+            q_img = nullptr;
+        }
         if (q != nullptr) {
             CL_CHECK(clReleaseMemObject(q));
             q = nullptr;
@@ -4388,10 +4420,6 @@ struct ggml_tensor_extra_cl_q4_1 {
         if (m != nullptr) {
             CL_CHECK(clReleaseMemObject(m));
             m = nullptr;
-        }
-        if (q_img != nullptr) {
-            CL_CHECK(clReleaseMemObject(q_img));
-            q_img = nullptr;
         }
         // Currently, q_img and d_img are only initialized when SMALL_ALLOC is
         // enabled. They point to the images in ggml_backend_opencl_buffer_context.
@@ -6264,6 +6292,7 @@ static enum ggml_status ggml_backend_opencl_buffer_init_tensor(ggml_backend_buff
             extra->actual_size = ggml_nbytes(tensor);
             extra->owner_buffer = buffer;
             extra->backend_ctx = ctx->backend_ctx;
+            ggml_opencl_extra_header_bind(extra->header, buffer);
 
             tensor->extra = extra;
         }
@@ -6312,10 +6341,16 @@ static void ggml_backend_opencl_buffer_set_tensor(ggml_backend_buffer_t buffer, 
         // Allocate the new extra and create aliases from the original.
         ggml_backend_opencl_buffer_context * ctx = (ggml_backend_opencl_buffer_context *) buffer->context;
         ggml_tensor_extra_cl_q4_0 * extra = ctx->ggml_opencl_alloc_temp_tensor_extra_q4_0();
+        const bool use_standalone_quant_buffers = ctx->host_accessible && ctx->host_ptr != nullptr;
 
         size_t size_d = ggml_nelements(tensor)/ggml_blck_size(tensor->type)*sizeof(ggml_fp16_t);
         size_t size_q = ggml_nelements(tensor)/ggml_blck_size(tensor->type)*ggml_blck_size(tensor->type)/2;
         GGML_ASSERT(size_d + size_q == ggml_nbytes(tensor) && "Incorrect tensor size");
+
+        if (use_standalone_quant_buffers) {
+            memcpy((char *) tensor->data + offset, data, ggml_nbytes(tensor));
+            ctx->host_mirror_stale = false;
+        }
 
         cl_int err;
         cl_mem data_device = clCreateBuffer(context, CL_MEM_READ_WRITE,
@@ -6340,26 +6375,33 @@ static void ggml_backend_opencl_buffer_set_tensor(ggml_backend_buffer_t buffer, 
         // into the general backend code.
         // Does this create misaligned subbuffers (alignment is 1024) in certain
         // cases ?
-        cl_buffer_region region;
+        if (use_standalone_quant_buffers) {
+            extra->d = clCreateBuffer(context, CL_MEM_READ_WRITE, size_d, NULL, &err);
+            CL_CHECK(err);
+            extra->q = clCreateBuffer(context, CL_MEM_READ_WRITE, size_q, NULL, &err);
+            CL_CHECK(err);
+        } else {
+            cl_buffer_region region;
 
-        // The original tensor memory is divided into scales and quants, i.e.,
-        // we first store scales, then quants.
-        // Create subbuffer for scales.
-        region.origin = align_to(extra_orig->offset + tensor->view_offs + offset, backend_ctx->alignment);
-        region.size = size_d;
-        extra->d = clCreateSubBuffer(
-            extra_orig->data_device, CL_MEM_READ_WRITE,
-            CL_BUFFER_CREATE_TYPE_REGION, &region, &err);
-        CL_CHECK(err);
-        auto previous_origin = region.origin;
+            // The original tensor memory is divided into scales and quants, i.e.,
+            // we first store scales, then quants.
+            // Create subbuffer for scales.
+            region.origin = align_to(extra_orig->offset + tensor->view_offs + offset, backend_ctx->alignment);
+            region.size = size_d;
+            extra->d = clCreateSubBuffer(
+                extra_orig->data_device, CL_MEM_READ_WRITE,
+                CL_BUFFER_CREATE_TYPE_REGION, &region, &err);
+            CL_CHECK(err);
+            auto previous_origin = region.origin;
 
-        // Create subbuffer for quants.
-        region.origin = align_to(previous_origin + size_d, backend_ctx->alignment);
-        region.size = size_q;
-        extra->q = clCreateSubBuffer(
-            extra_orig->data_device, CL_MEM_READ_WRITE,
-            CL_BUFFER_CREATE_TYPE_REGION, &region, &err);
-        CL_CHECK(err);
+            // Create subbuffer for quants.
+            region.origin = align_to(previous_origin + size_d, backend_ctx->alignment);
+            region.size = size_q;
+            extra->q = clCreateSubBuffer(
+                extra_orig->data_device, CL_MEM_READ_WRITE,
+                CL_BUFFER_CREATE_TYPE_REGION, &region, &err);
+            CL_CHECK(err);
+        }
 
 #ifdef GGML_OPENCL_USE_ADRENO_KERNELS
         // Adreno moe q4_0 kernel needs special transpose and unshuffling
@@ -6392,6 +6434,9 @@ static void ggml_backend_opencl_buffer_set_tensor(ggml_backend_buffer_t buffer, 
                 { extra->q }
             };
             extra->q_img = clCreateImage(context, CL_MEM_READ_ONLY, &img_format_q, &img_desc_q, NULL, &err);
+            extra->size_q = size_q;
+            extra->size_d = size_d;
+            ggml_opencl_extra_header_bind(extra->header, tensor->buffer);
             tensor->extra = extra;
 
             return;
@@ -6420,6 +6465,9 @@ static void ggml_backend_opencl_buffer_set_tensor(ggml_backend_buffer_t buffer, 
         CL_CHECK(clWaitForEvents(1, &evt));
         CL_CHECK(clReleaseMemObject(data_device));
 
+        extra->size_q = size_q;
+        extra->size_d = size_d;
+        ggml_opencl_extra_header_bind(extra->header, tensor->buffer);
         tensor->extra = extra;
 
         // transpose the weights and scales
@@ -6447,11 +6495,17 @@ static void ggml_backend_opencl_buffer_set_tensor(ggml_backend_buffer_t buffer, 
         // Allocate the new extra and create aliases from the original.
         ggml_backend_opencl_buffer_context * ctx = (ggml_backend_opencl_buffer_context *) buffer->context;
         ggml_tensor_extra_cl_q4_1 * extra = ctx->ggml_opencl_alloc_temp_tensor_extra_q4_1();
+        const bool use_standalone_quant_buffers = ctx->host_accessible && ctx->host_ptr != nullptr;
 
         size_t size_d = ggml_nelements(tensor)/ggml_blck_size(tensor->type)*sizeof(ggml_fp16_t);
         size_t size_m = ggml_nelements(tensor)/ggml_blck_size(tensor->type)*sizeof(ggml_fp16_t);
         size_t size_q = ggml_nelements(tensor)/ggml_blck_size(tensor->type)*ggml_blck_size(tensor->type)/2;
         GGML_ASSERT(size_d + size_m + size_q == ggml_nbytes(tensor) && "Incorrect tensor size");
+
+        if (use_standalone_quant_buffers) {
+            memcpy((char *) tensor->data + offset, data, ggml_nbytes(tensor));
+            ctx->host_mirror_stale = false;
+        }
 
         cl_int err;
         cl_mem data_device = clCreateBuffer(context, CL_MEM_READ_WRITE,
@@ -6461,35 +6515,44 @@ static void ggml_backend_opencl_buffer_set_tensor(ggml_backend_buffer_t buffer, 
             queue, data_device, CL_TRUE, 0,
             ggml_nbytes(tensor), data, 0, NULL, NULL));
 
-        cl_buffer_region region;
+        if (use_standalone_quant_buffers) {
+            extra->d = clCreateBuffer(context, CL_MEM_READ_WRITE, size_d, NULL, &err);
+            CL_CHECK(err);
+            extra->m = clCreateBuffer(context, CL_MEM_READ_WRITE, size_m, NULL, &err);
+            CL_CHECK(err);
+            extra->q = clCreateBuffer(context, CL_MEM_READ_WRITE, size_q, NULL, &err);
+            CL_CHECK(err);
+        } else {
+            cl_buffer_region region;
 
-        // The original tensor memory is divided into scales and quants, i.e.,
-        // we first store scales, mins, then quants.
-        // Create subbuffer for scales.
-        region.origin = align_to(extra_orig->offset + tensor->view_offs + offset, backend_ctx->alignment);
-        region.size = size_d;
-        extra->d = clCreateSubBuffer(
-            extra_orig->data_device, CL_MEM_READ_WRITE,
-            CL_BUFFER_CREATE_TYPE_REGION, &region, &err);
-        CL_CHECK(err);
-        auto previous_origin = region.origin;
+            // The original tensor memory is divided into scales and quants, i.e.,
+            // we first store scales, mins, then quants.
+            // Create subbuffer for scales.
+            region.origin = align_to(extra_orig->offset + tensor->view_offs + offset, backend_ctx->alignment);
+            region.size = size_d;
+            extra->d = clCreateSubBuffer(
+                extra_orig->data_device, CL_MEM_READ_WRITE,
+                CL_BUFFER_CREATE_TYPE_REGION, &region, &err);
+            CL_CHECK(err);
+            auto previous_origin = region.origin;
 
-        // Create subbuffer for mins.
-        region.origin = align_to(previous_origin + size_d, backend_ctx->alignment);
-        region.size = size_m;
-        extra->m = clCreateSubBuffer(
-            extra_orig->data_device, CL_MEM_READ_WRITE,
-            CL_BUFFER_CREATE_TYPE_REGION, &region, &err);
-        CL_CHECK(err);
-        previous_origin = region.origin;
+            // Create subbuffer for mins.
+            region.origin = align_to(previous_origin + size_d, backend_ctx->alignment);
+            region.size = size_m;
+            extra->m = clCreateSubBuffer(
+                extra_orig->data_device, CL_MEM_READ_WRITE,
+                CL_BUFFER_CREATE_TYPE_REGION, &region, &err);
+            CL_CHECK(err);
+            previous_origin = region.origin;
 
-        // Create subbuffer for quants.
-        region.origin = align_to(previous_origin + size_m, backend_ctx->alignment);
-        region.size = size_q;
-        extra->q = clCreateSubBuffer(
-            extra_orig->data_device, CL_MEM_READ_WRITE,
-            CL_BUFFER_CREATE_TYPE_REGION, &region, &err);
-        CL_CHECK(err);
+            // Create subbuffer for quants.
+            region.origin = align_to(previous_origin + size_m, backend_ctx->alignment);
+            region.size = size_q;
+            extra->q = clCreateSubBuffer(
+                extra_orig->data_device, CL_MEM_READ_WRITE,
+                CL_BUFFER_CREATE_TYPE_REGION, &region, &err);
+            CL_CHECK(err);
+        }
 
 #ifdef GGML_OPENCL_USE_ADRENO_KERNELS
         // Adreno moe q4_1 kernel needs special transpose and unshuffling
@@ -6874,10 +6937,16 @@ static void ggml_backend_opencl_buffer_set_tensor(ggml_backend_buffer_t buffer, 
         // Allocate the new extra and create aliases from the original.
         ggml_backend_opencl_buffer_context * ctx = (ggml_backend_opencl_buffer_context *) buffer->context;
         ggml_tensor_extra_cl_q8_0 * extra = ctx->ggml_opencl_alloc_temp_tensor_extra_q8_0();
+        const bool use_standalone_quant_buffers = ctx->host_accessible && ctx->host_ptr != nullptr;
 
         size_t size_d = ggml_nelements(tensor)/ggml_blck_size(tensor->type)*sizeof(ggml_fp16_t);
         size_t size_q = ggml_nelements(tensor)/ggml_blck_size(tensor->type)*(ggml_blck_size(tensor->type)*sizeof(char));
         GGML_ASSERT(size_d + size_q == ggml_nbytes(tensor) && "Incorrect tensor size");
+
+        if (use_standalone_quant_buffers) {
+            memcpy((char *) tensor->data + offset, data, ggml_nbytes(tensor));
+            ctx->host_mirror_stale = false;
+        }
 
         cl_int err;
         cl_mem data_device = clCreateBuffer(context, CL_MEM_READ_WRITE,
@@ -6887,26 +6956,33 @@ static void ggml_backend_opencl_buffer_set_tensor(ggml_backend_buffer_t buffer, 
             queue, data_device, CL_TRUE, 0,
             ggml_nbytes(tensor), data, 0, NULL, NULL));
 
-        // The original tensor memory is divided into scales and quants, i.e.,
-        // we first store scales, then quants.
-        cl_buffer_region region;
+        if (use_standalone_quant_buffers) {
+            extra->d = clCreateBuffer(context, CL_MEM_READ_WRITE, size_d, NULL, &err);
+            CL_CHECK(err);
+            extra->q = clCreateBuffer(context, CL_MEM_READ_WRITE, size_q, NULL, &err);
+            CL_CHECK(err);
+        } else {
+            // The original tensor memory is divided into scales and quants, i.e.,
+            // we first store scales, then quants.
+            cl_buffer_region region;
 
-        // Create subbuffer for scales.
-        region.origin = align_to(extra_orig->offset + tensor->view_offs + offset, backend_ctx->alignment);
-        region.size = size_d;
-        extra->d = clCreateSubBuffer(
-            extra_orig->data_device, CL_MEM_READ_WRITE,
-            CL_BUFFER_CREATE_TYPE_REGION, &region, &err);
-        CL_CHECK(err);
-        auto previous_origin = region.origin;
+            // Create subbuffer for scales.
+            region.origin = align_to(extra_orig->offset + tensor->view_offs + offset, backend_ctx->alignment);
+            region.size = size_d;
+            extra->d = clCreateSubBuffer(
+                extra_orig->data_device, CL_MEM_READ_WRITE,
+                CL_BUFFER_CREATE_TYPE_REGION, &region, &err);
+            CL_CHECK(err);
+            auto previous_origin = region.origin;
 
-        // Create subbuffer for quants.
-        region.origin = align_to(previous_origin + size_d, backend_ctx->alignment);
-        region.size = size_q;
-        extra->q = clCreateSubBuffer(
-            extra_orig->data_device, CL_MEM_READ_WRITE,
-            CL_BUFFER_CREATE_TYPE_REGION, &region, &err);
-        CL_CHECK(err);
+            // Create subbuffer for quants.
+            region.origin = align_to(previous_origin + size_d, backend_ctx->alignment);
+            region.size = size_q;
+            extra->q = clCreateSubBuffer(
+                extra_orig->data_device, CL_MEM_READ_WRITE,
+                CL_BUFFER_CREATE_TYPE_REGION, &region, &err);
+            CL_CHECK(err);
+        }
 
         cl_kernel kernel = backend_ctx->kernel_convert_block_q8_0;
 
@@ -7524,6 +7600,33 @@ static void ggml_backend_opencl_buffer_set_tensor(ggml_backend_buffer_t buffer, 
     GGML_UNUSED(buffer);
 }
 
+static bool ggml_backend_opencl_has_valid_q4_0_extra(const ggml_tensor * tensor) {
+    if (tensor == nullptr || tensor->extra == nullptr) {
+        return false;
+    }
+
+    const auto * header = static_cast<const ggml_opencl_extra_header *>(tensor->extra);
+    return header->magic == GGML_OPENCL_EXTRA_MAGIC_Q4_0 &&
+           ggml_opencl_extra_header_matches_owner(*header, tensor->buffer);
+}
+
+static ggml_tensor_extra_cl_q4_0 * ggml_backend_opencl_ensure_q4_0_tensor_extra(ggml_tensor * tensor) {
+    if (tensor == nullptr || tensor->type != GGML_TYPE_Q4_0 || tensor->buffer == nullptr || tensor->data == nullptr) {
+        return nullptr;
+    }
+
+    if (!ggml_backend_opencl_buffer_is_opencl_owned(tensor)) {
+        return nullptr;
+    }
+
+    if (!ggml_backend_opencl_has_valid_q4_0_extra(tensor)) {
+        ggml_backend_opencl_buffer_set_tensor(tensor->buffer, tensor, tensor->data, 0, ggml_nbytes(tensor));
+    }
+
+    GGML_ASSERT(ggml_backend_opencl_has_valid_q4_0_extra(tensor));
+    return static_cast<ggml_tensor_extra_cl_q4_0 *>(tensor->extra);
+}
+
 static void ggml_backend_opencl_buffer_get_tensor(ggml_backend_buffer_t buffer, const ggml_tensor * tensor, void * data, size_t offset, size_t size) {
     GGML_ASSERT(tensor->extra);
 
@@ -7537,8 +7640,12 @@ static void ggml_backend_opencl_buffer_get_tensor(ggml_backend_buffer_t buffer, 
     // Make sure all previously submitted commands in other devices are finished.
     sync_with_other_backends(backend_ctx);
 
-    if (ctx->host_accessible && ctx->host_ptr != nullptr && !ggml_is_quantized(tensor->type)) {
-        ggml_backend_opencl_sync_host_mirror(backend_ctx, ctx);
+    if (ctx->host_accessible && ctx->host_ptr != nullptr) {
+        if (!ggml_is_quantized(tensor->type)) {
+            ggml_backend_opencl_sync_host_mirror(backend_ctx, ctx);
+        } else {
+            CL_CHECK(clFinish(queue));
+        }
         memcpy(data, (const char *) tensor->data + offset, size);
         return;
     }
@@ -18013,6 +18120,10 @@ bool ggml_cl_compute_forward(ggml_backend_t backend, struct ggml_tensor * tensor
     ggml_backend_opencl_ensure_tensor_extra_from_host_buffer(backend, src0);
     ggml_backend_opencl_ensure_tensor_extra_from_host_buffer(backend, src1);
     ggml_backend_opencl_ensure_tensor_extra_from_host_buffer(backend, src2);
+
+    if (src0 != nullptr && src0->type == GGML_TYPE_Q4_0) {
+        ggml_backend_opencl_ensure_q4_0_tensor_extra(src0);
+    }
 
     const bool any_on_device = tensor->extra
         || (src0 != nullptr && src0->extra)

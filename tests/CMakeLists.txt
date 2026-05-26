@@ -262,7 +262,7 @@ if (NOT LLAMA_SANITIZE_ADDRESS AND NOT GGML_SCHED_NO_REALLOC)
 endif()
 llama_build_and_test(test-gguf.cpp)
 llama_build_and_test(test-backend-ops.cpp)
-if (GGML_OPENCL AND EXISTS "${LLAMA_TEST_OPENCL_CORE_EXTENSIONS}")
+if (GGML_OPENCL)
     llama_build_and_test(test-opencl-host-quant-buffer.cpp)
 endif()
 

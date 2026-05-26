@@ -4,6 +4,7 @@
 #include "ggml-opencl.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
@@ -167,7 +168,7 @@ static bool test_host_quant_buffer_preserves_layout(enum ggml_type type) {
     std::vector<uint8_t> src = make_pattern(nbytes);
     std::memset(tensor->data, 0xa5, nbytes);
 
-    ggml_backend_tensor_set(tensor, src.data(), 0, nbytes);
+    std::memcpy(tensor->data, src.data(), nbytes);
 
     const auto * tensor_bytes = static_cast<const uint8_t *>(tensor->data);
     const int diff = find_first_diff(src.data(), tensor_bytes, nbytes);
@@ -188,12 +189,172 @@ static bool test_host_quant_buffer_preserves_layout(enum ggml_type type) {
     return true;
 }
 
+static bool test_host_q4_0_mmap_loaded_mul_mat_is_successful(void) {
+    ggml_backend_t backend = ggml_backend_opencl_init();
+    if (backend == nullptr) {
+        std::fprintf(stderr, "SKIP: OpenCL backend unavailable\n");
+        return true;
+    }
+
+    ggml_backend_buffer_type_t host_buft = ggml_backend_opencl_host_buffer_type();
+    if (host_buft == nullptr) {
+        std::fprintf(stderr, "SKIP: OpenCL host buffer type unavailable\n");
+        ggml_backend_free(backend);
+        return true;
+    }
+
+    constexpr int64_t k = 512;
+    constexpr int64_t m = 512;
+    constexpr int64_t n = 1;
+
+    ggml_init_params params = {
+        /*.mem_size   =*/ 16 * 1024 * 1024,
+        /*.mem_buffer =*/ nullptr,
+        /*.no_alloc   =*/ true,
+    };
+
+    ggml_context * ctx = ggml_init(params);
+    if (ctx == nullptr) {
+        std::fprintf(stderr, "failed to initialize ggml context for q4_0 MUL_MAT test\n");
+        ggml_backend_free(backend);
+        return false;
+    }
+
+    ggml_tensor * weight = ggml_new_tensor_2d(ctx, GGML_TYPE_Q4_0, k, m);
+    ggml_tensor * input  = ggml_new_tensor_2d(ctx, GGML_TYPE_F32,  k, n);
+    if (weight == nullptr || input == nullptr) {
+        std::fprintf(stderr, "failed to create q4_0 MUL_MAT input tensors\n");
+        ggml_free(ctx);
+        ggml_backend_free(backend);
+        return false;
+    }
+
+    ggml_tensor * output = ggml_mul_mat(ctx, weight, input);
+    if (output == nullptr) {
+        std::fprintf(stderr, "failed to create q4_0 MUL_MAT output tensor\n");
+        ggml_free(ctx);
+        ggml_backend_free(backend);
+        return false;
+    }
+
+    ggml_set_name(weight, "opencl_host_q4_0_weight");
+    ggml_set_name(input,  "opencl_host_q4_0_input");
+    ggml_set_name(output, "opencl_host_q4_0_output");
+
+    ggml_backend_buffer_t buffer = ggml_backend_alloc_ctx_tensors_from_buft(ctx, host_buft);
+    if (buffer == nullptr) {
+        std::fprintf(stderr, "failed to allocate OpenCL host buffer for q4_0 MUL_MAT test\n");
+        ggml_free(ctx);
+        ggml_backend_free(backend);
+        return false;
+    }
+
+    ggml_backend_buffer_set_usage(buffer, GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
+    ggml_backend_buffer_clear(buffer, 0);
+
+    std::vector<float> weight_f32(static_cast<size_t>(k * m));
+    for (int64_t row = 0; row < m; ++row) {
+        for (int64_t col = 0; col < k; ++col) {
+            const int value = static_cast<int>((row * 17 + col * 13) % 23) - 11;
+            weight_f32[static_cast<size_t>(row * k + col)] = static_cast<float>(value) * 0.03125f;
+        }
+    }
+
+    const size_t weight_row_size = ggml_row_size(GGML_TYPE_Q4_0, k);
+    std::vector<uint8_t> weight_q(weight_row_size * static_cast<size_t>(m));
+    const size_t quantized_size = ggml_quantize_chunk(
+            GGML_TYPE_Q4_0,
+            weight_f32.data(),
+            weight_q.data(),
+            /* start = */ 0,
+            /* nrows = */ m,
+            /* n_per_row = */ k,
+            /* imatrix = */ nullptr);
+    if (quantized_size != weight_q.size()) {
+        std::fprintf(stderr, "unexpected q4_0 quantized size: expected=%zu actual=%zu\n", weight_q.size(), quantized_size);
+        ggml_backend_buffer_free(buffer);
+        ggml_free(ctx);
+        ggml_backend_free(backend);
+        return false;
+    }
+
+    std::vector<float> input_f32(static_cast<size_t>(k));
+    for (int64_t i = 0; i < k; ++i) {
+        input_f32[static_cast<size_t>(i)] = static_cast<float>((i % 19) - 9) * 0.015625f;
+    }
+
+    std::memcpy(weight->data, weight_q.data(), weight_q.size());
+    ggml_backend_tensor_set(input, input_f32.data(), 0, input_f32.size() * sizeof(float));
+
+    ggml_cgraph * graph = ggml_new_graph_custom(ctx, GGML_DEFAULT_GRAPH_SIZE, false);
+    if (graph == nullptr) {
+        std::fprintf(stderr, "failed to create q4_0 MUL_MAT graph\n");
+        ggml_backend_buffer_free(buffer);
+        ggml_free(ctx);
+        ggml_backend_free(backend);
+        return false;
+    }
+
+    ggml_build_forward_expand(graph, output);
+    const ggml_status status = ggml_backend_graph_compute(backend, graph);
+    if (status != GGML_STATUS_SUCCESS) {
+        std::fprintf(stderr, "OpenCL_Host q4_0 MUL_MAT failed: %s\n", ggml_status_to_string(status));
+        ggml_backend_buffer_free(buffer);
+        ggml_free(ctx);
+        ggml_backend_free(backend);
+        return false;
+    }
+
+    std::vector<float> actual(static_cast<size_t>(m), 0.0f);
+    ggml_backend_tensor_get(output, actual.data(), 0, actual.size() * sizeof(float));
+    ggml_backend_synchronize(backend);
+
+    const ggml_type_traits * traits = ggml_get_type_traits(GGML_TYPE_Q4_0);
+    if (traits == nullptr || traits->to_float == nullptr) {
+        std::fprintf(stderr, "q4_0 dequantization traits unavailable\n");
+        ggml_backend_buffer_free(buffer);
+        ggml_free(ctx);
+        ggml_backend_free(backend);
+        return false;
+    }
+
+    std::vector<float> dequant_row(static_cast<size_t>(k));
+    std::vector<float> expected(static_cast<size_t>(m), 0.0f);
+    for (int64_t row = 0; row < m; ++row) {
+        const uint8_t * row_q = weight_q.data() + static_cast<size_t>(row) * weight_row_size;
+        traits->to_float(row_q, dequant_row.data(), k);
+        for (int64_t col = 0; col < k; ++col) {
+            expected[static_cast<size_t>(row)] += dequant_row[static_cast<size_t>(col)] * input_f32[static_cast<size_t>(col)];
+        }
+    }
+
+    for (size_t i = 0; i < actual.size(); ++i) {
+        if (!std::isfinite(actual[i]) || std::fabs(actual[i] - expected[i]) > 2.0e-2f) {
+            std::fprintf(stderr,
+                    "OpenCL_Host q4_0 MUL_MAT mismatch at row %zu: expected=%f actual=%f\n",
+                    i,
+                    expected[i],
+                    actual[i]);
+            ggml_backend_buffer_free(buffer);
+            ggml_free(ctx);
+            ggml_backend_free(backend);
+            return false;
+        }
+    }
+
+    ggml_backend_buffer_free(buffer);
+    ggml_free(ctx);
+    ggml_backend_free(backend);
+    return true;
+}
+
 int main(void) {
     bool ok = true;
 
     ok &= test_host_buffer_roundtrip_sync();
     ok &= test_host_quant_buffer_preserves_layout(GGML_TYPE_Q4_0);
     ok &= test_host_quant_buffer_preserves_layout(GGML_TYPE_Q4_1);
+    ok &= test_host_q4_0_mmap_loaded_mul_mat_is_successful();
 
     return ok ? 0 : 1;
 }

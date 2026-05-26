@@ -141,7 +141,19 @@ QNN case 额外检查：
 
 ```sh
 adb -s "${DEVICE}" shell "test -f ${QNN_DIR}/config.json"
+adb -s "${DEVICE}" shell "test -f ${REMOTE_BIN_DIR}/libQnnSystem.so"
+adb -s "${DEVICE}" shell "test -f ${REMOTE_BIN_DIR}/libQnnHtp.so"
+adb -s "${DEVICE}" shell "test -f ${REMOTE_BIN_DIR}/libQnnHtpPrepare.so"
+adb -s "${DEVICE}" shell "test -n \"\$(ls ${REMOTE_BIN_DIR}/libQnnHtp*Stub.so 2>/dev/null | head -n 1)\""
+adb -s "${DEVICE}" shell "test -n \"\$(ls ${REMOTE_BIN_DIR}/libQnnHtp*Skel.so 2>/dev/null | head -n 1)\""
 ```
+
+如果 `--list-devices` 能看到 `qnn-npu`，但 QNN AoT smoke 在
+`failed to create QNN device, status: 1008` 处失败，优先检查
+`${REMOTE_BIN_DIR}` 是否只推了 `libQnnSystem.so` / `libQnnHtp.so`，漏掉
+`libQnnHtpV*Stub.so`、`libQnnHtpV*Skel.so`、`libQnnHtpPrepare.so` 等 HTP
+runtime。`qnn-npu` 枚举成功不等于 HTP device/context 可创建；QNN case 的
+push 包必须包含构建目录中的 `libQnn*.so`。
 
 ## 测试输出目录
 
@@ -1074,7 +1086,7 @@ summary 中每个 route/workload 增加：
 
 ## 推荐第一轮执行顺序
 
-1. 构建 profiling 版本并 push 到 `${REMOTE_BIN_DIR}`。
+1. 构建 profiling 版本并 push 到 `${REMOTE_BIN_DIR}`，QNN case 必须同时 push 构建目录中的 `libQnn*.so`。
 2. `adb -s "${DEVICE}" shell "${REMOTE_BIN_DIR}/llama-bench --list-devices"`，三后端矩阵确认 `GPUOpenCL` 和 `qnn-npu` 可见；四后端矩阵还必须确认 `HTP0` 可见。
 3. 跑 QNN AoT smoke：`qnn-npu -> qnn-npu pp32_tg4`，打开 `TRACE_ASSIGN/MATCH`。
 4. 跑 FastRPC 单后端 smoke：`fastrpc -> fastrpc pp32_tg4`，打开 `GGML_HEXAGON_PROFILE=1` 并确认 `hex_HTP0_*profiling.csv` 可解析。
