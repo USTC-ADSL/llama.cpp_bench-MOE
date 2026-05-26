@@ -208,6 +208,7 @@ llama_build_and_test(test-context-qnn-phase-migration.cpp)
 llama_build(test-llama-bench-utils.cpp)
 llama_test(test-llama-bench-utils)
 llama_build_and_test(test-context-cpu-host-fallback.cpp)
+llama_build_and_test(test-model-cpu-buft-qnn-gating.cpp)
 llama_build_and_test(test-model-loader-opencl-portability.cpp)
 llama_build_and_test(test-opencl-cpu-extra-copy.cpp)
 set(LLAMA_TEST_OPENCL_CORE_EXTENSIONS

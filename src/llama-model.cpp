@@ -20,6 +20,7 @@
 #include "ggml-cpp.h"
 
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <cfloat>
 #include <cstdint>
@@ -34,6 +35,17 @@
 #include <string>
 #include <vector>
 
+bool llama_model_cpu_buft_qnn_accel_backend_requested(
+        const std::vector<std::string> & device_names,
+        const llama_hetero_route_spec & hetero_route,
+        const llama_hetero_route_spec & dynamic_prefill_route,
+        const llama_hetero_route_spec & dynamic_decode_route,
+        const llama_hetero_route_spec & dynamic_fallback_route);
+
+bool llama_model_cpu_buft_should_include_accel(
+        const char * device_name,
+        bool qnn_accel_backend_requested);
+
 const ggml_tensor * llama_model_resolve_weight_for_cpu_copy(
         const ggml_tensor * original,
         const ggml_tensor * cpu_copy,
@@ -44,6 +56,51 @@ const ggml_tensor * llama_model_resolve_weight_for_cpu_copy(
     }
 
     return llama_hetero_is_cpu_backend(route.backend_for(stage)) ? cpu_copy : original;
+}
+
+static bool llama_model_cpu_buft_route_requests_qnn(const llama_hetero_route_spec & route) {
+    static constexpr std::array<llama_hetero_route_stage, 5> stages = {{
+        llama_hetero_route_stage::ATTN_PROJ,
+        llama_hetero_route_stage::ATTN_CORE,
+        llama_hetero_route_stage::ATTN_OUT,
+        llama_hetero_route_stage::FFN,
+        llama_hetero_route_stage::OUTPUT,
+    }};
+
+    for (const auto stage : stages) {
+        if (llama_hetero_is_qnn_backend(route.backend_for(stage))) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool llama_model_cpu_buft_qnn_accel_backend_requested(
+        const std::vector<std::string> & device_names,
+        const llama_hetero_route_spec & hetero_route,
+        const llama_hetero_route_spec & dynamic_prefill_route,
+        const llama_hetero_route_spec & dynamic_decode_route,
+        const llama_hetero_route_spec & dynamic_fallback_route) {
+    for (const std::string & name : device_names) {
+        const std::string normalized = llama_hetero_canonical_backend(name);
+        if (normalized == "qnn-npu" || normalized == "qnn-cpu") {
+            return true;
+        }
+    }
+
+    return llama_model_cpu_buft_route_requests_qnn(hetero_route) ||
+           llama_model_cpu_buft_route_requests_qnn(dynamic_prefill_route) ||
+           llama_model_cpu_buft_route_requests_qnn(dynamic_decode_route) ||
+           llama_model_cpu_buft_route_requests_qnn(dynamic_fallback_route);
+}
+
+bool llama_model_cpu_buft_should_include_accel(
+        const char * device_name,
+        bool qnn_accel_backend_requested) {
+    return qnn_accel_backend_requested ||
+           device_name == nullptr ||
+           !llama_hetero_is_qnn_backend(device_name);
 }
 
 static llama_model * llama_model_mapping(llm_arch arch, const llama_model_params & params) {
@@ -826,13 +883,23 @@ static llama_rope_scaling_type llama_rope_scaling_type_from_string(const std::st
 }
 
 // CPU: ACCEL -> GPU host -> CPU extra -> CPU
-static buft_list_t make_cpu_buft_list(const std::vector<llama_device> & devices, bool use_extra_bufts, bool no_host) {
+static buft_list_t make_cpu_buft_list(
+        const std::vector<llama_device> & devices,
+        bool use_extra_bufts,
+        bool no_host,
+        bool qnn_accel_backend_requested) {
     buft_list_t buft_list;
 
     // add ACCEL buffer types
     for (size_t i = 0; i < ggml_backend_dev_count(); ++i) {
         ggml_backend_dev_t dev = ggml_backend_dev_get(i);
         if (ggml_backend_dev_type(dev) == GGML_BACKEND_DEVICE_TYPE_ACCEL) {
+            if (!llama_model_cpu_buft_should_include_accel(
+                    ggml_backend_dev_name(dev),
+                    qnn_accel_backend_requested)) {
+                continue;
+            }
+
             auto * buft = ggml_backend_dev_buffer_type(dev);
             // skip
             if (buft != ggml_backend_cpu_buffer_type()) {
@@ -1185,8 +1252,25 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
     LLAMA_LOG_INFO("%s: loading model tensors, this can take a while... (mmap = %s, direct_io = %s)\n",
         __func__, ml.use_mmap ? "true" : "false", ml.use_direct_io ? "true" : "false");
 
+    std::vector<std::string> model_device_names;
+    model_device_names.reserve(devices.size());
+    for (const auto & dev : devices) {
+        model_device_names.emplace_back(dev.dev != nullptr ? ggml_backend_dev_name(dev.dev) : "");
+    }
+
+    const bool qnn_accel_backend_requested = llama_model_cpu_buft_qnn_accel_backend_requested(
+        model_device_names,
+        hetero_plan.route,
+        llama_hetero_parse_route_spec(std::getenv("GGML_HETERO_DYNAMIC_PREFILL_ROUTE")),
+        llama_hetero_parse_route_spec(std::getenv("GGML_HETERO_DYNAMIC_DECODE_ROUTE")),
+        llama_hetero_parse_route_spec(std::getenv("GGML_HETERO_DYNAMIC_FALLBACK_ROUTE")));
+
     // build a list of buffer types for the CPU and GPU devices
-    pimpl->cpu_buft_list = make_cpu_buft_list(devices, params.use_extra_bufts, params.no_host);
+    pimpl->cpu_buft_list = make_cpu_buft_list(
+        devices,
+        params.use_extra_bufts,
+        params.no_host,
+        qnn_accel_backend_requested);
     for (const auto & dev : devices) {
         buft_list_t buft_list = make_gpu_buft_list(dev.dev, split_mode, tensor_split);
         // add CPU buffer types as a fallback
