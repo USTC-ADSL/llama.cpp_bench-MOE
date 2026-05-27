@@ -1,0 +1,13 @@
+device=fd8657d6
+remote_bin_dir=/data/local/tmp/bench-PD
+model_path=/data/local/tmp/models/Qwen2.5-3B-AoT/ggml/weights.gguf
+qnn_dir=/data/local/tmp/models/Qwen2.5-3B-AoT/qnn
+local_root=results/bench-PD-fd-20260527-0647
+cooldown_sec=120
+case_timeout_sec=1800
+reps=1
+keep_raw=0
+single_workloads=128:0 256:0 512:0 0:1 0:32 0:128 0:256
+switch_workloads=256:1
+formal_backends=cpu opencl qnn-npu
+fastrpc_htp0_policy=record list-devices only, not formal success criteria

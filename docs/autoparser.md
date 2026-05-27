@@ -443,27 +443,16 @@ Each returned parser is wrapped by `wrap_for_generation_prompt()`, which prepend
 |                                           | `wrap_for_generation_prompt()`, string helpers                                  |
 | `common/chat-peg-parser.h/cpp`            | `common_chat_peg_builder`, `common_chat_peg_mapper`, and helpers                |
 | `common/chat.cpp`                         | Entry point: `common_chat_templates_apply_jinja()`                              |
-| `tools/parser/debug-template-parser.cpp`  | Debug tool for template analysis                                                |
-| `tools/parser/template-analysis.cpp`      | Template analysis tool                                                          |
 
 ## Testing & Debugging
 
-### Debug Tools
-
-**Template Debugger**: `tools/parser/debug-template-parser.cpp`
-
-- Usage: `./bin/llama-debug-template-parser path/to/template.jinja`
-- Shows detected format, markers, generated parser, and GBNF grammar
-
-**Template Analysis**: `tools/parser/template-analysis.cpp`
-
-- Usage: `./bin/llama-template-analysis path/to/template.jinja`
+This trimmed workspace does not retain the standalone `tools/parser` debug binaries. Use the retained tests below for parser and template validation.
 
 **Debug Logging**: Enable with `LLAMA_LOG_VERBOSITY=2`
 
 - Shows detailed analysis steps, pattern extraction results, and generated parser structure
 
-**PEG Test Builder**: Fluent API for creating test cases — see [tests/test-chat.cpp:947-1043](tests/test-chat.cpp#L947-L1043). Example usage:
+**PEG Test Builder**: Fluent API for creating test cases — see `tests/test-chat.cpp`. Example usage:
 
 ```cpp
 auto tst = peg_tester("models/templates/Template.jinja");

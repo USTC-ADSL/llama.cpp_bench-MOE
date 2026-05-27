@@ -10,6 +10,7 @@
 build/             # 默认 native 构建目录
 build-clean-min/   # 本地验证用目录，可删除重建
 build-qnn-opencl/  # Snapdragon Android QNN + OpenCL 构建示例目录
+build-android-opencl/ # Snapdragon Android OpenCL 构建示例目录
 ```
 
 构建产物默认在：
@@ -44,7 +45,6 @@ hetero-switch-bench       # 仅 GGML_OPENCL=ON 时有
 
 ```sh
 cmake -B build-clean-min -S . \
-  -DLLAMA_BUILD_SERVER=OFF \
   -DLLAMA_BUILD_EXAMPLES=ON \
   -DLLAMA_BUILD_TOOLS=ON \
   -DLLAMA_BUILD_TESTS=ON
@@ -85,7 +85,6 @@ cmake --build build-clean-min -j --target \
   test-chat-template \
   test-chat-auto-parser \
   test-chat-peg-parser \
-  test-chat \
   test-arg-parser \
   test-gguf \
   test-quantize-fns \
@@ -106,7 +105,6 @@ ctest --test-dir build-clean-min --output-on-failure
 
 ```sh
 cmake -B build-opencl -S . \
-  -DLLAMA_BUILD_SERVER=OFF \
   -DLLAMA_BUILD_EXAMPLES=ON \
   -DLLAMA_BUILD_TOOLS=ON \
   -DLLAMA_BUILD_TESTS=ON \
@@ -133,36 +131,61 @@ cmake --build build-opencl -j --target \
   test-opencl-host-quant-buffer
 ```
 
-## Snapdragon Android 构建：helper 脚本
+## 推荐编译脚本：scripts/build.sh
 
-当前推荐用 `build-npu-opencl.sh` 生成 Android/Snapdragon 构建。这个脚本会调用 CMake preset，并按选项开启 OpenCL、QNN、Hexagon 或 Vulkan。
+当前推荐用 `scripts/build.sh` 统一做 native 和 Snapdragon Android 构建。脚本直接调用当前仓库的 CMake 入口，不依赖根目录 `CMakeUserPresets.json`，也不会连接远程设备；Android 产物仍然需要按后续 ADB 文档手动推送和运行。
 
 查看帮助：
 
 ```sh
-./build-npu-opencl.sh --help
+scripts/build.sh --help
+```
+
+本机完整验证构建：
+
+```sh
+scripts/build.sh \
+  --native \
+  --build-dir build-clean-min \
+  --clean \
+  --run-tests
+```
+
+本机只配置/编译，不运行测试：
+
+```sh
+scripts/build.sh \
+  --native \
+  --build-dir build-clean-min
+```
+
+本机 OpenCL 构建：
+
+```sh
+scripts/build.sh \
+  --native \
+  --build-dir build-opencl \
+  --with-opencl
 ```
 
 QNN + OpenCL，适合 Prefill/Decode 后端切换实验：
 
 ```sh
 QNN_SDK_PATH=<host-qairt-or-qnn-sdk-root> \
-./build-npu-opencl.sh \
-  build-qnn-opencl \
-  arm64-android-snapdragon-release \
-  --without-npu \
-  --with-gpu \
+scripts/build.sh \
+  --android-snapdragon \
+  --build-dir build-qnn-opencl \
+  --with-opencl \
   --with-qnn
 ```
 
 OpenCL only，适合 GPUOpenCL 路由和 OpenCL alias/copy 检查：
 
 ```sh
-./build-npu-opencl.sh \
-  build-opencl \
-  arm64-android-snapdragon-release \
-  --without-npu \
-  --with-gpu \
+scripts/build.sh \
+  --android-snapdragon \
+  --build-dir build-android-opencl \
+  --with-opencl \
   --without-qnn
 ```
 
@@ -170,40 +193,74 @@ QNN + OpenCL + profiling：
 
 ```sh
 QNN_SDK_PATH=<host-qairt-or-qnn-sdk-root> \
-./build-npu-opencl.sh \
-  build-qnn-opencl-prof \
-  arm64-android-snapdragon-release \
-  --without-npu \
-  --with-gpu \
+scripts/build.sh \
+  --android-snapdragon \
+  --build-dir build-qnn-opencl-prof \
+  --with-opencl \
   --with-qnn \
   --with-profiling
 ```
 
-Hexagon NPU + OpenCL：
+Hexagon + OpenCL。这个路径使用 `ggml-hexagon`，和 QNN backend 是两条不同路径：
 
 ```sh
-./build-npu-opencl.sh \
-  build-hexagon-opencl \
-  arm64-android-snapdragon-release \
-  --with-npu \
-  --with-gpu \
+scripts/build.sh \
+  --android-snapdragon \
+  --build-dir build-hexagon-opencl \
+  --with-hexagon \
+  --with-opencl \
   --without-qnn
 ```
 
-### helper 参数说明
+### scripts/build.sh 参数说明
 
-位置参数：
+构建模式：
 
 ```text
-build_dir    构建目录，例如 build-qnn-opencl
-preset       CMake preset，例如 arm64-android-snapdragon-release
+--native
+  本机 x86_64 构建。默认关闭 OpenCL/QNN/Hexagon/Vulkan，适合本地编译和 CTest。
+
+--android-snapdragon
+  Android arm64-v8a Snapdragon 构建。默认开启 OpenCL，关闭 QNN/Hexagon/Vulkan。
+  只负责编译，不 push，不运行远程设备命令。
 ```
 
-常用选项：
+通用选项：
 
 ```text
---with-gpu / --without-gpu
-  开启或关闭 OpenCL。GPUOpenCL decode、OpenCL alias 和 hetero-switch-bench 需要开启。
+--build-dir <dir>
+  构建目录，例如 build-clean-min、build-opencl、build-qnn-opencl。
+
+--type <Release|Debug|RelWithDebInfo|MinSizeRel>
+  CMAKE_BUILD_TYPE，默认 Release。
+
+--clean
+  配置前删除构建目录。
+
+--configure-only
+  只运行 CMake 配置，不编译。
+
+--run-tests
+  构建后运行 ctest。仅 native 模式支持；Android 测试必须在设备上单独运行。
+
+--target <name>
+  只构建指定目标，可重复传入多个目标。
+
+--no-tests / --tests
+  关闭或开启 LLAMA_BUILD_TESTS。
+
+--no-tools / --tools
+  关闭或开启 LLAMA_BUILD_TOOLS。
+
+--no-examples / --examples
+  关闭或开启 LLAMA_BUILD_EXAMPLES。
+```
+
+后端选项：
+
+```text
+--with-opencl / --without-opencl
+  开启或关闭 OpenCL。GPUOpenCL decode、OpenCL alias/copy 检查和 hetero-switch-bench 需要开启。
 
 --with-qnn / --without-qnn
   开启或关闭 QNN backend。qnn-npu / qnn-cpu / qnn-gpu 路由需要开启。
@@ -217,14 +274,26 @@ preset       CMake preset，例如 arm64-android-snapdragon-release
 --with-qnn-hexagon-backend / --without-qnn-hexagon-backend
   是否启用 QNN Hexagon custom package。默认关闭。
 
---with-npu / --without-npu
+--with-hexagon / --without-hexagon
   开启或关闭 ggml-hexagon 后端。注意这和 QNN backend 是两条路径。
+
+--hexagon-sdk <path>
+  指定 Hexagon SDK 根目录。也可以用 HEXAGON_SDK_ROOT。
+
+--hexagon-tools <path>
+  指定 Hexagon tools 目录。也可以用 HEXAGON_TOOLS_ROOT。
 
 --with-vulkan / --without-vulkan
   开启或关闭 Vulkan。当前 Prefill/Decode 主线默认不依赖 Vulkan。
 
+--android-ndk <path>
+  指定 Android NDK 根目录。也可以用 ANDROID_NDK_ROOT。
+
+--opencl-sdk <path>
+  指定 OpenCL SDK prefix。也可以用 OPENCL_SDK_ROOT。
+
 --with-profiling
-  开启 CPU/OpenCL/Vulkan profiling 编译选项，用于阶段 profiling。
+  开启 OpenCL profiling 编译选项，用于阶段 profiling。
 ```
 
 ## Snapdragon Android 构建：直接 CMake
@@ -248,7 +317,6 @@ cmake --preset arm64-android-snapdragon-release \
   -DGGML_QNN_ENABLE_CPU_BACKEND=ON \
   -DGGML_QNN_ENABLE_HEXAGON_BACKEND=OFF \
   -DGGML_HEXAGON=OFF \
-  -DLLAMA_BUILD_SERVER=OFF \
   -DLLAMA_BUILD_EXAMPLES=ON \
   -DLLAMA_BUILD_TOOLS=ON \
   -DLLAMA_BUILD_TESTS=ON
@@ -259,9 +327,6 @@ cmake --build build-qnn-opencl -j
 ## CMake 选项说明
 
 ```text
-LLAMA_BUILD_SERVER=OFF
-  server/webui 已从当前项目面移除，保持 OFF。
-
 LLAMA_BUILD_EXAMPLES=ON
   构建 examples/backend-op-bench、examples/stage-profiler，以及 GGUF inspect/hash 辅助示例。
 

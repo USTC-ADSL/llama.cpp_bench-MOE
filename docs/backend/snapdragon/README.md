@@ -10,7 +10,7 @@ This image includes Android NDK, OpenCL SDK, Hexagon SDK, CMake, etc.
 This method works on Linux, macOS, and Windows. macOS and Windows users should install Docker Desktop.
 
 ```
-~/src/llama.cpp$ docker run -it -u $(id -u):$(id -g) --volume $(pwd):/workspace --platform linux/amd64 ghcr.io/snapdragon-toolchain/arm64-android:v0.6
+~/src/llama.cpp$ docker run -it -u $(id -u):$(id -g) --volume $(pwd):/workspace --platform linux/amd64 ghcr.io/snapdragon-toolchain/arm64-android:v0.3
 [d]/> cd /workspace
 ```
 
@@ -80,7 +80,7 @@ To generate an installable "package" simply use cmake --install:
 -- Installing: /workspace/pkg-snapdragon/llama.cpp/lib/libggml.so
 ...
 -- Installing: /workspace/pkg-snapdragon/llama.cpp/bin/llama-bench
--- Installing: /workspace/pkg-snapdragon/llama.cpp/bin/llama-cli
+-- Installing: /workspace/pkg-snapdragon/llama.cpp/bin/llama-completion
 ...
 ```
 
@@ -113,17 +113,13 @@ At this point, you should also install some models:
 Llama-3.2-1B-Instruct-Q4_0.gguf: 1 file pushed, 0 skipped. 38.3 MB/s (773025920 bytes in 19.250s)
 ```
 
-### Windows
-
-All artifacts are already installed in the `pkg-snapdragon` folder.
-To run, adapt below instructions to use Powershell scripts in `scripts/snapdragon/windows`.
-
 ## How to Run
 
 The easiest way to run llama.cpp cli tools is using provided wrapper scripts that properly set up all required environment variables.
 
 llama.cpp supports three backends on Snapdragon-based devices: CPU, Adreno GPU (GPUOpenCL), and Hexagon NPU (HTP0-4).
-You can select which backend to run the model on using the `D=` variable, which maps to the `--device` option.
+Use `DEVICE` for the adb serial, `MODEL_PATH` for the device-side GGUF path,
+and `BACKEND_DEVICE` for the llama backend device selection.
 
 Hexagon NPU behaves as a "GPU" device when it comes to `-ngl` and other offload-related options.
 
@@ -132,7 +128,7 @@ Here are some examples of running various llama.cpp tools via ADB.
 Simple question for Llama-3.2-1B
 
 ```
-~/src/llama.cpp$ M=Llama-3.2-1B-Instruct-Q4_0.gguf D=HTP0 ./scripts/snapdragon/adb/run-completion.sh -p "what is the most popular cookie in the world?"
+~/src/llama.cpp$ DEVICE=<adb-serial> MODEL_PATH=<device-gguf-path> BACKEND_DEVICE=HTP0 ./scripts/snapdragon/adb/run-completion.sh -p "what is the most popular cookie in the world?"
 ...
 ggml-hex: Hexagon backend (experimental) : allocating new registry : ndev 1
 ggml-hex: Hexagon Arch version v79
@@ -162,7 +158,7 @@ llama_memory_breakdown_print: |   - HTP0-REPACK        |                  504 = 
 Summary request for OLMoE-1B-7B. This is a large model that requires two HTP sessions/devices
 
 ```
-~/src/llama.cpp$ M=OLMoE-1B-7B-0125-Instruct-Q4_0.gguf NDEV=2 D=HTP0,HTP1 ./scripts/snapdragon/adb/run-completion.sh -f surfing.txt
+~/src/llama.cpp$ DEVICE=<adb-serial> MODEL_PATH=<device-gguf-path> NDEV=2 BACKEND_DEVICE=HTP0,HTP1 ./scripts/snapdragon/adb/run-completion.sh -f surfing.txt
 ...
 ggml-hex: Hexagon backend (experimental) : allocating new registry : ndev 1
 ggml-hex: Hexagon Arch version v81
@@ -200,7 +196,7 @@ llama_memory_breakdown_print: |   - HTP0-REPACK        |                 2025 = 
 Op test for MUL_MAT
 
 ```
-~/src/llama.cpp$ HB=0 ./scripts/snapdragon/adb/run-tool.sh test-backend-ops -b HTP0 -o MUL_MAT
+~/src/llama.cpp$ DEVICE=<adb-serial> HB=0 ./scripts/snapdragon/adb/run-tool.sh test-backend-ops -b HTP0 -o MUL_MAT
 ...
 Backend 2/3: HTP0
 Device description: Hexagon
@@ -209,7 +205,7 @@ MUL_MAT(type_a=q4_0,type_b=f32,m=16,n=1,k=256,bs=[1,1],nr=[1,1],per=[0,1,2,3],v=
 MUL_MAT(type_a=q4_0,type_b=f32,m=16,n=2,k=256,bs=[1,1],nr=[1,1],per=[0,1,2,3],v=0,o=1): OK
 MUL_MAT(type_a=q4_0,type_b=f32,m=16,n=3,k=256,bs=[1,1],nr=[1,1],per=[0,1,2,3],v=0,o=1): OK
 
-~/src/llama.cpp-hexagon$ M=Llama-3.2-1B-Instruct-Q4_0.gguf ./scripts/snapdragon/adb/run-bench.sh -p 128 -n 64
+~/src/llama.cpp-hexagon$ DEVICE=<adb-serial> MODEL_PATH=<device-gguf-path> BACKEND_DEVICE=HTP0 ./scripts/snapdragon/adb/run-bench.sh -p 128 -n 64
 ...
 ggml-hex: Hexagon backend (experimental) : allocating new registry : ndev 1
 ggml-hex: Hexagon Arch version v79
@@ -236,6 +232,10 @@ build: 6a8cf8914 (6733)
   Controls whether the Hexagon backend allocates host buffers. By default, all buffers except for REPACK are host buffers.
   This option is required for testing Ops that require REPACK buffers (MUL_MAT and MUL_MAT_ID).
 
+- `GGML_HEXAGON_EXPERIMENTAL=1`
+  Controls whether the Hexagon backend enables experimental features.
+  This option is required for enabling/testing experimental Ops (FLASH_ATTN_EXT).
+
 - `GGML_HEXAGON_VERBOSE=1`
   Enables verbose logging of Ops from the backend. Example output:
 
@@ -249,32 +249,17 @@ build: 6a8cf8914 (6733)
   ```
 
 - `GGML_HEXAGON_PROFILE=1`
-  Enables Op profiling:
+  Generates a host-side profile for the ggml-hexagon Ops.
 
-  - `1` Basic profile with per-op `usecs` and `cycles` counters
-  - `2` Extended profile with per-op `usecs`, `cycles` and default PMU counter data
-  - `0x1,...,0x8` Extended profile with per-op `usecs`, `cycles` and custom PMU counter data
-
-  The logging output can be either saved into a file for post-processing or it can be piped directly into the post-processing tool to generate the report.
-  Examples:
-
-      `GGML_HEXAGON_PROFILE=1 llama-completion ... |& ./scripts/snapdragon/ggml-hexagon-profile.py -`
-
-- `GGML_HEXAGON_OPSTAGE=0x0`
-  Allows enabling specific stages of the Op processing pipeline:
+- `GGML_HEXAGON_OPMASK=0x0`
+  Allows enabling specific stages of the processing pipeline:
 
   - `0x1` Enable Op Queue (i.e., queuing Ops into NPU)
-  - `0x2` Enable Op Compute (MUL_MAT, etc.)
+  - `0x2` Enable Dynamic Quantizer (if needed for the Op)
+  - `0x4` Enable Op Compute (MUL_MAT, etc.)
 
   Examples:
 
-      `GGML_HEXAGON_OPSTAGE=0x1 llama-completion ...` - Ops are enqueued to the NPU but dma & compute are disabled
-      `GGML_HEXAGON_OPSTAGE=0x3 llama-completion ...` - Full queuing and processing of Ops (default)
-
-- `GGML_HEXAGON_OPFILTER=regex`
-  Allows filtering (disabling) Ops that match the regex pattern:
-
-  Examples:
-
-      `GGML_HEXAGON_OPFILTER="FLASH_ATTN_EXT" llama-completion ...` - Disable Flash Attention on Hexagon (falls back to CPU or GPU)
-      `GGML_HEXAGON_OPFILTER="ADD\|SUB" llama-completion ...` - Disable ADD and SUB on Hexagon (fall back to CPU or GPU)
+      `GGML_HEXAGON_OPMASK=0x1 llama-completion ...` - Ops are enqueued but NPU-side processing is stubbed out
+      `GGML_HEXAGON_OPMASK=0x3 llama-completion ...` - NPU performs dynamic quantization and skips the rest
+      `GGML_HEXAGON_OPMASK=0x7 llama-completion ...` - Full queuing and processing of Ops (default)
