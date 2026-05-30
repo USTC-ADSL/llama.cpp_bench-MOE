@@ -2476,7 +2476,9 @@ bool qnn_aot_runtime::initialize(const std::string & config_path, const std::str
                 for (auto existing_graph = existing_graphs->second.rbegin();
                      existing_graph != existing_graphs->second.rend();
                      ++existing_graph) {
-                    if (*existing_graph && (*existing_graph)->config().model_path == graph_config.model_path) {
+                    if (*existing_graph &&
+                        (*existing_graph)->config().model_path == graph_config.model_path &&
+                        (*existing_graph)->batch_size() >= graph_config.batch_size) {
                         sibling = existing_graph->get();
                         break;
                     }
@@ -2575,6 +2577,18 @@ bool qnn_aot_runtime::initialize(const std::string & config_path, const std::str
     if (!_config.attention_graphs.empty() &&
         !load_stage_family(_config.attention_graphs, _attention_graphs, "attention")) {
         return false;
+    }
+
+    if (!_config.lm_head_graphs.empty() &&
+        qnn_aot_graph_family_uses_eager_init("lm_head") &&
+        !load_graph_family(_config.lm_head_graphs, _lm_head_graphs, "lm_head")) {
+        return false;
+    }
+
+    if (!_config.lm_head_graphs.empty() &&
+        !qnn_aot_graph_family_uses_eager_init("lm_head") &&
+        aot_trace_bind_enabled()) {
+        QNN_LOG_INFO("[aot] deferring lm_head graph initialization until first use\n");
     }
 
     sort_graph_family_configs(_config.transformer_graphs);
