@@ -448,7 +448,7 @@ Each returned parser is wrapped by `wrap_for_generation_prompt()`, which prepend
 
 This trimmed workspace does not retain the standalone `tools/parser` debug binaries. Use the retained tests below for parser and template validation.
 
-**Debug Logging**: Enable with `LLAMA_LOG_VERBOSITY=2`
+**Debug Logging**: Enable with `LLAMA_ARG_LOG_VERBOSITY=2`
 
 - Shows detailed analysis steps, pattern extraction results, and generated parser structure
 
@@ -478,6 +478,7 @@ The following templates have active tests in `tests/test-chat.cpp`:
 | Qwen-QwQ-32B | Reasoning | Forced-open thinking |
 | NousResearch Hermes 2 Pro | JSON_NATIVE | `<tool_call>` wrapper |
 | IBM Granite 3.3 | JSON_NATIVE | `<think></think>` + `<response></response>` |
+| IBM Granite 4.0 | JSON_NATIVE | `<tool_call>` wrapper (same template used by 4.1) |
 | ByteDance Seed-OSS | TAG_WITH_TAGGED | Custom `<seed:think>` and `<seed:tool_call>` tags |
 | Qwen3-Coder | TAG_WITH_TAGGED | XML-style tool format |
 | DeepSeek V3.1 | JSON_NATIVE | Forced thinking mode |
