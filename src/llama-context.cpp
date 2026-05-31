@@ -2146,6 +2146,7 @@ void llama_context::maybe_apply_dynamic_route(uint32_t n_tokens) {
                 n_tokens,
                 generic_qnn_kv_enabled);
     const bool should_use_qnn_shared_phase_kv =
+        llama_context_env_flag_enabled("GGML_HETERO_DYNAMIC_QNN_OPENCL_SHARED_KV") &&
         llama_context_should_use_qnn_shared_phase_kv(
                 current_attn_backend,
                 target_attn_backend,

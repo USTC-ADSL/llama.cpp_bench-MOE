@@ -134,6 +134,35 @@ tensor_io_sets get_io_tensors_from_graph(const ggml_cgraph * cgraph) {
     return result;
 }
 
+bool is_kq_mask_tensor_name(const char * name) {
+    return name != nullptr &&
+           (std::strcmp(name, "self_kq_mask") == 0 ||
+            std::strcmp(name, "self_kq_mask_cnv") == 0 ||
+            std::strcmp(name, "self_kq_mask_swa") == 0 ||
+            std::strcmp(name, "self_kq_mask_swa_cnv") == 0 ||
+            std::strcmp(name, "attn_inp_kq_mask") == 0);
+}
+
+ggml_tensor * find_kq_mask_tensor(ggml_cgraph * graph) {
+    if (graph == nullptr) {
+        return nullptr;
+    }
+
+    for (const char * name : {
+            "self_kq_mask",
+            "self_kq_mask_cnv",
+            "self_kq_mask_swa",
+            "self_kq_mask_swa_cnv",
+            "attn_inp_kq_mask",
+        }) {
+        if (ggml_tensor * tensor = ggml_graph_get_tensor(graph, name)) {
+            return tensor;
+        }
+    }
+
+    return nullptr;
+}
+
 size_t tensor_nbytes(const Qnn_Tensor_t & tensor) {
     size_t n_elements = 1;
     for (size_t i = 0; i < QNN_TENSOR_GET_RANK(tensor); ++i) {
@@ -2704,8 +2733,7 @@ bool qnn_aot_runtime::is_attention_core_stage_name(const char * name) {
            has_prefix(name, "kq_soft_max-") ||
            has_prefix(name, "kqv-") ||
            has_prefix(name, "kqv_out-") ||
-           std::strcmp(name, "self_kq_mask_cnv") == 0 ||
-           std::strcmp(name, "self_kq_mask_swa_cnv") == 0;
+           is_kq_mask_tensor_name(name);
 }
 
 bool qnn_aot_runtime::is_attention_output_stage_name(const char * name) {
@@ -2984,7 +3012,7 @@ qnn_aot_runtime::aot_match_result qnn_aot_runtime::match_attention_graph(ggml_cg
         }
         const char * name = ggml_get_name(input);
         if (name != nullptr) {
-            if (std::strcmp(name, "self_kq_mask") == 0 || std::strcmp(name, "self_kq_mask_cnv") == 0) {
+            if (is_kq_mask_tensor_name(name)) {
                 result.kq_mask = input;
                 return;
             }
@@ -3013,10 +3041,7 @@ qnn_aot_runtime::aot_match_result qnn_aot_runtime::match_attention_graph(ggml_cg
     }
 
     if (result.kq_mask == nullptr) {
-        result.kq_mask = ggml_graph_get_tensor(cgraph, "self_kq_mask");
-    }
-    if (result.kq_mask == nullptr) {
-        result.kq_mask = ggml_graph_get_tensor(cgraph, "self_kq_mask_cnv");
+        result.kq_mask = find_kq_mask_tensor(cgraph);
     }
     if (result.cache_k_layers.empty() || result.cache_v_layers.empty()) {
         for (size_t layer = 0; layer < _config.model.n_layers; ++layer) {
@@ -3267,7 +3292,7 @@ qnn_aot_runtime::aot_match_result qnn_aot_runtime::match_attn_core_graph(ggml_cg
             result.cache_v = input;
             continue;
         }
-        if (std::strcmp(name, "self_kq_mask") == 0 || std::strcmp(name, "self_kq_mask_cnv") == 0) {
+        if (is_kq_mask_tensor_name(name)) {
             result.kq_mask = input;
             continue;
         }
@@ -3405,7 +3430,7 @@ qnn_aot_runtime::aot_match_result qnn_aot_runtime::match_transformer_graph(ggml_
         }
 
         if (name != nullptr) {
-            if (std::strcmp(name, "self_kq_mask") == 0 || std::strcmp(name, "self_kq_mask_cnv") == 0) {
+            if (is_kq_mask_tensor_name(name)) {
                 result.kq_mask = input;
                 return;
             }
@@ -3434,10 +3459,7 @@ qnn_aot_runtime::aot_match_result qnn_aot_runtime::match_transformer_graph(ggml_
     }
 
     if (result.kq_mask == nullptr) {
-        result.kq_mask = ggml_graph_get_tensor(cgraph, "self_kq_mask");
-    }
-    if (result.kq_mask == nullptr) {
-        result.kq_mask = ggml_graph_get_tensor(cgraph, "self_kq_mask_cnv");
+        result.kq_mask = find_kq_mask_tensor(cgraph);
     }
     if (result.cache_k_layers.empty() || result.cache_v_layers.empty()) {
         for (size_t layer = 0; layer < _config.model.n_layers; ++layer) {
@@ -6815,7 +6837,7 @@ bool qnn_aot_runtime::maybe_execute(ggml_cgraph * cgraph) {
             }
 
             if (name != nullptr) {
-                if (std::strcmp(name, "self_kq_mask") == 0 || std::strcmp(name, "self_kq_mask_cnv") == 0) {
+                if (is_kq_mask_tensor_name(name)) {
                     combined.transformer.kq_mask = input;
                     return;
                 }
@@ -6844,10 +6866,7 @@ bool qnn_aot_runtime::maybe_execute(ggml_cgraph * cgraph) {
         }
 
         if (combined.transformer.kq_mask == nullptr) {
-            combined.transformer.kq_mask = ggml_graph_get_tensor(graph, "self_kq_mask");
-        }
-        if (combined.transformer.kq_mask == nullptr) {
-            combined.transformer.kq_mask = ggml_graph_get_tensor(graph, "self_kq_mask_cnv");
+            combined.transformer.kq_mask = find_kq_mask_tensor(graph);
         }
         if (combined.transformer.cache_k_layers.empty() || combined.transformer.cache_v_layers.empty()) {
             for (size_t layer = 0; layer < _config.model.n_layers; ++layer) {
