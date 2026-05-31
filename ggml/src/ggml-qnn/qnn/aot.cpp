@@ -4520,13 +4520,30 @@ bool qnn_aot_runtime::import_generic_kv_prefix_to_graph(qnn_aot_graph & graph,
                 return false;
             }
 
+            if (!qnn::qnn_aot_scale_raw_key_rows_for_private_qnn_kv(key_rows,
+                                                                    n_tokens,
+                                                                    generic_k_values,
+                                                                    _config.model.n_kv_heads,
+                                                                    _config.model.head_dim)) {
+                QNN_LOG_WARN("[aot] import_generic_kv_prefix_to_graph failed to scale raw generic K rows for private QNN cache at layer=%zu head=%zu graph=%s: tokens=%zu token_values=%zu n_kv_heads=%zu head_dim=%zu total_values=%zu\n",
+                             layer,
+                             head,
+                             graph_config.graph_name.c_str(),
+                             n_tokens,
+                             generic_k_values,
+                             _config.model.n_kv_heads,
+                             _config.model.head_dim,
+                             key_rows.size());
+                return false;
+            }
+
             if (aot_trace_bind_enabled() &&
                 layer == graph_config.start_layer_id &&
                 head == 0 &&
                 !key_rows.empty() &&
                 !value_rows.empty()) {
                 QNN_LOG_INFO(
-                    "[aot] import generic KV sample: graph=%s offset=%zu tokens=%zu layer=%zu dense_v=%d k_idxs=%lld v_idxs=%lld slot0=%lld k0=[%.5f %.5f %.5f %.5f] v0=[%.5f %.5f %.5f %.5f]\n",
+                    "[aot] import generic KV sample: graph=%s offset=%zu tokens=%zu layer=%zu dense_v=%d private_scaled_k=1 k_idxs=%lld v_idxs=%lld slot0=%lld k0=[%.5f %.5f %.5f %.5f] v0=[%.5f %.5f %.5f %.5f]\n",
                     graph_config.graph_name.c_str(),
                     source_token_offset,
                     n_tokens,

@@ -73,6 +73,44 @@ int main(void) {
             "mismatched token width must be rejected");
     }
 
+    {
+        std::vector<float> key_rows = {
+             1.0f,  2.0f,  3.0f,  4.0f,
+             5.0f,  6.0f,  7.0f,  8.0f,
+             9.0f, 10.0f, 11.0f, 12.0f,
+            13.0f, 14.0f, 15.0f, 16.0f,
+        };
+
+        ok &= expect_true(
+            qnn::qnn_aot_scale_raw_key_rows_for_private_qnn_kv(
+                key_rows,
+                /* n_tokens = */ 2,
+                /* token_values = */ 8,
+                /* n_kv_heads = */ 2,
+                /* head_dim = */ 4),
+            "raw generic K rows should be scalable for private QNN KV");
+
+        for (size_t i = 0; i < key_rows.size(); ++i) {
+            ok &= expect_near(
+                key_rows[i],
+                static_cast<float>(i + 1) / 2.0f,
+                1e-6f,
+                "raw generic K rows should be divided by sqrt(head_dim)");
+        }
+    }
+
+    {
+        std::vector<float> key_rows = { 1.0f, 2.0f, 3.0f, 4.0f };
+        ok &= expect_false(
+            qnn::qnn_aot_scale_raw_key_rows_for_private_qnn_kv(
+                key_rows,
+                /* n_tokens = */ 1,
+                /* token_values = */ 3,
+                /* n_kv_heads = */ 1,
+                /* head_dim = */ 4),
+            "private QNN scaling should reject mismatched token widths");
+    }
+
     ok &= expect_true(
         qnn::qnn_aot_should_reset_staged_generic_kv_writeback(
             /* token_offset = */ 0,

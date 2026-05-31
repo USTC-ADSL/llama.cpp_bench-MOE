@@ -33,6 +33,33 @@ inline bool qnn_aot_restore_unscaled_key_rows_for_generic_kv(std::vector<float> 
     return true;
 }
 
+// Generic CPU/OpenCL KV stores raw K. QNN AoT private transformer caches store
+// the attention-scaled form expected by the precompiled graph.
+inline bool qnn_aot_scale_raw_key_rows_for_private_qnn_kv(std::vector<float> & key_rows,
+                                                          size_t               n_tokens,
+                                                          size_t               token_values,
+                                                          size_t               n_kv_heads,
+                                                          size_t               head_dim) {
+    if (token_values == 0 || n_kv_heads == 0 || head_dim == 0) {
+        return false;
+    }
+
+    if (token_values != n_kv_heads * head_dim) {
+        return false;
+    }
+
+    if (key_rows.size() != n_tokens * token_values) {
+        return false;
+    }
+
+    const float scale = 1.0f / std::sqrt(static_cast<float>(head_dim));
+    for (float & value : key_rows) {
+        value *= scale;
+    }
+
+    return true;
+}
+
 // Deferred generic-KV staging may span multiple transformer graph shards for the
 // same prefill. Only the first shard of a fresh prefill (layer 0 at token offset
 // 0) should discard previously staged payloads; later shards must preserve them.
