@@ -2429,7 +2429,7 @@ bool qnn_aot_runtime::initialize(const std::string & config_path, const std::str
     auto sort_graph_family_configs = [](std::vector<qnn_aot_graph_config> & graph_configs) {
         std::sort(graph_configs.begin(), graph_configs.end(), [](const qnn_aot_graph_config & lhs, const qnn_aot_graph_config & rhs) {
             if (lhs.batch_size != rhs.batch_size) {
-                return lhs.batch_size < rhs.batch_size;
+                return lhs.batch_size > rhs.batch_size;
             }
             if (lhs.start_layer_id != rhs.start_layer_id) {
                 return lhs.start_layer_id < rhs.start_layer_id;
@@ -3993,11 +3993,24 @@ qnn_aot_graph * qnn_aot_runtime::ensure_graph_loaded(const qnn_aot_graph_config 
     }
 
     const qnn_aot_graph * sibling = nullptr;
-    for (auto it = bucket.rbegin(); it != bucket.rend(); ++it) {
-        if (*it && (*it)->config().model_path == runtime_config.model_path) {
-            sibling = it->get();
-            break;
+    for (auto existing_bucket = family.rbegin(); existing_bucket != family.rend() && sibling == nullptr; ++existing_bucket) {
+        for (auto existing_graph = existing_bucket->second.rbegin();
+             existing_graph != existing_bucket->second.rend();
+             ++existing_graph) {
+            if (*existing_graph &&
+                (*existing_graph)->config().model_path == runtime_config.model_path &&
+                (*existing_graph)->batch_size() >= runtime_config.batch_size) {
+                sibling = existing_graph->get();
+                break;
+            }
         }
+    }
+
+    if (aot_trace_bind_enabled()) {
+        QNN_LOG_INFO("[aot] lazy graph %s sibling=%s (batch=%zu)\n",
+                     runtime_config.graph_name.c_str(),
+                     sibling != nullptr ? sibling->config().graph_name.c_str() : "<none>",
+                     runtime_config.batch_size);
     }
 
     auto graph = std::make_unique<qnn_aot_graph>(_instance, context_it->second, runtime_config, sibling);
