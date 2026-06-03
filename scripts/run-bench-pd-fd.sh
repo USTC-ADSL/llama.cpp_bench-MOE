@@ -9,7 +9,8 @@ LOCAL_ROOT=${LOCAL_ROOT:-results/bench-PD-fd-$(date -u +%Y%m%d-%H%M)}
 COOLDOWN_SEC=${COOLDOWN_SEC:-120}
 CASE_TIMEOUT_SEC=${CASE_TIMEOUT_SEC:-1800}
 REPS=${REPS:-1}
-KEEP_RAW=${KEEP_RAW:-0}
+KEEP_RAW=${KEEP_RAW:-1}
+QNN_TRACE=${QNN_TRACE:-0}
 
 SUMMARY_ONLY=0
 if [ "${1:-}" = "--summary-only" ]; then
@@ -28,7 +29,7 @@ MANIFEST="${LOCAL_ROOT}/manifest.txt"
 if [ "${SUMMARY_ONLY}" -eq 0 ]; then
     mkdir -p "${RAW_DIR}" "${SUMMARY_DIR}"
     printf '#!/usr/bin/env bash\n' > "${COMMANDS}"
-    printf 'case\tcategory\tbackend\tprefill\tdecode\tworkload\tpp\ttg\tstdout\tstderr\texit\tprofile\tprofile_pull\n' > "${CASES}"
+    printf 'case\tcategory\tbackend\tprefill\tdecode\tworkload\tpp\ttg\tstdout\tstderr\texit\tprofile\tprofile_pull\tcommand\tenv\n' > "${CASES}"
 else
     mkdir -p "${SUMMARY_DIR}"
 fi
@@ -65,8 +66,10 @@ qnn_env() {
     printf ' && export GGML_QNN_AOT_MODEL_DIR=%s' "${QNN_DIR}"
     printf ' && export GGML_QNN_AOT_DISABLE_SEED_KV=1'
     printf ' && export GGML_QNN_AOT_WRITE_GENERIC_KV=1'
-    printf ' && export GGML_QNN_AOT_TRACE_ASSIGN=1'
-    printf ' && export GGML_QNN_AOT_TRACE_MATCH=1'
+    if [ "${QNN_TRACE}" = "1" ]; then
+        printf ' && export GGML_QNN_AOT_TRACE_ASSIGN=1'
+        printf ' && export GGML_QNN_AOT_TRACE_MATCH=1'
+    fi
 }
 
 dynamic_env() {
@@ -109,7 +112,7 @@ route_args() {
     local decode=$2
     if { [ "${prefill}" = qnn-npu ] && [ "${decode}" = opencl ]; } ||
        { [ "${prefill}" = opencl ] && [ "${decode}" = qnn-npu ]; }; then
-        printf -- '-ngl 99 -dev qnn-npu,GPUOpenCL'
+        printf -- '-ngl 99 -dev qnn-npu/GPUOpenCL'
     elif [ "${prefill}" = qnn-npu ] || [ "${decode}" = qnn-npu ]; then
         printf -- '-ngl 99 -dev qnn-npu'
     elif [ "${prefill}" = opencl ] || [ "${decode}" = opencl ]; then
@@ -214,6 +217,27 @@ def route_label(row):
             return f"{prefill}->{decode}"
     return row.get("backend", "")
 
+def canonical_backend(value):
+    value = (value or "").strip().lower()
+    if value in ("", "none"):
+        return value
+    if value in ("gpuopencl", "gpu", "opencl"):
+        return "opencl"
+    if value in ("qnn", "qnn-npu", "npu"):
+        return "qnn-npu"
+    return value
+
+def normalized_target(value):
+    value = value or ""
+    fields = dict(re.findall(r"\b(attn|ffn|output)=([^,\s]+)", value))
+    values = [canonical_backend(fields.get(name, "")) for name in ("attn", "ffn", "output")]
+    values = [v for v in values if v]
+    if values and len(set(values)) == 1:
+        return values[0]
+    if values:
+        return ",".join(values)
+    return canonical_backend(value)
+
 speed_fields = [
     "route", "workload", "rc", "devices",
     "n_prompt", "n_gen", "avg_ms", "tokens/s",
@@ -299,11 +323,13 @@ for row in case_rows:
             "decide_us": gd.get("decide_us") or "",
             "apply_us": gd.get("apply_us") or "",
             "target": gd.get("target") or "",
+            "target_backend_normalized": normalized_target(gd.get("target") or ""),
         })
 
 phase_fields = [
     "case", "category", "prefill", "decode", "workload", "pp", "tg", "line",
     "phase", "n_tokens", "route_apply", "label", "reason", "decide_us", "apply_us", "target",
+    "target_backend_normalized",
 ]
 with (summary / "phase_timing.csv").open("w", newline="") as f:
     writer = csv.DictWriter(f, fieldnames=phase_fields)
@@ -316,8 +342,8 @@ with (summary / "README.md").open("w") as f:
     f.write("Core formal matrix: `cpu`, `opencl`/`GPUOpenCL`, `qnn`/`qnn-npu`.\n\n")
     f.write("FastRPC/HTP0 is not part of this run's success criteria; see `list-devices.stdout` for the observed device list.\n\n")
     f.write("Each invocation uses `-r 1`; the runner sleeps according to `COOLDOWN_SEC` between completed invocations.\n\n")
-    f.write("Single-backend workloads: `pp128_tg32`, `pp256_tg1`, `pp256_tg32`, `pp256_tg12`.\n\n")
-    f.write("Switch workloads: ordered non-self routes among `cpu`, `opencl`, and `qnn-npu` with `pp512_tg1`, `pp512_tg32`, `pp512_tg128`.\n\n")
+    f.write("Single-backend workloads are recorded in `manifest.txt` as `single_workloads`.\n\n")
+    f.write("Switch workloads are recorded in `manifest.txt` as `switch_workloads`; switch cases use ordered non-self routes among `cpu`, `opencl`, and `qnn-npu`.\n\n")
     f.write("Files:\n\n")
     f.write("- `speed_summary.csv`: compact speed table for all runs. `tokens/s` is llama-bench `avg_ts`; `avg_ms` is llama-bench `avg_ns` converted to milliseconds.\n")
     f.write("- `speed_summary.md`: same data as `speed_summary.csv`, formatted as a Markdown pipe table.\n")
@@ -325,10 +351,10 @@ with (summary / "README.md").open("w") as f:
     f.write("- `single_backend.md`: Markdown pipe table for single-backend speed rows.\n")
     f.write("- `switch_pp512.csv`: compact speed rows for non-self phase-route switch runs.\n")
     f.write("- `switch_pp512.md`: Markdown pipe table for non-self phase-route switch rows.\n")
-    f.write("- `phase_timing.csv`: parsed `maybe_apply_dynamic_route` timing lines from stderr.\n")
+    f.write("- `phase_timing.csv`: parsed `maybe_apply_dynamic_route` timing lines from stderr, including normalized target backend.\n")
     f.write("- `failures.csv`: rows whose invocation exit code is nonzero or missing.\n")
     f.write("- `failures.md`: Markdown pipe table for failures.\n")
-    f.write("\nRaw stdout/stderr/profile files are retained only when the runner is invoked with `KEEP_RAW=1`.\n")
+    f.write("\nRaw stdout/stderr/exit/profile/command/env files are retained by default. Set `KEEP_RAW=0` only for disposable local runs.\n")
 
 print(root)
 PY
@@ -372,10 +398,12 @@ record_case() {
     local exit_file=${11}
     local profile=${12}
     local profile_pull=${13}
+    local command_file=${14}
+    local env_file=${15}
 
-    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
         "${name}" "${category}" "${backend}" "${prefill}" "${decode}" "${workload}" "${pp}" "${tg}" \
-        "${out}" "${err}" "${exit_file}" "${profile}" "${profile_pull}" >> "${CASES}"
+        "${out}" "${err}" "${exit_file}" "${profile}" "${profile_pull}" "${command_file}" "${env_file}" >> "${CASES}"
 }
 
 cooldown() {
@@ -401,9 +429,13 @@ run_remote() {
     local err="${RAW_DIR}/${name}.stderr"
     local exit_file="${RAW_DIR}/${name}.exit"
     local profile_pull="${RAW_DIR}/${name}.profile.pull.log"
+    local command_file="${RAW_DIR}/${name}.command"
+    local env_file="${RAW_DIR}/${name}.env"
 
     printf '[%s] start %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${name}" >&2
+    printf '%s\n' "timeout ${CASE_TIMEOUT_SEC} adb -s ${DEVICE} shell '${remote_cmd}'" > "${command_file}"
     printf '%s\n' "timeout ${CASE_TIMEOUT_SEC} adb -s ${DEVICE} shell '${remote_cmd}'" >> "${COMMANDS}"
+    printf '%s\n' "${remote_cmd}" | sed 's/ && /\n/g' | sed -n 's/^export //p' > "${env_file}"
 
     set +e
     timeout "${CASE_TIMEOUT_SEC}" adb -s "${DEVICE}" shell "${remote_cmd}" > "${out}" 2> "${err}"
@@ -420,7 +452,7 @@ run_remote() {
     fi
 
     record_case "${name}" "${category}" "${backend}" "${prefill}" "${decode}" "${workload}" \
-        "${pp}" "${tg}" "${out}" "${err}" "${exit_file}" "${profile}" "${profile_pull}"
+        "${pp}" "${tg}" "${out}" "${err}" "${exit_file}" "${profile}" "${profile_pull}" "${command_file}" "${env_file}"
     write_summary > "${SUMMARY_DIR}/last_summary_path.txt"
 
     printf '[%s] finish %s rc=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${name}" "${rc}" >&2
@@ -490,8 +522,16 @@ preflight() {
     adb -s "${DEVICE}" shell "test -x ${REMOTE_BIN_DIR}/llama-bench"
     adb -s "${DEVICE}" shell "test -f ${MODEL_PATH}"
     adb -s "${DEVICE}" shell "test -f ${QNN_DIR}/config.json"
-    adb -s "${DEVICE}" shell "cd ${REMOTE_BIN_DIR} && export LD_LIBRARY_PATH=${REMOTE_BIN_DIR}:\$LD_LIBRARY_PATH && ./llama-bench --list-devices" \
+    adb -s "${DEVICE}" shell "cd ${REMOTE_BIN_DIR} && export LD_LIBRARY_PATH=${REMOTE_BIN_DIR}:\$LD_LIBRARY_PATH && export ADSP_LIBRARY_PATH=${REMOTE_BIN_DIR} && export GGML_HEXAGON_EXPERIMENTAL=1 && ./llama-bench --list-devices" \
         > "${LOCAL_ROOT}/list-devices.stdout" 2> "${LOCAL_ROOT}/list-devices.stderr"
+    if ! grep -q 'GPUOpenCL' "${LOCAL_ROOT}/list-devices.stdout"; then
+        printf 'error: fd device list does not include GPUOpenCL; see %s\n' "${LOCAL_ROOT}/list-devices.stdout" >&2
+        exit 1
+    fi
+    if ! grep -q 'qnn-npu' "${LOCAL_ROOT}/list-devices.stdout"; then
+        printf 'error: fd device list does not include qnn-npu; see %s\n' "${LOCAL_ROOT}/list-devices.stdout" >&2
+        exit 1
+    fi
     adb -s "${DEVICE}" shell "cd ${REMOTE_BIN_DIR} && sha256sum llama-bench libllama.so libggml.so libggml-opencl.so libggml-qnn.so 2>/dev/null" \
         > "${LOCAL_ROOT}/remote-sha256.txt" 2> "${LOCAL_ROOT}/remote-sha256.stderr" || true
 
@@ -505,6 +545,7 @@ preflight() {
         printf 'case_timeout_sec=%s\n' "${CASE_TIMEOUT_SEC}"
         printf 'reps=%s\n' "${REPS}"
         printf 'keep_raw=%s\n' "${KEEP_RAW}"
+        printf 'qnn_trace=%s\n' "${QNN_TRACE}"
         printf 'single_workloads=%s\n' "${single_workloads[*]}"
         printf 'switch_workloads=%s\n' "${switch_workloads[*]}"
         printf 'formal_backends=cpu opencl qnn-npu\n'

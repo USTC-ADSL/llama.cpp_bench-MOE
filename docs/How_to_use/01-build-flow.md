@@ -126,7 +126,6 @@ cmake --build build-opencl -j --target \
   backend-op-bench \
   test-model-loader-opencl-portability \
   test-opencl-cpu-extra-copy \
-  test-opencl-extra-metadata \
   test-opencl-external-host-alias \
   test-opencl-host-quant-buffer
 ```
@@ -171,7 +170,9 @@ scripts/build.sh \
 QNN + OpenCL，适合 Prefill/Decode 后端切换实验：
 
 ```sh
-QNN_SDK_PATH=<host-qairt-or-qnn-sdk-root> \
+cd ../qairt_2.44/qairt/2.44.0.260225/bin
+source envsetup.sh
+## QNN_SDK_PATH=<host-qairt-or-qnn-sdk-root> \
 scripts/build.sh \
   --android-snapdragon \
   --build-dir build-qnn-opencl \
@@ -247,7 +248,8 @@ scripts/build.sh \
   只构建指定目标，可重复传入多个目标。
 
 --no-tests / --tests
-  关闭或开启 LLAMA_BUILD_TESTS。
+  关闭或开启 LLAMA_BUILD_TESTS。native 默认开启，Android/Snapdragon 默认关闭。
+  Android tests 只能在设备上运行；普通部署构建不需要编译 tests。
 
 --no-tools / --tools
   关闭或开启 LLAMA_BUILD_TOOLS。

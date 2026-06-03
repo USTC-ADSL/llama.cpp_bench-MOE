@@ -81,6 +81,13 @@ bool plan_is_compatible(
         return false;
     }
 
+    if (llama_dynamic_route_uses_fastrpc(candidate_plan) && !request.fastrpc_backend_available) {
+        if (reject_reason != nullptr) {
+            *reject_reason = "fastrpc-backend-unavailable";
+        }
+        return false;
+    }
+
     if (request.allocated_kv_contract != nullptr &&
         !llama_hetero_kv_contract_can_satisfy(*request.allocated_kv_contract, candidate_plan.attn_kv)) {
         if (reject_reason != nullptr) {
@@ -121,6 +128,7 @@ enum class route_latency_bucket {
     CPU,
     OPENCL,
     QNN,
+    FASTRPC,
 };
 
 route_latency_bucket bucket_for_backend_name(const std::string & backend_name) {
@@ -130,6 +138,9 @@ route_latency_bucket bucket_for_backend_name(const std::string & backend_name) {
     }
     if (llama_hetero_is_qnn_backend(canonical)) {
         return route_latency_bucket::QNN;
+    }
+    if (llama_hetero_is_fastrpc_backend(canonical)) {
+        return route_latency_bucket::FASTRPC;
     }
     return route_latency_bucket::CPU;
 }
@@ -142,6 +153,11 @@ route_latency_bucket bucket_for_kv_contract(const llama_hetero_execution_plan & 
         }
         if (storage.find("qnn") != std::string::npos) {
             return route_latency_bucket::QNN;
+        }
+        if (storage.find("fastrpc") != std::string::npos ||
+            storage.find("htp") != std::string::npos ||
+            storage.find("hexagon") != std::string::npos) {
+            return route_latency_bucket::FASTRPC;
         }
         return route_latency_bucket::CPU;
     }
@@ -161,6 +177,7 @@ double decode_phase_cost_us(route_latency_bucket bucket) {
         case route_latency_bucket::CPU:    return 1000.0;
         case route_latency_bucket::OPENCL: return 1200.0;
         case route_latency_bucket::QNN:    return 1400.0;
+        case route_latency_bucket::FASTRPC:return 1400.0;
     }
 
     return 0.0;
@@ -171,6 +188,7 @@ double prefill_phase_cost_us(route_latency_bucket bucket) {
         case route_latency_bucket::CPU:    return 6500.0;
         case route_latency_bucket::OPENCL: return 900.0;
         case route_latency_bucket::QNN:    return 500.0;
+        case route_latency_bucket::FASTRPC:return 500.0;
     }
 
     return 0.0;
@@ -183,6 +201,7 @@ double kv_cost_us(bool is_prefill, const llama_hetero_execution_plan & plan) {
             case route_latency_bucket::CPU:    return 124.0;
             case route_latency_bucket::OPENCL: return 60.0;
             case route_latency_bucket::QNN:    return 274.0;
+            case route_latency_bucket::FASTRPC:return 274.0;
         }
     }
 
@@ -190,6 +209,7 @@ double kv_cost_us(bool is_prefill, const llama_hetero_execution_plan & plan) {
         case route_latency_bucket::CPU:    return 1631.0;
         case route_latency_bucket::OPENCL: return 1700.0;
         case route_latency_bucket::QNN:    return 1736.0;
+        case route_latency_bucket::FASTRPC:return 1736.0;
     }
 
     return 0.0;
@@ -382,6 +402,10 @@ bool llama_dynamic_route_uses_qnn(const llama_hetero_execution_plan & plan) {
 
 bool llama_dynamic_route_uses_opencl(const llama_hetero_execution_plan & plan) {
     return candidate_uses_backend(plan, llama_hetero_is_opencl_backend);
+}
+
+bool llama_dynamic_route_uses_fastrpc(const llama_hetero_execution_plan & plan) {
+    return candidate_uses_backend(plan, llama_hetero_is_fastrpc_backend);
 }
 
 llama_dynamic_route_decision llama_dynamic_route_decide(

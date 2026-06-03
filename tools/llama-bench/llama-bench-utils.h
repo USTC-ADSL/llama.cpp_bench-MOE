@@ -21,6 +21,28 @@ struct llama_bench_round_reset_result {
     }
 };
 
+inline bool llama_bench_qnn_aot_reset_requested_for_backend(
+        const std::string &              backend_name,
+        const std::vector<std::string> & requested_backend_names) {
+    if (backend_name != "qnn-npu") {
+        return false;
+    }
+
+    // Empty requested devices means llama-bench is using the model-loader default
+    // device selection. Preserve the historical behavior for that auto case.
+    if (requested_backend_names.empty()) {
+        return true;
+    }
+
+    for (const std::string & requested_backend_name : requested_backend_names) {
+        if (requested_backend_name == backend_name) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 inline llama_bench_round_reset_result llama_bench_reset_qnn_aot_backends(
         const std::vector<llama_bench_round_reset_entry> & entries) {
     llama_bench_round_reset_result result;

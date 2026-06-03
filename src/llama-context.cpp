@@ -131,6 +131,24 @@ llama_hetero_kv_contract llama_dynamic_phase_migration_kv_contract(
         return contract;
     }
 
+    const bool producer_is_fastrpc = llama_hetero_is_fastrpc_backend(producer);
+    const bool consumer_is_fastrpc = llama_hetero_is_fastrpc_backend(consumer);
+    if (producer_is_fastrpc != consumer_is_fastrpc) {
+        const std::string & other = producer_is_fastrpc ? consumer : producer;
+        if (other == "cpu" || other == "opencl") {
+            contract.layout = llama_hetero_kv_layout_kind::LEGACY;
+            contract.transfer = llama_hetero_kv_transfer_mode::NONE;
+            contract.storage_backend =
+                consumer_is_fastrpc ? "fastrpc-device" :
+                consumer == "opencl" ? "opencl-host" :
+                "cpu-host";
+            contract.shared_buffer_required = false;
+            contract.buffer_available = true;
+            contract.zero_copy = false;
+            return contract;
+        }
+    }
+
     contract.storage_backend = consumer;
     contract.transfer = llama_hetero_kv_transfer_mode::NONE;
     contract.shared_buffer_required = false;
@@ -155,6 +173,27 @@ bool llama_context_should_attempt_qnn_phase_kv_migration(
     }
 
     return target == "cpu" || target == "opencl";
+}
+
+bool llama_context_should_attempt_fastrpc_phase_kv_migration(
+        const std::string & current_attn_backend,
+        const std::string & target_attn_backend,
+        uint32_t            n_tokens) {
+    if (n_tokens != 1) {
+        return false;
+    }
+
+    const std::string current = llama_hetero_canonical_backend(current_attn_backend);
+    const std::string target  = llama_hetero_canonical_backend(target_attn_backend);
+
+    const bool current_is_fastrpc = llama_hetero_is_fastrpc_backend(current);
+    const bool target_is_fastrpc  = llama_hetero_is_fastrpc_backend(target);
+    if (current_is_fastrpc == target_is_fastrpc) {
+        return false;
+    }
+
+    const std::string & other = current_is_fastrpc ? target : current;
+    return other == "cpu" || other == "opencl";
 }
 
 llama_hetero_kv_contract llama_dynamic_phase_shared_qnn_kv_contract(
@@ -2097,6 +2136,7 @@ void llama_context::maybe_apply_dynamic_route(uint32_t n_tokens) {
             backend_available_for_route("qnn-npu") ||
             backend_available_for_route("qnn-gpu") ||
             backend_available_for_route("qnn-cpu"),
+        /*.fastrpc_backend_available =*/ backend_available_for_route("fastrpc"),
         /*.current_plan =*/ &hetero_plan,
         /*.base_plan =*/ &hetero_plan_base,
         /*.allocated_kv_contract =*/ &hetero_kv_contract_allocated,
@@ -2157,8 +2197,14 @@ void llama_context::maybe_apply_dynamic_route(uint32_t n_tokens) {
         n_tokens == 1 &&
         ((current_attn_backend == "cpu" && target_attn_backend == "opencl") ||
          (current_attn_backend == "opencl" && target_attn_backend == "cpu"));
+    const bool should_attempt_fastrpc_kv_migration =
+        llama_context_should_attempt_fastrpc_phase_kv_migration(
+                current_attn_backend,
+                target_attn_backend,
+                n_tokens);
 
     bool migrated_qnn_kv = false;
+    bool migrated_fastrpc_kv = false;
 
     if (switching_out_of_qnn_decode) {
         ggml_backend_t qnn_backend = find_backend_for_route("qnn-npu");
@@ -2253,6 +2299,29 @@ void llama_context::maybe_apply_dynamic_route(uint32_t n_tokens) {
         }
         if (!migrated_qnn_kv) {
             LLAMA_LOG_ERROR("%s: QNN KV migration failed; keeping existing route and skipping backend switch\n",
+                    __func__);
+            return;
+        }
+    }
+
+    if (should_attempt_fastrpc_kv_migration) {
+        LLAMA_LOG_INFO("%s: starting FastRPC KV state rebuild before decode route switch (%s -> %s, kv_path=fastrpc_state_rebuild zero_copy=false)\n",
+                __func__,
+                current_attn_backend.c_str(),
+                target_attn_backend.c_str());
+        const int64_t t_kv_start_us = trace_timing ? ggml_time_us() : 0;
+        const bool opencl_fastrpc_boundary =
+            current_attn_backend == "opencl" || target_attn_backend == "opencl";
+        migrated_fastrpc_kv = rebuild_dynamic_consumer_kv_from_state(
+                current_attn_backend,
+                target_attn_backend,
+                opencl_fastrpc_boundary ? "opencl-fastrpc-state-rebuild" : "cpu-fastrpc-state-rebuild");
+        const int64_t t_kv_end_us = trace_timing ? ggml_time_us() : 0;
+        if (trace_timing && hetero_phase_trace.active) {
+            hetero_phase_trace.kv_migration_us += t_kv_end_us - t_kv_start_us;
+        }
+        if (!migrated_fastrpc_kv) {
+            LLAMA_LOG_ERROR("%s: FastRPC KV state rebuild failed; keeping existing route and skipping backend switch\n",
                     __func__);
             return;
         }
@@ -4176,11 +4245,16 @@ bool llama_context::rebuild_dynamic_consumer_kv_from_state(
     const std::string producer = llama_hetero_canonical_backend(producer_backend);
     const std::string consumer = llama_hetero_canonical_backend(consumer_backend);
 
-    const bool producer_supported =
-        producer == "cpu" || producer == "opencl" || llama_hetero_is_qnn_backend(producer);
-    const bool consumer_supported = consumer == "cpu" || consumer == "opencl";
+    const bool cpu_opencl_boundary =
+        (producer == "cpu" && consumer == "opencl") ||
+        (producer == "opencl" && consumer == "cpu");
+    const bool qnn_consumer_boundary =
+        llama_hetero_is_qnn_backend(producer) &&
+        (consumer == "cpu" || consumer == "opencl");
+    const bool fastrpc_boundary =
+        llama_context_should_attempt_fastrpc_phase_kv_migration(producer, consumer, 1);
 
-    if (!producer_supported || !consumer_supported || producer == consumer) {
+    if ((!cpu_opencl_boundary && !qnn_consumer_boundary && !fastrpc_boundary) || producer == consumer) {
         LLAMA_LOG_ERROR("%s: unsupported dynamic KV rebuild request producer=%s consumer=%s\n",
                 __func__,
                 producer.empty() ? "<unset>" : producer.c_str(),
@@ -4250,11 +4324,13 @@ bool llama_context::rebuild_dynamic_consumer_kv_from_state(
         hetero_dynamic_pre_reserved_plans.clear();
         sched_need_reserve = true;
 
-        LLAMA_LOG_INFO("%s: rebuilt KV-backed memory for dynamic phase migration %s -> %s using consumer-owned placement (reason=%s)\n",
+        LLAMA_LOG_INFO("%s: rebuilt KV-backed memory for dynamic phase migration %s -> %s using storage=%s (reason=%s zero_copy=%s)\n",
                 __func__,
                 producer.c_str(),
                 consumer.c_str(),
-                migration_contract.reason.c_str());
+                migration_contract.storage_backend.empty() ? "<unset>" : migration_contract.storage_backend.c_str(),
+                migration_contract.reason.c_str(),
+                migration_contract.zero_copy ? "true" : "false");
     } catch (const std::exception & err) {
         LLAMA_LOG_ERROR("%s: dynamic KV rebuild failed for %s -> %s: %s\n",
                 __func__,

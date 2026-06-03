@@ -16,6 +16,18 @@ struct llama_hparams;
 struct llama_model;
 struct llama_context;
 
+static inline size_t llama_kv_cache_v_offset(
+        bool transposed,
+        uint32_t cell,
+        uint32_t elem,
+        uint32_t kv_size,
+        uint32_t n_embd_v_gqa,
+        size_t elem_size) {
+    return transposed
+        ? (static_cast<size_t>(cell) + static_cast<size_t>(elem) * kv_size) * elem_size
+        : (static_cast<size_t>(cell) * n_embd_v_gqa + elem) * elem_size;
+}
+
 struct llama_opencl_external_host_sync_timing {
     int64_t alias_us = 0;
     int64_t backend_sync_us = 0;

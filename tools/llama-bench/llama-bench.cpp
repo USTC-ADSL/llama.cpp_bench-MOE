@@ -50,7 +50,33 @@ static bool llama_bench_fast_exit_requested() {
     return value != nullptr && value[0] != '\0' && std::strcmp(value, "0") != 0;
 }
 
-static std::vector<llama_bench_round_reset_entry> collect_qnn_aot_reset_entries(llama_context * ctx) {
+static std::vector<std::string> collect_requested_backend_names(const std::vector<ggml_backend_dev_t> & devices) {
+    std::vector<std::string> requested_backend_names;
+    if (devices.empty()) {
+        return requested_backend_names;
+    }
+
+    for (ggml_backend_dev_t dev : devices) {
+        if (dev == nullptr) {
+            continue;
+        }
+
+        const char * name = ggml_backend_dev_name(dev);
+        if (name != nullptr) {
+            requested_backend_names.emplace_back(name);
+        }
+    }
+
+    if (requested_backend_names.empty()) {
+        requested_backend_names.emplace_back("none");
+    }
+
+    return requested_backend_names;
+}
+
+static std::vector<llama_bench_round_reset_entry> collect_qnn_aot_reset_entries(
+        llama_context *                  ctx,
+        const std::vector<std::string> & requested_backend_names) {
     std::vector<llama_bench_round_reset_entry> entries;
     if (ctx == nullptr) {
         return entries;
@@ -74,7 +100,9 @@ static std::vector<llama_bench_round_reset_entry> collect_qnn_aot_reset_entries(
                         ? (ggml_backend_qnn_aot_reset_state_t)
                               ggml_backend_reg_get_proc_address(reg, "ggml_backend_qnn_aot_reset_state")
                         : nullptr;
-        const bool has_qnn_aot_reset = reset_state_fn != nullptr && backend_name == "qnn-npu";
+        const bool has_qnn_aot_reset =
+                reset_state_fn != nullptr &&
+                llama_bench_qnn_aot_reset_requested_for_backend(backend_name, requested_backend_names);
 
         entries.push_back({
                 backend_name,
@@ -2372,6 +2400,9 @@ int llama_bench(int argc, char ** argv) {
 
         llama_attach_threadpool(ctx, threadpool, NULL);
 
+        const std::vector<std::string> qnn_reset_requested_backend_names =
+                collect_requested_backend_names(t.devices);
+
         // warmup run
         if (!params.no_warmup) {
             if (t.n_prompt > 0) {
@@ -2405,7 +2436,8 @@ int llama_bench(int argc, char ** argv) {
             const int round_idx = i + 1;
             const bool print_round_events = params.progress || params.verbose;
 
-            const auto qnn_reset_result = llama_bench_reset_qnn_aot_backends(collect_qnn_aot_reset_entries(ctx));
+            const auto qnn_reset_result = llama_bench_reset_qnn_aot_backends(
+                    collect_qnn_aot_reset_entries(ctx, qnn_reset_requested_backend_names));
             if (!qnn_reset_result.ok()) {
                 fprintf(stderr,
                         "%s: error: failed to reset qnn AoT state before %s (failed backends: %s)\n",

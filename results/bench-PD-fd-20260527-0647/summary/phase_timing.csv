@@ -1,1 +1,17 @@
 case,category,prefill,decode,workload,pp,tg,line,phase,n_tokens,route_apply,label,reason,decide_us,apply_us,target
+switch_cpu_to_opencl_pp256_tg1,switch,cpu,opencl,pp256_tg1,256,1,1153,prefill,256,true,prefill,phase-prefill-route,2,15,"attn=cpu,ffn=cpu,output=cpu"
+switch_cpu_to_opencl_pp256_tg1,switch,cpu,opencl,pp256_tg1,256,1,1220,decode,1,true,decode,phase-decode-route,6,891,"attn=opencl,ffn=opencl,output=opencl"
+switch_cpu_to_qnn_pp256_tg1,switch,cpu,qnn-npu,pp256_tg1,256,1,718,prefill,256,true,prefill,phase-prefill-route,2,16,"attn=cpu,ffn=cpu,output=cpu"
+switch_cpu_to_qnn_pp256_tg1,switch,cpu,qnn-npu,pp256_tg1,256,1,733,decode,1,true,decode,phase-decode-route,3,114,"attn=qnn-npu,ffn=qnn-npu,output=qnn-npu"
+switch_opencl_to_cpu_pp256_tg1,switch,opencl,cpu,pp256_tg1,256,1,1153,prefill,256,true,prefill,phase-prefill-route,3,15,"attn=opencl,ffn=opencl,output=opencl"
+switch_opencl_to_cpu_pp256_tg1,switch,opencl,cpu,pp256_tg1,256,1,1223,decode,1,true,decode,phase-decode-route,3,32,"attn=cpu,ffn=cpu,output=cpu"
+switch_opencl_to_qnn_pp256_tg1,switch,opencl,qnn-npu,pp256_tg1,256,1,1174,prefill,256,false,,,,,
+switch_opencl_to_qnn_pp256_tg1,switch,opencl,qnn-npu,pp256_tg1,256,1,1383,decode,1,true,decode,phase-decode-route,5,26,"attn=qnn-npu,ffn=qnn-npu,output=qnn-npu"
+switch_opencl_to_qnn_pp256_tg1,switch,opencl,qnn-npu,pp256_tg1,256,1,2548,prefill,256,true,prefill,phase-prefill-route,2,18,"attn=opencl,ffn=opencl,output=opencl"
+switch_opencl_to_qnn_pp256_tg1,switch,opencl,qnn-npu,pp256_tg1,256,1,2564,decode,1,true,decode,phase-decode-route,5,28,"attn=qnn-npu,ffn=qnn-npu,output=qnn-npu"
+switch_qnn_to_cpu_pp256_tg1,switch,qnn-npu,cpu,pp256_tg1,256,1,718,prefill,256,true,prefill,phase-prefill-route,2,15,"attn=qnn-npu,ffn=qnn-npu,output=qnn-npu"
+switch_qnn_to_cpu_pp256_tg1,switch,qnn-npu,cpu,pp256_tg1,256,1,991,decode,1,true,decode,phase-decode-route,5,31,"attn=cpu,ffn=cpu,output=cpu"
+switch_qnn_to_opencl_pp256_tg1,switch,qnn-npu,opencl,pp256_tg1,256,1,1175,prefill,256,true,prefill,phase-prefill-route,2,15,"attn=qnn-npu,ffn=qnn-npu,output=qnn-npu"
+switch_qnn_to_opencl_pp256_tg1,switch,qnn-npu,opencl,pp256_tg1,256,1,1396,decode,1,true,base,phase-base-route,4,13,<default>
+switch_qnn_to_opencl_pp256_tg1,switch,qnn-npu,opencl,pp256_tg1,256,1,2562,prefill,256,true,prefill,phase-prefill-route,2,15,"attn=qnn-npu,ffn=qnn-npu,output=qnn-npu"
+switch_qnn_to_opencl_pp256_tg1,switch,qnn-npu,opencl,pp256_tg1,256,1,2781,decode,1,true,decode,phase-decode-route,3,36,"attn=opencl,ffn=opencl,output=opencl"

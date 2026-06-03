@@ -160,7 +160,7 @@ static inline std::string llama_hetero_canonical_backend(std::string_view value)
     if (normalized == "opencl" || normalized == "gpuopencl" || normalized == "gpu") {
         return "opencl";
     }
-    if (normalized == "qnn" || normalized == "qnn-npu" || normalized == "npu" || normalized == "htp0" || normalized == "htp") {
+    if (normalized == "qnn" || normalized == "qnn-npu" || normalized == "npu") {
         return "qnn-npu";
     }
     if (normalized == "qnn-gpu") {
@@ -169,22 +169,42 @@ static inline std::string llama_hetero_canonical_backend(std::string_view value)
     if (normalized == "qnn-cpu") {
         return "qnn-cpu";
     }
+    if (normalized == "fastrpc" || normalized == "hexagon" || normalized == "htp" ||
+        (normalized.size() > 3 &&
+         normalized[0] == 'h' &&
+         normalized[1] == 't' &&
+         normalized[2] == 'p' &&
+         std::all_of(normalized.begin() + 3, normalized.end(), [](unsigned char ch) {
+             return std::isdigit(ch) != 0;
+         }))) {
+        return "fastrpc";
+    }
 
     return normalized;
 }
 
 static inline int llama_hetero_backend_kind(const std::string & value) {
-    if (value.empty()) {
+    const std::string normalized = llama_hetero_canonical_backend(value);
+
+    if (normalized.empty()) {
         return 0;
     }
 
-    if (value == "cpu") {
+    if (normalized == "cpu") {
         return 1;
     }
-    if (value == "opencl") {
+    if (normalized == "opencl") {
         return 2;
     }
-    return 3;
+    if (normalized == "qnn-npu" ||
+        normalized == "qnn-gpu" ||
+        normalized == "qnn-cpu") {
+        return 3;
+    }
+    if (normalized == "fastrpc") {
+        return 4;
+    }
+    return 5;
 }
 
 static inline bool llama_hetero_is_cpu_backend(const std::string & value) {
@@ -200,6 +220,10 @@ static inline bool llama_hetero_is_qnn_backend(const std::string & value) {
     return normalized == "qnn-npu" ||
            normalized == "qnn-gpu" ||
            normalized == "qnn-cpu";
+}
+
+static inline bool llama_hetero_is_fastrpc_backend(const std::string & value) {
+    return llama_hetero_canonical_backend(value) == "fastrpc";
 }
 
 static inline const char * llama_hetero_kv_layout_name(llama_hetero_kv_layout_kind layout) {

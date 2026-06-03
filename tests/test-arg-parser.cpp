@@ -102,6 +102,10 @@ int main(void) {
     argv = {"binary_name", "--draft", "123"};
     assert(false == common_params_parse(argv.size(), list_str_to_char(argv).data(), params, LLAMA_EXAMPLE_EMBEDDING));
 
+    // completion-only generated token id dump must not be accepted by other examples
+    argv = {"binary_name", "--dump-generated-token-ids", "tokens.jsonl"};
+    assert(false == common_params_parse(argv.size(), list_str_to_char(argv).data(), params, LLAMA_EXAMPLE_COMMON));
+
     // negated arg
     argv = {"binary_name", "--no-mmap"};
     assert(false == common_params_parse(argv.size(), list_str_to_char(argv).data(), params, LLAMA_EXAMPLE_COMMON));
@@ -140,6 +144,10 @@ int main(void) {
     assert(params.lora_adapters[1].path == "file2,2.gguf");
     assert(params.lora_adapters[2].path == "file3\"3\".gguf");
     assert(params.lora_adapters[3].path == "file4\".gguf");
+
+    argv = {"binary_name", "--dump-generated-token-ids", "tokens.jsonl"};
+    assert(true == common_params_parse(argv.size(), list_str_to_char(argv).data(), params, LLAMA_EXAMPLE_COMPLETION));
+    assert(params.generated_token_ids_output == "tokens.jsonl");
 
 // skip this part on windows, because setenv is not supported
 #ifdef _WIN32

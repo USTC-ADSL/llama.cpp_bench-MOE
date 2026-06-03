@@ -45,6 +45,7 @@ struct llama_dynamic_route_request {
 
     bool opencl_backend_available = false;
     bool qnn_backend_available    = false;
+    bool fastrpc_backend_available = false;
 
     const llama_hetero_execution_plan * current_plan           = nullptr;
     const llama_hetero_execution_plan * base_plan              = nullptr;
@@ -74,6 +75,7 @@ llama_dynamic_route_runtime_config llama_dynamic_route_config_from_env();
 
 bool llama_dynamic_route_uses_qnn(const llama_hetero_execution_plan & plan);
 bool llama_dynamic_route_uses_opencl(const llama_hetero_execution_plan & plan);
+bool llama_dynamic_route_uses_fastrpc(const llama_hetero_execution_plan & plan);
 
 llama_dynamic_route_decision llama_dynamic_route_decide(
         const llama_dynamic_route_runtime_config & config,

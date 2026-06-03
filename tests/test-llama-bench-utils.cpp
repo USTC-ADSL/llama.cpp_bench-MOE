@@ -43,6 +43,19 @@ int main() {
         t.assert_equal("non-qnn backends should be ignored", 1, reset_calls);
     });
 
+    t.test("qnn aot reset eligibility follows explicit benchmark devices", [](testing & t) {
+        t.assert_true("default device selection should preserve qnn reset behavior",
+                      llama_bench_qnn_aot_reset_requested_for_backend("qnn-npu", {}));
+        t.assert_true("explicit qnn-npu device should reset qnn state",
+                      llama_bench_qnn_aot_reset_requested_for_backend("qnn-npu", { "qnn-npu" }));
+        t.assert_true("explicit HTP0 device should not reset qnn-npu state",
+                      !llama_bench_qnn_aot_reset_requested_for_backend("qnn-npu", { "HTP0" }));
+        t.assert_true("explicit none device should not reset qnn-npu state",
+                      !llama_bench_qnn_aot_reset_requested_for_backend("qnn-npu", { "none" }));
+        t.assert_true("non-qnn backend should not be qnn reset eligible",
+                      !llama_bench_qnn_aot_reset_requested_for_backend("HTP0", { "HTP0" }));
+    });
+
     t.test("qnn reset helper records failing backends", [](testing & t) {
         int ok_calls = 0;
         int fail_calls = 0;

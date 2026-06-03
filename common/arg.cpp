@@ -826,7 +826,9 @@ static void common_params_print_completion(common_params_context & ctx_arg) {
 
 static std::vector<ggml_backend_dev_t> parse_device_list(const std::string & value) {
     std::vector<ggml_backend_dev_t> devices;
-    auto dev_names = string_split<std::string>(value, ',');
+    auto normalized = value;
+    string_replace_all(normalized, "/", ",");
+    auto dev_names = string_split<std::string>(normalized, ',');
     if (dev_names.empty()) {
         throw std::invalid_argument("no devices specified");
     }
@@ -2291,7 +2293,7 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
     ).set_env("LLAMA_ARG_NUMA"));
     add_opt(common_arg(
         {"-dev", "--device"}, "<dev1,dev2,..>",
-        "comma-separated list of devices to use for offloading (none = don't offload)\n"
+        "comma- or slash-separated list of devices to use for offloading (none = don't offload)\n"
         "use --list-devices to see a list of available devices",
         [](common_params & params, const std::string & value) {
             params.devices = parse_device_list(value);

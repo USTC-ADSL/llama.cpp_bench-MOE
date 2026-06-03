@@ -1,2 +1,0 @@
-#!/usr/bin/env bash
-timeout 1800 adb -s fd8657d6 shell 'cd /data/local/tmp/bench-PD && mkdir -p /data/local/tmp/bench-PD/results && export LD_LIBRARY_PATH=/data/local/tmp/bench-PD:$LD_LIBRARY_PATH && export ADSP_LIBRARY_PATH=/data/local/tmp/bench-PD && export LLAMA_BENCH_FAST_EXIT=1 && export GGML_QNN_DISABLE_BACKEND=1 && export GGML_HETERO_DYNAMIC_ALLOW_QNN=0 && taskset C0 ./llama-bench -v -r 1 -o csv -m /data/local/tmp/models/Qwen2.5-3B-AoT/ggml/weights.gguf -ngl 0 -dev none -t 4 -c 2048 -b 128 -ub 128 -p 0 -n 0 -pg 128,0 --no-warmup --mmap 0'

@@ -16,6 +16,11 @@ bool llama_context_should_attempt_qnn_phase_kv_migration(
         uint32_t            n_tokens,
         bool                generic_kv_enabled);
 
+bool llama_context_should_attempt_fastrpc_phase_kv_migration(
+        const std::string & current_attn_backend,
+        const std::string & target_attn_backend,
+        uint32_t            n_tokens);
+
 llama_hetero_kv_contract llama_dynamic_phase_shared_qnn_kv_contract(
         const std::string & prefill_attn_backend,
         const std::string & decode_attn_backend,
@@ -160,6 +165,34 @@ int main() {
                        false);
     });
 
+    t.test("fastrpc phase migration uses explicit target-owned storage", [](testing & t) {
+        const auto opencl_to_fastrpc = llama_dynamic_phase_migration_kv_contract("opencl", "fastrpc", "unit-test");
+
+        t.assert_true("opencl->fastrpc should be a stage boundary contract", opencl_to_fastrpc.stage_boundary_active());
+        t.assert_equal("opencl->fastrpc should keep legacy serialized layout",
+                       (int) opencl_to_fastrpc.layout,
+                       (int) llama_hetero_kv_layout_kind::LEGACY);
+        t.assert_equal("opencl->fastrpc should not use QNN transfer modes",
+                       (int) opencl_to_fastrpc.transfer,
+                       (int) llama_hetero_kv_transfer_mode::NONE);
+        t.assert_equal("opencl->fastrpc should restore into FastRPC device storage",
+                       opencl_to_fastrpc.storage_backend,
+                       std::string("fastrpc-device"));
+        t.assert_equal("opencl->fastrpc should use copy/rebuild, not shared buffers",
+                       opencl_to_fastrpc.shared_buffer_required,
+                       false);
+
+        const auto fastrpc_to_opencl = llama_dynamic_phase_migration_kv_contract("fastrpc", "opencl", "unit-test");
+        t.assert_equal("fastrpc->opencl should restore through OpenCL host-visible storage",
+                       fastrpc_to_opencl.storage_backend,
+                       std::string("opencl-host"));
+
+        const auto fastrpc_to_cpu = llama_dynamic_phase_migration_kv_contract("fastrpc", "cpu", "unit-test");
+        t.assert_equal("fastrpc->cpu should restore into CPU host storage",
+                       fastrpc_to_cpu.storage_backend,
+                       std::string("cpu-host"));
+    });
+
     t.test("dynamic qnn prefill and opencl decode can pre-allocate shared qnn kv", [](testing & t) {
         const auto contract = llama_dynamic_phase_shared_qnn_kv_contract(
                 "qnn-npu",
@@ -218,6 +251,40 @@ int main() {
         t.assert_true(
                 "opencl->cpu should not be routed through qnn state migration",
                 !llama_context_should_attempt_qnn_phase_kv_migration("opencl", "cpu", 1, true));
+    });
+
+    t.test("single-token fastrpc and opencl decode uses explicit state migration", [](testing & t) {
+        t.assert_true(
+                "opencl->fastrpc decode should rebuild KV into the FastRPC layout/buffer before route switch",
+                llama_context_should_attempt_fastrpc_phase_kv_migration("opencl", "fastrpc", 1));
+
+        t.assert_true(
+                "fastrpc->opencl decode should rebuild KV into the OpenCL layout/buffer before route switch",
+                llama_context_should_attempt_fastrpc_phase_kv_migration("fastrpc", "opencl", 1));
+    });
+
+    t.test("single-token fastrpc and cpu decode uses explicit state migration", [](testing & t) {
+        t.assert_true(
+                "cpu->fastrpc decode should rebuild KV into the FastRPC layout/buffer before route switch",
+                llama_context_should_attempt_fastrpc_phase_kv_migration("cpu", "fastrpc", 1));
+
+        t.assert_true(
+                "fastrpc->cpu decode should rebuild KV into CPU-owned storage before route switch",
+                llama_context_should_attempt_fastrpc_phase_kv_migration("fastrpc", "cpu", 1));
+    });
+
+    t.test("fastrpc phase migration is scoped to decode and excludes qnn", [](testing & t) {
+        t.assert_true(
+                "prefill-sized fastrpc/opencl batches should not trigger direct phase migration",
+                !llama_context_should_attempt_fastrpc_phase_kv_migration("opencl", "fastrpc", 16));
+
+        t.assert_true(
+                "qnn->fastrpc is not supported by the first-pass FastRPC state migration path",
+                !llama_context_should_attempt_fastrpc_phase_kv_migration("qnn-npu", "fastrpc", 1));
+
+        t.assert_true(
+                "fastrpc->qnn is not supported by the first-pass FastRPC state migration path",
+                !llama_context_should_attempt_fastrpc_phase_kv_migration("fastrpc", "qnn-npu", 1));
     });
 
     t.test("single-token qnn to opencl decode uses shared kv directly when the context was pre-allocated on qnn rpcmem", [](testing & t) {

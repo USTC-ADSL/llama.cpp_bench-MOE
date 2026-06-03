@@ -22,6 +22,35 @@ static bool ggml_is_power_of_2(int n) {
     return (n & (n - 1)) == 0;
 }
 
+static ggml_backend_dev_t llama_kv_cache_find_backend_dev(const std::string & backend_name) {
+    const std::string canonical = llama_hetero_canonical_backend(backend_name);
+    if (canonical.empty()) {
+        return nullptr;
+    }
+
+    ggml_backend_dev_t dev = ggml_backend_dev_by_name(backend_name.c_str());
+    if (dev != nullptr) {
+        return dev;
+    }
+
+    if (canonical == "opencl") {
+        dev = ggml_backend_dev_by_name("GPUOpenCL");
+        if (dev != nullptr) {
+            return dev;
+        }
+    }
+
+    for (size_t i = 0; i < ggml_backend_dev_count(); ++i) {
+        dev = ggml_backend_dev_get(i);
+        const char * dev_name = dev != nullptr ? ggml_backend_dev_name(dev) : nullptr;
+        if (dev_name != nullptr && llama_hetero_canonical_backend(dev_name) == canonical) {
+            return dev;
+        }
+    }
+
+    return nullptr;
+}
+
 // orthonormal Walsh-Hadamard rotation matrix
 // note: res^2 == I
 static void ggml_gen_hadamard(ggml_tensor * tensor) {
@@ -219,14 +248,48 @@ llama_kv_cache::llama_kv_cache(
     const char * producer_kv_dev_name = nullptr;
     if (shared_kv_buft == nullptr && this->kv_contract.stage_boundary_active()) {
         const std::string consumer_backend = llama_hetero_canonical_backend(this->kv_contract.consumer_backend);
-        if (consumer_backend == "cpu") {
+        const std::string storage_backend =
+            llama_hetero_to_lower(llama_hetero_trim(this->kv_contract.storage_backend));
+        bool storage_backend_requested = false;
+        bool storage_backend_selected = false;
+
+        if (storage_backend == "cpu-host") {
+            storage_backend_requested = true;
             consumer_kv_buft = ggml_backend_cpu_buffer_type();
             consumer_kv_dev_name = "CPU";
-        } else if (!consumer_backend.empty()) {
-            ggml_backend_dev_t consumer_dev = ggml_backend_dev_by_name(consumer_backend.c_str());
-            if (consumer_dev == nullptr && consumer_backend == "opencl") {
-                consumer_dev = ggml_backend_dev_by_name("GPUOpenCL");
+            storage_backend_selected = true;
+        } else if (storage_backend == "opencl-host") {
+            storage_backend_requested = true;
+            ggml_backend_dev_t opencl_dev = llama_kv_cache_find_backend_dev("opencl");
+            if (opencl_dev != nullptr) {
+                consumer_kv_buft = ggml_backend_dev_host_buffer_type(opencl_dev);
+                consumer_kv_dev_name =
+                    consumer_kv_buft != nullptr ? ggml_backend_buft_name(consumer_kv_buft) : nullptr;
+                storage_backend_selected = consumer_kv_buft != nullptr;
             }
+        } else if (storage_backend == "fastrpc-device") {
+            storage_backend_requested = true;
+            ggml_backend_dev_t fastrpc_dev = llama_kv_cache_find_backend_dev("fastrpc");
+            if (fastrpc_dev != nullptr) {
+                consumer_kv_buft = ggml_backend_dev_buffer_type(fastrpc_dev);
+                consumer_kv_dev_name = ggml_backend_dev_name(fastrpc_dev);
+                storage_backend_selected = consumer_kv_buft != nullptr;
+            }
+        }
+
+        if (storage_backend_requested && !storage_backend_selected) {
+            LLAMA_LOG_WARN("%s: attn KV contract requested storage=%s for %s -> %s, but that buffer type is unavailable; falling back to consumer-owned legacy placement\n",
+                    __func__,
+                    storage_backend.c_str(),
+                    this->kv_contract.producer_backend.c_str(),
+                    this->kv_contract.consumer_backend.c_str());
+        }
+
+        if (consumer_kv_buft == nullptr && consumer_backend == "cpu") {
+            consumer_kv_buft = ggml_backend_cpu_buffer_type();
+            consumer_kv_dev_name = "CPU";
+        } else if (consumer_kv_buft == nullptr && !consumer_backend.empty()) {
+            ggml_backend_dev_t consumer_dev = llama_kv_cache_find_backend_dev(consumer_backend);
             if (consumer_dev != nullptr) {
                 consumer_kv_buft = ggml_backend_dev_buffer_type(consumer_dev);
                 consumer_kv_dev_name = ggml_backend_dev_name(consumer_dev);
@@ -234,8 +297,9 @@ llama_kv_cache::llama_kv_cache(
         }
 
         if (consumer_kv_buft != nullptr) {
-            LLAMA_LOG_INFO("%s: attn KV contract fallback keeps legacy placement on the consumer backend=%s for %s -> %s (layout=%s transfer=%s reason=%s)\n",
+            LLAMA_LOG_INFO("%s: attn KV contract fallback selected storage=%s buft=%s for %s -> %s (layout=%s transfer=%s reason=%s zero_copy=false)\n",
                     __func__,
+                    storage_backend_selected ? storage_backend.c_str() : consumer_backend.c_str(),
                     consumer_kv_dev_name != nullptr ? consumer_kv_dev_name : ggml_backend_buft_name(consumer_kv_buft),
                     this->kv_contract.producer_backend.c_str(),
                     this->kv_contract.consumer_backend.c_str(),
@@ -343,10 +407,7 @@ llama_kv_cache::llama_kv_cache(
                 consumer_kv_buft = nullptr;
                 consumer_kv_dev_name = nullptr;
             } else if (!dynamic_decode_consumer_backend.empty()) {
-                ggml_backend_dev_t consumer_dev = ggml_backend_dev_by_name(dynamic_decode_consumer_backend.c_str());
-                if (consumer_dev == nullptr && dynamic_decode_consumer_backend == "opencl") {
-                    consumer_dev = ggml_backend_dev_by_name("GPUOpenCL");
-                }
+                ggml_backend_dev_t consumer_dev = llama_kv_cache_find_backend_dev(dynamic_decode_consumer_backend);
                 if (consumer_dev != nullptr) {
                     consumer_kv_buft = ggml_backend_dev_buffer_type(consumer_dev);
                     consumer_kv_dev_name = ggml_backend_dev_name(consumer_dev);
@@ -365,10 +426,7 @@ llama_kv_cache::llama_kv_cache(
                 producer_kv_buft = ggml_backend_cpu_buffer_type();
                 producer_kv_dev_name = "CPU";
             } else if (!dynamic_prefill_consumer_backend.empty()) {
-                ggml_backend_dev_t producer_dev = ggml_backend_dev_by_name(dynamic_prefill_consumer_backend.c_str());
-                if (producer_dev == nullptr && dynamic_prefill_consumer_backend == "opencl") {
-                    producer_dev = ggml_backend_dev_by_name("GPUOpenCL");
-                }
+                ggml_backend_dev_t producer_dev = llama_kv_cache_find_backend_dev(dynamic_prefill_consumer_backend);
                 if (producer_dev != nullptr) {
                     producer_kv_buft = ggml_backend_dev_buffer_type(producer_dev);
                     producer_kv_dev_name = ggml_backend_dev_name(producer_dev);
@@ -2729,10 +2787,7 @@ bool llama_kv_cache::state_read_data(llama_io_read_i & io, uint32_t strm, uint32
         return false;
     }
 
-    if (this->v_trans != (bool) v_trans) {
-        LLAMA_LOG_ERROR("%s: incompatible V transposition\n", __func__);
-        return false;
-    }
+    const bool saved_v_trans = (bool) v_trans;
 
     // For each layer, read the keys for each cell, one row is one cell, read as one contiguous block
     for (const auto & layer : layers) {
@@ -2772,6 +2827,128 @@ bool llama_kv_cache::state_read_data(llama_io_read_i & io, uint32_t strm, uint32
                 }
             }
         }
+    }
+
+    if (saved_v_trans != this->v_trans) {
+        LLAMA_LOG_INFO("%s: converting V cache layout while restoring KV state (saved_v_trans=%d target_v_trans=%d)\n",
+                __func__,
+                saved_v_trans ? 1 : 0,
+                this->v_trans ? 1 : 0);
+
+        for (const auto & layer : layers) {
+            const uint32_t il = layer.il;
+
+            const uint32_t n_embd_v_gqa = hparams.n_embd_v_gqa(il);
+
+            auto * v = layer.v_stream[strm];
+            if (!v) {
+                continue;
+            }
+
+            int32_t v_type_i_ref;
+            io.read(&v_type_i_ref, sizeof(v_type_i_ref));
+            const int32_t v_type_i = (int32_t) v->type;
+            if (v_type_i != v_type_i_ref) {
+                LLAMA_LOG_ERROR("%s: mismatched value type (%d != %d, layer %d)\n", __func__, v_type_i, v_type_i_ref, il);
+                return false;
+            }
+
+            if (ggml_blck_size(v->type) != 1) {
+                LLAMA_LOG_ERROR("%s: V cache layout conversion is unsupported for blocked type %s, layer %d\n",
+                        __func__, ggml_type_name(v->type), il);
+                return false;
+            }
+
+            const size_t v_size_el  = ggml_type_size(v->type);
+            const size_t v_size_row = ggml_row_size(v->type, n_embd_v_gqa);
+            std::vector<uint8_t> canonical_rows(static_cast<size_t>(cell_count) * v_size_row);
+
+            if (!saved_v_trans) {
+                uint64_t v_size_row_ref;
+                io.read(&v_size_row_ref, sizeof(v_size_row_ref));
+                if (v_size_row != v_size_row_ref) {
+                    LLAMA_LOG_ERROR("%s: mismatched value row size (%zu != %zu, layer %d)\n", __func__, v_size_row, (size_t) v_size_row_ref, il);
+                    return false;
+                }
+
+                for (uint32_t i = 0; i < cell_count; ++i) {
+                    io.read(canonical_rows.data() + static_cast<size_t>(i) * v_size_row, v_size_row);
+                }
+            } else {
+                uint32_t v_size_el_ref;
+                io.read(&v_size_el_ref, sizeof(v_size_el_ref));
+                if (v_size_el != v_size_el_ref) {
+                    LLAMA_LOG_ERROR("%s: mismatched value element size (%zu != %zu, layer %d)\n", __func__, v_size_el, (size_t) v_size_el_ref, il);
+                    return false;
+                }
+
+                uint32_t n_embd_v_gqa_ref;
+                io.read(&n_embd_v_gqa_ref, sizeof(n_embd_v_gqa_ref));
+                if (n_embd_v_gqa != n_embd_v_gqa_ref) {
+                    LLAMA_LOG_ERROR("%s: mismatched GQA embedding size (%u != %u, layer %d)\n", __func__, n_embd_v_gqa, n_embd_v_gqa_ref, il);
+                    return false;
+                }
+
+                std::vector<uint8_t> elem_column(static_cast<size_t>(cell_count) * v_size_el);
+                for (uint32_t j = 0; j < n_embd_v_gqa; ++j) {
+                    io.read(elem_column.data(), elem_column.size());
+                    for (uint32_t i = 0; i < cell_count; ++i) {
+                        std::memcpy(
+                                canonical_rows.data() + static_cast<size_t>(i) * v_size_row + static_cast<size_t>(j) * v_size_el,
+                                elem_column.data() + static_cast<size_t>(i) * v_size_el,
+                                v_size_el);
+                    }
+                }
+            }
+
+            if (!this->v_trans) {
+                if (cell_count) {
+                    if (sinfo.is_contiguous()) {
+                        ggml_backend_tensor_set(v, canonical_rows.data(), sinfo.head() * v_size_row, canonical_rows.size());
+                    } else {
+                        for (uint32_t i = 0; i < cell_count; ++i) {
+                            const size_t dst_offset = sinfo.idxs[0][i] * v_size_row;
+                            ggml_backend_tensor_set(
+                                    v,
+                                    canonical_rows.data() + static_cast<size_t>(i) * v_size_row,
+                                    dst_offset,
+                                    v_size_row);
+                        }
+                    }
+                }
+            } else {
+                const uint32_t kv_size = cells.size();
+                std::vector<uint8_t> elem_column(static_cast<size_t>(cell_count) * v_size_el);
+                for (uint32_t j = 0; j < n_embd_v_gqa; ++j) {
+                    for (uint32_t i = 0; i < cell_count; ++i) {
+                        std::memcpy(
+                                elem_column.data() + static_cast<size_t>(i) * v_size_el,
+                                canonical_rows.data() + static_cast<size_t>(i) * v_size_row + static_cast<size_t>(j) * v_size_el,
+                                v_size_el);
+                    }
+
+                    if (cell_count) {
+                        if (sinfo.is_contiguous()) {
+                            const size_t dst_offset = llama_kv_cache_v_offset(
+                                    true, sinfo.head(), j, kv_size, n_embd_v_gqa, v_size_el);
+                            ggml_backend_tensor_set(v, elem_column.data(), dst_offset, elem_column.size());
+                        } else {
+                            for (uint32_t i = 0; i < cell_count; ++i) {
+                                const size_t dst_offset = llama_kv_cache_v_offset(
+                                        true, sinfo.idxs[0][i], j, kv_size, n_embd_v_gqa, v_size_el);
+                                ggml_backend_tensor_set(
+                                        v,
+                                        elem_column.data() + static_cast<size_t>(i) * v_size_el,
+                                        dst_offset,
+                                        v_size_el);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return true;
     }
 
     if (!this->v_trans) {

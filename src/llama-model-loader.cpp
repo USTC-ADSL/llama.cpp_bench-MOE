@@ -1106,18 +1106,199 @@ static ggml_backend_buffer_type_t select_weight_cpu_default_buft(const llama_hpa
     return weight_buft_supported(hparams, tensor, op, cpu_buft, cpu_dev) ? cpu_buft : nullptr;
 }
 
-static ggml_backend_buffer_type_t select_weight_device_buft(const llama_hparams & hparams, ggml_tensor * tensor, ggml_op op, const char * device_name, bool use_host_buft) {
+static bool llama_model_loader_buft_matches_backend(
+        ggml_backend_dev_t dev,
+        ggml_backend_buffer_type_t buft,
+        const char * backend_name) {
+    if (backend_name == nullptr || backend_name[0] == '\0') {
+        return true;
+    }
+
+    if (dev == nullptr && buft != nullptr) {
+        dev = ggml_backend_buft_get_device(buft);
+    }
+
+    const std::string requested_raw = llama_hetero_to_lower(llama_hetero_trim(backend_name));
+    const std::string requested = llama_hetero_canonical_backend(backend_name);
+
+    const char * dev_name = dev != nullptr ? ggml_backend_dev_name(dev) : nullptr;
+    if (dev_name != nullptr) {
+        const std::string dev_raw = llama_hetero_to_lower(llama_hetero_trim(dev_name));
+        if (dev_raw == requested_raw ||
+            llama_hetero_canonical_backend(dev_name) == requested) {
+            return true;
+        }
+    }
+
+    const char * buft_name = buft != nullptr ? ggml_backend_buft_name(buft) : nullptr;
+    if (buft_name != nullptr) {
+        const std::string buft_raw = llama_hetero_to_lower(llama_hetero_trim(buft_name));
+        if (buft_raw == requested_raw ||
+            llama_hetero_canonical_backend(buft_name) == requested) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static ggml_backend_buffer_type_t select_weight_backend_buft_from_list(
+        const llama_hparams & hparams,
+        ggml_tensor * tensor,
+        ggml_op op,
+        const buft_list_t * buft_list,
+        const char * backend_name) {
+    if (buft_list == nullptr || buft_list->empty()) {
+        return nullptr;
+    }
+
+    for (const auto & cur : *buft_list) {
+        ggml_backend_dev_t cur_dev = cur.first;
+        ggml_backend_buffer_type_t cur_buft = cur.second;
+        if (!llama_model_loader_buft_matches_backend(cur_dev, cur_buft, backend_name)) {
+            continue;
+        }
+        if (weight_buft_supported(hparams, tensor, op, cur_buft, cur_dev)) {
+            return cur_buft;
+        }
+    }
+
+    return nullptr;
+}
+
+ggml_backend_buffer_type_t llama_model_loader_select_weight_backend_buft_from_list(
+        const llama_hparams & hparams,
+        ggml_tensor * tensor,
+        ggml_op op,
+        const buft_list_t * buft_list,
+        const char * backend_name) {
+    return select_weight_backend_buft_from_list(hparams, tensor, op, buft_list, backend_name);
+}
+
+ggml_backend_buffer_type_t llama_model_loader_select_weight_device_buft(
+        const llama_hparams & hparams,
+        ggml_tensor * tensor,
+        ggml_op op,
+        const char * device_name,
+        bool use_host_buft) {
     ggml_backend_dev_t dev = ggml_backend_dev_by_name(device_name);
     if (dev == nullptr) {
         return nullptr;
     }
 
     ggml_backend_buffer_type_t buft = use_host_buft ? ggml_backend_dev_host_buffer_type(dev) : ggml_backend_dev_buffer_type(dev);
-    if (buft == nullptr) {
+    if (buft != nullptr && weight_buft_supported(hparams, tensor, op, buft, dev)) {
+        return buft;
+    }
+
+    ggml_backend_reg_t reg = ggml_backend_dev_backend_reg(dev);
+    auto get_extra_bufts_fn =
+        reg != nullptr
+            ? (ggml_backend_dev_get_extra_bufts_t) ggml_backend_reg_get_proc_address(reg, "ggml_backend_dev_get_extra_bufts")
+            : nullptr;
+    if (get_extra_bufts_fn == nullptr) {
         return nullptr;
     }
 
-    return weight_buft_supported(hparams, tensor, op, buft, dev) ? buft : nullptr;
+    ggml_backend_buffer_type_t * extra_bufts = get_extra_bufts_fn(dev);
+    while (extra_bufts != nullptr && *extra_bufts != nullptr) {
+        ggml_backend_buffer_type_t extra_buft = *extra_bufts;
+        ++extra_bufts;
+
+        if (use_host_buft && !ggml_backend_buft_is_host(extra_buft)) {
+            continue;
+        }
+        if (!llama_model_loader_buft_matches_backend(dev, extra_buft, device_name)) {
+            continue;
+        }
+        if (weight_buft_supported(hparams, tensor, op, extra_buft, dev)) {
+            return extra_buft;
+        }
+    }
+
+    return nullptr;
+}
+
+ggml_backend_buffer_type_t llama_model_loader_select_fastrpc_weight_duplicate_buft(
+        const llama_hparams & hparams,
+        ggml_tensor * tensor,
+        ggml_op op,
+        const buft_list_t * buft_list_layer,
+        const char * device_name,
+        bool allow_cpu_fallback) {
+    ggml_backend_buffer_type_t buft =
+        select_weight_backend_buft_from_list(hparams, tensor, op, buft_list_layer, device_name);
+    if (buft != nullptr) {
+        return buft;
+    }
+
+    buft = llama_model_loader_select_weight_device_buft(
+            hparams,
+            tensor,
+            op,
+            device_name,
+            /* use_host_buft = */ false);
+    if (buft != nullptr) {
+        return buft;
+    }
+
+    return allow_cpu_fallback ? select_weight_cpu_default_buft(hparams, tensor, op) : nullptr;
+}
+
+static bool llama_model_loader_buft_is_cpu(ggml_backend_buffer_type_t buft) {
+    if (buft == nullptr) {
+        return false;
+    }
+
+    ggml_backend_dev_t dev = ggml_backend_buft_get_device(buft);
+    if (dev != nullptr && ggml_backend_dev_type(dev) == GGML_BACKEND_DEVICE_TYPE_CPU) {
+        return true;
+    }
+
+    return buft == ggml_backend_cpu_buffer_type();
+}
+
+static bool llama_model_loader_buft_is_opencl(ggml_backend_buffer_type_t buft) {
+    if (buft == nullptr) {
+        return false;
+    }
+
+    ggml_backend_dev_t dev = ggml_backend_buft_get_device(buft);
+    const char * dev_name = dev != nullptr ? ggml_backend_dev_name(dev) : nullptr;
+    if (dev_name != nullptr && llama_hetero_is_opencl_backend(dev_name)) {
+        return true;
+    }
+
+    const char * buft_name = ggml_backend_buft_name(buft);
+    return buft_name != nullptr &&
+           llama_hetero_to_lower(llama_hetero_trim(buft_name)).find("opencl") != std::string::npos;
+}
+
+bool llama_model_loader_should_replace_fastrpc_opencl_weight_duplicate(
+        const char * backend,
+        ggml_backend_buffer_type_t existing_buft,
+        ggml_backend_buffer_type_t candidate_buft) {
+    if (candidate_buft == nullptr) {
+        return false;
+    }
+    if (existing_buft == nullptr) {
+        return true;
+    }
+
+    const std::string target_backend = llama_hetero_canonical_backend(backend != nullptr ? backend : "");
+    if (target_backend == "opencl") {
+        const bool existing_opencl = llama_model_loader_buft_is_opencl(existing_buft);
+        const bool candidate_opencl = llama_model_loader_buft_is_opencl(candidate_buft);
+        if (candidate_opencl && !existing_opencl) {
+            return true;
+        }
+        if (existing_opencl && !candidate_opencl) {
+            return false;
+        }
+    }
+
+    return llama_model_loader_buft_is_cpu(existing_buft) &&
+           !llama_model_loader_buft_is_cpu(candidate_buft);
 }
 
 static bool llama_hetero_route_uses_backend_kind(const llama_hetero_route_spec & route, int backend_kind) {
@@ -1167,7 +1348,7 @@ bool llama_model_loader_should_preserve_opencl_host_buft_for_mmap(
         bool buft_is_dev_host);
 
 static ggml_backend_buffer_type_t select_weight_opencl_shared_host_buft(const llama_hparams & hparams, ggml_tensor * tensor, ggml_op op) {
-    ggml_backend_buffer_type_t buft = select_weight_device_buft(hparams, tensor, op, "GPUOpenCL", /* use_host_buft = */ true);
+    ggml_backend_buffer_type_t buft = llama_model_loader_select_weight_device_buft(hparams, tensor, op, "GPUOpenCL", /* use_host_buft = */ true);
     if (buft != nullptr) {
         return buft;
     }
@@ -1180,11 +1361,11 @@ static ggml_backend_buffer_type_t select_weight_opencl_portable_buft(const llama
 }
 
 static ggml_backend_buffer_type_t select_weight_opencl_device_buft(
-        const llama_hparams & hparams,
+    const llama_hparams & hparams,
         ggml_tensor * tensor,
         ggml_op op,
         const buft_list_t * buft_list_cpu) {
-    ggml_backend_buffer_type_t buft = select_weight_device_buft(hparams, tensor, op, "GPUOpenCL", /* use_host_buft = */ false);
+    ggml_backend_buffer_type_t buft = llama_model_loader_select_weight_device_buft(hparams, tensor, op, "GPUOpenCL", /* use_host_buft = */ false);
     if (buft != nullptr) {
         return buft;
     }
