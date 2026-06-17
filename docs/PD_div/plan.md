@@ -1,3 +1,20 @@
+最新状态（2026-06-03 fd 复测）：
+
+- 本轮按 `scripts/run-bench-pd-fd.sh` 的 fd 设备、远端目录和模型约定执行，但不跑 FastRPC/QNN 组合；命令中显式设置 `GGML_QNN_DISABLE_BACKEND=1`、`GGML_HETERO_DYNAMIC_ALLOW_QNN=0`。
+- 结果目录：
+  - 主矩阵：`results/codex-fastrpc-coop-20260603-fd`
+  - 复测：`results/codex-fastrpc-coop-20260603-fd-verify`
+- `./llama-bench --list-devices` 返回 0，`GPUOpenCL` 和 `HTP0` 可见；`qnn-*` 也因构建包含 QNN 出现在 device list 中，但本轮没有运行 FastRPC/QNN case。
+- `./test-backend-ops -b HTP0 -o MUL_MAT -p 'type_a=f16'` 返回 0，`258/258 tests passed`；`./test-backend-ops -b GPUOpenCL -o MUL_MAT -p 'type_a=f16'` 也返回 0。说明基础 backend registry、OpenCL 和 FastRPC f16 MUL_MAT smoke 可用。
+- `llama-bench` 最小 workload `pp32_tg4` 复测结果：
+  - `single_opencl_pp32_tg4` 返回 0，`devices=GPUOpenCL`，`avg_ts=89.903483`。
+  - `single_fastrpc_pp32_tg4` 返回 134，`ggml-hexagon.cpp:2142: ggml-hex: dspqueue_read failed: 0x0000002e`。
+  - `switch_cpu_to_fastrpc_pp32_tg4` 返回 134；prefill route 到 CPU、decode route 到 FastRPC 均 apply 成功，KV state rebuild 到 `storage=fastrpc-device buft=HTP0` 成功，然后 FastRPC decode compute 报 `dspqueue_read failed`。
+  - `switch_fastrpc_to_cpu_pp32_tg4` 返回 134；FastRPC prefill route apply 后，在进入 CPU decode 前 FastRPC compute 报 `dspqueue_read failed`。
+  - `switch_opencl_to_fastrpc_pp32_tg4` 返回 134；OpenCL prefill 成功，KV 从 OpenCL 同步并 rebuild 到 `storage=fastrpc-device buft=HTP0` 成功，decode route 到 FastRPC 成功，然后 FastRPC decode compute 报 `dspqueue_read failed`。
+  - `switch_fastrpc_to_opencl_pp32_tg4` 返回 134；FastRPC prefill route apply 后，在进入 OpenCL decode KV migration 前 FastRPC/OpenCL mixed graph 报 `dspqueue_read failed`。
+- 本轮结论：当前 fd 上 FastRPC 与 CPU/OpenCL 协同推理没有跑通；阻塞点不是 QNN，也不是 `opencl -> fastrpc` 的 KV state rebuild 本身，而是含 FastRPC 的 `llama-bench` 图执行在 Hexagon `dspqueue_read` 阶段失败。更关键的是，当前构建下 `single_fastrpc_pp32_tg4` 也失败，所以需要先恢复 FastRPC 单后端 `llama-bench` 基线，再继续定位 OpenCL/FastRPC 的中间数据布局转换和权重 residency。
+
 暂时不用完成第二层：
 第二层：修模型权重驻留策略。
 当前 route_args opencl/fastrpc 两个方向都用 -dev GPUOpenCL/HTP0：见 run-bench-pd-fd.sh (line 134)。这对 opencl -> fastrpc 的 prefill 有利，但对 fastrpc -> opencl 的 FastRPC prefill 不利，容易让权重首先偏向 OpenCL，然后 HTP0 prefill 变成 mixed graph。
@@ -853,3 +870,113 @@ switch_fastrpc_to_opencl_pp32_tg4:
 - FastRPC 基础后端和已验证 PD 最小矩阵已经在 runner 中跑通：`backend_ops f16/mxfp4/q4_0`、`fastrpc -> fastrpc`、`cpu -> fastrpc`、`fastrpc -> cpu` 均返回 0。
 - bench repo 不能直接照 `llama.cpp_test` 的现象跑通，核心原因是当前 Hexagon backend 新增的 HMX/op batching 路径改变了 workload 行为；PD `pp32_tg4` 需要禁用 HMX，backend-ops 量化测试又需要保留 HMX 且禁用 hostbuf，因此必须拆分环境。
 - `opencl <-> fastrpc` 当前仍未跑通，但已经证明不是 route canonical、QNN gating 或 KV rebuild 的问题；阻塞点在 OpenCL/FastRPC mixed graph 进入 Hexagon compute 后的 `dspqueue_read failed: 0x2e`。
+
+### 2026-06-03 fd 复测：FastRPC + CPU/OpenCL 协同推理当前未跑通
+
+本轮目标：按 fd runner 的设备、远端目录和模型约定，在 `fd8657d6` 上只复测 FastRPC 与 CPU/OpenCL 的协同推理；不考虑 FastRPC/QNN。远端目录为 `/data/local/tmp/bench-PD`，模型为 `/data/local/tmp/models/Qwen2.5-3B-AoT/ggml/weights.gguf`。
+
+使用结果目录：
+
+```text
+results/codex-fastrpc-coop-20260603-fd
+results/codex-fastrpc-coop-20260603-fd-verify
+```
+
+本轮环境要点：
+
+```text
+GGML_QNN_DISABLE_BACKEND=1
+GGML_HETERO_DYNAMIC_ALLOW_QNN=0
+GGML_HEXAGON_EXPERIMENTAL=1
+GGML_HEXAGON_HOSTBUF=1
+GGML_HEXAGON_NDEV=1
+GGML_HEXAGON_NHVX=0
+GGML_HEXAGON_USE_HMX=0
+LLAMA_BENCH_FAST_EXIT=1
+```
+
+设备预检：
+
+```text
+./llama-bench --list-devices
+  rc = 0
+  GPUOpenCL: QUALCOMM Adreno(TM) 830
+  HTP0: Hexagon
+  qnn-npu/qnn-gpu/qnn-cpu 可见，但本轮没有运行 FastRPC/QNN case
+```
+
+backend ops smoke：
+
+```text
+./test-backend-ops -b HTP0 -o MUL_MAT -p 'type_a=f16'
+  rc = 0
+  258/258 tests passed
+
+./test-backend-ops -b GPUOpenCL -o MUL_MAT -p 'type_a=f16'
+  rc = 0
+```
+
+`llama-bench pp32_tg4` 复测矩阵：
+
+```text
+single_opencl_pp32_tg4:
+  rc = 0
+  devices = GPUOpenCL
+  avg_ts = 89.903483
+
+single_fastrpc_pp32_tg4:
+  rc = 134
+  HTP0 KV buffer size = 72.00 MiB
+  sched_reserve: graph splits = 3
+  ggml-hexagon.cpp:2142: ggml-hex: dspqueue_read failed: 0x0000002e
+
+switch_cpu_to_fastrpc_pp32_tg4:
+  rc = 134
+  prefill route apply 到 cpu 成功
+  decode 前 FastRPC KV state rebuild 成功
+  storage = fastrpc-device
+  buft = HTP0
+  decode route apply 到 fastrpc 成功
+  随后 FastRPC decode compute:
+    sched_reserve: graph splits = 3
+    ggml-hex: dspqueue_read failed: 0x0000002e
+
+switch_fastrpc_to_cpu_pp32_tg4:
+  rc = 134
+  prefill route apply 到 fastrpc 成功
+  尚未进入 CPU decode 迁移/执行前，FastRPC prefill compute:
+    sched_reserve: graph splits = 3
+    ggml-hex: dspqueue_read failed: 0x0000002e
+
+switch_opencl_to_fastrpc_pp32_tg4:
+  rc = 134
+  prefill route apply 到 opencl 成功
+  OpenCL KV 同步到 host 成功
+  decode 前 FastRPC KV state rebuild 成功
+  storage = fastrpc-device
+  buft = HTP0
+  decode route apply 到 fastrpc 成功
+  随后 FastRPC decode compute:
+    sched_reserve: graph splits = 363
+    ggml-hex: dspqueue_read failed: 0x0000002e
+
+switch_fastrpc_to_opencl_pp32_tg4:
+  rc = 134
+  prefill route apply 到 fastrpc 成功
+  尚未进入 OpenCL decode KV migration，FastRPC/OpenCL mixed prefill graph:
+    sched_reserve: graph splits = 383
+    ggml-hex: dspqueue_read failed: 0x0000002e
+```
+
+与 2026-05-31 记录的差异：
+
+- 2026-05-31 的 runner 记录显示 `GGML_HEXAGON_USE_HMX=0` 后 `fastrpc -> fastrpc`、`cpu -> fastrpc`、`fastrpc -> cpu` 可跑通。
+- 2026-06-03 复测使用同样的关键 FastRPC PD 环境后，`single_fastrpc_pp32_tg4` 已经返回 134。因此当前问题不能只按 OpenCL/FastRPC layout 解释；需要先确认当前远端二进制、Hexagon skel、driver 环境和 FastRPC 单后端 `llama-bench` 基线是否发生回退。
+- FastRPC `MUL_MAT f16` backend ops 仍返回 0，说明 `HTP0` registry 和简单 op path 可用；失败发生在 `llama-bench` 组图执行/queue 读取阶段。
+
+本轮结论：
+
+- FastRPC 与其他后端协同推理当前没有跑通；所有含 FastRPC 的 `llama-bench pp32_tg4` case 都返回 134。
+- `opencl -> fastrpc` 已经证明 route apply、OpenCL KV 同步、FastRPC KV rebuild 都能走到；失败点在后续 FastRPC compute 的 `dspqueue_read failed: 0x2e`。
+- `fastrpc -> opencl` 的失败更早，FastRPC prefill 阶段就在 HTP/OpenCL mixed graph 上 abort，尚未进入 decode-side KV migration。
+- 下一步优先级应调整为：先恢复 `single_fastrpc_pp32_tg4`；单后端稳定后，再处理 OpenCL/FastRPC 之间 KV/中间 tensor layout 转换和双端权重驻留 contract。

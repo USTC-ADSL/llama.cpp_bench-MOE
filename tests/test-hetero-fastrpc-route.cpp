@@ -4,6 +4,14 @@
 
 #include <string>
 
+std::string llama_context_route_backend_for_tensor_name(
+        const llama_hetero_route_spec & route,
+        const char * tensor_name);
+
+bool llama_context_opencl_fastrpc_route_forbids_backend(
+        const std::string & active_phase_backend,
+        const std::string & actual_backend);
+
 int main() {
     testing t;
 
@@ -100,6 +108,29 @@ int main() {
         t.assert_equal("available fastrpc should use the decode route",
                 std::string("phase-decode-route"),
                 decision.reason);
+    });
+
+    t.test("fastrpc phase route claims kqv_out as attention core", [](testing & t) {
+        const llama_hetero_route_spec route =
+            llama_hetero_parse_route_spec("attn=fastrpc,ffn=fastrpc,output=fastrpc");
+
+        t.assert_equal("kqv_out should follow the FastRPC attention core stage",
+                std::string("fastrpc"),
+                llama_context_route_backend_for_tensor_name(route, "kqv_out-12"));
+        t.assert_equal("Qcur should follow the FastRPC attention projection stage",
+                std::string("fastrpc"),
+                llama_context_route_backend_for_tensor_name(route, "Qcur-12"));
+    });
+
+    t.test("OpenCL and FastRPC dynamic phases reject the opposite compute backend", [](testing & t) {
+        t.assert_true("FastRPC phase must reject material OpenCL compute nodes",
+                llama_context_opencl_fastrpc_route_forbids_backend("fastrpc", "opencl"));
+        t.assert_true("OpenCL phase must reject material FastRPC compute nodes",
+                llama_context_opencl_fastrpc_route_forbids_backend("opencl", "HTP0"));
+        t.assert_true("FastRPC phase should allow CPU fallback nodes",
+                !llama_context_opencl_fastrpc_route_forbids_backend("fastrpc", "cpu"));
+        t.assert_true("OpenCL phase should allow CPU fallback nodes",
+                !llama_context_opencl_fastrpc_route_forbids_backend("opencl", "cpu"));
     });
 
     return t.summary();

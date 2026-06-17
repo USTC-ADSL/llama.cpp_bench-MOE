@@ -155,6 +155,7 @@ llama_build_and_test(test-model-cpu-buft-qnn-gating.cpp)
 llama_build_and_test(test-qnn-aot-pos-utils.cpp)
 llama_build_and_test(test-qnn-aot-kv-utils.cpp)
 llama_build_and_test(test-qnn-aot-lazy-transformer-init.cpp)
+llama_build_and_test(test-gallocr-view-refresh.cpp)
 
 if (GGML_OPENCL)
     llama_build_and_test(test-model-loader-opencl-portability.cpp)

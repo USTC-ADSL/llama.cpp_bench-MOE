@@ -2450,6 +2450,15 @@ int llama_bench(int argc, char ** argv) {
             }
 
             llama_memory_clear(llama_get_memory(ctx), false);
+            if (!ctx->reset_dynamic_route_for_benchmark_repeat()) {
+                fprintf(stderr,
+                        "%s: error: failed to reset dynamic route state before %s\n",
+                        __func__,
+                        llama_bench_format_round_event(params_idx, params_count, round_idx, params.reps, "starting").c_str());
+                llama_free(ctx);
+                llama_model_free(lmodel);
+                exit(1);
+            }
 
             if (print_round_events) {
                 fprintf(stderr,

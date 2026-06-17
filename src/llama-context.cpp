@@ -107,6 +107,87 @@ bool llama_context_should_disable_cpu_qnn_host_fallback(
     return first_device_is_qnn && (routes_use_opencl || routes_use_cpu);
 }
 
+std::string llama_context_route_backend_for_tensor_name(
+        const llama_hetero_route_spec & route,
+        const char * tensor_name) {
+    if (tensor_name == nullptr || !route.has_any_route()) {
+        return {};
+    }
+    if (llama_hetero_is_output_tensor_name(tensor_name)) {
+        return llama_hetero_canonical_backend(route.backend_for(llama_hetero_route_stage::OUTPUT));
+    }
+    if (llama_hetero_is_ffn_tensor_name(tensor_name)) {
+        return llama_hetero_canonical_backend(route.backend_for(llama_hetero_route_stage::FFN));
+    }
+    if (llama_hetero_is_attn_out_tensor_name(tensor_name)) {
+        return llama_hetero_canonical_backend(route.backend_for(llama_hetero_route_stage::ATTN_OUT));
+    }
+    if (llama_hetero_is_attn_core_tensor_name(tensor_name)) {
+        return llama_hetero_canonical_backend(route.backend_for(llama_hetero_route_stage::ATTN_CORE));
+    }
+    if (llama_hetero_is_attn_proj_tensor_name(tensor_name)) {
+        return llama_hetero_canonical_backend(route.backend_for(llama_hetero_route_stage::ATTN_PROJ));
+    }
+    return {};
+}
+
+bool llama_context_opencl_fastrpc_route_forbids_backend(
+        const std::string & active_phase_backend,
+        const std::string & actual_backend) {
+    const std::string active = llama_hetero_canonical_backend(active_phase_backend);
+    const std::string actual = llama_hetero_canonical_backend(actual_backend);
+    return (active == "fastrpc" && actual == "opencl") ||
+           (active == "opencl" && actual == "fastrpc");
+}
+
+static std::string llama_context_backend_canonical_name(ggml_backend_t backend) {
+    if (backend == nullptr) {
+        return {};
+    }
+
+    ggml_backend_dev_t dev = ggml_backend_get_device(backend);
+    const char * dev_name = dev != nullptr ? ggml_backend_dev_name(dev) : nullptr;
+    const std::string canonical_dev = llama_hetero_canonical_backend(dev_name != nullptr ? dev_name : "");
+    if (!canonical_dev.empty()) {
+        return canonical_dev;
+    }
+
+    const char * backend_name = ggml_backend_name(backend);
+    return llama_hetero_canonical_backend(backend_name != nullptr ? backend_name : "");
+}
+
+static std::string llama_context_dynamic_candidate_phase_backend(const llama_dynamic_route_candidate & candidate) {
+    return candidate.configured
+        ? llama_hetero_canonical_backend(llama_hetero_phase_backend_for_route(candidate.plan.route))
+        : std::string();
+}
+
+static bool llama_context_dynamic_route_is_opencl_fastrpc_switch(
+        const llama_dynamic_route_runtime_config & config) {
+    const std::string prefill = llama_context_dynamic_candidate_phase_backend(config.prefill);
+    const std::string decode  = llama_context_dynamic_candidate_phase_backend(config.decode);
+    return (prefill == "opencl"  && decode == "fastrpc") ||
+           (prefill == "fastrpc" && decode == "opencl");
+}
+
+bool llama_context_should_activate_dynamic_prefill_route_for_initial_reserve(
+        const llama_dynamic_route_runtime_config & config) {
+    if (!config.enabled() ||
+        !config.prefill.configured ||
+        !config.decode.configured ||
+        !llama_hetero_route_is_phase_homogeneous(config.prefill.plan.route) ||
+        !llama_hetero_route_is_phase_homogeneous(config.decode.plan.route)) {
+        return false;
+    }
+
+    return llama_context_dynamic_route_is_opencl_fastrpc_switch(config);
+}
+
+bool llama_context_should_reset_dynamic_route_for_benchmark_repeat(
+        const llama_dynamic_route_runtime_config & config) {
+    return llama_context_should_activate_dynamic_prefill_route_for_initial_reserve(config);
+}
+
 llama_hetero_kv_contract llama_dynamic_phase_migration_kv_contract(
         const std::string & producer_backend,
         const std::string & consumer_backend,
@@ -155,6 +236,36 @@ llama_hetero_kv_contract llama_dynamic_phase_migration_kv_contract(
     contract.buffer_available = true;
     contract.zero_copy = false;
     return contract;
+}
+
+llama_hetero_kv_contract llama_dynamic_phase_initial_opencl_fastrpc_kv_contract(
+        const llama_hetero_route_spec & prefill_route,
+        const llama_hetero_route_spec & decode_route,
+        const char * reason) {
+    if (!prefill_route.has_any_route() ||
+        !decode_route.has_any_route() ||
+        !llama_hetero_route_is_phase_homogeneous(prefill_route) ||
+        !llama_hetero_route_is_phase_homogeneous(decode_route)) {
+        return {};
+    }
+
+    const std::string prefill =
+        llama_hetero_canonical_backend(llama_hetero_phase_backend_for_route(prefill_route));
+    const std::string decode =
+        llama_hetero_canonical_backend(llama_hetero_phase_backend_for_route(decode_route));
+
+    const bool opencl_to_fastrpc =
+        prefill == "opencl" && llama_hetero_is_fastrpc_backend(decode);
+    const bool fastrpc_to_opencl =
+        llama_hetero_is_fastrpc_backend(prefill) && decode == "opencl";
+    if (!opencl_to_fastrpc && !fastrpc_to_opencl) {
+        return {};
+    }
+
+    return llama_dynamic_phase_migration_kv_contract(
+            decode,
+            prefill,
+            reason != nullptr ? reason : "dynamic-opencl-fastrpc-prefill-kv-placement");
 }
 
 bool llama_context_should_attempt_qnn_phase_kv_migration(
@@ -279,9 +390,24 @@ bool llama_context_should_try_qnn_opencl_direct_host_ptr_visibility(
 
 bool llama_context_should_use_dynamic_decode_tg_only_sched_reserve(
         bool     dynamic_route_enabled,
+        bool     dynamic_opencl_fastrpc_switch,
         uint32_t n_tokens,
         bool     experimental_enabled) {
-    return experimental_enabled && dynamic_route_enabled && n_tokens == 1;
+    return experimental_enabled && dynamic_route_enabled && dynamic_opencl_fastrpc_switch && n_tokens == 1;
+}
+
+uint32_t llama_context_dynamic_sched_reserve_n_tokens(
+        uint32_t full_reserve_tokens,
+        uint32_t n_seqs,
+        bool     dynamic_route_enabled,
+        bool     dynamic_opencl_fastrpc_switch,
+        uint32_t request_n_tokens,
+        bool     experimental_enabled) {
+    return llama_context_should_use_dynamic_decode_tg_only_sched_reserve(
+            dynamic_route_enabled,
+            dynamic_opencl_fastrpc_switch,
+            request_n_tokens,
+            experimental_enabled) ? n_seqs : full_reserve_tokens;
 }
 
 bool llama_context_should_prewarm_dynamic_qnn_opencl_kv_aliases(
@@ -477,9 +603,15 @@ llama_context::llama_context(
         ? llama_hetero_build_execution_plan(params.hetero_phase_route, params.hetero_kv_layout)
         : model.get_hetero_plan();
     hetero_plan_base = hetero_plan;
+    dynamic_route_config = llama_dynamic_route_config_from_env();
+    if (llama_context_should_activate_dynamic_prefill_route_for_initial_reserve(dynamic_route_config)) {
+        hetero_plan = dynamic_route_config.prefill.plan;
+        LLAMA_LOG_INFO("%s: pre-activating dynamic prefill route for initial reserve: %s\n",
+                __func__,
+                llama_hetero_format_route_spec(hetero_plan.route).c_str());
+    }
     aot_active_route_requests_qnn = llama_context_hetero_route_requests_qnn(hetero_plan.route);
     hetero_kv_contract_allocated = hetero_plan.attn_kv;
-    dynamic_route_config = llama_dynamic_route_config_from_env();
     const auto & hetero_route = hetero_plan.route;
     const bool dynamic_cpu_opencl_zero_copy =
         llama_hetero_route_has_cpu_opencl_adjacent_boundary(dynamic_route_config.prefill.plan.route) ||
@@ -747,6 +879,22 @@ llama_context::llama_context(
                             llama_hetero_kv_layout_name(hetero_kv_contract_allocated.layout),
                             llama_hetero_kv_transfer_mode_name(hetero_kv_contract_allocated.transfer));
                 }
+            }
+        }
+
+        {
+            llama_hetero_kv_contract prefill_owned_kv =
+                llama_dynamic_phase_initial_opencl_fastrpc_kv_contract(
+                        dynamic_route_config.prefill.plan.route,
+                        dynamic_route_config.decode.plan.route,
+                        "dynamic-opencl-fastrpc-prefill-kv-placement");
+            if (prefill_owned_kv.stage_boundary_active()) {
+                hetero_kv_contract_allocated = std::move(prefill_owned_kv);
+                LLAMA_LOG_INFO("%s: dynamic OpenCL/FastRPC initial KV placement uses storage=%s for prefill backend=%s before decode rebuild to %s\n",
+                        __func__,
+                        hetero_kv_contract_allocated.storage_backend.empty() ? "<unset>" : hetero_kv_contract_allocated.storage_backend.c_str(),
+                        hetero_kv_contract_allocated.consumer_backend.c_str(),
+                        hetero_kv_contract_allocated.producer_backend.c_str());
             }
         }
 
@@ -1028,7 +1176,31 @@ void llama_context::sched_reserve() {
     const int64_t t_start_us = ggml_time_us();
 
     const uint32_t n_seqs = cparams.n_seq_max;
-    const uint32_t n_tokens = std::min(cparams.n_ctx, cparams.n_ubatch);
+    const uint32_t full_reserve_tokens = std::min(cparams.n_ctx, cparams.n_ubatch);
+    const uint32_t request_tokens = sched_reserve_request_tokens;
+    sched_reserve_request_tokens = 0;
+    const bool dynamic_opencl_fastrpc_switch =
+        llama_context_dynamic_route_is_opencl_fastrpc_switch(dynamic_route_config);
+    const bool dynamic_decode_tg_only_reserve =
+        llama_context_should_use_dynamic_decode_tg_only_sched_reserve(
+                dynamic_route_config.enabled(),
+                dynamic_opencl_fastrpc_switch,
+                request_tokens,
+                llama_context_env_flag_enabled("GGML_HETERO_DYNAMIC_PRERESERVE"));
+    const uint32_t n_tokens = llama_context_dynamic_sched_reserve_n_tokens(
+            full_reserve_tokens,
+            n_seqs,
+            dynamic_route_config.enabled(),
+            dynamic_opencl_fastrpc_switch,
+            request_tokens,
+            llama_context_env_flag_enabled("GGML_HETERO_DYNAMIC_PRERESERVE"));
+
+    if (dynamic_decode_tg_only_reserve) {
+        LLAMA_LOG_INFO("%s: using tg-only reserve for dynamic decode route switch (request_tokens=%u full_tokens=%u)\n",
+                __func__,
+                request_tokens,
+                full_reserve_tokens);
+    }
 
     const size_t max_nodes = this->graph_max_nodes(n_tokens);
 
@@ -1052,6 +1224,46 @@ void llama_context::sched_reserve() {
     const int n_outputs = n_seqs;
 
     LLAMA_LOG_DEBUG("%s: worst-case: n_tokens = %d, n_seqs = %d, n_outputs = %d\n", __func__, n_tokens, n_seqs, n_outputs);
+
+    const std::string active_phase_backend =
+        llama_hetero_canonical_backend(llama_hetero_phase_backend_for_route(hetero_plan.route));
+    const bool validate_opencl_fastrpc_phase =
+        dynamic_opencl_fastrpc_switch &&
+        (active_phase_backend == "opencl" || active_phase_backend == "fastrpc");
+
+    const auto validate_opencl_fastrpc_route_graph = [&](ggml_cgraph * gf, const char * reserve_label) {
+        if (!validate_opencl_fastrpc_phase || gf == nullptr) {
+            return;
+        }
+
+        for (int i = 0; i < ggml_graph_n_nodes(gf); ++i) {
+            ggml_tensor * node = ggml_graph_node(gf, i);
+            if (node == nullptr) {
+                continue;
+            }
+
+            const std::string route_backend =
+                llama_context_route_backend_for_tensor_name(hetero_plan.route, ggml_get_name(node));
+            if (route_backend.empty()) {
+                continue;
+            }
+
+            ggml_backend_t assigned_backend = ggml_backend_sched_get_tensor_backend(sched.get(), node);
+            const std::string actual_backend = llama_context_backend_canonical_name(assigned_backend);
+            if (!llama_context_opencl_fastrpc_route_forbids_backend(active_phase_backend, actual_backend)) {
+                continue;
+            }
+
+            throw std::runtime_error(format(
+                    "rejecting OpenCL/FastRPC route reserve for active backend=%s: %s graph assigned route tensor name=%s op=%s route_backend=%s actual_backend=%s",
+                    active_phase_backend.c_str(),
+                    reserve_label != nullptr ? reserve_label : "unknown",
+                    ggml_get_name(node),
+                    ggml_op_desc(node),
+                    route_backend.c_str(),
+                    actual_backend.c_str()));
+        }
+    };
 
     // resolve automatic Flash Attention use
     if (cparams.auto_fa) {
@@ -1184,7 +1396,7 @@ void llama_context::sched_reserve() {
     int n_nodes_tg  = -1;
 
     // reserve pp (prompt processing) graph first so that buffers are only allocated once
-    {
+    if (!dynamic_decode_tg_only_reserve) {
         auto * gf = graph_reserve(n_tokens, n_seqs, n_tokens, mctx.get(),
                 model.hparams.no_alloc, model.hparams.no_alloc ? backend_buf_exp_size.data() : nullptr);
         if (!gf) {
@@ -1201,6 +1413,7 @@ void llama_context::sched_reserve() {
 
         n_splits_pp = ggml_backend_sched_get_n_splits(sched.get());
         n_nodes_pp  = ggml_graph_n_nodes(gf);
+        validate_opencl_fastrpc_route_graph(gf, "pp");
     }
 
     // reserve with tg (token generation) graph to get the number of splits and nodes
@@ -1212,10 +1425,11 @@ void llama_context::sched_reserve() {
 
         n_splits_tg = ggml_backend_sched_get_n_splits(sched.get());
         n_nodes_tg  = ggml_graph_n_nodes(gf);
+        validate_opencl_fastrpc_route_graph(gf, "tg");
     }
 
     // reserve again with pp graph to avoid ggml-alloc reallocations during inference
-    {
+    if (!dynamic_decode_tg_only_reserve) {
         // TODO: not sure if the following graph would be worst case for multi-stream KV caches:
         //
         // auto * gf = graph_reserve(n_tokens, 1, n_tokens, mctx.get());
@@ -1224,6 +1438,7 @@ void llama_context::sched_reserve() {
         if (!gf) {
             throw std::runtime_error("failed to allocate compute pp buffers");
         }
+        validate_opencl_fastrpc_route_graph(gf, "pp-final");
     }
 
     for (size_t i = 0; i < backend_ptrs.size(); ++i) {
@@ -1239,13 +1454,61 @@ void llama_context::sched_reserve() {
         }
     }
 
-    if (n_nodes_pp == n_nodes_tg) {
+    if (validate_opencl_fastrpc_phase) {
+        const int max_splits = n_splits_pp >= 0 ? std::max(n_splits_pp, n_splits_tg) : n_splits_tg;
+        if (max_splits > 5) {
+            throw std::runtime_error(format(
+                    "rejecting OpenCL/FastRPC route reserve for active backend=%s: graph splits=%d exceeds low-split limit=5",
+                    active_phase_backend.c_str(),
+                    max_splits));
+        }
+
+        const auto buft_name_contains = [](ggml_backend_buffer_type_t buft, const char * needle) {
+            const char * name = buft != nullptr ? ggml_backend_buft_name(buft) : nullptr;
+            if (name == nullptr || needle == nullptr) {
+                return false;
+            }
+
+            return llama_hetero_to_lower(name).find(needle) != std::string::npos;
+        };
+
+        for (size_t i = 0; i < backend_buft.size(); ++i) {
+            if (backend_buf_exp_size[i] <= 1) {
+                continue;
+            }
+
+            ggml_backend_buffer_type_t buft = backend_buft[i];
+            const bool is_opencl_buft = buft_name_contains(buft, "opencl");
+            const bool is_fastrpc_buft =
+                buft_name_contains(buft, "htp") ||
+                buft_name_contains(buft, "hexagon") ||
+                buft_name_contains(buft, "fastrpc");
+            if (active_phase_backend == "fastrpc" && is_opencl_buft) {
+                throw std::runtime_error(format(
+                        "rejecting OpenCL/FastRPC route reserve for FastRPC phase: material OpenCL compute buffer %s size=%.4f MiB",
+                        ggml_backend_buft_name(buft),
+                        backend_buf_exp_size[i] / 1024.0 / 1024.0));
+            }
+            if (active_phase_backend == "opencl" && is_fastrpc_buft) {
+                throw std::runtime_error(format(
+                        "rejecting OpenCL/FastRPC route reserve for OpenCL phase: material FastRPC compute buffer %s size=%.4f MiB",
+                        ggml_backend_buft_name(buft),
+                        backend_buf_exp_size[i] / 1024.0 / 1024.0));
+            }
+        }
+    }
+
+    if (n_nodes_pp < 0) {
+        LLAMA_LOG_INFO("%s: graph nodes  = %d (tg-only reserve)\n", __func__, n_nodes_tg);
+    } else if (n_nodes_pp == n_nodes_tg) {
         LLAMA_LOG_INFO("%s: graph nodes  = %d\n", __func__, n_nodes_pp);
     } else {
         LLAMA_LOG_INFO("%s: graph nodes  = %d (with bs=%d), %d (with bs=1)\n", __func__, n_nodes_pp, n_tokens, n_nodes_tg);
     }
 
-    if (n_splits_pp == n_splits_tg) {
+    if (n_splits_pp < 0) {
+        LLAMA_LOG_INFO("%s: graph splits = %d (tg-only reserve)\n", __func__, n_splits_tg);
+    } else if (n_splits_pp == n_splits_tg) {
         LLAMA_LOG_INFO("%s: graph splits = %d\n", __func__, n_splits_pp);
     } else {
         LLAMA_LOG_INFO("%s: graph splits = %d (with bs=%d), %d (with bs=1)\n", __func__, n_splits_pp, n_tokens, n_splits_tg);
@@ -2116,6 +2379,57 @@ bool llama_context::set_dynamic_route_config(const llama_dynamic_route_config & 
 
 std::string llama_context::get_dynamic_route_mode() const {
     return llama_dynamic_route_mode_name(dynamic_route_config.mode);
+}
+
+bool llama_context::reset_dynamic_route_for_benchmark_repeat() {
+    if (!llama_context_should_reset_dynamic_route_for_benchmark_repeat(dynamic_route_config)) {
+        return true;
+    }
+
+    synchronize();
+
+    const std::string current_attn_backend =
+        llama_hetero_canonical_backend(hetero_plan.route.backend_for(llama_hetero_route_stage::ATTN_CORE));
+    const std::string prefill_attn_backend =
+        llama_hetero_canonical_backend(dynamic_route_config.prefill.plan.route.backend_for(llama_hetero_route_stage::ATTN_CORE));
+
+    if (current_attn_backend != prefill_attn_backend) {
+        LLAMA_LOG_INFO("%s: rebuilding cleared KV memory for benchmark repeat prefill route (%s -> %s)\n",
+                __func__,
+                current_attn_backend.empty() ? "<unset>" : current_attn_backend.c_str(),
+                prefill_attn_backend.empty() ? "<unset>" : prefill_attn_backend.c_str());
+        if (!rebuild_dynamic_consumer_kv_from_state(
+                    current_attn_backend,
+                    prefill_attn_backend,
+                    "opencl-fastrpc-benchmark-repeat-prefill-reset")) {
+            LLAMA_LOG_ERROR("%s: failed to rebuild cleared KV memory for benchmark repeat prefill route (%s -> %s)\n",
+                    __func__,
+                    current_attn_backend.empty() ? "<unset>" : current_attn_backend.c_str(),
+                    prefill_attn_backend.empty() ? "<unset>" : prefill_attn_backend.c_str());
+            return false;
+        }
+    }
+
+    if (!apply_hetero_plan(dynamic_route_config.prefill.plan, /* update_base_plan = */ false, "benchmark-repeat-reset")) {
+        LLAMA_LOG_ERROR("%s: failed to restore dynamic prefill route for benchmark repeat: %s\n",
+                __func__,
+                llama_hetero_format_route_spec(dynamic_route_config.prefill.plan.route).c_str());
+        return false;
+    }
+
+    gf_res_prev.reset();
+    gf_res_reserve.reset();
+    aot_saved_sched.reset();
+    hetero_dynamic_pre_reserved_plans.clear();
+    sched_reserve_request_tokens = 0;
+    sched_need_reserve = true;
+    dynamic_route_state = {};
+    hetero_phase_trace.reset();
+
+    LLAMA_LOG_INFO("%s: restored dynamic prefill route for benchmark repeat: %s\n",
+            __func__,
+            llama_hetero_format_route_spec(dynamic_route_config.prefill.plan.route).c_str());
+    return true;
 }
 
 void llama_context::maybe_apply_dynamic_route(uint32_t n_tokens) {
@@ -3506,32 +3820,36 @@ llm_graph_cb llama_context::graph_get_cb() const {
             }
         }
 
-        const auto route_backend_for_tensor = [&](const char * tensor_name) -> std::string {
-            if (tensor_name == nullptr || !hetero_plan.route.has_any_route()) {
-                return {};
-            }
-            if (llama_hetero_is_output_tensor_name(tensor_name)) {
-                return hetero_plan.route.backend_for(llama_hetero_route_stage::OUTPUT);
-            }
-            if (llama_hetero_is_ffn_tensor_name(tensor_name)) {
-                return hetero_plan.route.backend_for(llama_hetero_route_stage::FFN);
-            }
-            if (llama_hetero_is_attn_out_tensor_name(tensor_name)) {
-                return hetero_plan.route.backend_for(llama_hetero_route_stage::ATTN_OUT);
-            }
-            if (llama_hetero_is_attn_core_tensor_name(tensor_name)) {
-                return hetero_plan.route.backend_for(llama_hetero_route_stage::ATTN_CORE);
-            }
-            if (llama_hetero_is_attn_proj_tensor_name(tensor_name)) {
-                return hetero_plan.route.backend_for(llama_hetero_route_stage::ATTN_PROJ);
-            }
-            return {};
-        };
-
-        const std::string route_backend = route_backend_for_tensor(ggml_get_name(cur));
+        const std::string route_backend =
+            llama_context_route_backend_for_tensor_name(hetero_plan.route, ggml_get_name(cur));
         ggml_backend_t backend = find_backend_for_route(route_backend);
-        if (backend != nullptr && ggml_backend_supports_op(backend, cur)) {
+        if (backend == nullptr) {
+            return;
+        }
+
+        if (ggml_backend_supports_op(backend, cur)) {
             ggml_backend_sched_set_tensor_backend(sched.get(), cur, backend);
+            return;
+        }
+
+        const bool active_opencl_fastrpc_phase =
+            llama_context_dynamic_route_is_opencl_fastrpc_switch(dynamic_route_config) &&
+            (llama_hetero_canonical_backend(llama_hetero_phase_backend_for_route(hetero_plan.route)) == "opencl" ||
+             llama_hetero_canonical_backend(llama_hetero_phase_backend_for_route(hetero_plan.route)) == "fastrpc");
+        const std::string active_phase_backend =
+            llama_hetero_canonical_backend(llama_hetero_phase_backend_for_route(hetero_plan.route));
+        if (active_opencl_fastrpc_phase &&
+            route_backend == active_phase_backend &&
+            backend_cpu != nullptr &&
+            ggml_backend_supports_op(backend_cpu, cur)) {
+            ggml_backend_sched_set_tensor_backend(sched.get(), cur, backend_cpu);
+            if (llama_context_env_flag_enabled("GGML_HETERO_TRACE_ROUTE_BACKEND")) {
+                LLAMA_LOG_INFO("%s: route tensor name=%s op=%s target=%s unsupported, using CPU fallback for OpenCL/FastRPC phase\n",
+                        __func__,
+                        ggml_get_name(cur),
+                        ggml_op_desc(cur),
+                        route_backend.c_str());
+            }
         }
     };
 }

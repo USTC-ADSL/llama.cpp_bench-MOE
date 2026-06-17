@@ -59,6 +59,39 @@ const ggml_tensor * llama_model_resolve_weight_for_cpu_copy(
     return llama_hetero_is_cpu_backend(route.backend_for(stage)) ? cpu_copy : original;
 }
 
+const ggml_tensor * llama_model_resolve_weight_for_fastrpc_duplicate(
+        const ggml_tensor * original,
+        const ggml_tensor * fastrpc_copy,
+        llama_hetero_route_stage stage,
+        const llama_hetero_route_spec & route) {
+    if (original == nullptr || fastrpc_copy == nullptr) {
+        return original;
+    }
+
+    return llama_hetero_is_fastrpc_backend(route.backend_for(stage)) ? fastrpc_copy : original;
+}
+
+const ggml_tensor * llama_model_resolve_weight_for_fastrpc_opencl_dual_residency(
+        const ggml_tensor * original,
+        const ggml_tensor * opencl_copy,
+        const ggml_tensor * fastrpc_copy,
+        llama_hetero_route_stage stage,
+        const llama_hetero_route_spec & route) {
+    if (original == nullptr) {
+        return nullptr;
+    }
+
+    const std::string backend = llama_hetero_canonical_backend(route.backend_for(stage));
+    if (backend == "opencl" && opencl_copy != nullptr) {
+        return opencl_copy;
+    }
+    if (backend == "fastrpc" && fastrpc_copy != nullptr) {
+        return fastrpc_copy;
+    }
+
+    return original;
+}
+
 static bool llama_model_cpu_buft_route_requests_qnn(const llama_hetero_route_spec & route) {
     static constexpr std::array<llama_hetero_route_stage, 5> stages = {{
         llama_hetero_route_stage::ATTN_PROJ,
@@ -1530,6 +1563,24 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
     for (auto & [_, ctx_ptr] : ml.ctx_map) {
         for (auto * cur = ggml_get_first_tensor(ctx_ptr.get()); cur != NULL; cur = ggml_get_next_tensor(ctx_ptr.get(), cur)) {
             tensors_by_name.emplace_back(ggml_get_name(cur), cur);
+
+            llama_hetero_route_stage stage = llama_hetero_route_stage::FFN;
+            if (const ggml_tensor * cpu_copy = ml.get_opencl_cpu_extra_cpu_copy(ggml_get_name(cur))) {
+                if (cur != cpu_copy && ml.get_opencl_cpu_extra_cpu_copy_stage(ggml_get_name(cur), stage)) {
+                    register_opencl_cpu_extra_cpu_copy(cur, const_cast<ggml_tensor *>(cpu_copy), stage);
+                }
+            }
+
+            if (ml.get_fastrpc_opencl_weight_dual_stage(ggml_get_name(cur), stage)) {
+                ggml_tensor * opencl_copy = const_cast<ggml_tensor *>(
+                        ml.get_fastrpc_opencl_weight_dual_opencl_copy(ggml_get_name(cur)));
+                ggml_tensor * fastrpc_copy = const_cast<ggml_tensor *>(
+                        ml.get_fastrpc_opencl_weight_dual_fastrpc_copy(ggml_get_name(cur)));
+                if ((opencl_copy != nullptr && cur != opencl_copy) ||
+                    (fastrpc_copy != nullptr && cur != fastrpc_copy)) {
+                    register_fastrpc_opencl_weight_dual_residency(cur, opencl_copy, fastrpc_copy, stage);
+                }
+            }
         }
     }
 
@@ -2016,11 +2067,77 @@ void llama_model::register_opencl_cpu_extra_cpu_copy(
     opencl_cpu_extra_cpu_copy_stages[original] = stage;
 }
 
+void llama_model::register_fastrpc_opencl_weight_dual_residency(
+        ggml_tensor * original,
+        ggml_tensor * opencl_copy,
+        ggml_tensor * fastrpc_copy,
+        llama_hetero_route_stage stage) {
+    if (original == nullptr) {
+        return;
+    }
+
+    if (opencl_copy != nullptr && original != opencl_copy) {
+        fastrpc_opencl_weight_dual_opencl_copies[original] = opencl_copy;
+    }
+    if (fastrpc_copy != nullptr && original != fastrpc_copy) {
+        fastrpc_opencl_weight_dual_fastrpc_copies[original] = fastrpc_copy;
+    }
+    if ((opencl_copy != nullptr && original != opencl_copy) ||
+        (fastrpc_copy != nullptr && original != fastrpc_copy)) {
+        fastrpc_opencl_weight_dual_stages[original] = stage;
+    }
+}
+
+void llama_model::register_fastrpc_opencl_weight_duplicate(
+        ggml_tensor * original,
+        ggml_tensor * fastrpc_copy,
+        llama_hetero_route_stage stage) {
+    register_fastrpc_opencl_weight_dual_residency(original, nullptr, fastrpc_copy, stage);
+}
+
 ggml_tensor * llama_model::resolve_weight_for_route(
         ggml_tensor * weight,
         const llama_hetero_route_spec & route) const {
     if (weight == nullptr) {
         return nullptr;
+    }
+
+    auto dual_stage_it = fastrpc_opencl_weight_dual_stages.find(weight);
+    if (dual_stage_it != fastrpc_opencl_weight_dual_stages.end()) {
+        const ggml_tensor * opencl_copy = nullptr;
+        const ggml_tensor * fastrpc_copy = nullptr;
+        auto opencl_it = fastrpc_opencl_weight_dual_opencl_copies.find(weight);
+        if (opencl_it != fastrpc_opencl_weight_dual_opencl_copies.end()) {
+            opencl_copy = opencl_it->second;
+        }
+        auto fastrpc_it = fastrpc_opencl_weight_dual_fastrpc_copies.find(weight);
+        if (fastrpc_it != fastrpc_opencl_weight_dual_fastrpc_copies.end()) {
+            fastrpc_copy = fastrpc_it->second;
+        }
+
+        ggml_tensor * resolved = const_cast<ggml_tensor *>(
+                llama_model_resolve_weight_for_fastrpc_opencl_dual_residency(
+                    weight,
+                    opencl_copy,
+                    fastrpc_copy,
+                    dual_stage_it->second,
+                    route));
+        if (resolved != weight) {
+            return resolved;
+        }
+    }
+
+    auto fastrpc_it = fastrpc_opencl_weight_dual_fastrpc_copies.find(weight);
+    if (fastrpc_it != fastrpc_opencl_weight_dual_fastrpc_copies.end()) {
+        auto stage_it = fastrpc_opencl_weight_dual_stages.find(weight);
+        if (stage_it != fastrpc_opencl_weight_dual_stages.end()) {
+            ggml_tensor * resolved = const_cast<ggml_tensor *>(
+                    llama_model_resolve_weight_for_fastrpc_duplicate(
+                        weight, fastrpc_it->second, stage_it->second, route));
+            if (resolved != weight) {
+                return resolved;
+            }
+        }
     }
 
     auto copy_it = opencl_cpu_extra_cpu_copies.find(weight);

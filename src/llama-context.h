@@ -282,6 +282,7 @@ public:
     const llama_hetero_execution_plan & get_hetero_plan() const;
     bool set_dynamic_route_config(const llama_dynamic_route_config & config);
     std::string get_dynamic_route_mode() const;
+    bool reset_dynamic_route_for_benchmark_repeat();
 
 private:
     llm_graph_params graph_params(

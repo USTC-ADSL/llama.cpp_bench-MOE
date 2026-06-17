@@ -1,1 +1,0 @@
-timeout 1200 adb -s fd8657d6 shell 'cd /data/local/tmp/bench-PD && export LD_LIBRARY_PATH=/data/local/tmp/bench-PD:$LD_LIBRARY_PATH && export ADSP_LIBRARY_PATH=/data/local/tmp/bench-PD && export GGML_HEXAGON_EXPERIMENTAL=1 && ./llama-bench --list-devices'

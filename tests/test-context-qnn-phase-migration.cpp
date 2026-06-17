@@ -10,6 +10,11 @@ llama_hetero_kv_contract llama_dynamic_phase_migration_kv_contract(
         const std::string & consumer_backend,
         const char * reason);
 
+llama_hetero_kv_contract llama_dynamic_phase_initial_opencl_fastrpc_kv_contract(
+        const llama_hetero_route_spec & prefill_route,
+        const llama_hetero_route_spec & decode_route,
+        const char * reason);
+
 bool llama_context_should_attempt_qnn_phase_kv_migration(
         const std::string & current_attn_backend,
         const std::string & target_attn_backend,
@@ -44,7 +49,16 @@ bool llama_context_should_try_qnn_opencl_direct_host_ptr_visibility(
 
 bool llama_context_should_use_dynamic_decode_tg_only_sched_reserve(
         bool     dynamic_route_enabled,
+        bool     dynamic_opencl_fastrpc_switch,
         uint32_t n_tokens,
+        bool     experimental_enabled);
+
+uint32_t llama_context_dynamic_sched_reserve_n_tokens(
+        uint32_t full_reserve_tokens,
+        uint32_t n_seqs,
+        bool     dynamic_route_enabled,
+        bool     dynamic_opencl_fastrpc_switch,
+        uint32_t request_n_tokens,
         bool     experimental_enabled);
 
 bool llama_context_should_prewarm_dynamic_qnn_opencl_kv_aliases(
@@ -53,6 +67,12 @@ bool llama_context_should_prewarm_dynamic_qnn_opencl_kv_aliases(
         bool                generic_kv_enabled,
         const llama_hetero_kv_contract & allocated_kv_contract,
         bool                experimental_enabled);
+
+bool llama_context_should_activate_dynamic_prefill_route_for_initial_reserve(
+        const llama_dynamic_route_runtime_config & config);
+
+bool llama_context_should_reset_dynamic_route_for_benchmark_repeat(
+        const llama_dynamic_route_runtime_config & config);
 
 int main() {
     testing t;
@@ -191,6 +211,121 @@ int main() {
         t.assert_equal("fastrpc->cpu should restore into CPU host storage",
                        fastrpc_to_cpu.storage_backend,
                        std::string("cpu-host"));
+    });
+
+    t.test("dynamic OpenCL FastRPC initial KV placement follows prefill target", [](testing & t) {
+        const auto opencl_prefill = llama_hetero_parse_route_spec("opencl");
+        const auto fastrpc_prefill = llama_hetero_parse_route_spec("fastrpc");
+        const auto cpu_prefill = llama_hetero_parse_route_spec("cpu");
+        const auto qnn_prefill = llama_hetero_parse_route_spec("qnn-npu");
+
+        const auto opencl_to_fastrpc = llama_dynamic_phase_initial_opencl_fastrpc_kv_contract(
+                opencl_prefill,
+                fastrpc_prefill,
+                "unit-test");
+        t.assert_true("OpenCL prefill -> FastRPC decode should request prefill-owned initial KV",
+                      opencl_to_fastrpc.stage_boundary_active());
+        t.assert_equal("OpenCL prefill should start with OpenCL host-visible KV",
+                       opencl_to_fastrpc.storage_backend,
+                       std::string("opencl-host"));
+        t.assert_equal("OpenCL prefill initial KV should still use conservative rebuild semantics",
+                       (int) opencl_to_fastrpc.transfer,
+                       (int) llama_hetero_kv_transfer_mode::NONE);
+
+        const auto fastrpc_to_opencl = llama_dynamic_phase_initial_opencl_fastrpc_kv_contract(
+                fastrpc_prefill,
+                opencl_prefill,
+                "unit-test");
+        t.assert_true("FastRPC prefill -> OpenCL decode should request prefill-owned initial KV",
+                      fastrpc_to_opencl.stage_boundary_active());
+        t.assert_equal("FastRPC prefill should start with HTP/FastRPC device KV",
+                       fastrpc_to_opencl.storage_backend,
+                       std::string("fastrpc-device"));
+        t.assert_equal("FastRPC prefill initial KV should not request shared buffers",
+                       fastrpc_to_opencl.shared_buffer_required,
+                       false);
+
+        const auto cpu_to_opencl = llama_dynamic_phase_initial_opencl_fastrpc_kv_contract(
+                cpu_prefill,
+                opencl_prefill,
+                "unit-test");
+        t.assert_true("CPU/OpenCL dynamic routes must keep their existing initial KV placement",
+                      !cpu_to_opencl.stage_boundary_active());
+
+        const auto qnn_to_opencl = llama_dynamic_phase_initial_opencl_fastrpc_kv_contract(
+                qnn_prefill,
+                opencl_prefill,
+                "unit-test");
+        t.assert_true("QNN/OpenCL dynamic routes must keep the QNN shared-KV path isolated",
+                      !qnn_to_opencl.stage_boundary_active());
+    });
+
+    t.test("initial reserve pre-activates only OpenCL FastRPC dynamic prefill routes", [](testing & t) {
+        const auto make_config = [](const char * prefill, const char * decode) {
+            llama_dynamic_route_runtime_config config;
+            config.mode = llama_dynamic_route_mode::PHASE_HEURISTIC;
+            config.prefill.label = "prefill";
+            config.prefill.plan = llama_hetero_build_execution_plan(prefill, nullptr);
+            config.prefill.configured = prefill != nullptr && prefill[0] != '\0';
+            config.decode.label = "decode";
+            config.decode.plan = llama_hetero_build_execution_plan(decode, nullptr);
+            config.decode.configured = decode != nullptr && decode[0] != '\0';
+            return config;
+        };
+
+        t.assert_true("FastRPC prefill with OpenCL decode should start the initial reserve on FastRPC",
+                llama_context_should_activate_dynamic_prefill_route_for_initial_reserve(
+                    make_config("fastrpc", "opencl")));
+        t.assert_true("OpenCL prefill with FastRPC decode should start the initial reserve on OpenCL",
+                llama_context_should_activate_dynamic_prefill_route_for_initial_reserve(
+                    make_config("opencl", "fastrpc")));
+
+        t.assert_true("CPU/OpenCL keeps the existing initial reserve behavior",
+                !llama_context_should_activate_dynamic_prefill_route_for_initial_reserve(
+                    make_config("cpu", "opencl")));
+        t.assert_true("CPU/FastRPC keeps the existing initial reserve behavior",
+                !llama_context_should_activate_dynamic_prefill_route_for_initial_reserve(
+                    make_config("cpu", "fastrpc")));
+        t.assert_true("QNN/OpenCL keeps the shared-KV initial reserve behavior",
+                !llama_context_should_activate_dynamic_prefill_route_for_initial_reserve(
+                    make_config("qnn-npu", "opencl")));
+        t.assert_true("missing decode route should not change the initial reserve owner",
+                !llama_context_should_activate_dynamic_prefill_route_for_initial_reserve(
+                    make_config("fastrpc", "")));
+    });
+
+    t.test("benchmark repeat reset is scoped to OpenCL FastRPC dynamic routes", [](testing & t) {
+        const auto make_config = [](const char * prefill, const char * decode) {
+            llama_dynamic_route_runtime_config config;
+            config.mode = llama_dynamic_route_mode::PHASE_HEURISTIC;
+            config.prefill.label = "prefill";
+            config.prefill.plan = llama_hetero_build_execution_plan(prefill, nullptr);
+            config.prefill.configured = prefill != nullptr && prefill[0] != '\0';
+            config.decode.label = "decode";
+            config.decode.plan = llama_hetero_build_execution_plan(decode, nullptr);
+            config.decode.configured = decode != nullptr && decode[0] != '\0';
+            return config;
+        };
+
+        t.assert_true("OpenCL prefill with FastRPC decode needs repeat reset to rebuild prefill-owned KV",
+                llama_context_should_reset_dynamic_route_for_benchmark_repeat(
+                    make_config("opencl", "fastrpc")));
+        t.assert_true("FastRPC prefill with OpenCL decode needs repeat reset to rebuild prefill-owned KV",
+                llama_context_should_reset_dynamic_route_for_benchmark_repeat(
+                    make_config("fastrpc", "opencl")));
+
+        t.assert_true("CPU/FastRPC repeat reset must stay on the existing path",
+                !llama_context_should_reset_dynamic_route_for_benchmark_repeat(
+                    make_config("cpu", "fastrpc")));
+        t.assert_true("CPU/OpenCL repeat reset must stay on the existing path",
+                !llama_context_should_reset_dynamic_route_for_benchmark_repeat(
+                    make_config("cpu", "opencl")));
+        t.assert_true("QNN/OpenCL repeat reset must not enter the FastRPC path",
+                !llama_context_should_reset_dynamic_route_for_benchmark_repeat(
+                    make_config("qnn-npu", "opencl")));
+        t.assert_true("missing decode route does not need benchmark repeat reset",
+                !llama_context_should_reset_dynamic_route_for_benchmark_repeat(
+                    make_config("fastrpc", "")));
     });
 
     t.test("dynamic qnn prefill and opencl decode can pre-allocate shared qnn kv", [](testing & t) {
@@ -348,15 +483,17 @@ int main() {
                 "single-token dynamic decode should be allowed to reserve only the token-generation graph when the experiment is enabled",
                 llama_context_should_use_dynamic_decode_tg_only_sched_reserve(
                         /* dynamic_route_enabled = */ true,
+                        /* dynamic_opencl_fastrpc_switch = */ true,
                         /* n_tokens = */ 1,
                         /* experimental_enabled = */ true));
     });
 
-    t.test("tg-only reserve stays disabled for prefill or when the experiment is off", [](testing & t) {
+    t.test("tg-only reserve stays disabled outside OpenCL FastRPC dynamic decode", [](testing & t) {
         t.assert_true(
                 "prefill-sized batches must keep the existing full reserve path",
                 !llama_context_should_use_dynamic_decode_tg_only_sched_reserve(
                         /* dynamic_route_enabled = */ true,
+                        /* dynamic_opencl_fastrpc_switch = */ true,
                         /* n_tokens = */ 128,
                         /* experimental_enabled = */ true));
 
@@ -364,6 +501,7 @@ int main() {
                 "without the env gate decode must keep the existing full reserve path",
                 !llama_context_should_use_dynamic_decode_tg_only_sched_reserve(
                         /* dynamic_route_enabled = */ true,
+                        /* dynamic_opencl_fastrpc_switch = */ true,
                         /* n_tokens = */ 1,
                         /* experimental_enabled = */ false));
 
@@ -371,8 +509,63 @@ int main() {
                 "static contexts must not silently opt into tg-only reserve",
                 !llama_context_should_use_dynamic_decode_tg_only_sched_reserve(
                         /* dynamic_route_enabled = */ false,
+                        /* dynamic_opencl_fastrpc_switch = */ true,
                         /* n_tokens = */ 1,
                         /* experimental_enabled = */ true));
+
+        t.assert_true(
+                "non OpenCL/FastRPC dynamic routes must keep the existing full reserve path",
+                !llama_context_should_use_dynamic_decode_tg_only_sched_reserve(
+                        /* dynamic_route_enabled = */ true,
+                        /* dynamic_opencl_fastrpc_switch = */ false,
+                        /* n_tokens = */ 1,
+                        /* experimental_enabled = */ true));
+    });
+
+    t.test("dynamic decode reserve token count can shrink to token generation scope", [](testing & t) {
+        t.assert_equal(
+                "decode route switch should reserve only the tg graph when the experiment is enabled",
+                llama_context_dynamic_sched_reserve_n_tokens(
+                        /* full_reserve_tokens = */ 512,
+                        /* n_seqs = */ 1,
+                        /* dynamic_route_enabled = */ true,
+                        /* dynamic_opencl_fastrpc_switch = */ true,
+                        /* request_n_tokens = */ 1,
+                        /* experimental_enabled = */ true),
+                (uint32_t) 1);
+
+        t.assert_equal(
+                "prefill route switch should keep full reserve scope",
+                llama_context_dynamic_sched_reserve_n_tokens(
+                        /* full_reserve_tokens = */ 512,
+                        /* n_seqs = */ 1,
+                        /* dynamic_route_enabled = */ true,
+                        /* dynamic_opencl_fastrpc_switch = */ true,
+                        /* request_n_tokens = */ 512,
+                        /* experimental_enabled = */ true),
+                (uint32_t) 512);
+
+        t.assert_equal(
+                "decode route switch should keep full reserve scope without the env gate",
+                llama_context_dynamic_sched_reserve_n_tokens(
+                        /* full_reserve_tokens = */ 512,
+                        /* n_seqs = */ 1,
+                        /* dynamic_route_enabled = */ true,
+                        /* dynamic_opencl_fastrpc_switch = */ true,
+                        /* request_n_tokens = */ 1,
+                        /* experimental_enabled = */ false),
+                (uint32_t) 512);
+
+        t.assert_equal(
+                "non OpenCL/FastRPC routes should keep full reserve scope",
+                llama_context_dynamic_sched_reserve_n_tokens(
+                        /* full_reserve_tokens = */ 512,
+                        /* n_seqs = */ 1,
+                        /* dynamic_route_enabled = */ true,
+                        /* dynamic_opencl_fastrpc_switch = */ false,
+                        /* request_n_tokens = */ 1,
+                        /* experimental_enabled = */ true),
+                (uint32_t) 512);
     });
 
     t.test("dynamic qnn prefill and opencl decode do not prewarm direct host-ptr aliases before qnn writes kv", [](testing & t) {

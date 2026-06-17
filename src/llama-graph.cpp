@@ -1062,13 +1062,16 @@ ggml_tensor * llm_graph_context::build_cvec(
     return cvec->apply_to(ctx0, cur, il);
 }
 
+ggml_tensor * llm_graph_context::resolve_weight_for_route(
+         ggml_tensor * w) const {
+    return model != nullptr ? model->resolve_weight_for_route(w, hetero_route) : w;
+}
+
 ggml_tensor * llm_graph_context::build_lora_mm(
           ggml_tensor * w,
           ggml_tensor * cur,
           ggml_tensor * w_s) const {
-    if (model != nullptr) {
-        w = model->resolve_weight_for_route(w, hetero_route);
-    }
+    w = resolve_weight_for_route(w);
 
     ggml_tensor * res = ggml_mul_mat(ctx0, w, cur);
 
@@ -1101,9 +1104,7 @@ ggml_tensor * llm_graph_context::build_lora_mm_id(
           ggml_tensor * w,   // ggml_tensor * as
           ggml_tensor * cur, // ggml_tensor * b
           ggml_tensor * ids) const {
-    if (model != nullptr) {
-        w = model->resolve_weight_for_route(w, hetero_route);
-    }
+    w = resolve_weight_for_route(w);
 
     ggml_tensor * res = ggml_mul_mat_id(ctx0, w, cur, ids);
     for (const auto & lora : *loras) {
@@ -1151,6 +1152,7 @@ ggml_tensor * llm_graph_context::build_norm(
     }
 
     if (mw) {
+        mw = resolve_weight_for_route(mw);
         cur = ggml_mul(ctx0, cur, mw);
         if (mb) {
             cb(cur, "norm_w", il);
@@ -1158,6 +1160,7 @@ ggml_tensor * llm_graph_context::build_norm(
     }
 
     if (mb) {
+        mb = resolve_weight_for_route(mb);
         cur = ggml_add(ctx0, cur, mb);
     }
 
@@ -1182,7 +1185,7 @@ llm_graph_qkv llm_graph_context::build_qkv(
         ggml_tensor * qkv = build_lora_mm(layer.wqkv, cur, layer.wqkv_s);
         cb(qkv, "wqkv", il);
         if (layer.wqkv_b) {
-            qkv = ggml_add(ctx0, qkv, layer.wqkv_b);
+            qkv = ggml_add(ctx0, qkv, resolve_weight_for_route(layer.wqkv_b));
             cb(qkv, "wqkv_b", il);
         }
         if (hparams.f_clamp_kqv > 0.0f) {
@@ -1202,7 +1205,7 @@ llm_graph_qkv llm_graph_context::build_qkv(
         Qcur = build_lora_mm(layer.wq, cur, layer.wq_s);
         cb(Qcur, "Qcur", il);
         if (layer.wq_b) {
-            Qcur = ggml_add(ctx0, Qcur, layer.wq_b);
+            Qcur = ggml_add(ctx0, Qcur, resolve_weight_for_route(layer.wq_b));
             cb(Qcur, "Qcur", il);
         }
         if (hparams.f_clamp_kqv > 0.0f) {
@@ -1212,7 +1215,7 @@ llm_graph_qkv llm_graph_context::build_qkv(
         Kcur = build_lora_mm(layer.wk, cur, layer.wk_s);
         cb(Kcur, "Kcur", il);
         if (layer.wk_b) {
-            Kcur = ggml_add(ctx0, Kcur, layer.wk_b);
+            Kcur = ggml_add(ctx0, Kcur, resolve_weight_for_route(layer.wk_b));
             cb(Kcur, "Kcur", il);
         }
         if (hparams.f_clamp_kqv > 0.0f) {
@@ -1222,7 +1225,7 @@ llm_graph_qkv llm_graph_context::build_qkv(
         Vcur = build_lora_mm(layer.wv, cur, layer.wv_s);
         cb(Vcur, "Vcur", il);
         if (layer.wv_b) {
-            Vcur = ggml_add(ctx0, Vcur, layer.wv_b);
+            Vcur = ggml_add(ctx0, Vcur, resolve_weight_for_route(layer.wv_b));
             cb(Vcur, "Vcur", il);
         }
         if (hparams.f_clamp_kqv > 0.0f) {

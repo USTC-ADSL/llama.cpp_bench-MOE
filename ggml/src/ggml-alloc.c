@@ -971,12 +971,16 @@ static void ggml_gallocr_init_tensor(ggml_gallocr_t galloc, struct ggml_tensor *
     assert(tensor->data || tensor->view_src || ggml_backend_buft_get_alloc_size(galloc->bufts[buffer_id], tensor) <= tensor_alloc->size_max);
 
     if (tensor->view_src != NULL) {
-        if (tensor->buffer == NULL) {
-            assert(tensor_alloc->addr.offset == SIZE_MAX);
-            if (tensor->view_src->buffer == NULL) {
-                // this tensor was allocated without ggml-backend
-                return;
-            }
+        if (tensor->view_src->buffer == NULL || tensor->view_src->data == NULL) {
+            // this tensor was allocated without ggml-backend
+            return;
+        }
+
+        void * view_data = (char *) tensor->view_src->data + tensor->view_offs;
+        if (tensor->buffer != tensor->view_src->buffer || tensor->data != view_data) {
+            assert(tensor->buffer != NULL || tensor_alloc->addr.offset == SIZE_MAX);
+            tensor->buffer = NULL;
+            tensor->data = NULL;
             ggml_backend_view_init(tensor);
         }
     } else {

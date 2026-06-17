@@ -868,6 +868,68 @@ const struct ggml_tensor * llama_model_loader::get_opencl_cpu_extra_cpu_copy(con
     return it->second;
 }
 
+bool llama_model_loader::get_opencl_cpu_extra_cpu_copy_stage(const char * name, llama_hetero_route_stage & stage) const {
+    if (name == nullptr) {
+        return false;
+    }
+
+    auto it = opencl_cpu_extra_cpu_copy_stages_by_name.find(name);
+    if (it == opencl_cpu_extra_cpu_copy_stages_by_name.end()) {
+        return false;
+    }
+
+    stage = it->second;
+    return true;
+}
+
+const struct ggml_tensor * llama_model_loader::get_fastrpc_opencl_weight_dual_opencl_copy(const char * name) const {
+    if (name == nullptr) {
+        return nullptr;
+    }
+
+    auto it = fastrpc_opencl_weight_dual_opencl_copies_by_name.find(name);
+    if (it == fastrpc_opencl_weight_dual_opencl_copies_by_name.end()) {
+        return nullptr;
+    }
+
+    return it->second;
+}
+
+const struct ggml_tensor * llama_model_loader::get_fastrpc_opencl_weight_dual_fastrpc_copy(const char * name) const {
+    if (name == nullptr) {
+        return nullptr;
+    }
+
+    auto it = fastrpc_opencl_weight_dual_fastrpc_copies_by_name.find(name);
+    if (it == fastrpc_opencl_weight_dual_fastrpc_copies_by_name.end()) {
+        return nullptr;
+    }
+
+    return it->second;
+}
+
+bool llama_model_loader::get_fastrpc_opencl_weight_dual_stage(const char * name, llama_hetero_route_stage & stage) const {
+    if (name == nullptr) {
+        return false;
+    }
+
+    auto it = fastrpc_opencl_weight_dual_stages_by_name.find(name);
+    if (it == fastrpc_opencl_weight_dual_stages_by_name.end()) {
+        return false;
+    }
+
+    stage = it->second;
+    return true;
+}
+
+const struct ggml_tensor * llama_model_loader::get_fastrpc_opencl_weight_duplicate(const char * name) const {
+    return get_fastrpc_opencl_weight_dual_fastrpc_copy(name);
+}
+
+bool llama_model_loader::get_fastrpc_opencl_weight_duplicate_stage(const char * name, llama_hetero_route_stage & stage) const {
+    return get_fastrpc_opencl_weight_dual_stage(name, stage);
+}
+
 struct ggml_tensor * llama_model_loader::require_tensor_meta(const std::string & name) const {
     struct ggml_tensor * tensor = get_tensor_meta(name.c_str());
     if (!tensor) {
@@ -1183,6 +1245,15 @@ ggml_backend_buffer_type_t llama_model_loader_select_weight_device_buft(
         bool use_host_buft) {
     ggml_backend_dev_t dev = ggml_backend_dev_by_name(device_name);
     if (dev == nullptr) {
+        for (size_t i = 0; i < ggml_backend_dev_count(); ++i) {
+            ggml_backend_dev_t candidate = ggml_backend_dev_get(i);
+            if (llama_model_loader_buft_matches_backend(candidate, nullptr, device_name)) {
+                dev = candidate;
+                break;
+            }
+        }
+    }
+    if (dev == nullptr) {
         return nullptr;
     }
 
@@ -1274,7 +1345,7 @@ static bool llama_model_loader_buft_is_opencl(ggml_backend_buffer_type_t buft) {
            llama_hetero_to_lower(llama_hetero_trim(buft_name)).find("opencl") != std::string::npos;
 }
 
-bool llama_model_loader_should_replace_fastrpc_opencl_weight_duplicate(
+bool llama_model_loader_should_replace_fastrpc_opencl_weight_residency(
         const char * backend,
         ggml_backend_buffer_type_t existing_buft,
         ggml_backend_buffer_type_t candidate_buft) {
@@ -1301,6 +1372,16 @@ bool llama_model_loader_should_replace_fastrpc_opencl_weight_duplicate(
            !llama_model_loader_buft_is_cpu(candidate_buft);
 }
 
+bool llama_model_loader_should_replace_fastrpc_opencl_weight_duplicate(
+        const char * backend,
+        ggml_backend_buffer_type_t existing_buft,
+        ggml_backend_buffer_type_t candidate_buft) {
+    return llama_model_loader_should_replace_fastrpc_opencl_weight_residency(
+            backend,
+            existing_buft,
+            candidate_buft);
+}
+
 static bool llama_hetero_route_uses_backend_kind(const llama_hetero_route_spec & route, int backend_kind) {
     return route.has_any_route() &&
            llama_hetero_backend_kind(llama_hetero_phase_backend_for_route(route)) == backend_kind;
@@ -1316,6 +1397,18 @@ static bool llama_hetero_routes_are_cpu_opencl_switch(
 
     return (dynamic_prefill_backend_kind == 1 && dynamic_decode_backend_kind == 2) ||
            (dynamic_prefill_backend_kind == 2 && dynamic_decode_backend_kind == 1);
+}
+
+static bool llama_hetero_routes_are_opencl_fastrpc_switch(
+        const llama_hetero_route_spec & dynamic_prefill_route,
+        const llama_hetero_route_spec & dynamic_decode_route) {
+    const int dynamic_prefill_backend_kind =
+        llama_hetero_backend_kind(llama_hetero_phase_backend_for_route(dynamic_prefill_route));
+    const int dynamic_decode_backend_kind =
+        llama_hetero_backend_kind(llama_hetero_phase_backend_for_route(dynamic_decode_route));
+
+    return (dynamic_prefill_backend_kind == 2 && dynamic_decode_backend_kind == 4) ||
+           (dynamic_prefill_backend_kind == 4 && dynamic_decode_backend_kind == 2);
 }
 
 bool llama_model_loader_requires_opencl_weight_portability(
@@ -1336,6 +1429,14 @@ bool llama_model_loader_should_enable_opencl_cpu_extra_cpu_copy(
         const llama_hetero_route_spec & dynamic_prefill_route,
         const llama_hetero_route_spec & dynamic_decode_route,
         bool enable_extra_cpu_copy);
+
+bool llama_model_loader_should_enable_fastrpc_opencl_dual_residency(
+        const llama_hetero_route_spec & dynamic_prefill_route,
+        const llama_hetero_route_spec & dynamic_decode_route);
+
+bool llama_model_loader_should_enable_fastrpc_opencl_weight_duplicate(
+        const llama_hetero_route_spec & dynamic_prefill_route,
+        const llama_hetero_route_spec & dynamic_decode_route);
 
 bool llama_model_loader_requires_opencl_shared_host_weight_residency(
         const llama_hetero_route_spec & dynamic_prefill_route,
@@ -1376,6 +1477,164 @@ static ggml_backend_buffer_type_t select_weight_opencl_device_buft(
     }
 
     return buft_list_cpu != nullptr ? select_weight_host_buft(hparams, tensor, op, buft_list_cpu) : nullptr;
+}
+
+bool llama_model_loader_weight_route_stage(
+        llm_tensor tn_tensor,
+        llm_tensor_layer layer,
+        llama_hetero_route_stage & stage) {
+    if (layer == LLM_TENSOR_LAYER_OUTPUT) {
+        stage = llama_hetero_route_stage::OUTPUT;
+        return true;
+    }
+
+    if (layer != LLM_TENSOR_LAYER_REPEATING) {
+        return false;
+    }
+
+    switch (tn_tensor) {
+        case LLM_TENSOR_ATTN_NORM:
+        case LLM_TENSOR_ATTN_NORM_2:
+        case LLM_TENSOR_ATTN_POST_NORM:
+        case LLM_TENSOR_ATTN_ROT_EMBD:
+        case LLM_TENSOR_ATTN_Q:
+        case LLM_TENSOR_ATTN_K:
+        case LLM_TENSOR_ATTN_V:
+        case LLM_TENSOR_ATTN_QKV:
+        case LLM_TENSOR_ATTN_Q_NORM:
+        case LLM_TENSOR_ATTN_K_NORM:
+        case LLM_TENSOR_ATTN_Q_A:
+        case LLM_TENSOR_ATTN_Q_B:
+        case LLM_TENSOR_ATTN_KV_A_MQA:
+        case LLM_TENSOR_ATTN_KV_B:
+        case LLM_TENSOR_ATTN_K_B:
+        case LLM_TENSOR_ATTN_V_B:
+        case LLM_TENSOR_ATTN_Q_A_NORM:
+        case LLM_TENSOR_ATTN_KV_A_NORM:
+        case LLM_TENSOR_ATTN_SUB_NORM:
+        case LLM_TENSOR_DEC_ATTN_Q:
+        case LLM_TENSOR_DEC_ATTN_K:
+        case LLM_TENSOR_DEC_ATTN_V:
+        case LLM_TENSOR_DEC_CROSS_ATTN_Q:
+        case LLM_TENSOR_DEC_CROSS_ATTN_K:
+        case LLM_TENSOR_DEC_CROSS_ATTN_V:
+        case LLM_TENSOR_ENC_ATTN_Q:
+        case LLM_TENSOR_ENC_ATTN_K:
+        case LLM_TENSOR_ENC_ATTN_V:
+        case LLM_TENSOR_POS_NET_ATTN_Q:
+        case LLM_TENSOR_POS_NET_ATTN_K:
+        case LLM_TENSOR_POS_NET_ATTN_V:
+        case LLM_TENSOR_VISEXP_ATTN_QKV:
+        case LLM_TENSOR_INDEXER_ATTN_K:
+        case LLM_TENSOR_INDEXER_ATTN_Q_B:
+            stage = llama_hetero_route_stage::ATTN_PROJ;
+            return true;
+
+        case LLM_TENSOR_ATTN_OUT:
+        case LLM_TENSOR_ATTN_OUT_NORM:
+        case LLM_TENSOR_ATTN_GATE:
+        case LLM_TENSOR_DEC_ATTN_OUT:
+        case LLM_TENSOR_DEC_CROSS_ATTN_OUT:
+        case LLM_TENSOR_ENC_ATTN_OUT:
+        case LLM_TENSOR_POS_NET_ATTN_OUT:
+        case LLM_TENSOR_VISEXP_ATTN_OUT:
+            stage = llama_hetero_route_stage::ATTN_OUT;
+            return true;
+
+        case LLM_TENSOR_FFN_NORM:
+        case LLM_TENSOR_FFN_NORM_EXPS:
+        case LLM_TENSOR_FFN_GATE:
+        case LLM_TENSOR_FFN_DOWN:
+        case LLM_TENSOR_FFN_UP:
+        case LLM_TENSOR_FFN_GATE_INP:
+        case LLM_TENSOR_FFN_GATE_EXPS:
+        case LLM_TENSOR_FFN_DOWN_EXPS:
+        case LLM_TENSOR_FFN_UP_EXPS:
+        case LLM_TENSOR_FFN_GATE_UP_EXPS:
+        case LLM_TENSOR_FFN_LATENT_DOWN:
+        case LLM_TENSOR_FFN_LATENT_UP:
+        case LLM_TENSOR_FFN_GATE_SHEXP:
+        case LLM_TENSOR_FFN_DOWN_SHEXP:
+        case LLM_TENSOR_FFN_UP_SHEXP:
+        case LLM_TENSOR_FFN_GATE_CHEXPS:
+        case LLM_TENSOR_FFN_DOWN_CHEXPS:
+        case LLM_TENSOR_FFN_UP_CHEXPS:
+        case LLM_TENSOR_DEC_FFN_GATE:
+        case LLM_TENSOR_DEC_FFN_DOWN:
+        case LLM_TENSOR_DEC_FFN_UP:
+        case LLM_TENSOR_ENC_FFN_GATE:
+        case LLM_TENSOR_ENC_FFN_DOWN:
+        case LLM_TENSOR_ENC_FFN_UP:
+        case LLM_TENSOR_VISEXP_FFN_GATE:
+        case LLM_TENSOR_VISEXP_FFN_DOWN:
+        case LLM_TENSOR_VISEXP_FFN_UP:
+            stage = llama_hetero_route_stage::FFN;
+            return true;
+
+        default:
+            return false;
+    }
+}
+
+bool llama_model_loader_fastrpc_opencl_dual_residency_op_stage(
+        llm_tensor tn_tensor,
+        const char * suffix,
+        int flags,
+        ggml_op & op,
+        llama_hetero_route_stage & stage) {
+    if (suffix == nullptr) {
+        return false;
+    }
+
+    const bool is_weight = std::strcmp(suffix, "weight") == 0;
+    const bool is_bias   = std::strcmp(suffix, "bias") == 0;
+    if (!is_weight && !is_bias) {
+        return false;
+    }
+
+    if (tn_tensor == LLM_TENSOR_TOKEN_EMBD &&
+        (flags & llama_model_loader::TENSOR_DUPLICATED)) {
+        tn_tensor = LLM_TENSOR_OUTPUT;
+    }
+
+    const llm_tensor_info info = llm_tensor_info_for(tn_tensor);
+    if (!llama_model_loader_weight_route_stage(tn_tensor, info.layer, stage)) {
+        return false;
+    }
+
+    op = is_bias
+        ? (info.op == GGML_OP_MUL_MAT_ID ? GGML_OP_ADD_ID : GGML_OP_ADD)
+        : info.op;
+
+    switch (op) {
+        case GGML_OP_MUL_MAT:
+        case GGML_OP_MUL_MAT_ID:
+        case GGML_OP_MUL:
+        case GGML_OP_ADD:
+        case GGML_OP_ADD_ID:
+            return true;
+        default:
+            return false;
+    }
+}
+
+static const char * llama_model_loader_route_stage_name(llama_hetero_route_stage stage) {
+    switch (stage) {
+        case llama_hetero_route_stage::ATTN:
+            return "attn";
+        case llama_hetero_route_stage::ATTN_PROJ:
+            return "attn_proj";
+        case llama_hetero_route_stage::ATTN_CORE:
+            return "attn_core";
+        case llama_hetero_route_stage::ATTN_OUT:
+            return "attn_out";
+        case llama_hetero_route_stage::FFN:
+            return "ffn";
+        case llama_hetero_route_stage::OUTPUT:
+            return "output";
+    }
+
+    return "unknown";
 }
 
 bool llama_model_loader_requires_opencl_weight_portability(
@@ -1430,6 +1689,20 @@ bool llama_model_loader_should_enable_opencl_cpu_extra_cpu_copy(
     return llama_hetero_routes_are_cpu_opencl_switch(dynamic_prefill_route, dynamic_decode_route);
 }
 
+bool llama_model_loader_should_enable_fastrpc_opencl_dual_residency(
+        const llama_hetero_route_spec & dynamic_prefill_route,
+        const llama_hetero_route_spec & dynamic_decode_route) {
+    return llama_hetero_routes_are_opencl_fastrpc_switch(dynamic_prefill_route, dynamic_decode_route);
+}
+
+bool llama_model_loader_should_enable_fastrpc_opencl_weight_duplicate(
+        const llama_hetero_route_spec & dynamic_prefill_route,
+        const llama_hetero_route_spec & dynamic_decode_route) {
+    return llama_model_loader_should_enable_fastrpc_opencl_dual_residency(
+            dynamic_prefill_route,
+            dynamic_decode_route);
+}
+
 bool llama_model_loader_requires_opencl_shared_host_weight_residency(
         const llama_hetero_route_spec & dynamic_prefill_route,
         const llama_hetero_route_spec & dynamic_decode_route,
@@ -1473,6 +1746,10 @@ struct ggml_tensor * llama_model_loader::create_tensor(
                 dynamic_prefill_route,
                 dynamic_decode_route,
                 env_flag_enabled("GGML_HETERO_ENABLE_OPENCL_CPU_EXTRA_CPU_COPY"));
+    const bool enable_fastrpc_opencl_dual_residency =
+        llama_model_loader_should_enable_fastrpc_opencl_dual_residency(
+                dynamic_prefill_route,
+                dynamic_decode_route);
     const bool enable_cpu_opencl_shared_host_weights =
         env_flag_enabled("GGML_HETERO_ENABLE_CPU_OPENCL_SHARED_HOST_WEIGHTS");
     const bool hetero_shared_opencl_host_weights_for_dynamic_cpu_opencl =
@@ -1622,6 +1899,13 @@ struct ggml_tensor * llama_model_loader::create_tensor(
         LLAMA_LOG_INFO("%s: keeping an extra CPU-friendly duplicate of selected OpenCL decode weights for dynamic CPU/OpenCL switching\n",
                 __func__);
         logged_opencl_cpu_extra_cpu_copy = true;
+    }
+
+    static bool logged_fastrpc_opencl_dual_residency = false;
+    if (enable_fastrpc_opencl_dual_residency && !logged_fastrpc_opencl_dual_residency) {
+        LLAMA_LOG_INFO("%s: preparing full OpenCL/FastRPC dual residency for dynamic OpenCL/FastRPC switching\n",
+                __func__);
+        logged_fastrpc_opencl_dual_residency = true;
     }
 
     auto ctx_for_buft = [&](ggml_backend_buffer_type_t buft) -> ggml_context * {
@@ -2129,6 +2413,19 @@ struct ggml_tensor * llama_model_loader::create_tensor(
         }
 
         const llm_tensor_info info = llm_tensor_info_for(tn_tensor);
+        llama_hetero_route_stage stage = llama_hetero_route_stage::FFN;
+        if (!llama_model_loader_weight_route_stage(tn_tensor, info.layer, stage)) {
+            switch (tn_tensor) {
+                case LLM_TENSOR_ATTN_Q_A_NORM:
+                case LLM_TENSOR_ATTN_KV_A_NORM:
+                    stage = llama_hetero_route_stage::ATTN_PROJ;
+                    break;
+                default:
+                    stage = llama_hetero_route_stage::FFN;
+                    break;
+            }
+        }
+
         ggml_op op = info.op;
         if (tn.suffix != nullptr && std::strcmp(tn.suffix, "bias") == 0) {
             op = (info.op == GGML_OP_MUL_MAT_ID) ? GGML_OP_ADD_ID : GGML_OP_ADD;
@@ -2148,6 +2445,112 @@ struct ggml_tensor * llama_model_loader::create_tensor(
         }
 
         opencl_cpu_extra_cpu_copies_by_name[ggml_get_name(cur)] = cpu_copy;
+        opencl_cpu_extra_cpu_copy_stages_by_name[ggml_get_name(cur)] = stage;
+    };
+
+    auto maybe_prepare_fastrpc_opencl_dual_residency = [&](const ggml_tensor * cur, ggml_backend_buffer_type_t primary_buft) {
+        if (!enable_fastrpc_opencl_dual_residency || cur == nullptr || primary_buft == nullptr) {
+            return;
+        }
+
+        llama_hetero_route_stage stage = llama_hetero_route_stage::FFN;
+        ggml_op op = GGML_OP_NONE;
+        if (!llama_model_loader_fastrpc_opencl_dual_residency_op_stage(
+                    tn.tensor,
+                    tn.suffix,
+                    flags,
+                    op,
+                    stage)) {
+            return;
+        }
+
+        ggml_backend_buffer_type_t opencl_buft =
+            llama_model_loader_select_weight_device_buft(
+                    hparams,
+                    const_cast<ggml_tensor *>(cur),
+                    op,
+                    "GPUOpenCL",
+                    /* use_host_buft = */ false);
+        if (opencl_buft == nullptr) {
+            throw std::runtime_error(format(
+                    "failed to prepare OpenCL residency for dynamic OpenCL/FastRPC tensor %s stage=%s target=opencl",
+                    ggml_get_name(cur),
+                    llama_model_loader_route_stage_name(stage)));
+        }
+
+        const bool allow_cpu_fallback = stage == llama_hetero_route_stage::OUTPUT;
+        ggml_backend_buffer_type_t fastrpc_buft =
+            llama_model_loader_select_fastrpc_weight_duplicate_buft(
+                    hparams,
+                    const_cast<ggml_tensor *>(cur),
+                    op,
+                    buft_list_layer,
+                    "fastrpc",
+                    allow_cpu_fallback);
+        if (fastrpc_buft == nullptr) {
+            throw std::runtime_error(format(
+                    "failed to prepare FastRPC residency for dynamic OpenCL/FastRPC tensor %s stage=%s target=fastrpc",
+                    ggml_get_name(cur),
+                    llama_model_loader_route_stage_name(stage)));
+        }
+
+        const std::string name = ggml_get_name(cur);
+        auto ensure_residency = [&](
+                const char * target_backend,
+                ggml_backend_buffer_type_t target_buft,
+                std::unordered_map<std::string, ggml_tensor *> & copies_by_name,
+                std::unordered_map<std::string, ggml_backend_buffer_type_t> & bufts_by_name) -> ggml_tensor * {
+            auto existing_buft_it = bufts_by_name.find(name);
+            if (existing_buft_it != bufts_by_name.end() &&
+                !llama_model_loader_should_replace_fastrpc_opencl_weight_residency(
+                        target_backend,
+                        existing_buft_it->second,
+                        target_buft)) {
+                auto existing_copy_it = copies_by_name.find(name);
+                return existing_copy_it != copies_by_name.end() ? existing_copy_it->second : nullptr;
+            }
+
+            ggml_tensor * target_tensor = nullptr;
+            if (target_buft == primary_buft) {
+                ggml_context * primary_ctx = ctx_for_buft(primary_buft);
+                target_tensor = ggml_get_tensor(primary_ctx, name.c_str());
+            }
+
+            if (target_tensor == nullptr) {
+                ggml_context * target_ctx = ctx_for_buft(target_buft);
+                target_tensor = ggml_get_tensor(target_ctx, name.c_str());
+                if (target_tensor == nullptr) {
+                    target_tensor = ggml_dup_tensor(target_ctx, cur);
+                    ggml_set_name(target_tensor, name.c_str());
+                    if (target_buft != primary_buft) {
+                        size_data += ggml_nbytes(cur);
+                    }
+                }
+            }
+
+            copies_by_name[name] = target_tensor;
+            bufts_by_name[name] = target_buft;
+            return target_tensor;
+        };
+
+        ggml_tensor * opencl_copy = ensure_residency(
+                "opencl",
+                opencl_buft,
+                fastrpc_opencl_weight_dual_opencl_copies_by_name,
+                fastrpc_opencl_weight_dual_opencl_bufts_by_name);
+        ggml_tensor * fastrpc_copy = ensure_residency(
+                "fastrpc",
+                fastrpc_buft,
+                fastrpc_opencl_weight_dual_fastrpc_copies_by_name,
+                fastrpc_opencl_weight_dual_fastrpc_bufts_by_name);
+        if (opencl_copy == nullptr || fastrpc_copy == nullptr) {
+            throw std::runtime_error(format(
+                    "failed to register complete OpenCL/FastRPC dual residency for tensor %s stage=%s",
+                    name.c_str(),
+                    llama_model_loader_route_stage_name(stage)));
+        }
+
+        fastrpc_opencl_weight_dual_stages_by_name[name] = stage;
     };
 
     if (files.empty()) {
@@ -2209,6 +2612,7 @@ struct ggml_tensor * llama_model_loader::create_tensor(
         ggml_tensor * t = ggml_get_tensor(ctx, tn.str().c_str());
         if (t) {
             maybe_create_opencl_cpu_extra_cpu_copy(cur, buft);
+            maybe_prepare_fastrpc_opencl_dual_residency(cur, buft);
             return t;
         }
     }
@@ -2223,6 +2627,7 @@ struct ggml_tensor * llama_model_loader::create_tensor(
     }
 
     maybe_create_opencl_cpu_extra_cpu_copy(cur, buft);
+    maybe_prepare_fastrpc_opencl_dual_residency(cur, buft);
 
     return tensor;
 }

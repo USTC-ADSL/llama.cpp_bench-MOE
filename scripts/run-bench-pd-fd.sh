@@ -11,6 +11,18 @@ CASE_TIMEOUT_SEC=${CASE_TIMEOUT_SEC:-1800}
 REPS=${REPS:-1}
 KEEP_RAW=${KEEP_RAW:-1}
 QNN_TRACE=${QNN_TRACE:-0}
+INCLUDE_FASTRPC=${INCLUDE_FASTRPC:-0}
+FASTRPC_ONLY=${FASTRPC_ONLY:-0}
+RUN_FASTRPC_PD=${RUN_FASTRPC_PD:-0}
+RUN_FASTRPC_OPENCL_PD=${RUN_FASTRPC_OPENCL_PD:-0}
+FASTRPC_DEVICE=${FASTRPC_DEVICE:-HTP0}
+FASTRPC_TASKSET=${FASTRPC_TASKSET:-80}
+FASTRPC_PD_HOSTBUF=${FASTRPC_PD_HOSTBUF:-1}
+FASTRPC_PD_USE_HMX=${FASTRPC_PD_USE_HMX:-1}
+FASTRPC_PD_NHVX=${FASTRPC_PD_NHVX:-0}
+FASTRPC_FLASH_ATTN=${FASTRPC_FLASH_ATTN:-1}
+FASTRPC_THREADS=${FASTRPC_THREADS:-4}
+FASTRPC_WORKLOADS=${FASTRPC_WORKLOADS:-"32:4"}
 
 SUMMARY_ONLY=0
 if [ "${1:-}" = "--summary-only" ]; then
@@ -48,6 +60,8 @@ switch_workloads=(
     "256:1"
 )
 
+fastrpc_workloads=(${FASTRPC_WORKLOADS})
+
 backends=(cpu opencl qnn)
 
 remote_base_env() {
@@ -72,6 +86,18 @@ qnn_env() {
     fi
 }
 
+fastrpc_env() {
+    disable_qnn_env
+    printf ' && export GGML_HEXAGON_EXPERIMENTAL=1'
+    printf ' && export GGML_HEXAGON_HOSTBUF=%s' "${FASTRPC_PD_HOSTBUF}"
+    printf ' && export GGML_HEXAGON_NDEV=1'
+    printf ' && export GGML_HEXAGON_NHVX=%s' "${FASTRPC_PD_NHVX}"
+    printf ' && export GGML_HEXAGON_USE_HMX=%s' "${FASTRPC_PD_USE_HMX}"
+    printf ' && unset GGML_HEXAGON_OPFILTER'
+    printf ' && unset GGML_QNN_AOT_CONFIG'
+    printf ' && unset GGML_QNN_AOT_MODEL_DIR'
+}
+
 dynamic_env() {
     local prefill=$1
     local decode=$2
@@ -94,6 +120,7 @@ backend_args() {
         cpu)    printf -- '-ngl 0 -dev none' ;;
         opencl) printf -- '-ngl 99 -dev GPUOpenCL' ;;
         qnn)    printf -- '-ngl 99 -dev qnn-npu' ;;
+        fastrpc) printf -- '-ngl 99 -dev %s' "${FASTRPC_DEVICE}" ;;
         *)      return 1 ;;
     esac
 }
@@ -103,6 +130,7 @@ route_name() {
         cpu)    printf 'cpu' ;;
         opencl) printf 'opencl' ;;
         qnn)    printf 'qnn-npu' ;;
+        fastrpc) printf 'fastrpc' ;;
         *)      return 1 ;;
     esac
 }
@@ -113,6 +141,12 @@ route_args() {
     if { [ "${prefill}" = qnn-npu ] && [ "${decode}" = opencl ]; } ||
        { [ "${prefill}" = opencl ] && [ "${decode}" = qnn-npu ]; }; then
         printf -- '-ngl 99 -dev qnn-npu/GPUOpenCL'
+    elif [ "${prefill}" = opencl ] && [ "${decode}" = fastrpc ]; then
+        printf -- '-ngl 99 -dev GPUOpenCL/%s' "${FASTRPC_DEVICE}"
+    elif [ "${prefill}" = fastrpc ] && [ "${decode}" = opencl ]; then
+        printf -- '-ngl 99 -dev %s/GPUOpenCL' "${FASTRPC_DEVICE}"
+    elif [ "${prefill}" = fastrpc ] || [ "${decode}" = fastrpc ]; then
+        printf -- '-ngl 99 -dev %s' "${FASTRPC_DEVICE}"
     elif [ "${prefill}" = qnn-npu ] || [ "${decode}" = qnn-npu ]; then
         printf -- '-ngl 99 -dev qnn-npu'
     elif [ "${prefill}" = opencl ] || [ "${decode}" = opencl ]; then
@@ -125,6 +159,7 @@ route_args() {
 taskset_for_backend() {
     case "$1" in
         cpu) printf 'C0' ;;
+        fastrpc) printf '%s' "${FASTRPC_TASKSET}" ;;
         *)   printf '80' ;;
     esac
 }
@@ -132,8 +167,47 @@ taskset_for_backend() {
 taskset_for_route() {
     if [ "$1" = cpu ] && [ "$2" = cpu ]; then
         printf 'C0'
+    elif [ "$1" = fastrpc ] || [ "$2" = fastrpc ]; then
+        printf '%s' "${FASTRPC_TASKSET}"
     else
         printf '80'
+    fi
+}
+
+threads_for_backend() {
+    case "$1" in
+        fastrpc) printf '%s' "${FASTRPC_THREADS}" ;;
+        *)       printf '4' ;;
+    esac
+}
+
+threads_for_route() {
+    if [ "$1" = fastrpc ] || [ "$2" = fastrpc ]; then
+        printf '%s' "${FASTRPC_THREADS}"
+    else
+        printf '4'
+    fi
+}
+
+flash_attn_args_for_backend() {
+    case "$1" in
+        fastrpc) printf -- '-fa %s' "${FASTRPC_FLASH_ATTN}" ;;
+        *)       printf '' ;;
+    esac
+}
+
+flash_attn_args_for_route() {
+    if [ "$1" = fastrpc ] || [ "$2" = fastrpc ]; then
+        printf -- '-fa %s' "${FASTRPC_FLASH_ATTN}"
+    fi
+}
+
+bench_batch_for_workload() {
+    local pp=$1
+    if [ "${pp}" -gt 0 ]; then
+        printf '%s' "${pp}"
+    else
+        printf '512'
     fi
 }
 
@@ -225,6 +299,8 @@ def canonical_backend(value):
         return "opencl"
     if value in ("qnn", "qnn-npu", "npu"):
         return "qnn-npu"
+    if value in ("fastrpc", "hexagon", "htp", "htp0"):
+        return "fastrpc"
     return value
 
 def normalized_target(value):
@@ -340,7 +416,7 @@ with (summary / "README.md").open("w") as f:
     f.write("# bench-PD fd summary\n\n")
     f.write(f"Local root: `{root}`\n\n")
     f.write("Core formal matrix: `cpu`, `opencl`/`GPUOpenCL`, `qnn`/`qnn-npu`.\n\n")
-    f.write("FastRPC/HTP0 is not part of this run's success criteria; see `list-devices.stdout` for the observed device list.\n\n")
+    f.write("FastRPC/HTP0 cases run only when `RUN_FASTRPC_PD=1` or `FASTRPC_ONLY=1`; `INCLUDE_FASTRPC=1` only enables FastRPC device preflight/manifest coverage.\n\n")
     f.write("Each invocation uses `-r 1`; the runner sleeps according to `COOLDOWN_SEC` between completed invocations.\n\n")
     f.write("Single-backend workloads are recorded in `manifest.txt` as `single_workloads`.\n\n")
     f.write("Switch workloads are recorded in `manifest.txt` as `switch_workloads`; switch cases use ordered non-self routes among `cpu`, `opencl`, and `qnn-npu`.\n\n")
@@ -467,17 +543,25 @@ run_single_backend() {
     args=$(backend_args "${backend}")
     local mask
     mask=$(taskset_for_backend "${backend}")
+    local threads
+    threads=$(threads_for_backend "${backend}")
+    local bench_batch
+    bench_batch=$(bench_batch_for_workload "${pp}")
+    local flash_attn_args
+    flash_attn_args=$(flash_attn_args_for_backend "${backend}")
     local workload
     workload=$(workload_name "${pp}" "${tg}")
     local name="single_${backend}_${workload}"
     local cmd
     cmd="$(remote_base_env)"
-    if [ "${backend}" = qnn ]; then
+    if [ "${backend}" = fastrpc ]; then
+        cmd="${cmd}$(fastrpc_env)"
+    elif [ "${backend}" = qnn ]; then
         cmd="${cmd}$(qnn_env)"
     else
         cmd="${cmd}$(disable_qnn_env)"
     fi
-    cmd="${cmd} && taskset ${mask} ./llama-bench -v -r ${REPS} -o csv -m ${MODEL_PATH} ${args} -t 4 -c 2048 -b ${pp} -ub ${pp} -p 0 -n 0 -pg ${pp},${tg} --no-warmup --mmap 0"
+    cmd="${cmd} && taskset ${mask} ./llama-bench -v -r ${REPS} -o csv -m ${MODEL_PATH} ${args} -t ${threads} -c 2048 -b ${bench_batch} -ub ${bench_batch} -p 0 -n 0 -pg ${pp},${tg} --no-warmup --mmap 0 ${flash_attn_args}"
     run_remote "${name}" single_backend "${backend}" "" "" "${workload}" "${pp}" "${tg}" "" "${cmd}"
 }
 
@@ -494,13 +578,21 @@ run_switch() {
     args=$(route_args "${prefill_route}" "${decode_route}")
     local mask
     mask=$(taskset_for_route "${prefill_backend}" "${decode_backend}")
+    local threads
+    threads=$(threads_for_route "${prefill_backend}" "${decode_backend}")
+    local bench_batch
+    bench_batch=$(bench_batch_for_workload "${pp}")
+    local flash_attn_args
+    flash_attn_args=$(flash_attn_args_for_route "${prefill_backend}" "${decode_backend}")
     local workload
     workload=$(workload_name "${pp}" "${tg}")
     local name="switch_${prefill_backend}_to_${decode_backend}_${workload}"
     local profile="${REMOTE_BIN_DIR}/results/${name}.profile.csv"
     local cmd
     cmd="$(remote_base_env)"
-    if [ "${prefill_backend}" = qnn ] || [ "${decode_backend}" = qnn ]; then
+    if [ "${prefill_backend}" = fastrpc ] || [ "${decode_backend}" = fastrpc ]; then
+        cmd="${cmd}$(fastrpc_env)"
+    elif [ "${prefill_backend}" = qnn ] || [ "${decode_backend}" = qnn ]; then
         cmd="${cmd}$(qnn_env)"
     else
         cmd="${cmd}$(disable_qnn_env)"
@@ -514,25 +606,43 @@ run_switch() {
     fi
     cmd="${cmd} && rm -f ${profile}"
     cmd="${cmd}$(dynamic_env "${prefill_route}" "${decode_route}" "${profile}")"
-    cmd="${cmd} && taskset ${mask} ./llama-bench -v -r ${REPS} -o csv -m ${MODEL_PATH} ${args} -t 4 -c 2048 -b ${pp} -ub ${pp} -p 0 -n 0 -pg ${pp},${tg} --no-warmup --mmap 0"
+    cmd="${cmd} && taskset ${mask} ./llama-bench -v -r ${REPS} -o csv -m ${MODEL_PATH} ${args} -t ${threads} -c 2048 -b ${bench_batch} -ub ${bench_batch} -p 0 -n 0 -pg ${pp},${tg} --no-warmup --mmap 0 ${flash_attn_args}"
     run_remote "${name}" switch "" "${prefill_route}" "${decode_route}" "${workload}" "${pp}" "${tg}" "${profile}" "${cmd}"
 }
 
 preflight() {
     adb -s "${DEVICE}" shell "test -x ${REMOTE_BIN_DIR}/llama-bench"
     adb -s "${DEVICE}" shell "test -f ${MODEL_PATH}"
-    adb -s "${DEVICE}" shell "test -f ${QNN_DIR}/config.json"
+    local needs_regular_matrix=1
+    if [ "${FASTRPC_ONLY}" = "1" ]; then
+        needs_regular_matrix=0
+    fi
+    local needs_opencl="${needs_regular_matrix}"
+    if [ "${RUN_FASTRPC_OPENCL_PD}" = "1" ]; then
+        needs_opencl=1
+    fi
+    local needs_qnn="${needs_regular_matrix}"
+
+    if [ "${needs_qnn}" = "1" ]; then
+        adb -s "${DEVICE}" shell "test -f ${QNN_DIR}/config.json"
+    fi
     adb -s "${DEVICE}" shell "cd ${REMOTE_BIN_DIR} && export LD_LIBRARY_PATH=${REMOTE_BIN_DIR}:\$LD_LIBRARY_PATH && export ADSP_LIBRARY_PATH=${REMOTE_BIN_DIR} && export GGML_HEXAGON_EXPERIMENTAL=1 && ./llama-bench --list-devices" \
         > "${LOCAL_ROOT}/list-devices.stdout" 2> "${LOCAL_ROOT}/list-devices.stderr"
-    if ! grep -q 'GPUOpenCL' "${LOCAL_ROOT}/list-devices.stdout"; then
+    if [ "${needs_opencl}" = "1" ] && ! grep -q 'GPUOpenCL' "${LOCAL_ROOT}/list-devices.stdout"; then
         printf 'error: fd device list does not include GPUOpenCL; see %s\n' "${LOCAL_ROOT}/list-devices.stdout" >&2
         exit 1
     fi
-    if ! grep -q 'qnn-npu' "${LOCAL_ROOT}/list-devices.stdout"; then
+    if [ "${needs_qnn}" = "1" ] && ! grep -q 'qnn-npu' "${LOCAL_ROOT}/list-devices.stdout"; then
         printf 'error: fd device list does not include qnn-npu; see %s\n' "${LOCAL_ROOT}/list-devices.stdout" >&2
         exit 1
     fi
-    adb -s "${DEVICE}" shell "cd ${REMOTE_BIN_DIR} && sha256sum llama-bench libllama.so libggml.so libggml-opencl.so libggml-qnn.so 2>/dev/null" \
+    if [ "${INCLUDE_FASTRPC}" = "1" ] || [ "${RUN_FASTRPC_PD}" = "1" ] || [ "${FASTRPC_ONLY}" = "1" ]; then
+        if ! grep -q "${FASTRPC_DEVICE}" "${LOCAL_ROOT}/list-devices.stdout"; then
+            printf 'error: fd device list does not include %s; see %s\n' "${FASTRPC_DEVICE}" "${LOCAL_ROOT}/list-devices.stdout" >&2
+            exit 1
+        fi
+    fi
+    adb -s "${DEVICE}" shell "cd ${REMOTE_BIN_DIR} && sha256sum llama-bench libllama.so libggml.so libggml-opencl.so libggml-qnn.so libggml-hexagon.so 2>/dev/null" \
         > "${LOCAL_ROOT}/remote-sha256.txt" 2> "${LOCAL_ROOT}/remote-sha256.stderr" || true
 
     {
@@ -546,34 +656,69 @@ preflight() {
         printf 'reps=%s\n' "${REPS}"
         printf 'keep_raw=%s\n' "${KEEP_RAW}"
         printf 'qnn_trace=%s\n' "${QNN_TRACE}"
+        printf 'include_fastrpc=%s\n' "${INCLUDE_FASTRPC}"
+        printf 'fastrpc_only=%s\n' "${FASTRPC_ONLY}"
+        printf 'run_fastrpc_pd=%s\n' "${RUN_FASTRPC_PD}"
+        printf 'run_fastrpc_opencl_pd=%s\n' "${RUN_FASTRPC_OPENCL_PD}"
+        printf 'fastrpc_device=%s\n' "${FASTRPC_DEVICE}"
+        printf 'fastrpc_pd_hostbuf=%s\n' "${FASTRPC_PD_HOSTBUF}"
+        printf 'fastrpc_pd_use_hmx=%s\n' "${FASTRPC_PD_USE_HMX}"
+        printf 'fastrpc_pd_nhvx=%s\n' "${FASTRPC_PD_NHVX}"
+        printf 'fastrpc_flash_attn=%s\n' "${FASTRPC_FLASH_ATTN}"
+        printf 'fastrpc_threads=%s\n' "${FASTRPC_THREADS}"
         printf 'single_workloads=%s\n' "${single_workloads[*]}"
         printf 'switch_workloads=%s\n' "${switch_workloads[*]}"
-        printf 'formal_backends=cpu opencl qnn-npu\n'
-        printf 'fastrpc_htp0_policy=record list-devices only, not formal success criteria\n'
+        printf 'fastrpc_workloads=%s\n' "${fastrpc_workloads[*]}"
+        if [ "${RUN_FASTRPC_PD}" = "1" ] || [ "${FASTRPC_ONLY}" = "1" ]; then
+            printf 'formal_backends=cpu opencl qnn-npu fastrpc\n'
+            printf 'fastrpc_htp0_policy=explicit smoke matrix enabled\n'
+        else
+            printf 'formal_backends=cpu opencl qnn-npu\n'
+            printf 'fastrpc_htp0_policy=record list-devices only, not formal success criteria\n'
+        fi
     } > "${MANIFEST}"
+}
+
+run_fastrpc_pd_matrix() {
+    for workload in "${fastrpc_workloads[@]}"; do
+        IFS=: read -r pp tg <<< "${workload}"
+        run_single_backend fastrpc "${pp}" "${tg}"
+        run_switch cpu fastrpc "${pp}" "${tg}"
+        run_switch fastrpc cpu "${pp}" "${tg}"
+        if [ "${RUN_FASTRPC_OPENCL_PD}" = "1" ]; then
+            run_switch opencl fastrpc "${pp}" "${tg}"
+            run_switch fastrpc opencl "${pp}" "${tg}"
+        fi
+    done
 }
 
 main() {
     preflight
 
-    for backend in "${backends[@]}"; do
-        for workload in "${single_workloads[@]}"; do
-            IFS=: read -r pp tg <<< "${workload}"
-            run_single_backend "${backend}" "${pp}" "${tg}"
-        done
-    done
-
-    for prefill in "${backends[@]}"; do
-        for decode in "${backends[@]}"; do
-            if [ "${prefill}" = "${decode}" ]; then
-                continue
-            fi
-            for workload in "${switch_workloads[@]}"; do
+    if [ "${FASTRPC_ONLY}" != "1" ]; then
+        for backend in "${backends[@]}"; do
+            for workload in "${single_workloads[@]}"; do
                 IFS=: read -r pp tg <<< "${workload}"
-                run_switch "${prefill}" "${decode}" "${pp}" "${tg}"
+                run_single_backend "${backend}" "${pp}" "${tg}"
             done
         done
-    done
+
+        for prefill in "${backends[@]}"; do
+            for decode in "${backends[@]}"; do
+                if [ "${prefill}" = "${decode}" ]; then
+                    continue
+                fi
+                for workload in "${switch_workloads[@]}"; do
+                    IFS=: read -r pp tg <<< "${workload}"
+                    run_switch "${prefill}" "${decode}" "${pp}" "${tg}"
+                done
+            done
+        done
+    fi
+
+    if [ "${RUN_FASTRPC_PD}" = "1" ] || [ "${FASTRPC_ONLY}" = "1" ]; then
+        run_fastrpc_pd_matrix
+    fi
 
     write_summary > "${SUMMARY_DIR}/last_summary_path.txt"
     printf 'LOCAL_ROOT=%s\n' "${LOCAL_ROOT}"

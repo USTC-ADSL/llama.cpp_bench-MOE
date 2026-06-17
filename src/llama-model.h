@@ -587,6 +587,9 @@ struct llama_model {
     std::unordered_set<llama_adapter_lora *> loras;
     std::unordered_map<const ggml_tensor *, ggml_tensor *> opencl_cpu_extra_cpu_copies;
     std::unordered_map<const ggml_tensor *, llama_hetero_route_stage> opencl_cpu_extra_cpu_copy_stages;
+    std::unordered_map<const ggml_tensor *, ggml_tensor *> fastrpc_opencl_weight_dual_opencl_copies;
+    std::unordered_map<const ggml_tensor *, ggml_tensor *> fastrpc_opencl_weight_dual_fastrpc_copies;
+    std::unordered_map<const ggml_tensor *, llama_hetero_route_stage> fastrpc_opencl_weight_dual_stages;
 
     // statically allocated context for assigning
     struct llama_meta_device_get_split_state_userdata get_split_state_ud;
@@ -629,6 +632,15 @@ struct llama_model {
     void register_opencl_cpu_extra_cpu_copy(
             ggml_tensor * original,
             ggml_tensor * cpu_copy,
+            llama_hetero_route_stage stage);
+    void register_fastrpc_opencl_weight_dual_residency(
+            ggml_tensor * original,
+            ggml_tensor * opencl_copy,
+            ggml_tensor * fastrpc_copy,
+            llama_hetero_route_stage stage);
+    void register_fastrpc_opencl_weight_duplicate(
+            ggml_tensor * original,
+            ggml_tensor * fastrpc_copy,
             llama_hetero_route_stage stage);
     ggml_tensor * resolve_weight_for_route(
             ggml_tensor * weight,

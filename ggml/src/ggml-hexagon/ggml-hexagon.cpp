@@ -3496,9 +3496,15 @@ static bool ggml_hexagon_supported_cpy(const struct ggml_hexagon_session * sess,
 static bool ggml_hexagon_supported_cont(const struct ggml_hexagon_session * sess, const struct ggml_tensor * op) {
     GGML_UNUSED(sess);
     const struct ggml_tensor * src0 = op->src[0];
+    const struct ggml_tensor * dst  = op;
 
     // CONT is same-type only, supports f32 and f16
     if (src0->type != GGML_TYPE_F32 && src0->type != GGML_TYPE_F16) return false;
+
+    if (!ggml_is_contiguous(dst)) return false;
+
+    // Large strided CONT copies can abort the DSP CPY path; keep small decode copies on HTP.
+    if (!ggml_is_contiguous(src0) && ggml_nbytes(dst) > 1024*1024) return false;
 
     return true;
 }

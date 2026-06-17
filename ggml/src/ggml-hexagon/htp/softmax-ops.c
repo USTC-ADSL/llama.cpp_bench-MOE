@@ -144,7 +144,7 @@ static void hvx_fast_softmax_prep_f32(const uint8_t * restrict src,
     for (int i = 0; i < step_of_1; i++) {
         HVX_Vector v1 = *(HVX_Vector *) src_curr;
 
-        HVX_Vector v3 = *(HVX_Vector *) mask_curr;
+        HVX_Vector v3 = *(HVX_UVector *) mask_curr;
 
         HVX_Vector v2 = Q6_Vqf32_vmpy_VsfVsf(v1, scale_vec);
 

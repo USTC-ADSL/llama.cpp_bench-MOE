@@ -32,6 +32,39 @@ bool llama_model_loader_should_replace_fastrpc_opencl_weight_duplicate(
         ggml_backend_buffer_type_t existing_buft,
         ggml_backend_buffer_type_t candidate_buft);
 
+bool llama_model_loader_should_enable_fastrpc_opencl_weight_duplicate(
+        const llama_hetero_route_spec & dynamic_prefill_route,
+        const llama_hetero_route_spec & dynamic_decode_route);
+
+bool llama_model_loader_should_enable_fastrpc_opencl_dual_residency(
+        const llama_hetero_route_spec & dynamic_prefill_route,
+        const llama_hetero_route_spec & dynamic_decode_route);
+
+bool llama_model_loader_weight_route_stage(
+        llm_tensor tn_tensor,
+        llm_tensor_layer layer,
+        llama_hetero_route_stage & stage);
+
+bool llama_model_loader_fastrpc_opencl_dual_residency_op_stage(
+        llm_tensor tn_tensor,
+        const char * suffix,
+        int flags,
+        ggml_op & op,
+        llama_hetero_route_stage & stage);
+
+const ggml_tensor * llama_model_resolve_weight_for_fastrpc_duplicate(
+        const ggml_tensor * original,
+        const ggml_tensor * fastrpc_copy,
+        llama_hetero_route_stage stage,
+        const llama_hetero_route_spec & route);
+
+const ggml_tensor * llama_model_resolve_weight_for_fastrpc_opencl_dual_residency(
+        const ggml_tensor * original,
+        const ggml_tensor * opencl_copy,
+        const ggml_tensor * fastrpc_copy,
+        llama_hetero_route_stage stage,
+        const llama_hetero_route_spec & route);
+
 namespace {
 
 const char * test_fastrpc_dev_name = "TestHTP0";
@@ -292,6 +325,31 @@ int main() {
         ggml_free(ctx);
     });
 
+    t.test("FastRPC duplicate fallback accepts canonical backend name", [](testing & t) {
+        register_test_fastrpc_backend();
+        test_fastrpc_repack_support_enabled = true;
+
+        const char * saved_dev_name = test_fastrpc_dev_name;
+        test_fastrpc_dev_name = "HTP0";
+
+        ggml_init_params params = {
+            /* .mem_size   = */ ggml_tensor_overhead()*4,
+            /* .mem_buffer = */ nullptr,
+            /* .no_alloc   = */ true,
+        };
+        ggml_context * ctx = ggml_init(params);
+        ggml_tensor * weight = new_test_fastrpc_weight(ctx);
+        llama_hparams hparams = {};
+
+        t.assert_true(
+                "named-device fallback should find HTP0 when the caller asks for canonical FastRPC",
+                llama_model_loader_select_weight_device_buft(
+                        hparams, weight, GGML_OP_MUL_MAT, "fastrpc", /* use_host_buft = */ false) == test_fastrpc_repack_buft());
+
+        test_fastrpc_dev_name = saved_dev_name;
+        ggml_free(ctx);
+    });
+
     t.test("FastRPC output duplicate can fall back to CPU when HTP0 rejects lm-head", [](testing & t) {
         register_test_fastrpc_backend();
         test_fastrpc_repack_support_enabled = false;
@@ -335,6 +393,227 @@ int main() {
                 "an existing OpenCL duplicate should not be replaced by a CPU fallback",
                 !llama_model_loader_should_replace_fastrpc_opencl_weight_duplicate(
                         "opencl", test_opencl_host_buft(), cpu_buft));
+    });
+
+    t.test("OpenCL and FastRPC dynamic routes request dual weight residency", [](testing & t) {
+        t.assert_true(
+                "OpenCL prefill -> FastRPC decode should keep FastRPC duplicates beside OpenCL primary weights",
+                llama_model_loader_should_enable_fastrpc_opencl_weight_duplicate(
+                        llama_hetero_parse_route_spec("opencl"),
+                        llama_hetero_parse_route_spec("fastrpc")));
+        t.assert_true(
+                "OpenCL prefill -> FastRPC decode should request full OpenCL/FastRPC dual residency",
+                llama_model_loader_should_enable_fastrpc_opencl_dual_residency(
+                        llama_hetero_parse_route_spec("opencl"),
+                        llama_hetero_parse_route_spec("fastrpc")));
+
+        t.assert_true(
+                "FastRPC prefill -> OpenCL decode should keep FastRPC duplicates even when OpenCL primary weights are preferred",
+                llama_model_loader_should_enable_fastrpc_opencl_weight_duplicate(
+                        llama_hetero_parse_route_spec("fastrpc"),
+                        llama_hetero_parse_route_spec("opencl")));
+        t.assert_true(
+                "FastRPC prefill -> OpenCL decode should request full OpenCL/FastRPC dual residency",
+                llama_model_loader_should_enable_fastrpc_opencl_dual_residency(
+                        llama_hetero_parse_route_spec("fastrpc"),
+                        llama_hetero_parse_route_spec("opencl")));
+    });
+
+    t.test("non OpenCL/FastRPC dynamic routes do not request FastRPC duplicates", [](testing & t) {
+        t.assert_true(
+                "CPU -> FastRPC switching should not be treated as an OpenCL/FastRPC dual-residency request",
+                !llama_model_loader_should_enable_fastrpc_opencl_weight_duplicate(
+                        llama_hetero_parse_route_spec("cpu"),
+                        llama_hetero_parse_route_spec("fastrpc")));
+        t.assert_true(
+                "OpenCL -> QNN switching should keep using the QNN/OpenCL residency path, not FastRPC dual residency",
+                !llama_model_loader_should_enable_fastrpc_opencl_dual_residency(
+                        llama_hetero_parse_route_spec("opencl"),
+                        llama_hetero_parse_route_spec("qnn-npu")));
+        t.assert_true(
+                "CPU -> OpenCL switching should keep using the CPU/OpenCL extra-copy path, not FastRPC dual residency",
+                !llama_model_loader_should_enable_fastrpc_opencl_dual_residency(
+                        llama_hetero_parse_route_spec("cpu"),
+                        llama_hetero_parse_route_spec("opencl")));
+    });
+
+    t.test("FastRPC route stages resolve to the FastRPC duplicate", [](testing & t) {
+        ggml_tensor original = {};
+        ggml_tensor fastrpc_copy = {};
+
+        t.assert_true(
+                "FastRPC FFN stages should consume the FastRPC-resident duplicate when it exists",
+                llama_model_resolve_weight_for_fastrpc_duplicate(
+                        &original,
+                        &fastrpc_copy,
+                        llama_hetero_route_stage::FFN,
+                        llama_hetero_parse_route_spec("HTP0")) == &fastrpc_copy);
+    });
+
+    t.test("OpenCL route stages keep the OpenCL primary weight", [](testing & t) {
+        ggml_tensor original = {};
+        ggml_tensor fastrpc_copy = {};
+
+        t.assert_true(
+                "OpenCL FFN stages should keep the primary OpenCL-resident weight",
+                llama_model_resolve_weight_for_fastrpc_duplicate(
+                        &original,
+                        &fastrpc_copy,
+                        llama_hetero_route_stage::FFN,
+                        llama_hetero_parse_route_spec("opencl")) == &original);
+    });
+
+    t.test("per-stage routes only switch stages that run on FastRPC", [](testing & t) {
+        ggml_tensor original = {};
+        ggml_tensor fastrpc_copy = {};
+        llama_hetero_route_spec route = {};
+        route.attn = "opencl";
+        route.ffn = "fastrpc";
+        route.output = "opencl";
+
+        t.assert_true(
+                "FFN should use the FastRPC duplicate when only FFN is routed to FastRPC",
+                llama_model_resolve_weight_for_fastrpc_duplicate(
+                        &original,
+                        &fastrpc_copy,
+                        llama_hetero_route_stage::FFN,
+                        route) == &fastrpc_copy);
+        t.assert_true(
+                "output should keep the original weight when output remains on OpenCL",
+                llama_model_resolve_weight_for_fastrpc_duplicate(
+                        &original,
+                        &fastrpc_copy,
+                        llama_hetero_route_stage::OUTPUT,
+                        route) == &original);
+    });
+
+    t.test("dual residency resolver selects OpenCL and FastRPC copies by route stage", [](testing & t) {
+        ggml_tensor original = {};
+        ggml_tensor opencl_copy = {};
+        ggml_tensor fastrpc_copy = {};
+
+        t.assert_true(
+                "OpenCL FFN stages should consume the OpenCL-resident copy even when the original is not OpenCL",
+                llama_model_resolve_weight_for_fastrpc_opencl_dual_residency(
+                        &original,
+                        &opencl_copy,
+                        &fastrpc_copy,
+                        llama_hetero_route_stage::FFN,
+                        llama_hetero_parse_route_spec("opencl")) == &opencl_copy);
+
+        t.assert_true(
+                "FastRPC FFN stages should consume the FastRPC-resident copy",
+                llama_model_resolve_weight_for_fastrpc_opencl_dual_residency(
+                        &original,
+                        &opencl_copy,
+                        &fastrpc_copy,
+                        llama_hetero_route_stage::FFN,
+                        llama_hetero_parse_route_spec("fastrpc")) == &fastrpc_copy);
+
+        t.assert_true(
+                "CPU stages should keep the original weight so CPU/OpenCL fallback logic can handle them separately",
+                llama_model_resolve_weight_for_fastrpc_opencl_dual_residency(
+                        &original,
+                        &opencl_copy,
+                        &fastrpc_copy,
+                        llama_hetero_route_stage::FFN,
+                        llama_hetero_parse_route_spec("cpu")) == &original);
+
+        llama_hetero_route_spec mixed_route = {};
+        mixed_route.attn = "opencl";
+        mixed_route.ffn = "fastrpc";
+        mixed_route.output = "opencl";
+        t.assert_true(
+                "per-stage dual resolver should choose the FastRPC copy only for FastRPC-owned stages",
+                llama_model_resolve_weight_for_fastrpc_opencl_dual_residency(
+                        &original,
+                        &opencl_copy,
+                        &fastrpc_copy,
+                        llama_hetero_route_stage::FFN,
+                        mixed_route) == &fastrpc_copy);
+        t.assert_true(
+                "per-stage dual resolver should choose the OpenCL copy for OpenCL-owned stages",
+                llama_model_resolve_weight_for_fastrpc_opencl_dual_residency(
+                        &original,
+                        &opencl_copy,
+                        &fastrpc_copy,
+                        llama_hetero_route_stage::OUTPUT,
+                        mixed_route) == &opencl_copy);
+    });
+
+    t.test("FastRPC OpenCL dual residency includes elementwise route weights", [](testing & t) {
+        llama_hetero_route_stage stage = llama_hetero_route_stage::OUTPUT;
+
+        t.assert_true(
+                "attention norm weights should belong to the attention projection stage",
+                llama_model_loader_weight_route_stage(
+                        LLM_TENSOR_ATTN_NORM,
+                        LLM_TENSOR_LAYER_REPEATING,
+                        stage));
+        t.assert_equal(
+                "attention norm stage",
+                int(llama_hetero_route_stage::ATTN_PROJ),
+                int(stage));
+
+        t.assert_true(
+                "FFN norm weights should belong to the FFN stage",
+                llama_model_loader_weight_route_stage(
+                        LLM_TENSOR_FFN_NORM,
+                        LLM_TENSOR_LAYER_REPEATING,
+                        stage));
+        t.assert_equal(
+                "FFN norm stage",
+                int(llama_hetero_route_stage::FFN),
+                int(stage));
+    });
+
+    t.test("FastRPC OpenCL dual residency prepares norm and bias ops", [](testing & t) {
+        ggml_op op = GGML_OP_NONE;
+        llama_hetero_route_stage stage = llama_hetero_route_stage::OUTPUT;
+
+        t.assert_true(
+                "attention norm scale should get dual residency as an HTP/OpenCL MUL input",
+                llama_model_loader_fastrpc_opencl_dual_residency_op_stage(
+                        LLM_TENSOR_ATTN_NORM,
+                        "weight",
+                        0,
+                        op,
+                        stage));
+        t.assert_equal("attention norm op", int(GGML_OP_MUL), int(op));
+        t.assert_equal("attention norm stage", int(llama_hetero_route_stage::ATTN_PROJ), int(stage));
+
+        t.assert_true(
+                "attention Q bias should get dual residency as an HTP/OpenCL ADD input",
+                llama_model_loader_fastrpc_opencl_dual_residency_op_stage(
+                        LLM_TENSOR_ATTN_Q,
+                        "bias",
+                        0,
+                        op,
+                        stage));
+        t.assert_equal("attention Q bias op", int(GGML_OP_ADD), int(op));
+        t.assert_equal("attention Q bias stage", int(llama_hetero_route_stage::ATTN_PROJ), int(stage));
+
+        t.assert_true(
+                "FFN norm scale should get dual residency as an HTP/OpenCL MUL input",
+                llama_model_loader_fastrpc_opencl_dual_residency_op_stage(
+                        LLM_TENSOR_FFN_NORM,
+                        "weight",
+                        0,
+                        op,
+                        stage));
+        t.assert_equal("FFN norm op", int(GGML_OP_MUL), int(op));
+        t.assert_equal("FFN norm stage", int(llama_hetero_route_stage::FFN), int(stage));
+
+        t.assert_true(
+                "output norm scale should get dual residency as an HTP/OpenCL MUL input",
+                llama_model_loader_fastrpc_opencl_dual_residency_op_stage(
+                        LLM_TENSOR_OUTPUT_NORM,
+                        "weight",
+                        0,
+                        op,
+                        stage));
+        t.assert_equal("output norm op", int(GGML_OP_MUL), int(op));
+        t.assert_equal("output norm stage", int(llama_hetero_route_stage::OUTPUT), int(stage));
     });
 
     return t.summary();
