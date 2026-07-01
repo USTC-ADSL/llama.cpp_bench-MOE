@@ -213,7 +213,7 @@ int main() {
                        std::string("cpu-host"));
     });
 
-    t.test("dynamic OpenCL FastRPC initial KV placement follows prefill target", [](testing & t) {
+    t.test("dynamic phase initial KV placement follows prefill target", [](testing & t) {
         const auto opencl_prefill = llama_hetero_parse_route_spec("opencl");
         const auto fastrpc_prefill = llama_hetero_parse_route_spec("fastrpc");
         const auto cpu_prefill = llama_hetero_parse_route_spec("cpu");
@@ -249,8 +249,27 @@ int main() {
                 cpu_prefill,
                 opencl_prefill,
                 "unit-test");
-        t.assert_true("CPU/OpenCL dynamic routes must keep their existing initial KV placement",
-                      !cpu_to_opencl.stage_boundary_active());
+        t.assert_true("CPU prefill -> OpenCL decode should request prefill-owned initial KV",
+                      cpu_to_opencl.stage_boundary_active());
+        t.assert_equal("CPU prefill before OpenCL decode should start with CPU host KV",
+                       cpu_to_opencl.storage_backend,
+                       std::string("cpu-host"));
+        t.assert_equal("CPU/OpenCL initial KV should keep rebuild semantics for decode",
+                       (int) cpu_to_opencl.transfer,
+                       (int) llama_hetero_kv_transfer_mode::NONE);
+
+        const auto cpu_to_fastrpc = llama_dynamic_phase_initial_opencl_fastrpc_kv_contract(
+                cpu_prefill,
+                fastrpc_prefill,
+                "unit-test");
+        t.assert_true("CPU prefill -> FastRPC decode should request prefill-owned initial KV",
+                      cpu_to_fastrpc.stage_boundary_active());
+        t.assert_equal("CPU prefill before FastRPC decode should start with CPU host KV",
+                       cpu_to_fastrpc.storage_backend,
+                       std::string("cpu-host"));
+        t.assert_equal("CPU/FastRPC initial KV should keep rebuild semantics for decode",
+                       (int) cpu_to_fastrpc.transfer,
+                       (int) llama_hetero_kv_transfer_mode::NONE);
 
         const auto qnn_to_opencl = llama_dynamic_phase_initial_opencl_fastrpc_kv_contract(
                 qnn_prefill,
@@ -260,7 +279,7 @@ int main() {
                       !qnn_to_opencl.stage_boundary_active());
     });
 
-    t.test("initial reserve pre-activates only OpenCL FastRPC dynamic prefill routes", [](testing & t) {
+    t.test("initial reserve pre-activates prefill-owned dynamic routes", [](testing & t) {
         const auto make_config = [](const char * prefill, const char * decode) {
             llama_dynamic_route_runtime_config config;
             config.mode = llama_dynamic_route_mode::PHASE_HEURISTIC;
@@ -280,11 +299,11 @@ int main() {
                 llama_context_should_activate_dynamic_prefill_route_for_initial_reserve(
                     make_config("opencl", "fastrpc")));
 
-        t.assert_true("CPU/OpenCL keeps the existing initial reserve behavior",
-                !llama_context_should_activate_dynamic_prefill_route_for_initial_reserve(
+        t.assert_true("CPU prefill with OpenCL decode should start the initial reserve on CPU",
+                llama_context_should_activate_dynamic_prefill_route_for_initial_reserve(
                     make_config("cpu", "opencl")));
-        t.assert_true("CPU/FastRPC keeps the existing initial reserve behavior",
-                !llama_context_should_activate_dynamic_prefill_route_for_initial_reserve(
+        t.assert_true("CPU prefill with FastRPC decode should start the initial reserve on CPU",
+                llama_context_should_activate_dynamic_prefill_route_for_initial_reserve(
                     make_config("cpu", "fastrpc")));
         t.assert_true("QNN/OpenCL keeps the shared-KV initial reserve behavior",
                 !llama_context_should_activate_dynamic_prefill_route_for_initial_reserve(
@@ -294,7 +313,7 @@ int main() {
                     make_config("fastrpc", "")));
     });
 
-    t.test("benchmark repeat reset is scoped to OpenCL FastRPC dynamic routes", [](testing & t) {
+    t.test("benchmark repeat reset is scoped to prefill-owned dynamic routes", [](testing & t) {
         const auto make_config = [](const char * prefill, const char * decode) {
             llama_dynamic_route_runtime_config config;
             config.mode = llama_dynamic_route_mode::PHASE_HEURISTIC;
@@ -314,11 +333,11 @@ int main() {
                 llama_context_should_reset_dynamic_route_for_benchmark_repeat(
                     make_config("fastrpc", "opencl")));
 
-        t.assert_true("CPU/FastRPC repeat reset must stay on the existing path",
-                !llama_context_should_reset_dynamic_route_for_benchmark_repeat(
+        t.assert_true("CPU/FastRPC repeat reset should restore CPU prefill-owned KV",
+                llama_context_should_reset_dynamic_route_for_benchmark_repeat(
                     make_config("cpu", "fastrpc")));
-        t.assert_true("CPU/OpenCL repeat reset must stay on the existing path",
-                !llama_context_should_reset_dynamic_route_for_benchmark_repeat(
+        t.assert_true("CPU/OpenCL repeat reset should restore CPU prefill-owned KV",
+                llama_context_should_reset_dynamic_route_for_benchmark_repeat(
                     make_config("cpu", "opencl")));
         t.assert_true("QNN/OpenCL repeat reset must not enter the FastRPC path",
                 !llama_context_should_reset_dynamic_route_for_benchmark_repeat(

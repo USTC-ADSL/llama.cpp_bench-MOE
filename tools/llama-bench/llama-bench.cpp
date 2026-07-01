@@ -9,13 +9,16 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <iomanip>
 #include <iterator>
+#include <limits>
 #include <map>
 #include <numeric>
 #include <regex>
 #include <sstream>
 #include <string>
 #include <thread>
+#include <type_traits>
 #include <unordered_set>
 #include <vector>
 
@@ -158,6 +161,9 @@ static bool vec_vec_tensor_buft_override_equal(const std::vector<std::vector<lla
 
 template <class T> static std::string join(const std::vector<T> & values, const std::string & delim) {
     std::ostringstream str;
+    if constexpr (std::is_floating_point_v<T>) {
+        str << std::setprecision(std::numeric_limits<T>::max_digits10);
+    }
     for (size_t i = 0; i < values.size(); i++) {
         str << values[i];
         if (i < values.size() - 1) {
@@ -429,6 +435,7 @@ struct cmd_params {
     int                              reps;
     ggml_sched_priority              prio;
     int                              delay;
+    int                              bench_timing_level;
     bool                             verbose;
     bool                             progress;
     bool                             no_warmup;
@@ -474,12 +481,23 @@ static const cmd_params cmd_params_defaults = {
     /* reps                 */ 5,
     /* prio                 */ GGML_SCHED_PRIO_NORMAL,
     /* delay                */ 0,
+    /* bench_timing_level   */ 2,
     /* verbose              */ false,
     /* progress             */ false,
     /* no_warmup            */ false,
     /* output_format        */ MARKDOWN,
     /* output_format_stderr */ NONE,
 };
+
+static int g_bench_timing_level = cmd_params_defaults.bench_timing_level;
+
+static bool llama_bench_timing_has_phase() {
+    return g_bench_timing_level >= 2;
+}
+
+static bool llama_bench_timing_has_switch_token() {
+    return g_bench_timing_level >= 3;
+}
 
 static void print_usage(int /* argc */, char ** argv) {
     printf("usage: %s [options]\n", argv[0]);
@@ -490,6 +508,7 @@ static void print_usage(int /* argc */, char ** argv) {
     printf("  -r, --repetitions <n>                       number of times to repeat each test (default: %d)\n", cmd_params_defaults.reps);
     printf("  --prio <-1|0|1|2|3>                         process/thread priority (default: %d)\n", cmd_params_defaults.prio);
     printf("  --delay <0...N> (seconds)                   delay between each test (default: %d)\n", cmd_params_defaults.delay);
+    printf("  --bench-timing-level <1|2|3>                timing output gate: 1=total, 2=phase/steady decode, 3=route/KV/reserve breakdown (default: %d)\n", cmd_params_defaults.bench_timing_level);
     printf("  -o, --output <csv|json|jsonl|md|sql>        output format printed to stdout (default: %s)\n", output_format_str(cmd_params_defaults.output_format));
     printf("  -oe, --output-err <csv|json|jsonl|md|sql>   output format printed to stderr (default: %s)\n", output_format_str(cmd_params_defaults.output_format_stderr));
     printf("  --list-devices                              list available devices and exit\n");
@@ -593,6 +612,7 @@ static cmd_params parse_cmd_params(int argc, char ** argv) {
     params.numa                 = cmd_params_defaults.numa;
     params.prio                 = cmd_params_defaults.prio;
     params.delay                = cmd_params_defaults.delay;
+    params.bench_timing_level   = cmd_params_defaults.bench_timing_level;
     params.progress             = cmd_params_defaults.progress;
     params.no_warmup            = cmd_params_defaults.no_warmup;
 
@@ -1041,6 +1061,16 @@ static cmd_params parse_cmd_params(int argc, char ** argv) {
                     break;
                 }
                 params.delay = std::stoi(argv[i]);
+            } else if (arg == "--bench-timing-level" || arg == "--timing-level") {
+                if (++i >= argc) {
+                    invalid_param = true;
+                    break;
+                }
+                params.bench_timing_level = std::stoi(argv[i]);
+                if (params.bench_timing_level < 1 || params.bench_timing_level > 3) {
+                    invalid_param = true;
+                    break;
+                }
             } else if (arg == "-o" || arg == "--output") {
                 if (++i >= argc) {
                     invalid_param = true;
@@ -1514,6 +1544,13 @@ struct test {
     int                      n_ctx;
     std::string              test_time;
     std::vector<uint64_t>    samples_ns;
+    std::vector<uint64_t>    samples_pp_ns;
+    std::vector<uint64_t>    samples_tg_ns;
+    std::vector<uint64_t>    samples_tg_first_ns;
+    std::vector<uint64_t>    samples_tg_steady_ns;
+    std::vector<uint64_t>    samples_tg_route_ns;
+    std::vector<uint64_t>    samples_tg_kv_ns;
+    std::vector<uint64_t>    samples_tg_reserve_ns;
 
     test(const cmd_params_instance & inst, const llama_model * lmodel, const llama_context * ctx) :
         cpu_info(get_cpu_info()),
@@ -1565,17 +1602,84 @@ struct test {
 
     uint64_t stdev_ns() const { return ::stdev(samples_ns); }
 
-    std::vector<double> get_ts() const {
-        int                 n_tokens = n_prompt + n_gen;
+    uint64_t avg_pp_ns() const { return ::avg(samples_pp_ns); }
+
+    uint64_t stdev_pp_ns() const { return ::stdev(samples_pp_ns); }
+
+    uint64_t avg_tg_ns() const { return ::avg(samples_tg_ns); }
+
+    uint64_t stdev_tg_ns() const { return ::stdev(samples_tg_ns); }
+
+    uint64_t avg_tg_first_ns() const { return ::avg(samples_tg_first_ns); }
+
+    uint64_t stdev_tg_first_ns() const { return ::stdev(samples_tg_first_ns); }
+
+    uint64_t avg_tg_steady_ns() const { return ::avg(samples_tg_steady_ns); }
+
+    uint64_t stdev_tg_steady_ns() const { return ::stdev(samples_tg_steady_ns); }
+
+    uint64_t avg_tg_route_ns() const { return ::avg(samples_tg_route_ns); }
+
+    uint64_t stdev_tg_route_ns() const { return ::stdev(samples_tg_route_ns); }
+
+    uint64_t avg_tg_kv_ns() const { return ::avg(samples_tg_kv_ns); }
+
+    uint64_t stdev_tg_kv_ns() const { return ::stdev(samples_tg_kv_ns); }
+
+    uint64_t avg_tg_reserve_ns() const { return ::avg(samples_tg_reserve_ns); }
+
+    uint64_t stdev_tg_reserve_ns() const { return ::stdev(samples_tg_reserve_ns); }
+
+    static std::vector<double> get_phase_ts(const std::vector<uint64_t> & samples, int n_tokens) {
         std::vector<double> ts;
-        std::transform(samples_ns.begin(), samples_ns.end(), std::back_inserter(ts),
-                       [n_tokens](uint64_t t) { return 1e9 * n_tokens / t; });
+        if (n_tokens <= 0) {
+            return ts;
+        }
+
+        std::transform(samples.begin(), samples.end(), std::back_inserter(ts),
+                       [n_tokens](uint64_t t) { return llama_bench_tokens_per_second(t, n_tokens); });
         return ts;
+    }
+
+    std::vector<double> get_ts() const {
+        return get_phase_ts(samples_ns, n_prompt + n_gen);
     }
 
     double avg_ts() const { return ::avg(get_ts()); }
 
     double stdev_ts() const { return ::stdev(get_ts()); }
+
+    std::vector<double> get_pp_ts() const {
+        return get_phase_ts(samples_pp_ns, n_prompt);
+    }
+
+    double avg_pp_ts() const { return ::avg(get_pp_ts()); }
+
+    double stdev_pp_ts() const { return ::stdev(get_pp_ts()); }
+
+    std::vector<double> get_tg_ts() const {
+        return get_phase_ts(samples_tg_ns, n_gen);
+    }
+
+    double avg_tg_ts() const { return ::avg(get_tg_ts()); }
+
+    double stdev_tg_ts() const { return ::stdev(get_tg_ts()); }
+
+    std::vector<double> get_tg_first_ts() const {
+        return get_phase_ts(samples_tg_first_ns, llama_bench_decode_first_tokens(n_gen));
+    }
+
+    double avg_tg_first_ts() const { return ::avg(get_tg_first_ts()); }
+
+    double stdev_tg_first_ts() const { return ::stdev(get_tg_first_ts()); }
+
+    std::vector<double> get_tg_steady_ts() const {
+        return get_phase_ts(samples_tg_steady_ns, llama_bench_decode_steady_tokens(n_gen));
+    }
+
+    double avg_tg_steady_ts() const { return ::avg(get_tg_steady_ts()); }
+
+    double stdev_tg_steady_ts() const { return ::stdev(get_tg_steady_ts()); }
 
     static std::string get_backend() {
         std::vector<std::string> backends;
@@ -1599,8 +1703,8 @@ struct test {
         return backends.empty() ? "CPU" : join(backends, ",");
     }
 
-    static const std::vector<std::string> & get_fields() {
-        static const std::vector<std::string> fields = {
+    static std::vector<std::string> get_fields() {
+        std::vector<std::string> fields = {
             "build_commit",   "build_number",   "cpu_info",      "gpu_info",       "backends",
             "model_filename", "model_type",     "model_size",    "model_n_params", "n_batch",
             "n_ubatch",       "n_threads",      "cpu_mask",      "cpu_strict",     "poll",
@@ -1612,6 +1716,23 @@ struct test {
             "n_ctx",
             "test_time",      "avg_ns",         "stddev_ns",     "avg_ts",         "stddev_ts"
         };
+
+        if (llama_bench_timing_has_phase()) {
+            fields.insert(fields.end(), {
+                "avg_pp_ns",          "stddev_pp_ns",       "avg_pp_ts",          "stddev_pp_ts",
+                "avg_tg_ns",          "stddev_tg_ns",       "avg_tg_ts",          "stddev_tg_ts",
+                "avg_tg_first_ns",    "stddev_tg_first_ns", "avg_tg_first_ts",    "stddev_tg_first_ts",
+                "avg_tg_steady_ns",   "stddev_tg_steady_ns","avg_tg_steady_ts",   "stddev_tg_steady_ts",
+            });
+        }
+        if (llama_bench_timing_has_switch_token()) {
+            fields.insert(fields.end(), {
+                "avg_tg_route_ns",    "stddev_tg_route_ns",
+                "avg_tg_kv_ns",       "stddev_tg_kv_ns",
+                "avg_tg_reserve_ns",  "stddev_tg_reserve_ns",
+            });
+        }
+
         return fields;
     }
 
@@ -1621,7 +1742,14 @@ struct test {
         if (field == "build_number" || field == "n_batch" || field == "n_ubatch" || field == "n_threads" ||
             field == "poll" || field == "model_size" || field == "model_n_params" || field == "n_gpu_layers" ||
             field == "main_gpu" || field == "n_prompt" || field == "n_gen" || field == "n_depth" || field == "n_ctx" || field == "avg_ns" ||
-            field == "stddev_ns" || field == "no_op_offload" || field == "n_cpu_moe" ||
+            field == "stddev_ns" || field == "avg_pp_ns" || field == "stddev_pp_ns" ||
+            field == "avg_tg_ns" || field == "stddev_tg_ns" ||
+            field == "avg_tg_first_ns" || field == "stddev_tg_first_ns" ||
+            field == "avg_tg_steady_ns" || field == "stddev_tg_steady_ns" ||
+            field == "avg_tg_route_ns" || field == "stddev_tg_route_ns" ||
+            field == "avg_tg_kv_ns" || field == "stddev_tg_kv_ns" ||
+            field == "avg_tg_reserve_ns" || field == "stddev_tg_reserve_ns" ||
+            field == "no_op_offload" || field == "n_cpu_moe" ||
             field == "fit_target" || field == "fit_min_ctx") {
             return INT;
         }
@@ -1629,7 +1757,11 @@ struct test {
             field == "use_mmap" || field == "use_direct_io" || field == "embeddings" || field == "no_host") {
             return BOOL;
         }
-        if (field == "avg_ts" || field == "stddev_ts") {
+        if (field == "avg_ts" || field == "stddev_ts" ||
+            field == "avg_pp_ts" || field == "stddev_pp_ts" ||
+            field == "avg_tg_ts" || field == "stddev_tg_ts" ||
+            field == "avg_tg_first_ts" || field == "stddev_tg_first_ts" ||
+            field == "avg_tg_steady_ts" || field == "stddev_tg_steady_ts") {
             return FLOAT;
         }
         return STRING;
@@ -1714,6 +1846,38 @@ struct test {
                                             std::to_string(stdev_ns()),
                                             std::to_string(avg_ts()),
                                             std::to_string(stdev_ts()) };
+
+        if (llama_bench_timing_has_phase()) {
+            values.insert(values.end(), {
+                std::to_string(avg_pp_ns()),
+                std::to_string(stdev_pp_ns()),
+                std::to_string(avg_pp_ts()),
+                std::to_string(stdev_pp_ts()),
+                std::to_string(avg_tg_ns()),
+                std::to_string(stdev_tg_ns()),
+                std::to_string(avg_tg_ts()),
+                std::to_string(stdev_tg_ts()),
+                std::to_string(avg_tg_first_ns()),
+                std::to_string(stdev_tg_first_ns()),
+                std::to_string(avg_tg_first_ts()),
+                std::to_string(stdev_tg_first_ts()),
+                std::to_string(avg_tg_steady_ns()),
+                std::to_string(stdev_tg_steady_ns()),
+                std::to_string(avg_tg_steady_ts()),
+                std::to_string(stdev_tg_steady_ts()),
+            });
+        }
+        if (llama_bench_timing_has_switch_token()) {
+            values.insert(values.end(), {
+                std::to_string(avg_tg_route_ns()),
+                std::to_string(stdev_tg_route_ns()),
+                std::to_string(avg_tg_kv_ns()),
+                std::to_string(stdev_tg_kv_ns()),
+                std::to_string(avg_tg_reserve_ns()),
+                std::to_string(stdev_tg_reserve_ns()),
+            });
+        }
+
         return values;
     }
 
@@ -1822,7 +1986,23 @@ struct json_printer : public printer {
         fprintf(fout, "  {\n");
         print_fields(test::get_fields(), t.get_values());
         fprintf(fout, "    \"samples_ns\": [ %s ],\n", join(t.samples_ns, ", ").c_str());
-        fprintf(fout, "    \"samples_ts\": [ %s ]\n", join(t.get_ts(), ", ").c_str());
+        fprintf(fout, "    \"samples_ts\": [ %s ]", join(t.get_ts(), ", ").c_str());
+        if (llama_bench_timing_has_phase()) {
+            fprintf(fout, ",\n    \"samples_pp_ns\": [ %s ],\n", join(t.samples_pp_ns, ", ").c_str());
+            fprintf(fout, "    \"samples_pp_ts\": [ %s ],\n", join(t.get_pp_ts(), ", ").c_str());
+            fprintf(fout, "    \"samples_tg_ns\": [ %s ],\n", join(t.samples_tg_ns, ", ").c_str());
+            fprintf(fout, "    \"samples_tg_ts\": [ %s ],\n", join(t.get_tg_ts(), ", ").c_str());
+            fprintf(fout, "    \"samples_tg_first_ns\": [ %s ],\n", join(t.samples_tg_first_ns, ", ").c_str());
+            fprintf(fout, "    \"samples_tg_first_ts\": [ %s ],\n", join(t.get_tg_first_ts(), ", ").c_str());
+            fprintf(fout, "    \"samples_tg_steady_ns\": [ %s ],\n", join(t.samples_tg_steady_ns, ", ").c_str());
+            fprintf(fout, "    \"samples_tg_steady_ts\": [ %s ]", join(t.get_tg_steady_ts(), ", ").c_str());
+        }
+        if (llama_bench_timing_has_switch_token()) {
+            fprintf(fout, ",\n    \"samples_tg_route_ns\": [ %s ],\n", join(t.samples_tg_route_ns, ", ").c_str());
+            fprintf(fout, "    \"samples_tg_kv_ns\": [ %s ],\n", join(t.samples_tg_kv_ns, ", ").c_str());
+            fprintf(fout, "    \"samples_tg_reserve_ns\": [ %s ]", join(t.samples_tg_reserve_ns, ", ").c_str());
+        }
+        fprintf(fout, "\n");
         fprintf(fout, "  }");
         fflush(fout);
     }
@@ -1843,6 +2023,21 @@ struct jsonl_printer : public printer {
         print_fields(test::get_fields(), t.get_values());
         fprintf(fout, "\"samples_ns\": [ %s ],", join(t.samples_ns, ", ").c_str());
         fprintf(fout, "\"samples_ts\": [ %s ]", join(t.get_ts(), ", ").c_str());
+        if (llama_bench_timing_has_phase()) {
+            fprintf(fout, ",\"samples_pp_ns\": [ %s ]", join(t.samples_pp_ns, ", ").c_str());
+            fprintf(fout, ",\"samples_pp_ts\": [ %s ]", join(t.get_pp_ts(), ", ").c_str());
+            fprintf(fout, ",\"samples_tg_ns\": [ %s ]", join(t.samples_tg_ns, ", ").c_str());
+            fprintf(fout, ",\"samples_tg_ts\": [ %s ]", join(t.get_tg_ts(), ", ").c_str());
+            fprintf(fout, ",\"samples_tg_first_ns\": [ %s ]", join(t.samples_tg_first_ns, ", ").c_str());
+            fprintf(fout, ",\"samples_tg_first_ts\": [ %s ]", join(t.get_tg_first_ts(), ", ").c_str());
+            fprintf(fout, ",\"samples_tg_steady_ns\": [ %s ]", join(t.samples_tg_steady_ns, ", ").c_str());
+            fprintf(fout, ",\"samples_tg_steady_ts\": [ %s ]", join(t.get_tg_steady_ts(), ", ").c_str());
+        }
+        if (llama_bench_timing_has_switch_token()) {
+            fprintf(fout, ",\"samples_tg_route_ns\": [ %s ]", join(t.samples_tg_route_ns, ", ").c_str());
+            fprintf(fout, ",\"samples_tg_kv_ns\": [ %s ]", join(t.samples_tg_kv_ns, ", ").c_str());
+            fprintf(fout, ",\"samples_tg_reserve_ns\": [ %s ]", join(t.samples_tg_reserve_ns, ", ").c_str());
+        }
         fprintf(fout, "}\n");
         fflush(fout);
     }
@@ -1857,6 +2052,13 @@ struct markdown_printer : public printer {
         }
         if (field == "t/s") {
             return 20;
+        }
+        if (field == "pp t/s" || field == "tg t/s" || field == "tg first t/s" || field == "tg steady t/s") {
+            return 20;
+        }
+        if (field == "tg first ms" || field == "tg steady ms" ||
+            field == "tg route ms" || field == "tg kv ms" || field == "tg reserve ms") {
+            return 16;
         }
         if (field == "size" || field == "params") {
             return 10;
@@ -2041,6 +2243,19 @@ struct markdown_printer : public printer {
         }
         fields.emplace_back("test");
         fields.emplace_back("t/s");
+        if (llama_bench_timing_has_phase()) {
+            fields.emplace_back("pp t/s");
+            fields.emplace_back("tg t/s");
+            fields.emplace_back("tg first ms");
+            fields.emplace_back("tg first t/s");
+            fields.emplace_back("tg steady ms");
+            fields.emplace_back("tg steady t/s");
+        }
+        if (llama_bench_timing_has_switch_token()) {
+            fields.emplace_back("tg route ms");
+            fields.emplace_back("tg kv ms");
+            fields.emplace_back("tg reserve ms");
+        }
 
         fprintf(fout, "|");
         for (const auto & field : fields) {
@@ -2096,6 +2311,33 @@ struct markdown_printer : public printer {
             } else if (field == "t/s") {
                 snprintf(buf, sizeof(buf), "%.2f ± %.2f", t.avg_ts(), t.stdev_ts());
                 value = buf;
+            } else if (field == "pp t/s") {
+                snprintf(buf, sizeof(buf), "%.2f ± %.2f", t.avg_pp_ts(), t.stdev_pp_ts());
+                value = buf;
+            } else if (field == "tg t/s") {
+                snprintf(buf, sizeof(buf), "%.2f ± %.2f", t.avg_tg_ts(), t.stdev_tg_ts());
+                value = buf;
+            } else if (field == "tg first ms") {
+                snprintf(buf, sizeof(buf), "%.3f ± %.3f", t.avg_tg_first_ns() / 1e6, t.stdev_tg_first_ns() / 1e6);
+                value = buf;
+            } else if (field == "tg first t/s") {
+                snprintf(buf, sizeof(buf), "%.2f ± %.2f", t.avg_tg_first_ts(), t.stdev_tg_first_ts());
+                value = buf;
+            } else if (field == "tg steady ms") {
+                snprintf(buf, sizeof(buf), "%.3f ± %.3f", t.avg_tg_steady_ns() / 1e6, t.stdev_tg_steady_ns() / 1e6);
+                value = buf;
+            } else if (field == "tg steady t/s") {
+                snprintf(buf, sizeof(buf), "%.2f ± %.2f", t.avg_tg_steady_ts(), t.stdev_tg_steady_ts());
+                value = buf;
+            } else if (field == "tg route ms") {
+                snprintf(buf, sizeof(buf), "%.3f ± %.3f", t.avg_tg_route_ns() / 1e6, t.stdev_tg_route_ns() / 1e6);
+                value = buf;
+            } else if (field == "tg kv ms") {
+                snprintf(buf, sizeof(buf), "%.3f ± %.3f", t.avg_tg_kv_ns() / 1e6, t.stdev_tg_kv_ns() / 1e6);
+                value = buf;
+            } else if (field == "tg reserve ms") {
+                snprintf(buf, sizeof(buf), "%.3f ± %.3f", t.avg_tg_reserve_ns() / 1e6, t.stdev_tg_reserve_ns() / 1e6);
+                value = buf;
             } else if (vmap.find(field) != vmap.end()) {
                 value = vmap.at(field);
             } else {
@@ -2104,7 +2346,8 @@ struct markdown_printer : public printer {
             }
 
             int width = get_field_width(field);
-            if (field == "t/s") {
+            if (field == "t/s" || field == "pp t/s" || field == "tg t/s" ||
+                field == "tg first t/s" || field == "tg steady t/s") {
                 // HACK: the utf-8 character is 2 bytes
                 width += 1;
             }
@@ -2192,7 +2435,12 @@ static bool test_prompt(llama_context * ctx, int n_prompt, int n_batch, int n_th
     return true;
 }
 
-static bool test_gen(llama_context * ctx, int n_gen, int n_threads) {
+static bool test_gen(
+        llama_context * ctx,
+        int n_gen,
+        int n_threads,
+        llama_bench_decode_timings * timings = nullptr,
+        llama_bench_decode_breakdown_timings * first_token_breakdown = nullptr) {
     llama_set_n_threads(ctx, n_threads, n_threads);
 
     const llama_model * model   = llama_get_model(ctx);
@@ -2201,13 +2449,35 @@ static bool test_gen(llama_context * ctx, int n_gen, int n_threads) {
 
     llama_token token = llama_vocab_get_add_bos(vocab) ? llama_vocab_bos(vocab) : std::rand() % n_vocab;
 
+    if (timings != nullptr) {
+        *timings = {};
+    }
+    if (first_token_breakdown != nullptr) {
+        *first_token_breakdown = {};
+    }
+
     for (int i = 0; i < n_gen; i++) {
+        const uint64_t token_start_ns = get_time_ns();
         int res = llama_decode(ctx, llama_batch_get_one(&token, 1));
         if (res != 0) {
             fprintf(stderr, "%s: failed to decode generation batch, res = %d\n", __func__, res);
             return false;
         }
         llama_synchronize(ctx);
+        const uint64_t token_ns = get_time_ns() - token_start_ns;
+        if (timings != nullptr) {
+            if (i == 0) {
+                timings->first_ns += token_ns;
+            } else {
+                timings->steady_ns += token_ns;
+            }
+        }
+        if (i == 0 && first_token_breakdown != nullptr) {
+            const llama_hetero_phase_timing_snapshot phase_timing = ctx->get_last_hetero_phase_timing();
+            first_token_breakdown->route_ns = llama_bench_us_to_ns(phase_timing.route_switch_us);
+            first_token_breakdown->kv_ns = llama_bench_us_to_ns(phase_timing.kv_migration_us);
+            first_token_breakdown->reserve_ns = llama_bench_us_to_ns(phase_timing.reserve_us);
+        }
         token = std::rand() % n_vocab;
     }
     return true;
@@ -2261,6 +2531,7 @@ int llama_bench(int argc, char ** argv) {
     ggml_backend_load_all();
 
     cmd_params params = parse_cmd_params(argc, argv);
+    g_bench_timing_level = params.bench_timing_level;
 
     auto * cpu_dev = ggml_backend_dev_by_type(GGML_BACKEND_DEVICE_TYPE_CPU);
     if (!cpu_dev) {
@@ -2369,6 +2640,7 @@ int llama_bench(int argc, char ** argv) {
             llama_model_free(lmodel);
             return 1;
         }
+        ctx->set_hetero_phase_timing_enabled_for_benchmark(llama_bench_timing_has_switch_token());
 
         test t(inst, lmodel, ctx);
 
@@ -2510,26 +2782,38 @@ int llama_bench(int argc, char ** argv) {
                     fprintf(stderr, "llama-bench: benchmark %d/%zu: prompt run %d/%d\n", params_idx, params_count,
                             i + 1, params.reps);
                 }
+                uint64_t pp_start = get_time_ns();
                 bool res = test_prompt(ctx, t.n_prompt, t.n_batch, t.n_threads);
+                uint64_t pp_ns = get_time_ns() - pp_start;
                 if (!res) {
                     fprintf(stderr, "%s: error: failed to run prompt\n", __func__);
                     llama_free(ctx);
                     llama_model_free(lmodel);
                     exit(1);
                 }
+                t.samples_pp_ns.push_back(pp_ns);
             }
             if (t.n_gen > 0) {
                 if (params.progress) {
                     fprintf(stderr, "llama-bench: benchmark %d/%zu: generation run %d/%d\n", params_idx, params_count,
                             i + 1, params.reps);
                 }
-                bool res = test_gen(ctx, t.n_gen, t.n_threads);
+                llama_bench_decode_timings tg_timings;
+                llama_bench_decode_breakdown_timings tg_breakdown;
+                bool res = test_gen(ctx, t.n_gen, t.n_threads, &tg_timings, &tg_breakdown);
+                uint64_t tg_ns = tg_timings.total_ns();
                 if (!res) {
                     fprintf(stderr, "%s: error: failed to run gen\n", __func__);
                     llama_free(ctx);
                     llama_model_free(lmodel);
                     exit(1);
                 }
+                t.samples_tg_ns.push_back(tg_ns);
+                t.samples_tg_first_ns.push_back(tg_timings.first_ns);
+                t.samples_tg_steady_ns.push_back(tg_timings.steady_ns);
+                t.samples_tg_route_ns.push_back(tg_breakdown.route_ns);
+                t.samples_tg_kv_ns.push_back(tg_breakdown.kv_ns);
+                t.samples_tg_reserve_ns.push_back(tg_breakdown.reserve_ns);
             }
 
             uint64_t t_ns = get_time_ns() - t_start;

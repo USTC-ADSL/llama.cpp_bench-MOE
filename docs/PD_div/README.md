@@ -16,8 +16,10 @@
    - 解释当前代码树中 CPU、GPUOpenCL、QNN/NPU 之间通过 `buffer_type`、host buffer、KV contract、OpenCL external alias 和 QNN rpcmem/shared buffer 完成交接的实际流程。
 6. [Backend、Device 注册与初始化机制](06-backend-device-registration-and-init.md)
    - 解释 `ggml_backend_reg_t`、`ggml_backend_dev_t`、`ggml_backend_t` 的职责差异，并用 OpenCL 与 QNN 对照说明设备注册、device context 创建、runtime 初始化和 `graph_compute` 执行入口。
-7. [Prefill/Decode 后端切换测试方案](07-prefill-decode-test-plan.md)
+7. [Prefill/Decode 后端切换测试方案](07-prefill-decode-test.md)
    - 设计 CPU、GPUOpenCL、qnn-npu 三后端的 Prefill/Decode phase switch 开销矩阵、单后端阶段耗时测试、输出 schema、数据质量规则，以及完整实现补点。
+8. [CPU/OpenCL/FastRPC phase 性能注意事项](08-cpu-opencl-fastrpc-performance-notes.md)
+   - 汇总 CPU prefill split 修复后的设备数据、CPU affinity 与线程数匹配规则、OpenCL FlashAttention 反向变慢原因、FastRPC/OpenCL 的全局 FA 冲突和推荐命令。
 
 ## 当前口径
 
@@ -27,4 +29,4 @@
 - 后端切换是 phase-level 执行计划切换；当前分支保留 stage route 数据结构，但不会启用真正混合 stage route。
 - 统一内存不是一个隐式一致性假设，而是初始化期 buffer type 能力探测、allocated KV contract、KV cache 放置、OpenCL alias/sync 和 QNN shared-buffer 绑定共同构成的数据交接路径。
 - backend registry 只负责暴露可选 device；`ggml_backend_dev_init()` 才创建可执行 backend instance；scheduler 最终调用的是 backend instance 的 `graph_compute()`。
-- 文档只说明路径和接口，不记录设备采样实验流程。
+- 文档以路径和接口说明为主；`08-cpu-opencl-fastrpc-performance-notes.md` 作为例外记录本地 fork 的设备采样结论和后续 benchmark 注意事项。

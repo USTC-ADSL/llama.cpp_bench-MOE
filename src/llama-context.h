@@ -66,6 +66,20 @@ struct llama_sched_reserve_timing {
     }
 };
 
+struct llama_hetero_phase_timing_snapshot {
+    bool active = false;
+    bool route_applied = false;
+    bool route_noop = false;
+
+    uint32_t n_tokens = 0;
+
+    int64_t route_switch_us = 0;
+    int64_t route_decide_us = 0;
+    int64_t route_apply_us = 0;
+    int64_t kv_migration_us = 0;
+    int64_t reserve_us = 0;
+};
+
 struct llama_context {
     // init scheduler and compute buffers, reserve worst-case graphs
     llama_context(
@@ -283,6 +297,8 @@ public:
     bool set_dynamic_route_config(const llama_dynamic_route_config & config);
     std::string get_dynamic_route_mode() const;
     bool reset_dynamic_route_for_benchmark_repeat();
+    void set_hetero_phase_timing_enabled_for_benchmark(bool enabled);
+    llama_hetero_phase_timing_snapshot get_last_hetero_phase_timing() const;
 
 private:
     llm_graph_params graph_params(
@@ -320,6 +336,7 @@ private:
     void record_dynamic_seq0_token_history(const llama_batch & batch_inp, size_t prefix_tokens_before_decode);
     bool replay_dynamic_qnn_prefix();
     void maybe_apply_dynamic_route(uint32_t n_tokens);
+    bool hetero_phase_timing_enabled() const;
 
     //
     // members
@@ -492,6 +509,7 @@ private:
 
     hetero_phase_timing_trace hetero_phase_trace;
     bool hetero_phase_trace_suppress_sync_log = false;
+    bool hetero_phase_timing_force_enabled = false;
 
     // perf
     mutable int64_t t_start_us  = 0;

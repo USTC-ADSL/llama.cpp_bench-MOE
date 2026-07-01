@@ -16,27 +16,27 @@ const ggml_tensor * llama_model_resolve_weight_for_cpu_copy(
 int main() {
     testing t;
 
-    t.test("opencl prefill to cpu decode can request an extra cpu-friendly copy", [](testing & t) {
+    t.test("opencl prefill to cpu decode enables an extra cpu-friendly copy when allowed", [](testing & t) {
         t.assert_true(
-                "env-enabled OpenCL -> CPU switching should request an extra CPU-friendly copy",
+                "OpenCL -> CPU switching should request an extra CPU-friendly copy when the loader allows it",
                 llama_model_loader_should_enable_opencl_cpu_extra_cpu_copy(
                         llama_hetero_parse_route_spec("opencl"),
                         llama_hetero_parse_route_spec("cpu"),
                         true));
     });
 
-    t.test("cpu prefill to opencl decode can request an extra cpu-friendly copy", [](testing & t) {
+    t.test("cpu prefill to opencl decode enables an extra cpu-friendly copy when allowed", [](testing & t) {
         t.assert_true(
-                "env-enabled CPU -> OpenCL switching should still keep a CPU-friendly copy for later CPU phases",
+                "CPU -> OpenCL switching should keep a CPU-friendly copy for the CPU prefill phase when the loader allows it",
                 llama_model_loader_should_enable_opencl_cpu_extra_cpu_copy(
                         llama_hetero_parse_route_spec("cpu"),
                         llama_hetero_parse_route_spec("opencl"),
                         true));
     });
 
-    t.test("feature stays disabled without the env gate", [](testing & t) {
+    t.test("feature can be disabled by the caller", [](testing & t) {
         t.assert_true(
-                "without the env gate the extra CPU-friendly copy must remain disabled",
+                "the extra CPU-friendly copy must remain disabled when the loader caller disables it",
                 !llama_model_loader_should_enable_opencl_cpu_extra_cpu_copy(
                         llama_hetero_parse_route_spec("opencl"),
                         llama_hetero_parse_route_spec("cpu"),

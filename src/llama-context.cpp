@@ -170,6 +170,21 @@ static bool llama_context_dynamic_route_is_opencl_fastrpc_switch(
            (prefill == "fastrpc" && decode == "opencl");
 }
 
+static bool llama_context_dynamic_route_needs_prefill_owned_initial_kv(
+        const llama_dynamic_route_runtime_config & config) {
+    const std::string prefill = llama_context_dynamic_candidate_phase_backend(config.prefill);
+    const std::string decode  = llama_context_dynamic_candidate_phase_backend(config.decode);
+    if (prefill.empty() || decode.empty() || prefill == decode) {
+        return false;
+    }
+
+    if (llama_context_dynamic_route_is_opencl_fastrpc_switch(config)) {
+        return true;
+    }
+
+    return prefill == "cpu" && (decode == "opencl" || llama_hetero_is_fastrpc_backend(decode));
+}
+
 bool llama_context_should_activate_dynamic_prefill_route_for_initial_reserve(
         const llama_dynamic_route_runtime_config & config) {
     if (!config.enabled() ||
@@ -180,7 +195,7 @@ bool llama_context_should_activate_dynamic_prefill_route_for_initial_reserve(
         return false;
     }
 
-    return llama_context_dynamic_route_is_opencl_fastrpc_switch(config);
+    return llama_context_dynamic_route_needs_prefill_owned_initial_kv(config);
 }
 
 bool llama_context_should_reset_dynamic_route_for_benchmark_repeat(
@@ -254,18 +269,36 @@ llama_hetero_kv_contract llama_dynamic_phase_initial_opencl_fastrpc_kv_contract(
     const std::string decode =
         llama_hetero_canonical_backend(llama_hetero_phase_backend_for_route(decode_route));
 
+    const bool cpu_prefill_to_opencl =
+        prefill == "cpu" && decode == "opencl";
+    const bool cpu_prefill_to_fastrpc =
+        prefill == "cpu" && llama_hetero_is_fastrpc_backend(decode);
     const bool opencl_to_fastrpc =
         prefill == "opencl" && llama_hetero_is_fastrpc_backend(decode);
     const bool fastrpc_to_opencl =
         llama_hetero_is_fastrpc_backend(prefill) && decode == "opencl";
-    if (!opencl_to_fastrpc && !fastrpc_to_opencl) {
+    if (!cpu_prefill_to_opencl &&
+        !cpu_prefill_to_fastrpc &&
+        !opencl_to_fastrpc &&
+        !fastrpc_to_opencl) {
         return {};
     }
 
-    return llama_dynamic_phase_migration_kv_contract(
-            decode,
-            prefill,
-            reason != nullptr ? reason : "dynamic-opencl-fastrpc-prefill-kv-placement");
+    llama_hetero_kv_contract contract;
+    contract.producer_backend = decode;
+    contract.consumer_backend = prefill;
+    contract.layout = llama_hetero_kv_layout_kind::LEGACY;
+    contract.transfer = llama_hetero_kv_transfer_mode::NONE;
+    contract.storage_backend =
+        (cpu_prefill_to_opencl || cpu_prefill_to_fastrpc) ? "cpu-host" :
+        opencl_to_fastrpc ? "opencl-host" :
+        "fastrpc-device";
+    contract.shared_buffer_required = false;
+    contract.implemented = true;
+    contract.buffer_available = true;
+    contract.zero_copy = false;
+    contract.reason = reason != nullptr ? reason : "dynamic-prefill-kv-placement";
+    return contract;
 }
 
 bool llama_context_should_attempt_qnn_phase_kv_migration(
@@ -890,11 +923,27 @@ llama_context::llama_context(
                         "dynamic-opencl-fastrpc-prefill-kv-placement");
             if (prefill_owned_kv.stage_boundary_active()) {
                 hetero_kv_contract_allocated = std::move(prefill_owned_kv);
-                LLAMA_LOG_INFO("%s: dynamic OpenCL/FastRPC initial KV placement uses storage=%s for prefill backend=%s before decode rebuild to %s\n",
+                const std::string prefill_backend =
+                    llama_hetero_canonical_backend(hetero_kv_contract_allocated.consumer_backend);
+                const std::string decode_backend =
+                    llama_hetero_canonical_backend(hetero_kv_contract_allocated.producer_backend);
+                const char * placement_label =
+                    prefill_backend == "cpu" && decode_backend == "opencl" ? "CPU/OpenCL" :
+                    prefill_backend == "cpu" && llama_hetero_is_fastrpc_backend(decode_backend) ? "CPU/FastRPC" :
+                    (prefill_backend == "opencl" && llama_hetero_is_fastrpc_backend(decode_backend)) ||
+                    (llama_hetero_is_fastrpc_backend(prefill_backend) && decode_backend == "opencl") ? "OpenCL/FastRPC" :
+                    "phase";
+                const llama_hetero_kv_contract decode_contract =
+                    llama_dynamic_phase_migration_kv_contract(
+                            prefill_backend,
+                            decode_backend,
+                            "dynamic-phase-decode-kv-target");
+                LLAMA_LOG_INFO("%s: dynamic %s initial KV placement uses storage=%s for prefill backend=%s before decode rebuild/migration to storage=%s\n",
                         __func__,
+                        placement_label,
                         hetero_kv_contract_allocated.storage_backend.empty() ? "<unset>" : hetero_kv_contract_allocated.storage_backend.c_str(),
                         hetero_kv_contract_allocated.consumer_backend.c_str(),
-                        hetero_kv_contract_allocated.producer_backend.c_str());
+                        decode_contract.storage_backend.empty() ? "<unset>" : decode_contract.storage_backend.c_str());
             }
         }
 
@@ -1515,6 +1564,9 @@ void llama_context::sched_reserve() {
     }
 
     const int64_t t_end_us = ggml_time_us();
+    if (hetero_phase_timing_enabled() && hetero_phase_trace.active) {
+        hetero_phase_trace.reserve_us += t_end_us - t_start_us;
+    }
 
     LLAMA_LOG_INFO("%s: reserve took %.2f ms, sched copies = %d\n",
             __func__, (t_end_us - t_start_us)/1000.0, ggml_backend_sched_get_n_copies(sched.get()));
@@ -2432,6 +2484,31 @@ bool llama_context::reset_dynamic_route_for_benchmark_repeat() {
     return true;
 }
 
+void llama_context::set_hetero_phase_timing_enabled_for_benchmark(bool enabled) {
+    hetero_phase_timing_force_enabled = enabled;
+}
+
+llama_hetero_phase_timing_snapshot llama_context::get_last_hetero_phase_timing() const {
+    llama_hetero_phase_timing_snapshot snapshot = {};
+    snapshot.active = hetero_phase_trace.active;
+    snapshot.route_applied = hetero_phase_trace.route_applied;
+    snapshot.route_noop = hetero_phase_trace.route_noop;
+    snapshot.n_tokens = hetero_phase_trace.n_tokens;
+    snapshot.route_decide_us = hetero_phase_trace.route_decide_us;
+    snapshot.route_apply_us = hetero_phase_trace.route_apply_us;
+    snapshot.route_switch_us =
+        hetero_phase_trace.route_applied
+            ? hetero_phase_trace.route_decide_us + hetero_phase_trace.route_apply_us
+            : 0;
+    snapshot.kv_migration_us = hetero_phase_trace.kv_migration_us;
+    snapshot.reserve_us = hetero_phase_trace.reserve_us;
+    return snapshot;
+}
+
+bool llama_context::hetero_phase_timing_enabled() const {
+    return hetero_phase_timing_force_enabled || llama_context_hetero_dynamic_trace_timing_enabled();
+}
+
 void llama_context::maybe_apply_dynamic_route(uint32_t n_tokens) {
     if (n_tokens > 1) {
         dynamic_route_state.prefill_calls++;
@@ -2456,12 +2533,13 @@ void llama_context::maybe_apply_dynamic_route(uint32_t n_tokens) {
         /*.allocated_kv_contract =*/ &hetero_kv_contract_allocated,
     };
 
+    const bool collect_timing = hetero_phase_timing_enabled();
     const bool trace_timing = llama_context_hetero_dynamic_trace_timing_enabled();
-    const int64_t t_decide_start_us = trace_timing ? ggml_time_us() : 0;
+    const int64_t t_decide_start_us = collect_timing ? ggml_time_us() : 0;
     llama_dynamic_route_decision decision = llama_dynamic_route_decide(dynamic_route_config, request);
-    const int64_t t_decide_end_us = trace_timing ? ggml_time_us() : 0;
+    const int64_t t_decide_end_us = collect_timing ? ggml_time_us() : 0;
 
-    if (trace_timing && hetero_phase_trace.active) {
+    if (collect_timing && hetero_phase_trace.active) {
         hetero_phase_trace.route_decide_us = t_decide_end_us - t_decide_start_us;
         hetero_phase_trace.route_reason = decision.reason;
     }
@@ -2538,10 +2616,10 @@ void llama_context::maybe_apply_dynamic_route(uint32_t n_tokens) {
 
             if (has_pending_fn != nullptr && flush_pending_fn != nullptr && has_pending_fn(qnn_backend)) {
                 LLAMA_LOG_INFO("%s: starting QNN pending KV flush before decode route switch\n", __func__);
-                const int64_t t_kv_start_us = trace_timing ? ggml_time_us() : 0;
+                const int64_t t_kv_start_us = collect_timing ? ggml_time_us() : 0;
                 const bool flushed = flush_pending_fn(qnn_backend);
-                const int64_t t_kv_end_us = trace_timing ? ggml_time_us() : 0;
-                if (trace_timing && hetero_phase_trace.active) {
+                const int64_t t_kv_end_us = collect_timing ? ggml_time_us() : 0;
+                if (collect_timing && hetero_phase_trace.active) {
                     hetero_phase_trace.kv_migration_us += t_kv_end_us - t_kv_start_us;
                 }
                 if (!flushed) {
@@ -2558,10 +2636,10 @@ void llama_context::maybe_apply_dynamic_route(uint32_t n_tokens) {
                 __func__,
                 current_attn_backend.c_str(),
                 target_attn_backend.c_str());
-        const int64_t t_kv_start_us = trace_timing ? ggml_time_us() : 0;
+        const int64_t t_kv_start_us = collect_timing ? ggml_time_us() : 0;
         const bool migrated = migrate_dynamic_cpu_opencl_kv(current_attn_backend, target_attn_backend);
-        const int64_t t_kv_end_us = trace_timing ? ggml_time_us() : 0;
-        if (trace_timing && hetero_phase_trace.active) {
+        const int64_t t_kv_end_us = collect_timing ? ggml_time_us() : 0;
+        if (collect_timing && hetero_phase_trace.active) {
             hetero_phase_trace.kv_migration_us += t_kv_end_us - t_kv_start_us;
         }
         if (!migrated) {
@@ -2576,14 +2654,14 @@ void llama_context::maybe_apply_dynamic_route(uint32_t n_tokens) {
                 __func__,
                 current_attn_backend.c_str(),
                 target_attn_backend.c_str());
-        const int64_t t_kv_start_us = trace_timing ? ggml_time_us() : 0;
+        const int64_t t_kv_start_us = collect_timing ? ggml_time_us() : 0;
         llama_opencl_external_host_sync_timing opencl_sync_timing;
         migrated_qnn_kv =
             target_attn_backend == "opencl"
                 ? sync_dynamic_cpu_opencl_kv(/* host_to_device = */ true, &opencl_sync_timing)
                 : true;
-        const int64_t t_kv_end_us = trace_timing ? ggml_time_us() : 0;
-        if (trace_timing && hetero_phase_trace.active) {
+        const int64_t t_kv_end_us = collect_timing ? ggml_time_us() : 0;
+        if (collect_timing && hetero_phase_trace.active) {
             hetero_phase_trace.kv_migration_us += t_kv_end_us - t_kv_start_us;
             hetero_phase_trace.kv_alias_us += opencl_sync_timing.alias_us;
             hetero_phase_trace.kv_backend_sync_us += opencl_sync_timing.backend_sync_us;
@@ -2602,13 +2680,13 @@ void llama_context::maybe_apply_dynamic_route(uint32_t n_tokens) {
                 __func__,
                 current_attn_backend.c_str(),
                 target_attn_backend.c_str());
-        const int64_t t_kv_start_us = trace_timing ? ggml_time_us() : 0;
+        const int64_t t_kv_start_us = collect_timing ? ggml_time_us() : 0;
         migrated_qnn_kv = rebuild_dynamic_consumer_kv_from_state(
                 current_attn_backend,
                 target_attn_backend,
                 "qnn-phase-state-migration");
-        const int64_t t_kv_end_us = trace_timing ? ggml_time_us() : 0;
-        if (trace_timing && hetero_phase_trace.active) {
+        const int64_t t_kv_end_us = collect_timing ? ggml_time_us() : 0;
+        if (collect_timing && hetero_phase_trace.active) {
             hetero_phase_trace.kv_migration_us += t_kv_end_us - t_kv_start_us;
         }
         if (!migrated_qnn_kv) {
@@ -2623,15 +2701,15 @@ void llama_context::maybe_apply_dynamic_route(uint32_t n_tokens) {
                 __func__,
                 current_attn_backend.c_str(),
                 target_attn_backend.c_str());
-        const int64_t t_kv_start_us = trace_timing ? ggml_time_us() : 0;
+        const int64_t t_kv_start_us = collect_timing ? ggml_time_us() : 0;
         const bool opencl_fastrpc_boundary =
             current_attn_backend == "opencl" || target_attn_backend == "opencl";
         migrated_fastrpc_kv = rebuild_dynamic_consumer_kv_from_state(
                 current_attn_backend,
                 target_attn_backend,
                 opencl_fastrpc_boundary ? "opencl-fastrpc-state-rebuild" : "cpu-fastrpc-state-rebuild");
-        const int64_t t_kv_end_us = trace_timing ? ggml_time_us() : 0;
-        if (trace_timing && hetero_phase_trace.active) {
+        const int64_t t_kv_end_us = collect_timing ? ggml_time_us() : 0;
+        if (collect_timing && hetero_phase_trace.active) {
             hetero_phase_trace.kv_migration_us += t_kv_end_us - t_kv_start_us;
         }
         if (!migrated_fastrpc_kv) {
@@ -2641,11 +2719,11 @@ void llama_context::maybe_apply_dynamic_route(uint32_t n_tokens) {
         }
     }
 
-    const int64_t t_apply_start_us = trace_timing ? ggml_time_us() : 0;
+    const int64_t t_apply_start_us = collect_timing ? ggml_time_us() : 0;
     const bool applied = apply_hetero_plan(std::move(decision.plan), /* update_base_plan = */ false, decision.plan_label.c_str());
-    const int64_t t_apply_end_us = trace_timing ? ggml_time_us() : 0;
+    const int64_t t_apply_end_us = collect_timing ? ggml_time_us() : 0;
 
-    if (trace_timing && hetero_phase_trace.active) {
+    if (collect_timing && hetero_phase_trace.active) {
         hetero_phase_trace.route_applied = applied;
         hetero_phase_trace.route_noop = !sched_need_reserve;
         hetero_phase_trace.route_apply_us = t_apply_end_us - t_apply_start_us;
@@ -3126,8 +3204,9 @@ int llama_context::decode(const llama_batch & batch_inp) {
         t_compute_start_us = ggml_time_us();
     }
 
-    if (llama_context_hetero_dynamic_trace_timing_enabled()) {
-        if (hetero_phase_trace.active) {
+    const bool collect_phase_timing = hetero_phase_timing_enabled();
+    if (collect_phase_timing) {
+        if (hetero_phase_trace.active && llama_context_hetero_dynamic_trace_timing_enabled()) {
             LLAMA_LOG_WARN("%s: overwriting pending hetero phase trace for phase=%s n_tokens=%u before synchronize() completed\n",
                     __func__,
                     llama_context_hetero_phase_name(hetero_phase_trace.n_tokens),
@@ -3154,9 +3233,9 @@ int llama_context::decode(const llama_batch & batch_inp) {
 
     // handle any pending shifts/copies
     const int64_t t_memory_update_start_us =
-        (llama_context_hetero_dynamic_trace_timing_enabled() && hetero_phase_trace.active) ? ggml_time_us() : 0;
+        (collect_phase_timing && hetero_phase_trace.active) ? ggml_time_us() : 0;
     memory_update(false);
-    if (llama_context_hetero_dynamic_trace_timing_enabled() && hetero_phase_trace.active) {
+    if (collect_phase_timing && hetero_phase_trace.active) {
         hetero_phase_trace.memory_update_us += ggml_time_us() - t_memory_update_start_us;
     }
 

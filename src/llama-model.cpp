@@ -92,6 +92,27 @@ const ggml_tensor * llama_model_resolve_weight_for_fastrpc_opencl_dual_residency
     return original;
 }
 
+const ggml_tensor * llama_model_resolve_weight_for_cpu_fastrpc_dual_residency(
+        const ggml_tensor * original,
+        const ggml_tensor * cpu_copy,
+        const ggml_tensor * fastrpc_copy,
+        llama_hetero_route_stage stage,
+        const llama_hetero_route_spec & route) {
+    if (original == nullptr) {
+        return nullptr;
+    }
+
+    const std::string backend = llama_hetero_canonical_backend(route.backend_for(stage));
+    if (backend == "cpu" && cpu_copy != nullptr) {
+        return cpu_copy;
+    }
+    if (backend == "fastrpc" && fastrpc_copy != nullptr) {
+        return fastrpc_copy;
+    }
+
+    return original;
+}
+
 static bool llama_model_cpu_buft_route_requests_qnn(const llama_hetero_route_spec & route) {
     static constexpr std::array<llama_hetero_route_stage, 5> stages = {{
         llama_hetero_route_stage::ATTN_PROJ,
@@ -1581,6 +1602,17 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
                     register_fastrpc_opencl_weight_dual_residency(cur, opencl_copy, fastrpc_copy, stage);
                 }
             }
+
+            if (ml.get_cpu_fastrpc_weight_dual_stage(ggml_get_name(cur), stage)) {
+                ggml_tensor * cpu_copy = const_cast<ggml_tensor *>(
+                        ml.get_cpu_fastrpc_weight_dual_cpu_copy(ggml_get_name(cur)));
+                ggml_tensor * fastrpc_copy = const_cast<ggml_tensor *>(
+                        ml.get_cpu_fastrpc_weight_dual_fastrpc_copy(ggml_get_name(cur)));
+                if ((cpu_copy != nullptr && cur != cpu_copy) ||
+                    (fastrpc_copy != nullptr && cur != fastrpc_copy)) {
+                    register_cpu_fastrpc_weight_dual_residency(cur, cpu_copy, fastrpc_copy, stage);
+                }
+            }
         }
     }
 
@@ -2088,6 +2120,27 @@ void llama_model::register_fastrpc_opencl_weight_dual_residency(
     }
 }
 
+void llama_model::register_cpu_fastrpc_weight_dual_residency(
+        ggml_tensor * original,
+        ggml_tensor * cpu_copy,
+        ggml_tensor * fastrpc_copy,
+        llama_hetero_route_stage stage) {
+    if (original == nullptr) {
+        return;
+    }
+
+    if (cpu_copy != nullptr && original != cpu_copy) {
+        cpu_fastrpc_weight_dual_cpu_copies[original] = cpu_copy;
+    }
+    if (fastrpc_copy != nullptr && original != fastrpc_copy) {
+        cpu_fastrpc_weight_dual_fastrpc_copies[original] = fastrpc_copy;
+    }
+    if ((cpu_copy != nullptr && original != cpu_copy) ||
+        (fastrpc_copy != nullptr && original != fastrpc_copy)) {
+        cpu_fastrpc_weight_dual_stages[original] = stage;
+    }
+}
+
 void llama_model::register_fastrpc_opencl_weight_duplicate(
         ggml_tensor * original,
         ggml_tensor * fastrpc_copy,
@@ -2137,6 +2190,31 @@ ggml_tensor * llama_model::resolve_weight_for_route(
             if (resolved != weight) {
                 return resolved;
             }
+        }
+    }
+
+    auto cpu_fastrpc_stage_it = cpu_fastrpc_weight_dual_stages.find(weight);
+    if (cpu_fastrpc_stage_it != cpu_fastrpc_weight_dual_stages.end()) {
+        const ggml_tensor * cpu_copy = nullptr;
+        const ggml_tensor * fastrpc_copy = nullptr;
+        auto cpu_it = cpu_fastrpc_weight_dual_cpu_copies.find(weight);
+        if (cpu_it != cpu_fastrpc_weight_dual_cpu_copies.end()) {
+            cpu_copy = cpu_it->second;
+        }
+        auto cpu_fastrpc_it = cpu_fastrpc_weight_dual_fastrpc_copies.find(weight);
+        if (cpu_fastrpc_it != cpu_fastrpc_weight_dual_fastrpc_copies.end()) {
+            fastrpc_copy = cpu_fastrpc_it->second;
+        }
+
+        ggml_tensor * resolved = const_cast<ggml_tensor *>(
+                llama_model_resolve_weight_for_cpu_fastrpc_dual_residency(
+                    weight,
+                    cpu_copy,
+                    fastrpc_copy,
+                    cpu_fastrpc_stage_it->second,
+                    route));
+        if (resolved != weight) {
+            return resolved;
         }
     }
 

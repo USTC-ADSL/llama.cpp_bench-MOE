@@ -97,6 +97,11 @@ struct llama_model_loader {
     std::unordered_map<std::string, llama_hetero_route_stage> fastrpc_opencl_weight_dual_stages_by_name;
     std::unordered_map<std::string, ggml_backend_buffer_type_t> fastrpc_opencl_weight_dual_opencl_bufts_by_name;
     std::unordered_map<std::string, ggml_backend_buffer_type_t> fastrpc_opencl_weight_dual_fastrpc_bufts_by_name;
+    std::unordered_map<std::string, ggml_tensor *> cpu_fastrpc_weight_dual_cpu_copies_by_name;
+    std::unordered_map<std::string, ggml_tensor *> cpu_fastrpc_weight_dual_fastrpc_copies_by_name;
+    std::unordered_map<std::string, llama_hetero_route_stage> cpu_fastrpc_weight_dual_stages_by_name;
+    std::unordered_map<std::string, ggml_backend_buffer_type_t> cpu_fastrpc_weight_dual_cpu_bufts_by_name;
+    std::unordered_map<std::string, ggml_backend_buffer_type_t> cpu_fastrpc_weight_dual_fastrpc_bufts_by_name;
 
     gguf_context_ptr metadata_ptr;
     struct gguf_context * metadata; // either metadata_ptr.get() or externally set
@@ -189,6 +194,9 @@ struct llama_model_loader {
     const struct ggml_tensor * get_fastrpc_opencl_weight_dual_opencl_copy(const char * name) const;
     const struct ggml_tensor * get_fastrpc_opencl_weight_dual_fastrpc_copy(const char * name) const;
     bool get_fastrpc_opencl_weight_dual_stage(const char * name, llama_hetero_route_stage & stage) const;
+    const struct ggml_tensor * get_cpu_fastrpc_weight_dual_cpu_copy(const char * name) const;
+    const struct ggml_tensor * get_cpu_fastrpc_weight_dual_fastrpc_copy(const char * name) const;
+    bool get_cpu_fastrpc_weight_dual_stage(const char * name, llama_hetero_route_stage & stage) const;
     const struct ggml_tensor * get_fastrpc_opencl_weight_duplicate(const char * name) const;
     bool get_fastrpc_opencl_weight_duplicate_stage(const char * name, llama_hetero_route_stage & stage) const;
 

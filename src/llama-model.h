@@ -590,6 +590,9 @@ struct llama_model {
     std::unordered_map<const ggml_tensor *, ggml_tensor *> fastrpc_opencl_weight_dual_opencl_copies;
     std::unordered_map<const ggml_tensor *, ggml_tensor *> fastrpc_opencl_weight_dual_fastrpc_copies;
     std::unordered_map<const ggml_tensor *, llama_hetero_route_stage> fastrpc_opencl_weight_dual_stages;
+    std::unordered_map<const ggml_tensor *, ggml_tensor *> cpu_fastrpc_weight_dual_cpu_copies;
+    std::unordered_map<const ggml_tensor *, ggml_tensor *> cpu_fastrpc_weight_dual_fastrpc_copies;
+    std::unordered_map<const ggml_tensor *, llama_hetero_route_stage> cpu_fastrpc_weight_dual_stages;
 
     // statically allocated context for assigning
     struct llama_meta_device_get_split_state_userdata get_split_state_ud;
@@ -636,6 +639,11 @@ struct llama_model {
     void register_fastrpc_opencl_weight_dual_residency(
             ggml_tensor * original,
             ggml_tensor * opencl_copy,
+            ggml_tensor * fastrpc_copy,
+            llama_hetero_route_stage stage);
+    void register_cpu_fastrpc_weight_dual_residency(
+            ggml_tensor * original,
+            ggml_tensor * cpu_copy,
             ggml_tensor * fastrpc_copy,
             llama_hetero_route_stage stage);
     void register_fastrpc_opencl_weight_duplicate(

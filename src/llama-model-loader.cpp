@@ -922,6 +922,46 @@ bool llama_model_loader::get_fastrpc_opencl_weight_dual_stage(const char * name,
     return true;
 }
 
+const struct ggml_tensor * llama_model_loader::get_cpu_fastrpc_weight_dual_cpu_copy(const char * name) const {
+    if (name == nullptr) {
+        return nullptr;
+    }
+
+    auto it = cpu_fastrpc_weight_dual_cpu_copies_by_name.find(name);
+    if (it == cpu_fastrpc_weight_dual_cpu_copies_by_name.end()) {
+        return nullptr;
+    }
+
+    return it->second;
+}
+
+const struct ggml_tensor * llama_model_loader::get_cpu_fastrpc_weight_dual_fastrpc_copy(const char * name) const {
+    if (name == nullptr) {
+        return nullptr;
+    }
+
+    auto it = cpu_fastrpc_weight_dual_fastrpc_copies_by_name.find(name);
+    if (it == cpu_fastrpc_weight_dual_fastrpc_copies_by_name.end()) {
+        return nullptr;
+    }
+
+    return it->second;
+}
+
+bool llama_model_loader::get_cpu_fastrpc_weight_dual_stage(const char * name, llama_hetero_route_stage & stage) const {
+    if (name == nullptr) {
+        return false;
+    }
+
+    auto it = cpu_fastrpc_weight_dual_stages_by_name.find(name);
+    if (it == cpu_fastrpc_weight_dual_stages_by_name.end()) {
+        return false;
+    }
+
+    stage = it->second;
+    return true;
+}
+
 const struct ggml_tensor * llama_model_loader::get_fastrpc_opencl_weight_duplicate(const char * name) const {
     return get_fastrpc_opencl_weight_dual_fastrpc_copy(name);
 }
@@ -1382,6 +1422,34 @@ bool llama_model_loader_should_replace_fastrpc_opencl_weight_duplicate(
             candidate_buft);
 }
 
+static bool llama_model_loader_should_replace_cpu_fastrpc_weight_residency(
+        const char * backend,
+        ggml_backend_buffer_type_t existing_buft,
+        ggml_backend_buffer_type_t candidate_buft) {
+    if (candidate_buft == nullptr) {
+        return false;
+    }
+    if (existing_buft == nullptr) {
+        return true;
+    }
+
+    const std::string target_backend = llama_hetero_canonical_backend(backend != nullptr ? backend : "");
+    const bool existing_cpu = llama_model_loader_buft_is_cpu(existing_buft);
+    const bool candidate_cpu = llama_model_loader_buft_is_cpu(candidate_buft);
+
+    if (target_backend == "cpu") {
+        if (candidate_cpu && !existing_cpu) {
+            return true;
+        }
+        if (existing_cpu && !candidate_cpu) {
+            return false;
+        }
+        return false;
+    }
+
+    return existing_cpu && !candidate_cpu;
+}
+
 static bool llama_hetero_route_uses_backend_kind(const llama_hetero_route_spec & route, int backend_kind) {
     return route.has_any_route() &&
            llama_hetero_backend_kind(llama_hetero_phase_backend_for_route(route)) == backend_kind;
@@ -1411,6 +1479,18 @@ static bool llama_hetero_routes_are_opencl_fastrpc_switch(
            (dynamic_prefill_backend_kind == 4 && dynamic_decode_backend_kind == 2);
 }
 
+static bool llama_hetero_routes_are_cpu_fastrpc_switch(
+        const llama_hetero_route_spec & dynamic_prefill_route,
+        const llama_hetero_route_spec & dynamic_decode_route) {
+    const int dynamic_prefill_backend_kind =
+        llama_hetero_backend_kind(llama_hetero_phase_backend_for_route(dynamic_prefill_route));
+    const int dynamic_decode_backend_kind =
+        llama_hetero_backend_kind(llama_hetero_phase_backend_for_route(dynamic_decode_route));
+
+    return (dynamic_prefill_backend_kind == 1 && dynamic_decode_backend_kind == 4) ||
+           (dynamic_prefill_backend_kind == 4 && dynamic_decode_backend_kind == 1);
+}
+
 bool llama_model_loader_requires_opencl_weight_portability(
         bool hetero_phase_route_active,
         int hetero_phase_backend_kind,
@@ -1431,6 +1511,10 @@ bool llama_model_loader_should_enable_opencl_cpu_extra_cpu_copy(
         bool enable_extra_cpu_copy);
 
 bool llama_model_loader_should_enable_fastrpc_opencl_dual_residency(
+        const llama_hetero_route_spec & dynamic_prefill_route,
+        const llama_hetero_route_spec & dynamic_decode_route);
+
+bool llama_model_loader_should_enable_cpu_fastrpc_dual_residency(
         const llama_hetero_route_spec & dynamic_prefill_route,
         const llama_hetero_route_spec & dynamic_decode_route);
 
@@ -1576,7 +1660,7 @@ bool llama_model_loader_weight_route_stage(
     }
 }
 
-bool llama_model_loader_fastrpc_opencl_dual_residency_op_stage(
+static bool llama_model_loader_dual_weight_residency_op_stage(
         llm_tensor tn_tensor,
         const char * suffix,
         int flags,
@@ -1616,6 +1700,34 @@ bool llama_model_loader_fastrpc_opencl_dual_residency_op_stage(
         default:
             return false;
     }
+}
+
+bool llama_model_loader_fastrpc_opencl_dual_residency_op_stage(
+        llm_tensor tn_tensor,
+        const char * suffix,
+        int flags,
+        ggml_op & op,
+        llama_hetero_route_stage & stage) {
+    return llama_model_loader_dual_weight_residency_op_stage(
+            tn_tensor,
+            suffix,
+            flags,
+            op,
+            stage);
+}
+
+bool llama_model_loader_opencl_cpu_extra_cpu_copy_op_stage(
+        llm_tensor tn_tensor,
+        const char * suffix,
+        int flags,
+        ggml_op & op,
+        llama_hetero_route_stage & stage) {
+    return llama_model_loader_dual_weight_residency_op_stage(
+            tn_tensor,
+            suffix,
+            flags,
+            op,
+            stage);
 }
 
 static const char * llama_model_loader_route_stage_name(llama_hetero_route_stage stage) {
@@ -1695,6 +1807,12 @@ bool llama_model_loader_should_enable_fastrpc_opencl_dual_residency(
     return llama_hetero_routes_are_opencl_fastrpc_switch(dynamic_prefill_route, dynamic_decode_route);
 }
 
+bool llama_model_loader_should_enable_cpu_fastrpc_dual_residency(
+        const llama_hetero_route_spec & dynamic_prefill_route,
+        const llama_hetero_route_spec & dynamic_decode_route) {
+    return llama_hetero_routes_are_cpu_fastrpc_switch(dynamic_prefill_route, dynamic_decode_route);
+}
+
 bool llama_model_loader_should_enable_fastrpc_opencl_weight_duplicate(
         const llama_hetero_route_spec & dynamic_prefill_route,
         const llama_hetero_route_spec & dynamic_decode_route) {
@@ -1745,9 +1863,13 @@ struct ggml_tensor * llama_model_loader::create_tensor(
         llama_model_loader_should_enable_opencl_cpu_extra_cpu_copy(
                 dynamic_prefill_route,
                 dynamic_decode_route,
-                env_flag_enabled("GGML_HETERO_ENABLE_OPENCL_CPU_EXTRA_CPU_COPY"));
+                !env_flag_enabled("GGML_HETERO_DISABLE_OPENCL_CPU_EXTRA_CPU_COPY"));
     const bool enable_fastrpc_opencl_dual_residency =
         llama_model_loader_should_enable_fastrpc_opencl_dual_residency(
+                dynamic_prefill_route,
+                dynamic_decode_route);
+    const bool enable_cpu_fastrpc_dual_residency =
+        llama_model_loader_should_enable_cpu_fastrpc_dual_residency(
                 dynamic_prefill_route,
                 dynamic_decode_route);
     const bool enable_cpu_opencl_shared_host_weights =
@@ -1896,7 +2018,7 @@ struct ggml_tensor * llama_model_loader::create_tensor(
 
     static bool logged_opencl_cpu_extra_cpu_copy = false;
     if (enable_opencl_cpu_extra_cpu_copy && !logged_opencl_cpu_extra_cpu_copy) {
-        LLAMA_LOG_INFO("%s: keeping an extra CPU-friendly duplicate of selected OpenCL decode weights for dynamic CPU/OpenCL switching\n",
+        LLAMA_LOG_INFO("%s: keeping CPU-friendly duplicates of OpenCL decode route weights for dynamic CPU/OpenCL switching\n",
                 __func__);
         logged_opencl_cpu_extra_cpu_copy = true;
     }
@@ -1906,6 +2028,13 @@ struct ggml_tensor * llama_model_loader::create_tensor(
         LLAMA_LOG_INFO("%s: preparing full OpenCL/FastRPC dual residency for dynamic OpenCL/FastRPC switching\n",
                 __func__);
         logged_fastrpc_opencl_dual_residency = true;
+    }
+
+    static bool logged_cpu_fastrpc_dual_residency = false;
+    if (enable_cpu_fastrpc_dual_residency && !logged_cpu_fastrpc_dual_residency) {
+        LLAMA_LOG_INFO("%s: preparing CPU/FastRPC dual residency for dynamic CPU/FastRPC switching using load-time CPU and HTP/FastRPC copies\n",
+                __func__);
+        logged_cpu_fastrpc_dual_residency = true;
     }
 
     auto ctx_for_buft = [&](ggml_backend_buffer_type_t buft) -> ggml_context * {
@@ -2362,73 +2491,15 @@ struct ggml_tensor * llama_model_loader::create_tensor(
             return;
         }
 
-        if (tn.suffix == nullptr || std::strcmp(tn.suffix, "weight") != 0) {
-            return;
-        }
-
-        llm_tensor tn_tensor = tn.tensor;
-        if (tn.tensor == LLM_TENSOR_TOKEN_EMBD && (flags & TENSOR_DUPLICATED)) {
-            tn_tensor = LLM_TENSOR_OUTPUT;
-        }
-
-        bool needs_extra_cpu_copy = false;
-        switch (tn_tensor) {
-            case LLM_TENSOR_OUTPUT:
-            case LLM_TENSOR_ATTN_Q:
-            case LLM_TENSOR_ATTN_K:
-            case LLM_TENSOR_ATTN_V:
-            case LLM_TENSOR_ATTN_QKV:
-            case LLM_TENSOR_ATTN_Q_A:
-            case LLM_TENSOR_ATTN_Q_B:
-            case LLM_TENSOR_ATTN_KV_A_MQA:
-            case LLM_TENSOR_ATTN_KV_B:
-            case LLM_TENSOR_ATTN_K_B:
-            case LLM_TENSOR_ATTN_V_B:
-            case LLM_TENSOR_ATTN_OUT:
-            case LLM_TENSOR_ATTN_GATE:
-            case LLM_TENSOR_FFN_GATE:
-            case LLM_TENSOR_FFN_DOWN:
-            case LLM_TENSOR_FFN_UP:
-            case LLM_TENSOR_FFN_GATE_INP:
-            case LLM_TENSOR_FFN_GATE_EXPS:
-            case LLM_TENSOR_FFN_DOWN_EXPS:
-            case LLM_TENSOR_FFN_UP_EXPS:
-            case LLM_TENSOR_FFN_GATE_UP_EXPS:
-            case LLM_TENSOR_FFN_LATENT_DOWN:
-            case LLM_TENSOR_FFN_LATENT_UP:
-            case LLM_TENSOR_FFN_GATE_SHEXP:
-            case LLM_TENSOR_FFN_DOWN_SHEXP:
-            case LLM_TENSOR_FFN_UP_SHEXP:
-            case LLM_TENSOR_FFN_GATE_CHEXPS:
-            case LLM_TENSOR_FFN_DOWN_CHEXPS:
-            case LLM_TENSOR_FFN_UP_CHEXPS:
-                needs_extra_cpu_copy = true;
-                break;
-            default:
-                break;
-        }
-
-        if (!needs_extra_cpu_copy) {
-            return;
-        }
-
-        const llm_tensor_info info = llm_tensor_info_for(tn_tensor);
         llama_hetero_route_stage stage = llama_hetero_route_stage::FFN;
-        if (!llama_model_loader_weight_route_stage(tn_tensor, info.layer, stage)) {
-            switch (tn_tensor) {
-                case LLM_TENSOR_ATTN_Q_A_NORM:
-                case LLM_TENSOR_ATTN_KV_A_NORM:
-                    stage = llama_hetero_route_stage::ATTN_PROJ;
-                    break;
-                default:
-                    stage = llama_hetero_route_stage::FFN;
-                    break;
-            }
-        }
-
-        ggml_op op = info.op;
-        if (tn.suffix != nullptr && std::strcmp(tn.suffix, "bias") == 0) {
-            op = (info.op == GGML_OP_MUL_MAT_ID) ? GGML_OP_ADD_ID : GGML_OP_ADD;
+        ggml_op op = GGML_OP_NONE;
+        if (!llama_model_loader_opencl_cpu_extra_cpu_copy_op_stage(
+                    tn.tensor,
+                    tn.suffix,
+                    flags,
+                    op,
+                    stage)) {
+            return;
         }
 
         ggml_backend_buffer_type_t cpu_copy_buft = select_weight_cpu_buft(hparams, const_cast<ggml_tensor *>(cur), op, buft_list_cpu);
@@ -2553,6 +2624,110 @@ struct ggml_tensor * llama_model_loader::create_tensor(
         fastrpc_opencl_weight_dual_stages_by_name[name] = stage;
     };
 
+    auto maybe_prepare_cpu_fastrpc_dual_residency = [&](const ggml_tensor * cur, ggml_backend_buffer_type_t primary_buft) {
+        if (!enable_cpu_fastrpc_dual_residency || cur == nullptr || primary_buft == nullptr) {
+            return;
+        }
+
+        llama_hetero_route_stage stage = llama_hetero_route_stage::FFN;
+        ggml_op op = GGML_OP_NONE;
+        if (!llama_model_loader_dual_weight_residency_op_stage(
+                    tn.tensor,
+                    tn.suffix,
+                    flags,
+                    op,
+                    stage)) {
+            return;
+        }
+
+        ggml_backend_buffer_type_t cpu_buft =
+            select_weight_cpu_buft(
+                    hparams,
+                    const_cast<ggml_tensor *>(cur),
+                    op,
+                    buft_list_cpu);
+        if (cpu_buft == nullptr) {
+            throw std::runtime_error(format(
+                    "failed to prepare CPU residency for dynamic CPU/FastRPC tensor %s stage=%s target=cpu",
+                    ggml_get_name(cur),
+                    llama_model_loader_route_stage_name(stage)));
+        }
+
+        const bool allow_cpu_fallback = stage == llama_hetero_route_stage::OUTPUT;
+        ggml_backend_buffer_type_t fastrpc_buft =
+            llama_model_loader_select_fastrpc_weight_duplicate_buft(
+                    hparams,
+                    const_cast<ggml_tensor *>(cur),
+                    op,
+                    buft_list_layer,
+                    "fastrpc",
+                    allow_cpu_fallback);
+        if (fastrpc_buft == nullptr) {
+            throw std::runtime_error(format(
+                    "failed to prepare FastRPC residency for dynamic CPU/FastRPC tensor %s stage=%s target=fastrpc",
+                    ggml_get_name(cur),
+                    llama_model_loader_route_stage_name(stage)));
+        }
+
+        const std::string name = ggml_get_name(cur);
+        auto ensure_residency = [&](
+                const char * target_backend,
+                ggml_backend_buffer_type_t target_buft,
+                std::unordered_map<std::string, ggml_tensor *> & copies_by_name,
+                std::unordered_map<std::string, ggml_backend_buffer_type_t> & bufts_by_name) -> ggml_tensor * {
+            auto existing_buft_it = bufts_by_name.find(name);
+            if (existing_buft_it != bufts_by_name.end() &&
+                !llama_model_loader_should_replace_cpu_fastrpc_weight_residency(
+                        target_backend,
+                        existing_buft_it->second,
+                        target_buft)) {
+                auto existing_copy_it = copies_by_name.find(name);
+                return existing_copy_it != copies_by_name.end() ? existing_copy_it->second : nullptr;
+            }
+
+            ggml_tensor * target_tensor = nullptr;
+            if (target_buft == primary_buft) {
+                ggml_context * primary_ctx = ctx_for_buft(primary_buft);
+                target_tensor = ggml_get_tensor(primary_ctx, name.c_str());
+            }
+
+            if (target_tensor == nullptr) {
+                ggml_context * target_ctx = ctx_for_buft(target_buft);
+                target_tensor = ggml_get_tensor(target_ctx, name.c_str());
+                if (target_tensor == nullptr) {
+                    target_tensor = ggml_dup_tensor(target_ctx, cur);
+                    ggml_set_name(target_tensor, name.c_str());
+                    if (target_buft != primary_buft) {
+                        size_data += ggml_nbytes(cur);
+                    }
+                }
+            }
+
+            copies_by_name[name] = target_tensor;
+            bufts_by_name[name] = target_buft;
+            return target_tensor;
+        };
+
+        ggml_tensor * cpu_copy = ensure_residency(
+                "cpu",
+                cpu_buft,
+                cpu_fastrpc_weight_dual_cpu_copies_by_name,
+                cpu_fastrpc_weight_dual_cpu_bufts_by_name);
+        ggml_tensor * fastrpc_copy = ensure_residency(
+                "fastrpc",
+                fastrpc_buft,
+                cpu_fastrpc_weight_dual_fastrpc_copies_by_name,
+                cpu_fastrpc_weight_dual_fastrpc_bufts_by_name);
+        if (cpu_copy == nullptr || fastrpc_copy == nullptr) {
+            throw std::runtime_error(format(
+                    "failed to register complete CPU/FastRPC dual residency for tensor %s stage=%s",
+                    name.c_str(),
+                    llama_model_loader_route_stage_name(stage)));
+        }
+
+        cpu_fastrpc_weight_dual_stages_by_name[name] = stage;
+    };
+
     if (files.empty()) {
         if (flags & TENSOR_SKIP_IF_VIRTUAL) {
             return nullptr;
@@ -2613,6 +2788,7 @@ struct ggml_tensor * llama_model_loader::create_tensor(
         if (t) {
             maybe_create_opencl_cpu_extra_cpu_copy(cur, buft);
             maybe_prepare_fastrpc_opencl_dual_residency(cur, buft);
+            maybe_prepare_cpu_fastrpc_dual_residency(cur, buft);
             return t;
         }
     }
@@ -2628,6 +2804,7 @@ struct ggml_tensor * llama_model_loader::create_tensor(
 
     maybe_create_opencl_cpu_extra_cpu_copy(cur, buft);
     maybe_prepare_fastrpc_opencl_dual_residency(cur, buft);
+    maybe_prepare_cpu_fastrpc_dual_residency(cur, buft);
 
     return tensor;
 }
