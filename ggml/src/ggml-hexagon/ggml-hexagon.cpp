@@ -2607,6 +2607,36 @@ static bool ggml_hexagon_supported_mul_mat(const struct ggml_hexagon_session * s
             }
             break;
 
+        case GGML_TYPE_F32:
+        {
+            if (src1->type != GGML_TYPE_F32) {
+                return false;
+            }
+
+            if (src0->ne[0] != src1->ne[0] || dst->ne[0] != src0->ne[1] || dst->ne[1] != src1->ne[1]) {
+                return false;
+            }
+
+            if (src0->ne[0] % 32) {
+                return false;
+            }
+
+            const size_t src1_nrows = ggml_nrows(src1);
+            if (src0->ne[0] > 8192 || src0->ne[1] > 128 || src1_nrows > 512) {
+                return false;  // limited to small router/gate-style F32 matmuls
+            }
+
+            if (src0->ne[2] != 1 || src0->ne[3] != 1 || src1->ne[2] != 1 || src1->ne[3] != 1 ||
+                dst->ne[2] != 1 || dst->ne[3] != 1) {
+                return false;  // no batched/broadcasted F32 path for now
+            }
+
+            if (!ggml_is_contiguous_rows(src0) || !ggml_is_contiguous_rows(src1) || !ggml_is_contiguous_rows(dst)) {
+                return false;
+            }
+            break;
+        }
+
         default:
             return false;
     }
@@ -3128,6 +3158,7 @@ static htp_op_code op_remap_to_htp(const ggml_tensor * t) {
         case GGML_OP_SCALE:           return HTP_OP_SCALE;
         case GGML_OP_SQR:             return HTP_OP_SQR;
         case GGML_OP_SQRT:            return HTP_OP_SQRT;
+        case GGML_OP_CLAMP:           return HTP_OP_CLAMP;
         case GGML_OP_SOFT_MAX:        return HTP_OP_SOFTMAX;
         case GGML_OP_SSM_CONV:        return HTP_OP_SSM_CONV;
         case GGML_OP_GATED_DELTA_NET: return HTP_OP_GATED_DELTA_NET;
@@ -3614,6 +3645,7 @@ static bool ggml_backend_hexagon_device_supports_op(ggml_backend_dev_t dev, cons
 
         case GGML_OP_SQR:
         case GGML_OP_SQRT:
+        case GGML_OP_CLAMP:
             supp = ggml_hexagon_supported_unary(sess, op);
             break;
 

@@ -1,5 +1,20 @@
 # Instructions for llama.cpp
 
+## Local Hexagon/Android Environment
+
+These local paths are part of this workspace's operating context and should be
+kept visible for Hexagon/FastRPC/HTP work:
+
+- Workspace root: `/home/miog/yzh/Yzh/llama.cpp_bench_MOE`
+- `~/yzh/Yzh` resolves to `/mnt/sda1/yzh`
+- Android NDK currently used by `build-android-pd-final`: `/home/miog/pzw/download/pzw/HeteroCompute/android-ndk-r27d`
+- Preferred Hexagon SDK: `/mnt/sda1/pzw/HeteroCompute/Qualcomm/Hexagon_SDK/6.4.0.0`
+- QAIRT under `~/yzh/Yzh`: `/home/miog/yzh/Yzh/qairt_2.44/qairt`
+- Device used for HTP validation: `3B661501LA000000`
+
+For exact build/cache notes and device run environment, see
+[`docs/local-hexagon-env.md`](docs/local-hexagon-env.md).
+
 > [!IMPORTANT]
 > This project does **not** accept pull requests that are fully or predominantly AI-generated. AI tools may be utilized solely in an assistive capacity.
 >

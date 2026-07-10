@@ -1660,6 +1660,20 @@ bool llama_model_loader_weight_route_stage(
     }
 }
 
+bool llama_model_loader_is_repeating_ffn_stage_weight(llm_tensor tn_tensor) {
+    switch (tn_tensor) {
+        case LLM_TENSOR_FFN_NORM:
+        case LLM_TENSOR_FFN_GATE:
+        case LLM_TENSOR_FFN_DOWN:
+        case LLM_TENSOR_FFN_UP:
+        case LLM_TENSOR_FFN_GATE_INP:
+        case LLM_TENSOR_FFN_GATE_INP_SHEXP:
+            return true;
+        default:
+            return false;
+    }
+}
+
 static bool llama_model_loader_dual_weight_residency_op_stage(
         llm_tensor tn_tensor,
         const char * suffix,
@@ -2173,11 +2187,7 @@ struct ggml_tensor * llama_model_loader::create_tensor(
         }
 
         if (!buft && info.layer == LLM_TENSOR_LAYER_REPEATING) {
-            const bool is_ffn_tensor =
-                tn_tensor == LLM_TENSOR_FFN_NORM ||
-                tn_tensor == LLM_TENSOR_FFN_GATE ||
-                tn_tensor == LLM_TENSOR_FFN_UP   ||
-                tn_tensor == LLM_TENSOR_FFN_DOWN;
+            const bool is_ffn_tensor = llama_model_loader_is_repeating_ffn_stage_weight(tn_tensor);
 
             const bool is_attn_proj_tensor =
                 tn_tensor == LLM_TENSOR_ATTN_NORM      ||
@@ -2374,11 +2384,7 @@ struct ggml_tensor * llama_model_loader::create_tensor(
         }
 
         if (hetero_phase_route_active && info.layer == LLM_TENSOR_LAYER_REPEATING) {
-            const bool is_ffn_tensor =
-                tn_tensor == LLM_TENSOR_FFN_NORM ||
-                tn_tensor == LLM_TENSOR_FFN_GATE ||
-                tn_tensor == LLM_TENSOR_FFN_UP   ||
-                tn_tensor == LLM_TENSOR_FFN_DOWN;
+            const bool is_ffn_tensor = llama_model_loader_is_repeating_ffn_stage_weight(tn_tensor);
 
             const bool is_attn_proj_tensor =
                 tn_tensor == LLM_TENSOR_ATTN_NORM      ||
