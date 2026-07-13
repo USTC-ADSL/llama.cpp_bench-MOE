@@ -266,7 +266,6 @@ set   (GGML_OPENCL_TARGET_VERSION "300" CACHE STRING
                                             "ggml: OpenCL API version to target")
 
 option(GGML_HEXAGON                         "ggml: enable Hexagon backend"                    OFF)
-set(GGML_HEXAGON_FP32_QUANTIZE_GROUP_SIZE 128 CACHE STRING "ggml: quantize group size (32, 64, or 128)")
 
 option(GGML_QNN                             "ggml: enable QNN backend"                        OFF)
 set(GGML_QNN_SDK_PATH "" CACHE PATH         "ggml: path to QNN SDK root directory")
