@@ -46,6 +46,137 @@ static uint64_t get_time_ns() {
     return std::chrono::nanoseconds(clock::now().time_since_epoch()).count();
 }
 
+struct cpu_profile_collector {
+    FILE * fout = nullptr;
+
+    uint64_t sequence = 0;
+    uint64_t start_ns = 0;
+
+    const ggml_tensor * active_tensor = nullptr;
+
+    int  benchmark_index = 0;
+    int  round           = 0;
+    int  n_prompt        = 0;
+    int  n_gen           = 0;
+    bool enabled         = false;
+
+    ~cpu_profile_collector() {
+        if (fout != nullptr) {
+            fclose(fout);
+        }
+    }
+
+    bool open(const std::string & path) {
+        fout = fopen(path.c_str(), "w");
+        if (fout == nullptr) {
+            return false;
+        }
+
+        fprintf(fout,
+                "benchmark_index,round,n_prompt,n_gen,sequence,op_name,op_desc,tensor_name,src_names,"
+                "output_dims,src_dims,output_type,src_types,duration_us\n");
+        return true;
+    }
+
+    void begin_round(int benchmark_index_in, int round_in, int n_prompt_in, int n_gen_in) {
+        benchmark_index = benchmark_index_in;
+        round           = round_in;
+        n_prompt        = n_prompt_in;
+        n_gen           = n_gen_in;
+        active_tensor   = nullptr;
+        enabled         = true;
+    }
+
+    void end_round() {
+        enabled       = false;
+        active_tensor = nullptr;
+    }
+
+    void flush() {
+        if (fout != nullptr) {
+            fflush(fout);
+        }
+    }
+
+    static std::string csv_string(const std::string & value) {
+        std::string result;
+        result.reserve(value.size() + 2);
+        result.push_back('"');
+        for (char c : value) {
+            if (c == '"') {
+                result.push_back('"');
+            }
+            result.push_back(c);
+        }
+        result.push_back('"');
+        return result;
+    }
+
+    static std::string tensor_dims(const ggml_tensor * tensor) {
+        if (tensor == nullptr) {
+            return {};
+        }
+
+        std::ostringstream stream;
+        for (int i = 0; i < GGML_MAX_DIMS; ++i) {
+            if (i > 0) {
+                stream << 'x';
+            }
+            stream << tensor->ne[i];
+        }
+        return stream.str();
+    }
+
+    bool eval(ggml_tensor * tensor, bool ask) {
+        if (!enabled) {
+            return false;
+        }
+
+        if (ask) {
+            active_tensor = tensor;
+            start_ns      = get_time_ns();
+            return true;
+        }
+
+        const uint64_t duration_ns = get_time_ns() - start_ns;
+
+        std::string src_names;
+        std::string src_dims;
+        std::string src_types;
+        for (int i = 0; i < GGML_MAX_SRC && tensor->src[i] != nullptr; ++i) {
+            if (i > 0) {
+                src_names.push_back('|');
+                src_dims.push_back('|');
+                src_types.push_back('|');
+            }
+            src_names += tensor->src[i]->name;
+            src_dims += tensor_dims(tensor->src[i]);
+            src_types += ggml_type_name(tensor->src[i]->type);
+        }
+
+        const std::string op_name       = csv_string(ggml_op_name(tensor->op));
+        const std::string op_desc       = csv_string(ggml_op_desc(tensor));
+        const std::string tensor_name   = csv_string(tensor->name);
+        const std::string src_name_csv  = csv_string(src_names);
+        const std::string output_dims   = csv_string(tensor_dims(tensor));
+        const std::string src_dims_csv  = csv_string(src_dims);
+        const std::string output_type   = csv_string(ggml_type_name(tensor->type));
+        const std::string src_types_csv = csv_string(src_types);
+
+        fprintf(fout, "%d,%d,%d,%d,%" PRIu64 ",%s,%s,%s,%s,%s,%s,%s,%s,%.3f\n", benchmark_index, round, n_prompt, n_gen,
+                ++sequence, op_name.c_str(), op_desc.c_str(), tensor_name.c_str(), src_name_csv.c_str(),
+                output_dims.c_str(), src_dims_csv.c_str(), output_type.c_str(), src_types_csv.c_str(),
+                duration_ns / 1000.0);
+
+        active_tensor = nullptr;
+        return true;
+    }
+};
+
+static bool cpu_profile_eval_callback(ggml_tensor * tensor, bool ask, void * user_data) {
+    return static_cast<cpu_profile_collector *>(user_data)->eval(tensor, ask);
+}
+
 using ggml_backend_qnn_aot_reset_state_t = bool (*)(ggml_backend_t backend);
 
 static bool llama_bench_fast_exit_requested() {
@@ -439,6 +570,8 @@ struct cmd_params {
     bool                             verbose;
     bool                             progress;
     bool                             no_warmup;
+    bool                             cpu_profile;
+    std::string                      cpu_profile_output;
     output_formats                   output_format;
     output_formats                   output_format_stderr;
 };
@@ -485,6 +618,8 @@ static const cmd_params cmd_params_defaults = {
     /* verbose              */ false,
     /* progress             */ false,
     /* no_warmup            */ false,
+    /* cpu_profile          */ false,
+    /* cpu_profile_output   */ "cpu_profile.csv",
     /* output_format        */ MARKDOWN,
     /* output_format_stderr */ NONE,
 };
@@ -515,6 +650,8 @@ static void print_usage(int /* argc */, char ** argv) {
     printf("  -v, --verbose                               verbose output\n");
     printf("  --progress                                  print test progress indicators\n");
     printf("  --no-warmup                                 skip warmup runs before benchmarking\n");
+    printf("  --cpu-profile <0|1>                         profile every CPU graph node (requires -ngl 0 -dev none; default: 0)\n");
+    printf("  --cpu-profile-output <file>                 CPU node profile CSV (default: %s)\n", cmd_params_defaults.cpu_profile_output.c_str());
     printf("  -fitt, --fit-target <MiB>                   fit model to device memory with this margin per device in MiB (default: off)\n");
     printf("  -fitc, --fit-ctx <n>                        minimum ctx size for --fit-target (default: 4096)\n");
     if (llama_supports_rpc()) {
@@ -615,6 +752,8 @@ static cmd_params parse_cmd_params(int argc, char ** argv) {
     params.bench_timing_level   = cmd_params_defaults.bench_timing_level;
     params.progress             = cmd_params_defaults.progress;
     params.no_warmup            = cmd_params_defaults.no_warmup;
+    params.cpu_profile          = cmd_params_defaults.cpu_profile;
+    params.cpu_profile_output   = cmd_params_defaults.cpu_profile_output;
 
     if (const char * env = getenv("HF_TOKEN")) {
         params.hf_token = env;
@@ -1089,6 +1228,23 @@ static cmd_params parse_cmd_params(int argc, char ** argv) {
                 params.progress = true;
             } else if (arg == "--no-warmup") {
                 params.no_warmup = true;
+            } else if (arg == "--cpu-profile") {
+                if (++i >= argc) {
+                    invalid_param = true;
+                    break;
+                }
+                const int value = std::stoi(argv[i]);
+                if (value != 0 && value != 1) {
+                    invalid_param = true;
+                    break;
+                }
+                params.cpu_profile = value == 1;
+            } else if (arg == "--cpu-profile-output") {
+                if (++i >= argc || argv[i][0] == '\0') {
+                    invalid_param = true;
+                    break;
+                }
+                params.cpu_profile_output = argv[i];
             } else if (arg == "-fitt" || arg == "--fit-target") {
                 if (++i >= argc) {
                     invalid_param = true;
@@ -1237,6 +1393,23 @@ static cmd_params parse_cmd_params(int argc, char ** argv) {
     }
     if (params.fit_params_min_ctx.empty()) {
         params.fit_params_min_ctx = cmd_params_defaults.fit_params_min_ctx;
+    }
+
+    if (params.cpu_profile) {
+        const bool cpu_layers_only        = std::all_of(params.n_gpu_layers.begin(), params.n_gpu_layers.end(),
+                                                        [](int n_gpu_layers) { return n_gpu_layers == 0; });
+        const bool no_accelerator_devices = std::all_of(params.devices.begin(), params.devices.end(),
+                                                        [](const std::vector<ggml_backend_dev_t> & devices) {
+                                                            return devices.size() == 1 && devices[0] == nullptr;
+                                                        });
+        const bool fit_disabled = std::all_of(params.fit_params_target.begin(), params.fit_params_target.end(),
+                                              [](size_t fit_target) { return fit_target == 0; });
+
+        if (!cpu_layers_only || !no_accelerator_devices || !fit_disabled) {
+            fprintf(stderr,
+                    "error: --cpu-profile 1 requires CPU-only execution: use -ngl 0 -dev none without --fit-target\n");
+            exit(1);
+        }
     }
 
     return params;
@@ -2533,6 +2706,12 @@ int llama_bench(int argc, char ** argv) {
     cmd_params params = parse_cmd_params(argc, argv);
     g_bench_timing_level = params.bench_timing_level;
 
+    cpu_profile_collector cpu_profile;
+    if (params.cpu_profile && !cpu_profile.open(params.cpu_profile_output)) {
+        fprintf(stderr, "error: failed to open CPU profile output '%s'\n", params.cpu_profile_output.c_str());
+        return 1;
+    }
+
     auto * cpu_dev = ggml_backend_dev_by_type(GGML_BACKEND_DEVICE_TYPE_CPU);
     if (!cpu_dev) {
         fprintf(stderr, "%s: error: CPU backend is not loaded\n", __func__);
@@ -2632,6 +2811,11 @@ int llama_bench(int argc, char ** argv) {
                 return 1;
             }
             prev_inst = &inst;
+        }
+
+        if (params.cpu_profile) {
+            cparams.cb_eval           = cpu_profile_eval_callback;
+            cparams.cb_eval_user_data = &cpu_profile;
         }
 
         llama_context * ctx = llama_init_from_model(lmodel, cparams);
@@ -2775,6 +2959,10 @@ int llama_bench(int argc, char ** argv) {
                 }
             }
 
+            if (params.cpu_profile) {
+                cpu_profile.begin_round(params_idx, round_idx, t.n_prompt, t.n_gen);
+            }
+
             uint64_t t_start = get_time_ns();
 
             if (t.n_prompt > 0) {
@@ -2786,6 +2974,7 @@ int llama_bench(int argc, char ** argv) {
                 bool res = test_prompt(ctx, t.n_prompt, t.n_batch, t.n_threads);
                 uint64_t pp_ns = get_time_ns() - pp_start;
                 if (!res) {
+                    cpu_profile.end_round();
                     fprintf(stderr, "%s: error: failed to run prompt\n", __func__);
                     llama_free(ctx);
                     llama_model_free(lmodel);
@@ -2803,6 +2992,7 @@ int llama_bench(int argc, char ** argv) {
                 bool res = test_gen(ctx, t.n_gen, t.n_threads, &tg_timings, &tg_breakdown);
                 uint64_t tg_ns = tg_timings.total_ns();
                 if (!res) {
+                    cpu_profile.end_round();
                     fprintf(stderr, "%s: error: failed to run gen\n", __func__);
                     llama_free(ctx);
                     llama_model_free(lmodel);
@@ -2814,6 +3004,10 @@ int llama_bench(int argc, char ** argv) {
                 t.samples_tg_route_ns.push_back(tg_breakdown.route_ns);
                 t.samples_tg_kv_ns.push_back(tg_breakdown.kv_ns);
                 t.samples_tg_reserve_ns.push_back(tg_breakdown.reserve_ns);
+            }
+
+            if (params.cpu_profile) {
+                cpu_profile.end_round();
             }
 
             uint64_t t_ns = get_time_ns() - t_start;
@@ -2839,6 +3033,8 @@ int llama_bench(int argc, char ** argv) {
 
         llama_perf_context_print(ctx);
 
+        cpu_profile.flush();
+
         llama_free(ctx);
 
         ggml_threadpool_free_fn(threadpool);
@@ -2853,6 +3049,8 @@ int llama_bench(int argc, char ** argv) {
     if (p_err) {
         p_err->print_footer();
     }
+
+    cpu_profile.flush();
 
     // Android/QNN can still abort in shared-library finalizers after the benchmark
     // output has already been printed. This opt-in escape hatch keeps the result

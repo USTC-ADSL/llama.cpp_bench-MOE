@@ -49,6 +49,8 @@ bool llama_model_loader_weight_route_stage(
         llm_tensor_layer layer,
         llama_hetero_route_stage & stage);
 
+bool llama_model_loader_is_repeating_ffn_stage_weight(llm_tensor tn_tensor);
+
 bool llama_model_loader_fastrpc_opencl_dual_residency_op_stage(
         llm_tensor tn_tensor,
         const char * suffix,
@@ -660,6 +662,14 @@ int main() {
                 "FFN norm stage",
                 int(llama_hetero_route_stage::FFN),
                 int(stage));
+
+        t.assert_true(
+                "MoE router weights should be handled as repeating FFN stage weights",
+                llama_model_loader_is_repeating_ffn_stage_weight(LLM_TENSOR_FFN_GATE_INP));
+
+        t.assert_true(
+                "shared expert router weights should be handled as repeating FFN stage weights",
+                llama_model_loader_is_repeating_ffn_stage_weight(LLM_TENSOR_FFN_GATE_INP_SHEXP));
     });
 
     t.test("FastRPC OpenCL dual residency prepares norm and bias ops", [](testing & t) {
