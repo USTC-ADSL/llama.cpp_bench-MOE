@@ -830,6 +830,25 @@ static int execute_op_unary_f32(struct htp_ops_context * octx) {
             return HTP_STATUS_NO_SUPPORT;
     }
 
+    if (octx->op == HTP_OP_CLAMP &&
+        src0->ne[0] == 1 && src0->ne[1] == 1 && src0->ne[2] == 1 && src0->ne[3] == 1 &&
+        dst->ne[0]  == 1 && dst->ne[1]  == 1 && dst->ne[2]  == 1 && dst->ne[3]  == 1) {
+        float min = 0.f;
+        float max = 0.f;
+        memcpy(&min, &octx->op_params[0], sizeof(float));
+        memcpy(&max, &octx->op_params[1], sizeof(float));
+
+        float v = *(const float *) (const void *) src0->data;
+        if (v < min) {
+            v = min;
+        }
+        if (v > max) {
+            v = max;
+        }
+        *(float *) (void *) dst->data = v;
+        return HTP_STATUS_OK;
+    }
+
     const struct htp_unary_kernel_params * kparams = (const struct htp_unary_kernel_params *) octx->kernel_params;
 
     const uint32_t src0_nrows = src0->ne[1] * src0->ne[2] * src0->ne[3];

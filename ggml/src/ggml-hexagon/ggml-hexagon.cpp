@@ -1182,7 +1182,8 @@ struct ggml_hexagon_opbatch {
         int64_t nb2 = is_repack ? nb1 * ne1 : t->nb[2];
         int64_t nb3 = is_repack ? nb2 * t->ne[2] : t->nb[3];
 
-        return (h->ne[0] == ne0) && (h->ne[1] == ne1) && (h->ne[2] == t->ne[2]) && (h->ne[3] == t->ne[3]) &&
+        return (h->type == t->type) &&
+               (h->ne[0] == ne0) && (h->ne[1] == ne1) && (h->ne[2] == t->ne[2]) && (h->ne[3] == t->ne[3]) &&
                (h->nb[0] == t->nb[0]) && (h->nb[1] == nb1) && (h->nb[2] == nb2) && (h->nb[3] == nb3);
     }
 
@@ -1434,6 +1435,25 @@ struct ggml_hexagon_opqueue {
 
     void pop(htp_opbatch_rsp rsp, dspqueue_buffer dbuf) {
         GGML_ASSERT(rsp.id < op_cache.size());
+
+        if (rsp.status != HTP_STATUS_OK) {
+            uint32_t failed_idx;
+            uint32_t failed_opcode;
+            memcpy(&failed_idx,    &rsp.pad[0], sizeof(failed_idx));
+            memcpy(&failed_opcode, &rsp.pad[4], sizeof(failed_opcode));
+
+            auto & ops = op_cache[rsp.id];
+            if (failed_idx < ops.size()) {
+                htp_opformat fmt(ops[failed_idx]);
+                GGML_LOG_ERROR("ggml-hex: %s dspcall : failed-op batch #%u idx %u/%u opcode %u cached-opcode %u %s|%s|%s|%s|%s|%s\n",
+                               shm_buf->sess->c_name(), rsp.id, failed_idx, rsp.n_ops, failed_opcode,
+                               ops[failed_idx].opcode, ops[failed_idx].op_name().c_str(),
+                               fmt.names, fmt.dims, fmt.types, fmt.strides, fmt.kparams);
+            } else {
+                GGML_LOG_ERROR("ggml-hex: %s dspcall : failed-op batch #%u idx %u/%u opcode %u (not in host op cache, cache size %zu)\n",
+                               shm_buf->sess->c_name(), rsp.id, failed_idx, rsp.n_ops, failed_opcode, ops.size());
+            }
+        }
 
         done.push(rsp.id);
 

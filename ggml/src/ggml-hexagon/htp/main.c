@@ -947,6 +947,8 @@ static void htp_packet_callback(dspqueue_t queue, int error, void * context) {
         }
 
         int      op_status = HTP_STATUS_OK;
+        uint32_t op_failed_idx    = UINT32_MAX;
+        uint32_t op_failed_opcode = 0;
         uint32_t op_wakeup = n_ops / 2; // half-way throgh the batch
 
         hmx_queue_wakeup(ctx->hmx_queue);
@@ -965,6 +967,8 @@ static void htp_packet_callback(dspqueue_t queue, int error, void * context) {
             profile_stop(ctx->profiler, &prof);
 
             if (op_status != HTP_STATUS_OK) {
+                op_failed_idx    = i;
+                op_failed_opcode = ops[i].opcode;
                 break;
             }
 
@@ -988,6 +992,8 @@ static void htp_packet_callback(dspqueue_t queue, int error, void * context) {
         rsp.n_tensors = n_tens;
         rsp.n_ops     = n_ops;
         memset(rsp.pad, 0, sizeof(rsp.pad));
+        memcpy(&rsp.pad[0], &op_failed_idx,    sizeof(op_failed_idx));
+        memcpy(&rsp.pad[4], &op_failed_opcode, sizeof(op_failed_opcode));
         if (ctx->profiler == HTP_PROF_TRACE) {
             for (int t = 0; t <= HTP_MAX_NTHREADS; t++) {
                 rsp.n_traces[t] = ctx->trace[t].count;

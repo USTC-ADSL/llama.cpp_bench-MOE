@@ -1,0 +1,19 @@
+#ifndef BUFFER_CAPACITY_IFACE_IDL
+#define BUFFER_CAPACITY_IFACE_IDL
+
+#include "AEEStdDef.idl"
+#include "remote.idl"
+
+interface buffer_capacity_iface : remote_handle64 {
+    AEEResult touch(
+        in long fd,
+        in uint64 offset,
+        in uint64 length,
+        in uint32 stride,
+        in uint32 seed,
+        in uint32 map_windowed,
+        rout uint64 checksum,
+        rout uint64 touched);
+};
+
+#endif

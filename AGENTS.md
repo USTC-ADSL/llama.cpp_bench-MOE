@@ -10,7 +10,26 @@ kept visible for Hexagon/FastRPC/HTP work:
 - Android NDK currently used by `build-android-pd-final`: `/home/miog/pzw/download/pzw/HeteroCompute/android-ndk-r27d`
 - Preferred Hexagon SDK: `/mnt/sda1/pzw/HeteroCompute/Qualcomm/Hexagon_SDK/6.4.0.0`
 - QAIRT under `~/yzh/Yzh`: `/home/miog/yzh/Yzh/qairt_2.44/qairt`
-- Device used for HTP validation: `3B661501LA000000`
+- Device used for HTP validation: `3B661501LA000000` via normal `adb`
+- V79 HTP validation device: `fd8657d6` via
+  `adb -H 127.0.0.1 -P 5038`
+
+For all AI-agent work on `fd8657d6`, use the full command prefix
+`adb -H 127.0.0.1 -P 5038`; do not invoke the `adb_f` alias or normal `adb`.
+Determine device availability only from
+`adb -H 127.0.0.1 -P 5038 devices -l`: `fd8657d6` is online only when its
+state is exactly `device`. A one-off command failure, EOF, or transport/channel
+error is not by itself evidence that the device is offline; re-run the exact
+`devices -l` check first, and do not reconnect when it still reports `device`.
+If that check shows the device offline, disconnected, or missing, make exactly
+one recovery attempt with
+`adb -H 127.0.0.1 -P 5038 reconnect`, followed by polling
+`adb -H 127.0.0.1 -P 5038 devices -l` for up to 20 seconds while the asynchronous
+transport re-registers. Do not treat the first empty list after `reconnect` as
+a final failure. If the device is still not online after that window, stop the
+current conversation immediately. Do not make a second recovery attempt and
+do not use `kill-server`, `start-server`, port changes, other TCP endpoints, or
+other recovery actions.
 
 For exact build/cache notes and device run environment, see
 [`docs/local-hexagon-env.md`](docs/local-hexagon-env.md).

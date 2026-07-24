@@ -47,6 +47,7 @@ static inline bool htp_op_is_unary(uint32_t opcode) {
         case HTP_OP_SCALE:
         case HTP_OP_SQR:
         case HTP_OP_SQRT:
+        case HTP_OP_CLAMP:
         case HTP_OP_UNARY_NEG:
         case HTP_OP_UNARY_EXP:
         case HTP_OP_UNARY_SIGMOID:
