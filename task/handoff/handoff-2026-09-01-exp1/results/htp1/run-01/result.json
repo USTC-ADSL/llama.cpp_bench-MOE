@@ -1,0 +1,78 @@
+{
+  "config": "htp1",
+  "repeat": 1,
+  "status": "success",
+  "server_ready": true,
+  "server_ready_reason": "ready",
+  "server_exit_code": 0,
+  "pid": 543,
+  "idle": {
+    "cache_drop_exit": 0,
+    "cache_drop_output": "dropped clean page-cache pages for /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf",
+    "idle_samples": [
+      {
+        "memavailable_kb": 10627840,
+        "cached_kb": 636424
+      },
+      {
+        "memavailable_kb": 10626748,
+        "cached_kb": 640112
+      },
+      {
+        "memavailable_kb": 10625836,
+        "cached_kb": 640948
+      },
+      {
+        "memavailable_kb": 10626608,
+        "cached_kb": 646308
+      },
+      {
+        "memavailable_kb": 10625716,
+        "cached_kb": 647148
+      }
+    ]
+  },
+  "clock_offset_ms": 1050.22900390625,
+  "request": {
+    "request_start_wall_ms": 1788276491938.3145,
+    "first_token_wall_ms": 1788276497270.3403,
+    "request_end_wall_ms": 1788276515754.7107,
+    "ttft_e2e_ms": 5332.025181502104,
+    "request_total_ms": 23816.396042704582,
+    "ttft_server_ms": 4937.711,
+    "tpot_ms": 145.5203070866142,
+    "tokens_evaluated": 512,
+    "tokens_predicted": 128,
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 512,
+      "prompt_ms": 4937.711,
+      "prompt_per_token_ms": 9.643966796875,
+      "prompt_per_second": 103.69177134911297,
+      "predicted_n": 128,
+      "predicted_ms": 18481.079,
+      "predicted_per_token_ms": 145.5203070866142,
+      "predicted_per_second": 6.871893140005516
+    },
+    "stop_type": "limit"
+  },
+  "request_error": null,
+  "monitor": {
+    "samples": 120,
+    "peak_pss_kb": 7939736,
+    "min_memavailable_kb": 2375484,
+    "majflt_process_delta": 64904,
+    "majflt_request_delta": 159,
+    "majflt_prompt_delta": 93,
+    "majflt_decode_delta": 66
+  },
+  "model_buffers_mib": {
+    "CPU_Mapped": 166.92,
+    "CPU_REPACK": 243.43,
+    "HTP0:0": 7356.29
+  },
+  "htp_repack_total_mib": 0,
+  "lmkd_oom_evidence": false,
+  "system_memory_pressure_events": 11,
+  "server_command": "cd /data/local/tmp/llama-exp1-20260901 && LD_LIBRARY_PATH=/data/local/tmp/llama-exp1-20260901 ADSP_LIBRARY_PATH='/data/local/tmp/llama-exp1-20260901;/vendor/dsp;/system/lib/rfsa/adsp;/vendor/lib/rfsa/adsp' GGML_HEXAGON_DEVICES=HTP0:0 exec ./llama-server -m /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf -lm mmap -lzm off -dev HTP0:0 -ngl all -c 2048 -b 512 -ub 128 -t 4 -fa off --host 127.0.0.1 --port 18080 --parallel 1 --no-cont-batching --no-warmup -lv 4 -sm layer -ts 1"
+}

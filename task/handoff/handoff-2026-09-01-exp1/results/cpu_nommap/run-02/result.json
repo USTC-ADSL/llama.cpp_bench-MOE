@@ -1,0 +1,52 @@
+{
+  "config": "cpu_nommap",
+  "repeat": 2,
+  "status": "success",
+  "server_ready": true,
+  "server_ready_reason": "ready",
+  "server_exit_code": 0,
+  "pid": 29371,
+  "idle": {
+    "cache_drop_exit": 0,
+    "cache_drop_output": "dropped clean page-cache pages for /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf",
+    "idle_samples": [
+      {
+        "memavailable_kb": 10669032,
+        "cached_kb": 720568
+      },
+      {
+        "memavailable_kb": 10670644,
+        "cached_kb": 735616
+      },
+      {
+        "memavailable_kb": 10668776,
+        "cached_kb": 735628
+      },
+      {
+        "memavailable_kb": 10668724,
+        "cached_kb": 736920
+      },
+      {
+        "memavailable_kb": 10668032,
+        "cached_kb": 737204
+      }
+    ]
+  },
+  "clock_offset_ms": 1070.1044921875,
+  "request": null,
+  "request_error": null,
+  "monitor": {
+    "samples": 31,
+    "peak_pss_kb": 8409137,
+    "min_memavailable_kb": 2185564,
+    "majflt_process_delta": 6
+  },
+  "model_buffers_mib": {
+    "CPU": 179.21,
+    "CPU_REPACK": 7587.43
+  },
+  "htp_repack_total_mib": 0,
+  "lmkd_oom_evidence": false,
+  "system_memory_pressure_events": 10,
+  "server_command": "cd /data/local/tmp/llama-exp1-20260901 && LD_LIBRARY_PATH=/data/local/tmp/llama-exp1-20260901 ADSP_LIBRARY_PATH='/data/local/tmp/llama-exp1-20260901;/vendor/dsp;/system/lib/rfsa/adsp;/vendor/lib/rfsa/adsp' exec ./llama-server -m /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf -lm none -lzm off -dev none -ngl 0 -c 2048 -b 512 -ub 128 -t 4 -fa off --host 127.0.0.1 --port 18080 --parallel 1 --no-cont-batching --no-warmup -lv 4"
+}

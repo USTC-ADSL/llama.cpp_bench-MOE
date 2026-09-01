@@ -478,7 +478,10 @@ def run_one(args: argparse.Namespace, config: Config, repeat: int, prompt_file: 
         "request_error": request_error,
         "monitor": monitor_summary,
         "model_buffers_mib": buffers,
-        "htp_repack_total_mib": sum(value for name, value in buffers.items() if "HTP" in name and "REPACK" in name),
+        "htp_model_buffer_total_mib": sum(value for name, value in buffers.items() if name.startswith("HTP")),
+        "htp_repack_total_mib": sum(
+            value for name, value in buffers.items() if name.startswith("HTP") and "REPACK" in name
+        ),
         "lmkd_oom_evidence": target_kill_evidence,
         "system_memory_pressure_events": system_memory_pressure_events,
         "server_command": remote_command,

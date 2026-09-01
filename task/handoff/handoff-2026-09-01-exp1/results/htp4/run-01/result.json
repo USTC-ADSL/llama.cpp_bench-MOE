@@ -1,0 +1,49 @@
+{
+  "config": "htp4",
+  "repeat": 1,
+  "status": "load_failed",
+  "server_ready": false,
+  "server_ready_reason": "server exited with code 1",
+  "server_exit_code": 1,
+  "pid": 6088,
+  "idle": {
+    "cache_drop_exit": 0,
+    "cache_drop_output": "dropped clean page-cache pages for /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf",
+    "idle_samples": [
+      {
+        "memavailable_kb": 10649524,
+        "cached_kb": 780800
+      },
+      {
+        "memavailable_kb": 10647868,
+        "cached_kb": 780808
+      },
+      {
+        "memavailable_kb": 10641000,
+        "cached_kb": 774684
+      },
+      {
+        "memavailable_kb": 10640752,
+        "cached_kb": 774684
+      },
+      {
+        "memavailable_kb": 10640492,
+        "cached_kb": 774940
+      }
+    ]
+  },
+  "clock_offset_ms": 1082.39599609375,
+  "request": null,
+  "request_error": null,
+  "monitor": {
+    "samples": 0,
+    "peak_pss_kb": null,
+    "min_memavailable_kb": null,
+    "majflt_process_delta": null
+  },
+  "model_buffers_mib": {},
+  "htp_repack_total_mib": 0,
+  "lmkd_oom_evidence": false,
+  "system_memory_pressure_events": 0,
+  "server_command": "cd /data/local/tmp/llama-exp1-20260901 && LD_LIBRARY_PATH=/data/local/tmp/llama-exp1-20260901 ADSP_LIBRARY_PATH='/data/local/tmp/llama-exp1-20260901;/vendor/dsp;/system/lib/rfsa/adsp;/vendor/lib/rfsa/adsp' GGML_HEXAGON_DEVICES=HTP0:0,HTP0:1,HTP0:2,HTP0:3 exec ./llama-server -m /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf -lm mmap -lzm off -dev HTP0:0,HTP0:1,HTP0:2,HTP0:3 -ngl all -c 2048 -b 512 -ub 128 -t 4 -fa off --host 127.0.0.1 --port 18080 --parallel 1 --no-cont-batching --no-warmup -lv 4 -sm layer -ts 1,1,1,1"
+}
