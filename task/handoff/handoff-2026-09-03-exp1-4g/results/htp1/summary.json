@@ -1,0 +1,440 @@
+[
+  {
+    "config": "htp1",
+    "repeat": 1,
+    "status": "success",
+    "server_ready": true,
+    "server_ready_reason": "ready",
+    "load_wait_elapsed_ms": 16230.7133320719,
+    "server_exit_code": 0,
+    "pid": 14339,
+    "idle": {
+      "cache_drop_exit": 0,
+      "cache_drop_output": "dropped clean page-cache pages for /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf",
+      "idle_samples": [
+        {
+          "memavailable_kb": 10262236,
+          "cached_kb": 1036108
+        },
+        {
+          "memavailable_kb": 10259940,
+          "cached_kb": 1036108
+        },
+        {
+          "memavailable_kb": 10259240,
+          "cached_kb": 1036112
+        },
+        {
+          "memavailable_kb": 10258996,
+          "cached_kb": 1036112
+        },
+        {
+          "memavailable_kb": 10257980,
+          "cached_kb": 1036112
+        }
+      ]
+    },
+    "clock_offset_ms": 99.82470703125,
+    "request": {
+      "request_start_wall_ms": 1788442024311.398,
+      "first_token_wall_ms": 1788442029449.8357,
+      "request_end_wall_ms": 1788442047142.3477,
+      "ttft_e2e_ms": 5138.437485322356,
+      "request_total_ms": 22830.948904156685,
+      "ttft_server_ms": 4777.631,
+      "tpot_ms": 139.29670866141734,
+      "tokens_evaluated": 512,
+      "tokens_predicted": 128,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 512,
+        "prompt_ms": 4777.631,
+        "prompt_per_token_ms": 9.331310546875,
+        "prompt_per_second": 107.16608293943169,
+        "predicted_n": 128,
+        "predicted_ms": 17690.682,
+        "predicted_per_token_ms": 139.29670866141734,
+        "predicted_per_second": 7.178920518722794
+      },
+      "stop_type": "limit"
+    },
+    "request_error": null,
+    "monitor": {
+      "samples": 109,
+      "peak_pss_kb": 4227372,
+      "min_memavailable_kb": 2060304,
+      "majflt_process_delta": 67708,
+      "peak_cgroup_usage_bytes": 4294774784,
+      "cgroup_max_usage_bytes": 4294967296,
+      "cgroup_failcnt_max": 0,
+      "majflt_request_delta": 2780,
+      "majflt_prompt_delta": 71,
+      "majflt_decode_delta": 2709
+    },
+    "memory_limit_bytes": 4294967296,
+    "memory_cgroup": {
+      "version": 1,
+      "path": "/dev/memcg/apps/llama-exp1-4g-htp1-01",
+      "limit_in_bytes": 4294967296,
+      "memsw_limit_in_bytes": 4294967296,
+      "usage_in_bytes": 1319059456,
+      "memsw_usage_in_bytes": 1319084032,
+      "max_usage_in_bytes": 4294967296,
+      "memsw_max_usage_in_bytes": 4294967296,
+      "failcnt": 0,
+      "oom_control": {
+        "oom_kill_disable": 0,
+        "under_oom": 0,
+        "oom_kill": 0
+      },
+      "stat": {
+        "cache": 1098924032,
+        "rss": 0,
+        "rss_huge": 0,
+        "shmem": 0,
+        "mapped_file": 704512,
+        "dirty": 0,
+        "writeback": 0,
+        "workingset_refault_anon": 6443,
+        "workingset_refault_file": 121957,
+        "swap": 0,
+        "pgpgin": 4439522,
+        "pgpgout": 4171230,
+        "pgfault": 646513,
+        "pgmajfault": 72549,
+        "inactive_anon": 0,
+        "active_anon": 0,
+        "inactive_file": 684871680,
+        "active_file": 414052352,
+        "unevictable": 0,
+        "hierarchical_memory_limit": 4294967296,
+        "hierarchical_memsw_limit": 4294967296,
+        "total_cache": 1098924032,
+        "total_rss": 0,
+        "total_rss_huge": 0,
+        "total_shmem": 0,
+        "total_mapped_file": 704512,
+        "total_dirty": 0,
+        "total_writeback": 0,
+        "total_workingset_refault_anon": 6443,
+        "total_workingset_refault_file": 121957,
+        "total_swap": 0,
+        "total_pgpgin": 4439522,
+        "total_pgpgout": 4171230,
+        "total_pgfault": 646513,
+        "total_pgmajfault": 72549,
+        "total_inactive_anon": 0,
+        "total_active_anon": 0,
+        "total_inactive_file": 684871680,
+        "total_active_file": 414052352,
+        "total_unevictable": 0
+      }
+    },
+    "memory_limit_reached": true,
+    "memory_cgroup_cleanup_error": null,
+    "model_buffers_mib": {
+      "CPU_Mapped": 166.92,
+      "CPU_REPACK": 243.43,
+      "HTP0:0": 7356.29
+    },
+    "htp_model_buffer_total_mib": 7356.29,
+    "htp_repack_total_mib": 0,
+    "lmkd_oom_evidence": false,
+    "system_memory_pressure_events": 0,
+    "server_command": "cd /data/local/tmp/llama-exp1-4g-20260903 && LD_LIBRARY_PATH=/data/local/tmp/llama-exp1-4g-20260903 ADSP_LIBRARY_PATH='/data/local/tmp/llama-exp1-4g-20260903;/vendor/dsp;/system/lib/rfsa/adsp;/vendor/lib/rfsa/adsp' GGML_HEXAGON_DEVICES=HTP0:0 exec ./llama-server -m /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf -lm mmap -lzm off -dev HTP0:0 -ngl all -c 2048 -b 512 -ub 128 -t 4 -fa off --host 127.0.0.1 --port 18080 --parallel 1 --no-cont-batching --no-warmup -lv 4 -sm layer -ts 1",
+    "launcher_command": "su -c \"echo $$ > /dev/memcg/apps/llama-exp1-4g-htp1-01/cgroup.procs\" && cd /data/local/tmp/llama-exp1-4g-20260903 && LD_LIBRARY_PATH=/data/local/tmp/llama-exp1-4g-20260903 ADSP_LIBRARY_PATH='/data/local/tmp/llama-exp1-4g-20260903;/vendor/dsp;/system/lib/rfsa/adsp;/vendor/lib/rfsa/adsp' GGML_HEXAGON_DEVICES=HTP0:0 exec ./llama-server -m /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf -lm mmap -lzm off -dev HTP0:0 -ngl all -c 2048 -b 512 -ub 128 -t 4 -fa off --host 127.0.0.1 --port 18080 --parallel 1 --no-cont-batching --no-warmup -lv 4 -sm layer -ts 1",
+    "lmkd_oom_evidence_lines": []
+  },
+  {
+    "config": "htp1",
+    "repeat": 2,
+    "status": "success",
+    "server_ready": true,
+    "server_ready_reason": "ready",
+    "load_wait_elapsed_ms": 16305.726997554302,
+    "server_exit_code": 0,
+    "pid": 16234,
+    "idle": {
+      "cache_drop_exit": 0,
+      "cache_drop_output": "dropped clean page-cache pages for /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf",
+      "idle_samples": [
+        {
+          "memavailable_kb": 10384848,
+          "cached_kb": 930352
+        },
+        {
+          "memavailable_kb": 10383516,
+          "cached_kb": 930516
+        },
+        {
+          "memavailable_kb": 10382292,
+          "cached_kb": 930516
+        },
+        {
+          "memavailable_kb": 10381812,
+          "cached_kb": 930516
+        },
+        {
+          "memavailable_kb": 10379524,
+          "cached_kb": 934684
+        }
+      ]
+    },
+    "clock_offset_ms": 91.648681640625,
+    "request": {
+      "request_start_wall_ms": 1788442085401.282,
+      "first_token_wall_ms": 1788442090568.6443,
+      "request_end_wall_ms": 1788442108451.8838,
+      "ttft_e2e_ms": 5167.361825704575,
+      "request_total_ms": 23050.601828843355,
+      "ttft_server_ms": 4793.058,
+      "tpot_ms": 140.7565196850394,
+      "tokens_evaluated": 512,
+      "tokens_predicted": 128,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 512,
+        "prompt_ms": 4793.058,
+        "prompt_per_token_ms": 9.36144140625,
+        "prompt_per_second": 106.82115676463752,
+        "predicted_n": 128,
+        "predicted_ms": 17876.078,
+        "predicted_per_token_ms": 140.7565196850394,
+        "predicted_per_second": 7.1044666509063115
+      },
+      "stop_type": "limit"
+    },
+    "request_error": null,
+    "monitor": {
+      "samples": 108,
+      "peak_pss_kb": 4264084,
+      "min_memavailable_kb": 2052360,
+      "majflt_process_delta": 71953,
+      "peak_cgroup_usage_bytes": 4294967296,
+      "cgroup_max_usage_bytes": 4294967296,
+      "cgroup_failcnt_max": 0,
+      "majflt_request_delta": 135,
+      "majflt_prompt_delta": 71,
+      "majflt_decode_delta": 64
+    },
+    "memory_limit_bytes": 4294967296,
+    "memory_cgroup": {
+      "version": 1,
+      "path": "/dev/memcg/apps/llama-exp1-4g-htp1-02",
+      "limit_in_bytes": 4294967296,
+      "memsw_limit_in_bytes": 4294967296,
+      "usage_in_bytes": 1387438080,
+      "memsw_usage_in_bytes": 1387442176,
+      "max_usage_in_bytes": 4294967296,
+      "memsw_max_usage_in_bytes": 4294967296,
+      "failcnt": 0,
+      "oom_control": {
+        "oom_kill_disable": 0,
+        "under_oom": 0,
+        "oom_kill": 0
+      },
+      "stat": {
+        "cache": 1345232896,
+        "rss": 0,
+        "rss_huge": 0,
+        "shmem": 0,
+        "mapped_file": 622592,
+        "dirty": 0,
+        "writeback": 0,
+        "workingset_refault_anon": 560,
+        "workingset_refault_file": 254452,
+        "swap": 0,
+        "pgpgin": 4440543,
+        "pgpgout": 4112117,
+        "pgfault": 646532,
+        "pgmajfault": 72530,
+        "inactive_anon": 0,
+        "active_anon": 0,
+        "inactive_file": 965148672,
+        "active_file": 380084224,
+        "unevictable": 0,
+        "hierarchical_memory_limit": 4294967296,
+        "hierarchical_memsw_limit": 4294967296,
+        "total_cache": 1345232896,
+        "total_rss": 0,
+        "total_rss_huge": 0,
+        "total_shmem": 0,
+        "total_mapped_file": 622592,
+        "total_dirty": 0,
+        "total_writeback": 0,
+        "total_workingset_refault_anon": 560,
+        "total_workingset_refault_file": 254452,
+        "total_swap": 0,
+        "total_pgpgin": 4440543,
+        "total_pgpgout": 4112117,
+        "total_pgfault": 646532,
+        "total_pgmajfault": 72530,
+        "total_inactive_anon": 0,
+        "total_active_anon": 0,
+        "total_inactive_file": 965148672,
+        "total_active_file": 380084224,
+        "total_unevictable": 0
+      }
+    },
+    "memory_limit_reached": true,
+    "memory_cgroup_cleanup_error": null,
+    "model_buffers_mib": {
+      "CPU_Mapped": 166.92,
+      "CPU_REPACK": 243.43,
+      "HTP0:0": 7356.29
+    },
+    "htp_model_buffer_total_mib": 7356.29,
+    "htp_repack_total_mib": 0,
+    "lmkd_oom_evidence": false,
+    "system_memory_pressure_events": 0,
+    "server_command": "cd /data/local/tmp/llama-exp1-4g-20260903 && LD_LIBRARY_PATH=/data/local/tmp/llama-exp1-4g-20260903 ADSP_LIBRARY_PATH='/data/local/tmp/llama-exp1-4g-20260903;/vendor/dsp;/system/lib/rfsa/adsp;/vendor/lib/rfsa/adsp' GGML_HEXAGON_DEVICES=HTP0:0 exec ./llama-server -m /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf -lm mmap -lzm off -dev HTP0:0 -ngl all -c 2048 -b 512 -ub 128 -t 4 -fa off --host 127.0.0.1 --port 18080 --parallel 1 --no-cont-batching --no-warmup -lv 4 -sm layer -ts 1",
+    "launcher_command": "su -c \"echo $$ > /dev/memcg/apps/llama-exp1-4g-htp1-02/cgroup.procs\" && cd /data/local/tmp/llama-exp1-4g-20260903 && LD_LIBRARY_PATH=/data/local/tmp/llama-exp1-4g-20260903 ADSP_LIBRARY_PATH='/data/local/tmp/llama-exp1-4g-20260903;/vendor/dsp;/system/lib/rfsa/adsp;/vendor/lib/rfsa/adsp' GGML_HEXAGON_DEVICES=HTP0:0 exec ./llama-server -m /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf -lm mmap -lzm off -dev HTP0:0 -ngl all -c 2048 -b 512 -ub 128 -t 4 -fa off --host 127.0.0.1 --port 18080 --parallel 1 --no-cont-batching --no-warmup -lv 4 -sm layer -ts 1",
+    "lmkd_oom_evidence_lines": []
+  },
+  {
+    "config": "htp1",
+    "repeat": 3,
+    "status": "success",
+    "server_ready": true,
+    "server_ready_reason": "ready",
+    "load_wait_elapsed_ms": 15195.07647678256,
+    "server_exit_code": 0,
+    "pid": 18121,
+    "idle": {
+      "cache_drop_exit": 0,
+      "cache_drop_output": "dropped clean page-cache pages for /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf",
+      "idle_samples": [
+        {
+          "memavailable_kb": 10414504,
+          "cached_kb": 851260
+        },
+        {
+          "memavailable_kb": 10412728,
+          "cached_kb": 851284
+        },
+        {
+          "memavailable_kb": 10412496,
+          "cached_kb": 851284
+        },
+        {
+          "memavailable_kb": 10411912,
+          "cached_kb": 852316
+        },
+        {
+          "memavailable_kb": 10410968,
+          "cached_kb": 852640
+        }
+      ]
+    },
+    "clock_offset_ms": 100.08837890625,
+    "request": {
+      "request_start_wall_ms": 1788442145655.4844,
+      "first_token_wall_ms": 1788442150775.7153,
+      "request_end_wall_ms": 1788442168668.245,
+      "ttft_e2e_ms": 5120.230548083782,
+      "request_total_ms": 23012.760795652866,
+      "ttft_server_ms": 4782.194,
+      "tpot_ms": 140.8017401574803,
+      "tokens_evaluated": 512,
+      "tokens_predicted": 128,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 512,
+        "prompt_ms": 4782.194,
+        "prompt_per_token_ms": 9.34022265625,
+        "prompt_per_second": 107.0638288618153,
+        "predicted_n": 128,
+        "predicted_ms": 17881.821,
+        "predicted_per_token_ms": 140.8017401574803,
+        "predicted_per_second": 7.102184950850364
+      },
+      "stop_type": "limit"
+    },
+    "request_error": null,
+    "monitor": {
+      "samples": 106,
+      "peak_pss_kb": 4269694,
+      "min_memavailable_kb": 1935764,
+      "majflt_process_delta": 65013,
+      "peak_cgroup_usage_bytes": 4294967296,
+      "cgroup_max_usage_bytes": 4294967296,
+      "cgroup_failcnt_max": 0,
+      "majflt_request_delta": 134,
+      "majflt_prompt_delta": 67,
+      "majflt_decode_delta": 67
+    },
+    "memory_limit_bytes": 4294967296,
+    "memory_cgroup": {
+      "version": 1,
+      "path": "/dev/memcg/apps/llama-exp1-4g-htp1-03",
+      "limit_in_bytes": 4294967296,
+      "memsw_limit_in_bytes": 4294967296,
+      "usage_in_bytes": 1265655808,
+      "memsw_usage_in_bytes": 1265774592,
+      "max_usage_in_bytes": 4294967296,
+      "memsw_max_usage_in_bytes": 4294967296,
+      "failcnt": 0,
+      "oom_control": {
+        "oom_kill_disable": 0,
+        "under_oom": 0,
+        "oom_kill": 0
+      },
+      "stat": {
+        "cache": 1245995008,
+        "rss": 0,
+        "rss_huge": 0,
+        "shmem": 0,
+        "mapped_file": 634880,
+        "dirty": 0,
+        "writeback": 0,
+        "workingset_refault_anon": 630,
+        "workingset_refault_file": 106245,
+        "swap": 0,
+        "pgpgin": 4442837,
+        "pgpgout": 4138639,
+        "pgfault": 646571,
+        "pgmajfault": 72506,
+        "inactive_anon": 0,
+        "active_anon": 0,
+        "inactive_file": 989487104,
+        "active_file": 256507904,
+        "unevictable": 0,
+        "hierarchical_memory_limit": 4294967296,
+        "hierarchical_memsw_limit": 4294967296,
+        "total_cache": 1245995008,
+        "total_rss": 0,
+        "total_rss_huge": 0,
+        "total_shmem": 0,
+        "total_mapped_file": 634880,
+        "total_dirty": 0,
+        "total_writeback": 0,
+        "total_workingset_refault_anon": 630,
+        "total_workingset_refault_file": 106245,
+        "total_swap": 0,
+        "total_pgpgin": 4442837,
+        "total_pgpgout": 4138639,
+        "total_pgfault": 646571,
+        "total_pgmajfault": 72506,
+        "total_inactive_anon": 0,
+        "total_active_anon": 0,
+        "total_inactive_file": 989487104,
+        "total_active_file": 256507904,
+        "total_unevictable": 0
+      }
+    },
+    "memory_limit_reached": true,
+    "memory_cgroup_cleanup_error": null,
+    "model_buffers_mib": {
+      "CPU_Mapped": 166.92,
+      "CPU_REPACK": 243.43,
+      "HTP0:0": 7356.29
+    },
+    "htp_model_buffer_total_mib": 7356.29,
+    "htp_repack_total_mib": 0,
+    "lmkd_oom_evidence": false,
+    "system_memory_pressure_events": 0,
+    "server_command": "cd /data/local/tmp/llama-exp1-4g-20260903 && LD_LIBRARY_PATH=/data/local/tmp/llama-exp1-4g-20260903 ADSP_LIBRARY_PATH='/data/local/tmp/llama-exp1-4g-20260903;/vendor/dsp;/system/lib/rfsa/adsp;/vendor/lib/rfsa/adsp' GGML_HEXAGON_DEVICES=HTP0:0 exec ./llama-server -m /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf -lm mmap -lzm off -dev HTP0:0 -ngl all -c 2048 -b 512 -ub 128 -t 4 -fa off --host 127.0.0.1 --port 18080 --parallel 1 --no-cont-batching --no-warmup -lv 4 -sm layer -ts 1",
+    "launcher_command": "su -c \"echo $$ > /dev/memcg/apps/llama-exp1-4g-htp1-03/cgroup.procs\" && cd /data/local/tmp/llama-exp1-4g-20260903 && LD_LIBRARY_PATH=/data/local/tmp/llama-exp1-4g-20260903 ADSP_LIBRARY_PATH='/data/local/tmp/llama-exp1-4g-20260903;/vendor/dsp;/system/lib/rfsa/adsp;/vendor/lib/rfsa/adsp' GGML_HEXAGON_DEVICES=HTP0:0 exec ./llama-server -m /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf -lm mmap -lzm off -dev HTP0:0 -ngl all -c 2048 -b 512 -ub 128 -t 4 -fa off --host 127.0.0.1 --port 18080 --parallel 1 --no-cont-batching --no-warmup -lv 4 -sm layer -ts 1",
+    "lmkd_oom_evidence_lines": []
+  }
+]
