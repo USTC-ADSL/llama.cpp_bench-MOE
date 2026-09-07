@@ -1,0 +1,13 @@
+fd-htp-perf-s1: 6 requests all 128/32 cache_n0, ON token-ready IDs match CPU output, OFF no trace, no PSS/overflow; thread count always 21; startup means (%) {'prefill_ms': -0.20677065596886313, 'decode_ms': -0.4227425200385493, 'slot_request_ms': -0.38204727770470015}
+fd-htp-perf-s2: 6 requests all 128/32 cache_n0, ON token-ready IDs match CPU output, OFF no trace, no PSS/overflow; thread count always 21; startup means (%) {'prefill_ms': -0.423215846862951, 'decode_ms': -0.01608897537601628, 'slot_request_ms': -0.11045856522166608}
+fd-htp-perf-s3: 6 requests all 128/32 cache_n0, ON token-ready IDs match CPU output, OFF no trace, no PSS/overflow; thread count always 21; startup means (%) {'prefill_ms': 0.8307873162176682, 'decode_ms': 1.6250689041760746, 'slot_request_ms': 1.4682455292505225}
+prefill_ms: startup-group mean 0.066934%, bootstrap95CI [-0.423216%,0.830787%]; +/-3% PASS
+decode_ms: startup-group mean 0.395412%, bootstrap95CI [-0.422743%,1.625069%]; +/-3% PASS
+slot_request_ms: startup-group mean 0.325247%, bootstrap95CI [-0.382047%,1.468246%]; +/-3% PASS
+fd-htp-memory-profile PASS: all load/context/request stage and token events: ['context_end', 'context_start', 'decode_end', 'decode_start', 'load_end', 'load_start', 'prefill_end', 'prefill_start', 'request_end', 'request_received', 'token_ready']
+Request counts128/32, cache_n0, token-ready IDs match response; getrusage brackets={'minflt': True, 'majflt': True}
+minflt delta=1304, majflt delta=137, rusage minflt/majflt delta=1304/137, read_bytes=74903552
+Independent PSS sampled peak=7940293.0 KiB; cgroup historical peak=10765127680.0 bytes (inherited/shared history, not private experiment peak); driver physical/PD physical/combined total=NA.
+Actual request lines 38049..156763: HMX completed 164, routed experts 46
+0.14.854.608 D ggml-hex: HTP0 profile-op MUL_MAT_ID_NX|blk.0.ffn_gate_exps.weight x blk.0.ffn_up_exps.weight x ffn_norm-0 (reshaped) x ffn_moe_topk-0 -> ffn_moe_up-0|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:128:1 x 4:128 -> 1408:4:128:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:1048576 x 4:240! -> 4:5632:22528:2883584|hmx-tiled vtcm 8243200|usec 9387 cycles 16042235 start 1657105667 mhz 1709.0
+0.14.854.625 D ggml-hex: HTP0 profile-op MUL_MAT_ID|blk.0.ffn_down_exps.weight x ffn_moe_swiglu-0 x ffn_moe_topk-0 -> ffn_moe_down-0|1408:2048:60:1 x 1408:4:128:1 x 4:128 -> 2048:4:128:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:22528:2883584 x 4:240! -> 4:8192:32768:4194304|hmx-tiled vtcm 8241152|usec 4882 cycles 8343943 start 1673572665 mhz 1709.1

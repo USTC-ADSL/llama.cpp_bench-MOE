@@ -1,0 +1,119 @@
+{
+  "config": "htp",
+  "mode": "perf",
+  "profile": false,
+  "pid": 31861,
+  "launcher": "cd /data/local/tmp/llama-e0-fd-htp-perf; echo $$ > /data/local/tmp/llama-e0-fd-htp-perf/fd-htp-perf-s1/pid; while [ ! -f /data/local/tmp/llama-e0-fd-htp-perf/fd-htp-perf-s1/go ]; do sleep 0.1; done; exec env LD_LIBRARY_PATH=/data/local/tmp/llama-e0-fd-htp-perf ADSP_LIBRARY_PATH=/data/local/tmp/llama-e0-fd-htp-perf GGML_HEXAGON_DEVICES=1 GGML_HEXAGON_USE_HMX=1 E0_MODE=perf E0_TRACE=/data/local/tmp/llama-e0-fd-htp-perf/fd-htp-perf-s1/events.jsonl E0_SAMPLE_CONFIG=/data/local/tmp/llama-e0-fd-htp-perf/fd-htp-perf-s1/sample ./llama-server -m /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf -c 512 -np 1 -t 4 -tb 4 -b 128 -ub 128 -ctk f16 -ctv f16 --load-mode mmap --no-warmup --cache-ram 0 --fit off --host 127.0.0.1 --port 18089 --device HTP0 -ngl 99 > /data/local/tmp/llama-e0-fd-htp-perf/fd-htp-perf-s1/server.log 2>&1",
+  "requests": [
+    {
+      "index": 0,
+      "sampling": 0,
+      "role": "warmup",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 483.075,
+        "prompt_per_token_ms": 3.7740234375,
+        "prompt_per_second": 264.96920767996687,
+        "predicted_n": 32,
+        "predicted_ms": 1717.915,
+        "predicted_per_token_ms": 55.416612903225804,
+        "predicted_per_second": 18.04513028875119
+      }
+    },
+    {
+      "index": 1,
+      "sampling": 1,
+      "role": "warmup",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 445.94100000000003,
+        "prompt_per_token_ms": 3.4839140625000002,
+        "prompt_per_second": 287.0334864926077,
+        "predicted_n": 32,
+        "predicted_ms": 1843.199,
+        "predicted_per_token_ms": 59.45803225806452,
+        "predicted_per_second": 16.818585513555508
+      }
+    },
+    {
+      "index": 2,
+      "sampling": 0,
+      "role": "paired",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 447.093,
+        "prompt_per_token_ms": 3.4929140625,
+        "prompt_per_second": 286.2939030582004,
+        "predicted_n": 32,
+        "predicted_ms": 1861.32,
+        "predicted_per_token_ms": 60.04258064516129,
+        "predicted_per_second": 16.65484709775858
+      }
+    },
+    {
+      "index": 3,
+      "sampling": 1,
+      "role": "paired",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 471.123,
+        "prompt_per_token_ms": 3.6806484375,
+        "prompt_per_second": 271.69125684799934,
+        "predicted_n": 32,
+        "predicted_ms": 1937.242,
+        "predicted_per_token_ms": 62.491677419354836,
+        "predicted_per_second": 16.002130864393813
+      }
+    },
+    {
+      "index": 4,
+      "sampling": 1,
+      "role": "paired",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 448.104,
+        "prompt_per_token_ms": 3.5008125,
+        "prompt_per_second": 285.6479745773303,
+        "predicted_n": 32,
+        "predicted_ms": 1851.403,
+        "predicted_per_token_ms": 59.72267741935484,
+        "predicted_per_second": 16.744058424881022
+      }
+    },
+    {
+      "index": 5,
+      "sampling": 0,
+      "role": "paired",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 475.635,
+        "prompt_per_token_ms": 3.7158984375,
+        "prompt_per_second": 269.11392138930063,
+        "predicted_n": 32,
+        "predicted_ms": 1947.296,
+        "predicted_per_token_ms": 62.816,
+        "predicted_per_second": 15.919510952623535
+      }
+    }
+  ],
+  "load_wall_s": 12.458311099559069,
+  "status": "completed"
+}

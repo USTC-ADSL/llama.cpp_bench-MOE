@@ -1,0 +1,119 @@
+{
+  "config": "htp",
+  "mode": "perf",
+  "profile": false,
+  "pid": 851,
+  "launcher": "cd /data/local/tmp/llama-e0-fd-htp-perf; echo $$ > /data/local/tmp/llama-e0-fd-htp-perf/fd-htp-perf-s3/pid; while [ ! -f /data/local/tmp/llama-e0-fd-htp-perf/fd-htp-perf-s3/go ]; do sleep 0.1; done; exec env LD_LIBRARY_PATH=/data/local/tmp/llama-e0-fd-htp-perf ADSP_LIBRARY_PATH=/data/local/tmp/llama-e0-fd-htp-perf GGML_HEXAGON_DEVICES=1 GGML_HEXAGON_USE_HMX=1 E0_MODE=perf E0_TRACE=/data/local/tmp/llama-e0-fd-htp-perf/fd-htp-perf-s3/events.jsonl E0_SAMPLE_CONFIG=/data/local/tmp/llama-e0-fd-htp-perf/fd-htp-perf-s3/sample ./llama-server -m /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf -c 512 -np 1 -t 4 -tb 4 -b 128 -ub 128 -ctk f16 -ctv f16 --load-mode mmap --no-warmup --cache-ram 0 --fit off --host 127.0.0.1 --port 18089 --device HTP0 -ngl 99 > /data/local/tmp/llama-e0-fd-htp-perf/fd-htp-perf-s3/server.log 2>&1",
+  "requests": [
+    {
+      "index": 0,
+      "sampling": 0,
+      "role": "warmup",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 515.6080000000001,
+        "prompt_per_token_ms": 4.0281875000000005,
+        "prompt_per_second": 248.25060898977515,
+        "predicted_n": 32,
+        "predicted_ms": 1792.878,
+        "predicted_per_token_ms": 57.834774193548384,
+        "predicted_per_second": 17.290635503363866
+      }
+    },
+    {
+      "index": 1,
+      "sampling": 1,
+      "role": "warmup",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 475.726,
+        "prompt_per_token_ms": 3.716609375,
+        "prompt_per_second": 269.0624435073971,
+        "predicted_n": 32,
+        "predicted_ms": 1914.5140000000001,
+        "predicted_per_token_ms": 61.75851612903226,
+        "predicted_per_second": 16.192098882536246
+      }
+    },
+    {
+      "index": 2,
+      "sampling": 0,
+      "role": "paired",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 460.25100000000003,
+        "prompt_per_token_ms": 3.5957109375000003,
+        "prompt_per_second": 278.10911872000275,
+        "predicted_n": 32,
+        "predicted_ms": 1872.008,
+        "predicted_per_token_ms": 60.387354838709676,
+        "predicted_per_second": 16.559758291631233
+      }
+    },
+    {
+      "index": 3,
+      "sampling": 1,
+      "role": "paired",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 447.833,
+        "prompt_per_token_ms": 3.4986953125,
+        "prompt_per_second": 285.8208305328102,
+        "predicted_n": 32,
+        "predicted_ms": 1876.0720000000001,
+        "predicted_per_token_ms": 60.51845161290323,
+        "predicted_per_second": 16.523886076866987
+      }
+    },
+    {
+      "index": 4,
+      "sampling": 1,
+      "role": "paired",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 474.37,
+        "prompt_per_token_ms": 3.706015625,
+        "prompt_per_second": 269.8315660771128,
+        "predicted_n": 32,
+        "predicted_ms": 1906.338,
+        "predicted_per_token_ms": 61.49477419354839,
+        "predicted_per_second": 16.26154438509855
+      }
+    },
+    {
+      "index": 5,
+      "sampling": 0,
+      "role": "paired",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 454.553,
+        "prompt_per_token_ms": 3.5511953125,
+        "prompt_per_second": 281.5953255175964,
+        "predicted_n": 32,
+        "predicted_ms": 1850.22,
+        "predicted_per_token_ms": 59.68451612903226,
+        "predicted_per_second": 16.754764298299662
+      }
+    }
+  ],
+  "load_wall_s": 10.544005416333675,
+  "status": "completed"
+}

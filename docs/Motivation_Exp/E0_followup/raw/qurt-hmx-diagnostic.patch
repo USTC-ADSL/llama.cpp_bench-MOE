@@ -1,0 +1,23 @@
+--- htp/main.c
++++ diagnostic-copy/main.c
+@@ -14,6 +14,7 @@
+ #include <HAP_ps.h>
+ #include <HAP_dcvs.h>
+ #include <qurt.h>
++#include <qurt_hmx.h>
+ #include <qurt_thread.h>
+ #include <qurt_memory.h>
+ #include <remote.h>
+@@ -653,6 +654,12 @@
+     *n_threads = n_hvx_val;
+     *n_hvx     = n_hvx_val;
+     *n_hmx     = 1;
++    // E0 diagnostic only: do not change reported count or backend selection.
++    HAP_setFARFRuntimeLoggingParams(0xffff, NULL, 0);
++    int e0_lock_rc = qurt_hmx_try_lock();
++    int e0_unlock_rc = e0_lock_rc == QURT_EOK ? qurt_hmx_unlock() : -1;
++    FARF(ALWAYS, "E0_QURT_HMX arch=%d try_lock=%d unlock=%d EOK=%d EVAL=%d EFAILED=%d",
++         __HEXAGON_ARCH__, e0_lock_rc, e0_unlock_rc, QURT_EOK, QURT_EVAL, QURT_EFAILED);
+ 
+     uint32_t vtcm_sz = 8 * 1024 * 1024; // 8MB default fallback
+     HAP_compute_res_query_VTCM(0, (unsigned int *)&vtcm_sz, NULL, NULL, NULL);

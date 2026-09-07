@@ -1,0 +1,26 @@
+--- htp/main.c
++++ diagnostic-copy/main.c
+@@ -14,6 +14,7 @@
+ #include <HAP_ps.h>
+ #include <HAP_dcvs.h>
+ #include <qurt.h>
++#include <dlfcn.h>
+ #include <qurt_thread.h>
+ #include <qurt_memory.h>
+ #include <remote.h>
+@@ -653,6 +654,15 @@
+     *n_threads = n_hvx_val;
+     *n_hvx     = n_hvx_val;
+     *n_hmx     = 1;
++    // E0 diagnostic only: absence of an exported API is unknown capability.
++    HAP_setFARFRuntimeLoggingParams(0xffff, NULL, 0);
++    int (*e0_lock)(void) = (int (*)(void)) dlsym(RTLD_DEFAULT, "qurt_hmx_try_lock");
++    int (*e0_unlock)(void) = (int (*)(void)) dlsym(RTLD_DEFAULT, "qurt_hmx_unlock");
++    int e0_lock_rc = (e0_lock && e0_unlock) ? e0_lock() : -999;
++    int e0_unlock_rc = e0_lock_rc == QURT_EOK ? e0_unlock() : -999;
++    FARF(ALWAYS, "E0_QURT_HMX arch=%d API_available=%d try_lock=%d unlock=%d EOK=%d EVAL=%d EFAILED=%d",
++         __HEXAGON_ARCH__, e0_lock != NULL && e0_unlock != NULL,
++         e0_lock_rc, e0_unlock_rc, QURT_EOK, QURT_EVAL, QURT_EFAILED);
+ 
+     uint32_t vtcm_sz = 8 * 1024 * 1024; // 8MB default fallback
+     HAP_compute_res_query_VTCM(0, (unsigned int *)&vtcm_sz, NULL, NULL, NULL);

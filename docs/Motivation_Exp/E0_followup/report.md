@@ -1,6 +1,6 @@
 # E0 定向补验（2026-09-07）
 
-**原 PLU110/v73 的结论：CPU 正式 perf 验收仍 BLOCKED；OpenCL 必要回归 PASS；默认 HTP 数值仍 BLOCKED。HMX 根因尚未确定，本次没有交付 HMX 修复。追加 K80 Pro/v79 的单次 HMX 语义对照通过，见文末。** 全部推理和数值测试均在指定 Android 手机执行。没有采用 HVX-only、CPU fallback、降低 ubatch、关闭默认融合或放宽容差作为验收方案。
+**最新结论：fd8657d6/v79 的 HTP 定向 E0（数值、执行路径与测量）PASS；CPU 按用户本轮 5% 工程接受指示记 PASS，原统计区间不变；OpenCL 保留既有 PASS。原 PLU110/v73 的 HMX 路径仍 BLOCKED，v75/v79 构建因 HMX_v2 时钟 API 未实现而无法初始化；尚未证明其物理硬件缺少 HMX。详见文末，本次没有交付 HMX 修复。** 全部推理和数值测试均在指定 Android 手机执行。没有采用 HVX-only、CPU fallback、降低 ubatch、关闭默认融合或放宽容差作为验收方案。
 
 - [x] 复用 E0 环境、真实输入和原失败用例，完成输出统计与局部定位
 - [x] 实现 perf/memory 分离，完成三次启动六对计时开销检查及独立 memory 运行
@@ -121,3 +121,47 @@ python3 docs/Motivation_Exp/E0/scripts/analyze.py --followup
 **解释边界：v79 本次端到端语义通过，v73 的全零数值异常仍 BLOCKED。** 同一官方提交/模型在两个设备上行为不同，将排查重点缩小到架构、DSP目标构建或设备/固件运行差异；尚不能确定根因，也不能称为已经修复。未在 v79 重做原算子数值容差验收，不能用32个token相同代替 RRMSE 检查。这两次均为独立 memory/profile 诊断，CSV耗时仅标 DIAGNOSTIC_ONLY，官方无 E0 token-ready 埋点，TTFT/p95 ITL 为 NA，不用于性能排名。没有改变默认HMX选择、降低ubatch、CPU回退或禁用融合。watchdog和退出检查保留，未改变任何全机配置。
 
 收尾：29个设备文件均与本地原始证据或构建产物逐一 SHA256 匹配，HTP大日志无损保存为 `server.log.gz`；确认无遗留推理或项目watchdog进程后，仅清理本次设备测试目录，保留模型，见 `raw/k80-final-validation.txt`。初次架构探测在v79库部署前的失败是缺少DSP库，部署后会话正常；`raw/k80-dsp-load.log:24` 为实际 server 成功打开专用目录库的记录。原有用户文件哈希不变。测试到此停止。
+
+**用户追加：v73/HMX 能力与跨架构兼容性核验，条件性补验 fd 设备 HTP。**
+
+- [x] 查询两机真实 FastRPC HMX 能力，区分硬件查询与后端固定值
+- [x] 核验 v75/v79 库能否在 v73 设备加载，记录准确失败类别
+- [x] 根据以上证据决定 fd 设备 HTP 数值/路径补验范围，保留原容差
+- [x] 单独记录用户接受的 CPU 5% 判据结论，保存证据和清理
+
+**原设备当前 HMX 路径不可用已确认；“物理硬件没有 HMX”未证实。** 主分支与官方 `ggml/src/ggml-hexagon` 源码相同；`htp/main.c:655` 固定 `*n_hmx=1`，因此此前 `hwinfo ... hmx 1` 只是后端假定。新增只读 `E0/scripts/hmx_capability_probe.cpp` 使用配置好的 SDK `remote.h`，查询 CDSP 的 `ARCH_VER`、HVX、HMX depth/spatial：原手机分别为 `0x8073`、4、0/0，fd 为 `0x8c79`、6、0/0，所有调用返回0。v79 的实际 HMX 正确执行构成阳性对照，故这组0/0不能用来判定硬件缺失。证据在 `raw/hmx-capability-{v73,v79}.jsonl`。
+
+SDK 为 v73 提供基础 HMX intrinsic 与 QuRT API，所以 v73 架构编号本身不等于无 HMX。隔离的 DSP 诊断副本尝试 QuRT `try_lock/unlock`：直接导入版本未能加载（`RX VA outside ELF segment`，没有执行锁操作）；改为可选 `dlsym` 后两机均可初始化，但均报告 `API_available=0`，`-999` 是诊断中的未调用占位值。仍无法查询硬件存在性。诊断未改写 HMX 数量、后端选择或验收输出，原官方源和正常构建对象均未修改；补丁/编译命令见 `raw/qurt-hmx-*.patch`、`commands.jsonl`，运行见 `runs/qurt-hmx-*/`。
+
+| 原 v73 手机的构建目标 | 动态库打开 | 会话初始化 | 解释 |
+|---|---|---|---|
+| 默认 v73 | 成功 | 成功 | 原 n128 计算仍全零，已有数值证据保留 |
+| 强制 v75 | 成功 | 失败，0x80000414 | HAP_power_set_HMX_v2 时钟设置不受固件支持 |
+| 强制 v79 | 成功 | 失败，0x80000414 | 同上 |
+
+上述覆盖仅设置进程环境 `GGML_HEXAGON_ARCH=75/79`，没有改变实际 v73 硬件。带 FARF 的复验明确记录 `Setting HMX clock` 随后 `error setting HMX clock`；错误为 SDK 的 `AEE_EUNSUPPORTED`（API未实现），不是 OOM，也不是本次观测到的 ELF ISA 拒绝。对应代码 `htp/main.c:488-524`：v75+ 调用 HMX_v2，v73 调用只含 power_up 的旧 HMX API。已定位跨版本替代失败的环节，**尚未定位原生 v73 全零的最终原因**，不能把高版本初始化失败推导成硬件必然缺失。日志 `runs/v73-init-target-v{73,75,79}/`、`v73-init-target-v{75,79}-logged/`；只初始化一个PD、无模型，20秒上限，无安全截断。
+
+**fd 的 HTP 定向 E0：PASS。** 为判断故障是否局限于原设备环境，并验证可用实验路径，在 fd 上复用原数值测试、实际128/32请求与原容差。先用官方库跑 `fd-htp-numeric-acceptance`，再用本分支最终测量库跑 `fd-htp-numeric-final`，四项数值逐项相同，n128 reference RMS也与原设备一致；不是重跑CPU性能，只调用同机CPU Q4_0 reference。默认选择、原权重/激活/expert IDs、量化和NX融合均保留。
+
+| 用例 | 实际路径 | RRMSE | max_abs_error / RMS(reference) | 结果 |
+|---|---|---:|---:|---|
+| n1 gate+up | HVX，默认选择 | 0.003550824 | 0.013148587 | PASS |
+| n1 down | HVX，默认选择 | 0.003568041 | 0.014693214 | PASS |
+| n128 gate+up | HMX / MUL_MAT_ID_NX | 0.002798966 | 0.019480680 | PASS |
+| n128 down | HMX / MUL_MAT_ID | 0.002787277 | 0.045816010 | PASS |
+
+所有输出有限、非零比例1；阈值仍为0.02/0.10。`fd-htp-perf-s1..s3` 各先OFF/ON预热，再AB/BA两对，共6对、3次独立启动；同构建同watchdog，perf无PSS/smaps及详细profile，21个线程始终稳定，OFF无时间戳记录（TTFT/ITL为NA），ON无溢出且32个 token-ready IDs 与响应及已有CPU结果一致。每请求均128输入/32输出、cache_n0、重新prefill128。按独立启动均值重采样4000次（seed1234），没有把token当独立重复：
+
+| 最小埋点 ON/OFF−1 | 启动均值 | 启动分组95%区间 | 原 ±3% |
+|---|---:|---:|---|
+| prefill | +0.0669% | [-0.4232%, +0.8308%] | PASS |
+| decode | +0.3954% | [-0.4227%, +1.6251%] | PASS |
+| slot_request | +0.3252% | [-0.3820%, +1.4682%] | PASS |
+
+只有3次独立启动，本结论限于此固定小测试。`fd-htp-memory-profile` 独立运行并保存load/context/prefill/decode边界，延迟不进入perf表；实际请求164个HMX算子、46个routed expert算子，gate+up保持NX融合。请求minflt增量1304、majflt增量137，与进程内getrusage增量一致，bracket通过；read_bytes单列74903552，不乘fault数估算UFS流量。独立PSS**采样峰值**7940293 KiB，继承cgroup的历史峰值10765127680 bytes不视为本实验私有峰值；驱动物理容量、PD独占物理内存和合计总RAM仍NA。证据 `raw/fd-htp-measurement-checks.txt`、各run原始事件/响应/内存/日志。
+
+版本：本轮起始主分支 `5d7330bb8`，只新增能力探测源码与结果，不改推理实现。官方仍为 `73ab7599b`。增量命令为官方构建 `--target htp-v75`，本分支 `cmake --build build-android-opencl-hexagon --target llama-server htp-v79 -j8`，工具链/依赖不变；两套设备库隔离且逐文件核验hash，见 `raw/fd-htp-{numeric,perf}-artifacts.txt`。runner保持固定参数，实际启动/请求/探测命令都记录在 `commands.jsonl`。正式路径未使用任何QuRT诊断库，未禁用HMX、缩小ubatch、移算子到CPU或改变融合。保留原watchdog/互斥/退出检查，未修改全机配置或清全局page cache。
+
+**CPU 当前记 PASS（用户接受的约5%工程判据）。** 这遵循本轮明确指示；沿用此前3次启动6对数据，无新增CPU/OpenCL性能实验。原CPU decode区间仍为[-5.7887%,+1.5797%]，严格“95%区间完全位于±5%”仍未通过；不修改旧统计行，新增 `user_acceptance_5_percent` 行区分用户验收决定与统计事实。OpenCL保留原设备范围内PASS。CPU/OpenCL旧数据保留原设备标签，不视为fd上的同机性能对照；本轮fd只验收HTP，PASS不表示ION已受控或研究motivation成立。
+
+收尾：175个设备文件逐一与本地原始记录/构建产物hash匹配，详细profile无损压缩，见 `raw/htp-capability-final-{sha256,validation}.txt`。确认无遗留推理、backend-init及项目watchdog进程后，清理两机本次 `llama-e0-hmx-capability` 和fd的 `llama-e0-fd-htp-perf` 目录；两机8149865792-byte模型均保留，原用户文件hash未变。原始E0结果不覆盖，新增结论以本报告及新增CSV行解释；旧 `analyze.py --followup` 尚不认识本次人工验收决策/新标签，不能直接用它覆盖当前CSV。没有新增manifest/handoff或配置框架。本轮到此停止。
