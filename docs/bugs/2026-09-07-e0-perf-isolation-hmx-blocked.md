@@ -1,0 +1,9 @@
+# E0 perf 隔离与 HMX 未解决异常
+
+E0 CPU 同时采集 PSS 时 p95 ITL 平均下降11.522%，不能当作无测量扰动。工具问题是性能计时与异步 PSS/进程诊断共享同一运行，旧OFF/ON检查未通过既定阈值；具体变快机制并未确定。本次在 `common/e0-measure.h` 与原runner/watchdog增加独立perf路径：事件缓存在内存，无PSS线程/队列；memory独立运行，延迟不进性能表。原legacy能力保留。
+
+指定Android设备上完成3次启动、6对OFF/ON请求；均重新prefill128、输出32，无PSS残留采样，线程数稳定。prefill/slot耗时区间在±3%内，decode区间[-5.789%,+1.580%]仍无法证明低开销，因此CPU正式perf验收仍BLOCKED。OpenCL公共代码回归通过。
+
+HMX n128真实Q4_0 gate/up、down仍全零，RRMSE1；锁成功、bias回读一致，HMX worker实际写零。未确定HMX根因、未宣称修复；临时诊断全部撤出后，默认DSP与原版本hash一致，原n1通过、n128失败。没有用HVX-only、改shape/精度/容差或CPU回退掩盖。修复后相关算子及整模型验收仍缺失。
+
+命令、版本、数值、原始日志和限制统一见 [补验报告](../Motivation_Exp/E0_followup/report.md) 与同目录 `summary.csv`，不另复制证据。

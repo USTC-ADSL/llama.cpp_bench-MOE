@@ -6,8 +6,12 @@ low_since=0
 phase_prev=""
 phase_start=0
 echo 'uptime_s,phase,memavailable_kb,thermal_status,pss_kb,cgroup_usage_bytes,cgroup_historical_peak_bytes' > "$dir/memory.csv"
-cg_path=$(awk -F: '$2 == "memory" {print $3}' "/proc/$pid/cgroup")
-cg_mount=$(awk '$3 == "cgroup" && $4 ~ /(^|,)memory(,|$)/ {print $2; exit}' /proc/mounts)
+mode=$(cat "$dir/mode" 2>/dev/null)
+cg_mount=""
+if [ "$mode" != perf ]; then
+    cg_path=$(awk -F: '$2 == "memory" {print $3}' "/proc/$pid/cgroup")
+    cg_mount=$(awk '$3 == "cgroup" && $4 ~ /(^|,)memory(,|$)/ {print $2; exit}' /proc/mounts)
+fi
 cg="$cg_mount$cg_path"
 while kill -0 "$pid" 2>/dev/null; do
     read uptime rest < /proc/uptime
@@ -22,7 +26,7 @@ while kill -0 "$pid" 2>/dev/null; do
       current && /mStatus=/ {s=$0; sub(/^.*mStatus=/,"",s); sub(/[^0-9].*$/,"",s); if(s+0>status) status=s+0; found=1}
       END {if(found) print status; else print -1}')
     pss=-1
-    if [ "$(cat "$dir/sample" 2>/dev/null)" = 1 ]; then
+    if [ "$mode" != perf ] && [ "$(cat "$dir/sample" 2>/dev/null)" = 1 ]; then
         pss=$(awk '/^Pss:/ {print $2}' "/proc/$pid/smaps_rollup" 2>/dev/null)
     fi
     usage=-1; peak=-1

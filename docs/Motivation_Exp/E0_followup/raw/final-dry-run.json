@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "serial": "3B661501LA000000",
+  "model": "/data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf",
+  "remote": "/data/local/tmp/llama-e0-followup",
+  "input_tokens": 128,
+  "output_target": 32,
+  "context": 512,
+  "parallel": 1,
+  "threads": 4,
+  "threads_batch": 4,
+  "batch": 128,
+  "ubatch": 128,
+  "kv": [
+    "f16",
+    "f16"
+  ],
+  "load_timeout_s": 300,
+  "request_timeout_s": 180,
+  "low_memavailable_kib": 1048576,
+  "low_mem_duration_s": 3,
+  "thermal_stop": 3,
+  "cache_policy": "cache_prompt=false; cache-ram=0; no weight eviction; no cache dropping",
+  "timing": "server CLOCK_MONOTONIC complete POST callback -> sampled token ready; per-token ready intervals",
+  "numerical_tolerance": {
+    "relative_rmse": 0.02,
+    "max_error_over_reference_rms": 0.1
+  },
+  "arms": "same server; alternating OFF/ON, ON/OFF, OFF/ON; watchdog always on",
+  "commands": {
+    "cpu": "cd /data/local/tmp/llama-e0-followup; LD_LIBRARY_PATH=/data/local/tmp/llama-e0-followup ADSP_LIBRARY_PATH=/data/local/tmp/llama-e0-followup GGML_HEXAGON_DEVICES=1 ./llama-server -m /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf -c 512 -np 1 -t 4 -tb 4 -b 128 -ub 128 -ctk f16 -ctv f16 --load-mode mmap --no-warmup --cache-ram 0 --fit off --host 127.0.0.1 --port 18089 --device none -ngl 0",
+    "opencl": "cd /data/local/tmp/llama-e0-followup; LD_LIBRARY_PATH=/data/local/tmp/llama-e0-followup ADSP_LIBRARY_PATH=/data/local/tmp/llama-e0-followup GGML_HEXAGON_DEVICES=1 ./llama-server -m /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf -c 512 -np 1 -t 4 -tb 4 -b 128 -ub 128 -ctk f16 -ctv f16 --load-mode mmap --no-warmup --cache-ram 0 --fit off --host 127.0.0.1 --port 18089 --device GPUOpenCL -ngl 99",
+    "htp": "cd /data/local/tmp/llama-e0-followup; LD_LIBRARY_PATH=/data/local/tmp/llama-e0-followup ADSP_LIBRARY_PATH=/data/local/tmp/llama-e0-followup GGML_HEXAGON_DEVICES=1 ./llama-server -m /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf -c 512 -np 1 -t 4 -tb 4 -b 128 -ub 128 -ctk f16 -ctv f16 --load-mode mmap --no-warmup --cache-ram 0 --fit off --host 127.0.0.1 --port 18089 --device HTP0 -ngl 99"
+  }
+}

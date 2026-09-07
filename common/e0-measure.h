@@ -14,6 +14,7 @@
 #include <condition_variable>
 #include <deque>
 #include <thread>
+#include <array>
 #include <sys/resource.h>
 #include <time.h>
 
@@ -88,8 +89,53 @@ struct recorder {
     ~recorder() { if (out) std::fclose(out); }
 };
 inline recorder & state() { static recorder s; return s; }
+// Perf never constructs recorder/pss_worker or reads process accounting. The
+// fixed-size trace is formatted only after the final token has become ready.
+struct perf_recorder {
+    struct entry { const char * name; long long time; int value; int token; };
+    std::mutex mutex;
+    std::array<entry, 1024> entries{};
+    size_t size = 0;
+    int request = 0, tokens = 0;
+    bool enabled = false, overflow = false;
+};
+inline void perf_event(const char * name, int value) {
+    static perf_recorder s;
+    std::lock_guard<std::mutex> lock(s.mutex);
+    const bool begin = std::strcmp(name, "request_received") == 0;
+    if (!begin && !s.enabled) return;
+    const auto t = now_us();
+    if (begin) {
+        ++s.request; s.tokens = 0; s.size = 0; s.overflow = false;
+        const char * config = std::getenv("E0_SAMPLE_CONFIG");
+        int on = 0;
+        if (config) { std::ifstream f(config); f >> on; }
+        s.enabled = on == 1;
+        if (!s.enabled) return;
+    }
+    if (std::strcmp(name, "token_ready") == 0) ++s.tokens;
+    if (s.size < s.entries.size()) s.entries[s.size++] = {name, t, value, s.tokens};
+    else s.overflow = true;
+    if (std::strcmp(name, "request_end") == 0) {
+        FILE * out = std::fopen(std::getenv("E0_TRACE"), "a");
+        if (out) {
+            for (size_t i=0; i<s.size; ++i) {
+                const auto & e = s.entries[i];
+                std::fprintf(out, "{\"event\":\"%s\",\"t_us\":%lld,\"request\":%d,\"value\":%d,\"token_index\":%d,\"mode\":\"perf\",\"overflow\":%s}\n",
+                             e.name,e.time,s.request,e.value,e.token,s.overflow ? "true" : "false");
+            }
+            std::fclose(out);
+        }
+        s.enabled = false;
+    }
+}
 inline void event(const char * name, int value = -1, bool boundary = false) {
     if (!std::getenv("E0_TRACE")) return;
+    static const bool perf = []() {
+        const char * mode = std::getenv("E0_MODE");
+        return mode && std::strcmp(mode, "perf") == 0;
+    }();
+    if (perf) { perf_event(name, value); return; }
     // Take the timestamp before any diagnostic I/O or locking.
     const long long t = now_us();
     auto & s = state();

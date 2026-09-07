@@ -9,7 +9,8 @@ import subprocess
 import time
 
 ROOT=pathlib.Path(__file__).resolve().parents[4]
-OUT=ROOT/'docs/Motivation_Exp/E0'
+E0=ROOT/'docs/Motivation_Exp/E0'
+OUT=E0
 BUILD=ROOT/'build-android-opencl-hexagon'
 SERIAL='3B661501LA000000'
 REMOTE='/data/local/tmp/llama-e0-20260907'
@@ -96,7 +97,7 @@ def prepare():
     path=BUILD/'ggml/src/ggml-hexagon/libggml-htp-v73.so'
     push(path,REMOTE+'/libggml-htp-v73.so')
     artifacts[path.name]={'source':str(path),'sha256':hashlib.sha256(path.read_bytes()).hexdigest()}
-    push(OUT/'scripts/watchdog.sh',REMOTE+'/watchdog.sh')
+    push(E0/'scripts/watchdog.sh',REMOTE+'/watchdog.sh')
     shell(f'chmod 755 {REMOTE}/llama-server {REMOTE}/e0-*')
     save(OUT/'artifacts.json',artifacts)
     for name,args in [('help','./llama-server --help'),('devices','./llama-server --list-devices'),
@@ -123,7 +124,7 @@ def plan():
               numerical_tolerance=dict(relative_rmse=.02,max_error_over_reference_rms=.10),
               arms='same server; alternating OFF/ON, ON/OFF, OFF/ON; watchdog always on',
               commands={c:f'cd {REMOTE}; {ENV} '+shlex.join(server_args(c)) for c in ['cpu','opencl','htp']})
-    save(OUT/'manifest.json',data)
+    if OUT==E0: save(OUT/'manifest.json',data)
     print(json.dumps(data,indent=2))
 
 def http(path,body=None,timeout=190):
@@ -132,17 +133,19 @@ def http(path,body=None,timeout=190):
     args += [f'http://127.0.0.1:{PORT}{path}']
     return shell(shlex.join(args),timeout=timeout)
 
-def run_server(config,profile=False,pairs=3,label=None):
+def run_server(config,profile=False,pairs=3,label=None,mode='legacy'):
+    if profile and mode=='perf':
+        raise ValueError('detailed profiling must run separately from perf')
     name=label or (config+('-profile' if profile else '-paired'))
     local=OUT/'runs'/name
     local.mkdir(parents=True,exist_ok=False)
     remote=REMOTE+'/'+name
-    shell(f'mkdir -p {remote}; echo 1 > {remote}/sample; echo loading > {remote}/phase')
-    extra=f'E0_TRACE={remote}/events.jsonl E0_SAMPLE_CONFIG={remote}/sample'
+    shell(f'mkdir -p {remote}; echo {mode} > {remote}/mode; echo {0 if mode=="perf" else 1} > {remote}/sample; echo loading > {remote}/phase')
+    extra=f'E0_MODE={mode} E0_TRACE={remote}/events.jsonl E0_SAMPLE_CONFIG={remote}/sample'
     if profile: extra+=' GGML_SCHED_DEBUG=2 GGML_HEXAGON_VERBOSE=1 GGML_HEXAGON_PROFILE=1'
     args=server_args(config)+(['--log-verbosity','5'] if profile else [])
     process,watch,pid,launch=start_guarded(remote,shlex.join(args),extra)
-    status={'config':config,'profile':profile,'pid':pid,'launcher':launch,'requests':[]}
+    status={'config':config,'mode':mode,'profile':profile,'pid':pid,'launcher':launch,'requests':[]}
     try:
         start=time.monotonic()
         while True:
@@ -154,17 +157,21 @@ def run_server(config,profile=False,pairs=3,label=None):
             time.sleep(1)
         shell(f'echo idle > {remote}/phase')
         status['load_wall_s']=time.monotonic()-start
-        # Capture accounting domains separately; read-only audit, outside requests.
-        audit=f'cat /proc/{pid}/cgroup; cat /proc/{pid}/maps; ls -l /proc/{pid}/fd'
-        p=shell(audit,check=False)
-        (local/'mapping-audit.txt').write_text(p.stdout+p.stderr)
-        audit=f'for f in /proc/{pid}/fdinfo/*; do echo "FILE $f"; cat "$f"; done; ls -l /sys/class/kgsl/kgsl/proc/{pid} /sys/class/kgsl/kgsl-3d0/proc/{pid} /sys/kernel/dmabuf/buffers/1'
-        p=shell('su -c '+Q(audit),check=False)
-        (local/'driver-fdinfo-audit.txt').write_text(p.stdout+p.stderr)
-        audit=f'for k in gpumem_mapped gpumem_unmapped imported_mem kernel kernel_max user user_max; do f=/sys/class/kgsl/kgsl/proc/{pid}/$k; if [ -r "$f" ]; then echo "$k $(cat "$f")"; else echo "$k NA"; fi; done'
-        p=shell('su -c '+Q(audit),check=False)
-        (local/'kgsl-counters.txt').write_text(p.stdout+p.stderr)
-        prompt_path=OUT/'prompt.json'
+        if mode!='perf':
+            # Separate read-only accounting audit, outside requests.
+            audit=f'cat /proc/{pid}/cgroup; cat /proc/{pid}/maps; ls -l /proc/{pid}/fd'
+            p=shell(audit,check=False)
+            (local/'mapping-audit.txt').write_text(p.stdout+p.stderr)
+            audit=f'for f in /proc/{pid}/fdinfo/*; do echo "FILE $f"; cat "$f"; done; ls -l /sys/class/kgsl/kgsl/proc/{pid} /sys/class/kgsl/kgsl-3d0/proc/{pid} /sys/kernel/dmabuf/buffers/1'
+            p=shell('su -c '+Q(audit),check=False)
+            (local/'driver-fdinfo-audit.txt').write_text(p.stdout+p.stderr)
+            audit=f'for k in gpumem_mapped gpumem_unmapped imported_mem kernel kernel_max user user_max; do f=/sys/class/kgsl/kgsl/proc/{pid}/$k; if [ -r "$f" ]; then echo "$k $(cat "$f")"; else echo "$k NA"; fi; done'
+            p=shell('su -c '+Q(audit),check=False)
+            (local/'kgsl-counters.txt').write_text(p.stdout+p.stderr)
+        else:
+            p=shell(f'cat /proc/{pid}/maps',check=False)
+            (local/'loaded-libraries.txt').write_text(p.stdout+p.stderr)
+        prompt_path=E0/'prompt.json'
         if not prompt_path.exists():
             text=('Explain how a phone can execute a mixture of experts language model using CPU GPU and a neural accelerator. '
                   'Describe token processing and memory measurements with concrete examples. ')*12
@@ -172,7 +179,9 @@ def run_server(config,profile=False,pairs=3,label=None):
             if len(tokens)!=128: raise RuntimeError('not 128 input tokens')
             save(prompt_path,{'source_text':text,'tokens':tokens,'add_special':False})
         tokens=json.loads(prompt_path.read_text())['tokens']
-        order=[1] if profile else [1]+[v for p in range(pairs) for v in ([0,1] if p%2==0 else [1,0])]
+        warmups=2 if mode=='perf' else 1
+        order=([1] if profile or mode=='memory' else
+               ([0,1] if mode=='perf' else [1])+[v for p in range(pairs) for v in ([0,1] if p%2==0 else [1,0])])
         for i,on in enumerate(order):
             shell(f'echo {on} > {remote}/sample; echo request > {remote}/phase')
             body=dict(prompt=tokens,n_predict=32,temperature=0,seed=1234,cache_prompt=False,
@@ -181,14 +190,17 @@ def run_server(config,profile=False,pairs=3,label=None):
             p=http('/completion',body)
             (local/f'response-{i:02d}.json').write_text(p.stdout)
             response=json.loads(p.stdout)
-            status['requests'].append({'index':i,'sampling':on,'role':'diagnostic' if i==0 else 'paired',
+            status['requests'].append({'index':i,'sampling':on,'role':'warmup' if mode=='perf' and i<warmups else ('diagnostic' if mode=='memory' or profile or i==0 else 'paired'),
                                        'tokens_evaluated':response.get('tokens_evaluated'),
                                        'tokens_predicted':response.get('tokens_predicted'),'timings':response.get('timings')})
             save(local/'status.json',status)
             shell(f'echo idle > {remote}/phase')
             print(name,i,on,status['requests'][-1],flush=True)
-            if response.get('tokens_evaluated')!=128 or response.get('tokens_predicted')!=32:
+            if response.get('tokens_evaluated')!=128 or response.get('tokens_predicted')!=32 or response.get('timings',{}).get('cache_n')!=0:
                 raise RuntimeError('token count contract failed')
+            if mode=='perf' and i>=warmups-1:
+                p=shell(f'for t in /proc/{pid}/task/*; do cat "$t/comm"; done',check=False)
+                (local/f'threads-after-{i:02d}.txt').write_text(p.stdout+p.stderr)
             time.sleep(1)
         status['status']='completed'
     except Exception as e:
@@ -223,10 +235,18 @@ def numeric(config,label=None):
     print('numeric',config,'saved',flush=True)
 
 def main():
+    global OUT, REMOTE, ENV
     p=argparse.ArgumentParser(); p.add_argument('--prepare',action='store_true'); p.add_argument('--run',choices=['cpu','opencl','htp']); p.add_argument('--profile',action='store_true'); p.add_argument('--numeric',choices=['cpu','opencl','htp']); p.add_argument('--pairs',type=int,default=3); p.add_argument('--label')
+    p.add_argument('--followup',action='store_true')
+    p.add_argument('--mode',choices=['legacy','perf','memory'],default='legacy')
     a=p.parse_args()
+    if a.followup:
+        OUT=ROOT/'docs/Motivation_Exp/E0_followup'
+        REMOTE='/data/local/tmp/llama-e0-followup'
+        ENV=f'LD_LIBRARY_PATH={REMOTE} ADSP_LIBRARY_PATH={REMOTE} GGML_HEXAGON_DEVICES=1'
+        (OUT/'raw').mkdir(parents=True,exist_ok=True)
     if a.prepare: prepare()
-    elif a.run: run_server(a.run,a.profile,a.pairs,a.label)
+    elif a.run: run_server(a.run,a.profile,a.pairs,a.label,a.mode)
     elif a.numeric: numeric(a.numeric,a.label)
     else: plan()
 

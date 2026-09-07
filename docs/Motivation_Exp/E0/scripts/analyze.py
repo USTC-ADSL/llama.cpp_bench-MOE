@@ -6,6 +6,7 @@ import math
 import pathlib
 import random
 import statistics
+import sys
 
 OUT=pathlib.Path(__file__).resolve().parents[1]
 ROOT=OUT.parents[2]
@@ -116,7 +117,104 @@ def analyze_run(folder):
                                    'status':'PASS' if ci[1]<=.03 and ci[0]>=-.03 else 'INCONCLUSIVE_OR_OVERHEAD'}
     return result
 
+def followup_summary():
+    """One CSV, with requests and independent startups as the repetition units."""
+    out=OUT.parent/'E0_followup'
+    rows=[]; startup_pairs=[]
+    def row(backend,kind,run,request,metric,value,unit,status='OBSERVED'):
+        rows.append(dict(backend=backend,kind=kind,run=run,request=request,
+                         metric=metric,value=value,unit=unit,status=status))
+    for folder in sorted((out/'runs').iterdir()):
+        if not (folder/'status.json').exists(): continue
+        status=load(folder/'status.json'); mode=status.get('mode','legacy'); backend=status['config']
+        if mode=='perf':
+            assert status['status']=='completed'
+            assert not (folder/'events.jsonl.pss.jsonl').exists()
+            events=lines(folder/'events.jsonl') if (folder/'events.jsonl').exists() else []
+            assert all(not e.get('overflow') for e in events)
+            threads=[p.read_text().splitlines() for p in sorted(folder.glob('threads-after-*.txt'))]
+            assert threads and len({len(t) for t in threads})==1
+            row(backend,'measurement_sanity',folder.name,'','threads_after_requests',len(threads[0]),'threads','PASS')
+            with (folder/'memory.csv').open() as f:
+                assert all(float(r['pss_kb'])==-1 and float(r['cgroup_usage_bytes'])==-1 for r in csv.DictReader(f))
+            values=[]
+            for req in status['requests']:
+                i=req['index']; resp=load(folder/f'response-{i:02d}.json'); t=resp['timings']
+                assert resp['tokens_evaluated']==128 and resp['tokens_predicted']==32 and t['cache_n']==0 and t['prompt_n']==128
+                m={'prefill_ms':t['prompt_ms'],'decode_ms':t['predicted_ms'],
+                   'slot_request_ms':t['prompt_ms']+t['predicted_ms']}
+                group=[e for e in events if e['request']==i+1]
+                if req['sampling']:
+                    ready=[e for e in group if e['event']=='token_ready']
+                    assert [e['value'] for e in ready]==resp['tokens'] and len(ready)==32
+                    start=next(e for e in group if e['event']=='request_received')
+                    assert sum(e['value'] for e in group if e['event']=='prefill_end')==128
+                    ttft=(ready[0]['t_us']-start['t_us'])/1000
+                    itl=quantile([(b['t_us']-a['t_us'])/1000 for a,b in zip(ready,ready[1:])],.95)
+                else:
+                    assert not group
+                    ttft=itl='NA'
+                kind=req['role']+('_trace_on' if req['sampling'] else '_trace_off')
+                for metric,v in {**m,'ttft_ms':ttft,'p95_itl_ms':itl}.items():
+                    row(backend,kind,folder.name,i,metric,v,'ms')
+                if req['role']=='paired': values.append((req['sampling'],m))
+            row(backend,'measurement_sanity',folder.name,'','128_input_32_output_no_prefix_cache',len(status['requests']),'requests','PASS')
+            row(backend,'measurement_sanity',folder.name,'','no_pss_sampling_or_trace_overflow',1,'boolean','PASS')
+            pairs=[]
+            for j,(a,b) in enumerate(zip(values[::2],values[1::2]),1):
+                assert a[0]!=b[0]
+                on,off=(a[1],b[1]) if a[0] else (b[1],a[1])
+                change={k:on[k]/off[k]-1 for k in on}; pairs.append(change)
+                for k,v in change.items(): row(backend,'pair_change',folder.name,j,k,v*100,'%')
+            if backend=='cpu' and pairs:
+                startup_pairs.append(pairs)
+                for k in pairs[0]: row(backend,'startup_mean_change',folder.name,'',k,statistics.mean(x[k] for x in pairs)*100,'%')
+        elif mode=='memory':
+            samples=[]
+            with (folder/'memory.csv').open() as f:
+                samples += [float(x['pss_kb']) for x in csv.DictReader(f)]
+            f=folder/'events.jsonl.pss.jsonl'
+            if f.exists(): samples += [x['pss_kb'] for x in lines(f)]
+            row(backend,'independent_memory_diagnostic',folder.name,'','pss_sample_peak',max(samples),'KiB','DIAGNOSTIC_ONLY')
+    if startup_pairs:
+        assert len(startup_pairs)==3 and all(len(g)==2 for g in startup_pairs)
+        cpu_pass=True
+        for k in startup_pairs[0][0]:
+            means=[statistics.mean(x[k] for x in g) for g in startup_pairs]
+            rng=random.Random(1234)
+            boot=[statistics.mean(rng.choices(means,k=len(means))) for _ in range(4000)]
+            lo,hi=quantile(boot,.025),quantile(boot,.975)
+            verdict='PASS' if lo>=-.03 and hi<=.03 else 'BLOCKED_INCONCLUSIVE_OR_OVERHEAD'
+            cpu_pass &= verdict=='PASS'
+            for suffix,value in [('',statistics.mean(means)),('_ci_low',lo),('_ci_high',hi)]:
+                row('cpu','startup_cluster_bootstrap','cpu-perf-s1..s3','',k+suffix,value*100,'%',verdict)
+        row('cpu','verdict','cpu-perf-s1..s3','','performance_acceptance',int(cpu_pass),'boolean','PASS' if cpu_pass else 'BLOCKED')
+    for folder in sorted((out/'runs').iterdir()):
+        if (folder/'numeric.jsonl').exists():
+            kind='numeric_default' if folder.name in ('hmx-repro','hmx-default-final') else 'numeric_diagnostic_not_acceptance'
+            for r in lines(folder/'numeric.jsonl'):
+                if 'n' not in r: continue
+                for k in ['relative_rmse','max_error_over_ref_rms']:
+                    if k in r: row(r['backend'],kind,folder.name,str(r['n'])+'/'+r['operation'],k,r[k],'ratio',r['status'])
+                for k,v in r.get('output_stats',{}).items():
+                    row(r['backend'],kind,folder.name,str(r['n'])+'/'+r['operation'],'output_'+k,v,'value',r['status'])
+            if folder.name=='hmx-default-final':
+                tests=[r for r in lines(folder/'numeric.jsonl') if 'n' in r]
+                log=(folder/'backend.log').read_text()
+                assert 'hmx-tiled' in log and 'profile-op MUL_MAT_ID_NX' in log
+                ok=len(tests)==4 and all(r['status']=='PASS' for r in tests)
+                row('htp','verdict',folder.name,'','default_numerical_acceptance',int(ok),'boolean','PASS' if ok else 'BLOCKED')
+    if (out/'runs/opencl-perf-regression/status.json').exists():
+        ok=load(out/'runs/opencl-perf-regression/status.json')['status']=='completed'
+        row('opencl','verdict','opencl-perf-regression','','public_timing_code_regression',int(ok),'boolean','PASS' if ok else 'BLOCKED')
+    with (out/'summary.csv').open('w') as f:
+        writer=csv.DictWriter(f,fieldnames=['backend','kind','run','request','metric','value','unit','status'])
+        writer.writeheader(); writer.writerows(rows)
+    print('followup summary:',len(rows),'rows; OFF-side TTFT/ITL are NA; independent memory latencies excluded')
+
 def main():
+    if '--followup' in sys.argv:
+        followup_summary(); return
     counter_sanity()
     old_audit()
     results={}

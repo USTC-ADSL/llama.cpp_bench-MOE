@@ -16,6 +16,17 @@
 using json = nlohmann::ordered_json;
 struct weight { std::string name; int64_t k, m, experts; std::vector<char> bytes; };
 
+json output_stats(const std::vector<float> & values) {
+    double lo=INFINITY, hi=-INFINITY, sq=0; size_t nonzero=0, nonfinite=0;
+    for (float v : values) {
+        if (!std::isfinite(v)) { ++nonfinite; continue; }
+        lo=std::min(lo,double(v)); hi=std::max(hi,double(v));
+        sq+=double(v)*v; nonzero+=v!=0;
+    }
+    return {{"min",lo},{"max",hi},{"rms",std::sqrt(sq/values.size())},
+            {"nonzero_fraction",double(nonzero)/values.size()},{"nonfinite_count",nonfinite}};
+}
+
 std::vector<float> compute(ggml_backend_t backend, const std::vector<weight> & ws,
                           int n, int used, bool broadcast) {
     auto ctx = ggml_init({16*1024*1024, nullptr, true});
@@ -111,6 +122,8 @@ int main(int argc, char ** argv) {
         try {
             auto ref=compute(cpu,ws,n,used,kind==0);
             auto got=compute(target,ws,n,used,kind==0);
+            result["reference_stats"]=output_stats(ref);
+            result["output_stats"]=output_stats(got);
             double sq=0, refsq=0, maxerr=0; bool finite=true;
             for (size_t i=0;i<ref.size();++i) {
                 finite &= std::isfinite(ref[i]) && std::isfinite(got[i]);

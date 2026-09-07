@@ -1,0 +1,119 @@
+{
+  "config": "cpu",
+  "mode": "perf",
+  "profile": false,
+  "pid": 27445,
+  "launcher": "cd /data/local/tmp/llama-e0-followup; echo $$ > /data/local/tmp/llama-e0-followup/cpu-perf-s1/pid; while [ ! -f /data/local/tmp/llama-e0-followup/cpu-perf-s1/go ]; do sleep 0.1; done; exec env LD_LIBRARY_PATH=/data/local/tmp/llama-e0-followup ADSP_LIBRARY_PATH=/data/local/tmp/llama-e0-followup GGML_HEXAGON_DEVICES=1 E0_MODE=perf E0_TRACE=/data/local/tmp/llama-e0-followup/cpu-perf-s1/events.jsonl E0_SAMPLE_CONFIG=/data/local/tmp/llama-e0-followup/cpu-perf-s1/sample ./llama-server -m /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf -c 512 -np 1 -t 4 -tb 4 -b 128 -ub 128 -ctk f16 -ctv f16 --load-mode mmap --no-warmup --cache-ram 0 --fit off --host 127.0.0.1 --port 18089 --device none -ngl 0 > /data/local/tmp/llama-e0-followup/cpu-perf-s1/server.log 2>&1",
+  "requests": [
+    {
+      "index": 0,
+      "sampling": 0,
+      "role": "warmup",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 4121.868,
+        "prompt_per_token_ms": 32.20209375,
+        "prompt_per_second": 31.05388139552261,
+        "predicted_n": 32,
+        "predicted_ms": 1402.7730000000001,
+        "predicted_per_token_ms": 45.25074193548387,
+        "predicted_per_second": 22.099085169161366
+      }
+    },
+    {
+      "index": 1,
+      "sampling": 1,
+      "role": "warmup",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 2334.696,
+        "prompt_per_token_ms": 18.2398125,
+        "prompt_per_second": 54.82512498415211,
+        "predicted_n": 32,
+        "predicted_ms": 1694.662,
+        "predicted_per_token_ms": 54.66651612903226,
+        "predicted_per_second": 18.29273330020972
+      }
+    },
+    {
+      "index": 2,
+      "sampling": 0,
+      "role": "paired",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 2320.5950000000003,
+        "prompt_per_token_ms": 18.129648437500002,
+        "prompt_per_second": 55.158267599473405,
+        "predicted_n": 32,
+        "predicted_ms": 1575.722,
+        "predicted_per_token_ms": 50.829741935483874,
+        "predicted_per_second": 19.67352109064924
+      }
+    },
+    {
+      "index": 3,
+      "sampling": 1,
+      "role": "paired",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 2341.051,
+        "prompt_per_token_ms": 18.2894609375,
+        "prompt_per_second": 54.676297099037996,
+        "predicted_n": 32,
+        "predicted_ms": 1360.056,
+        "predicted_per_token_ms": 43.87277419354839,
+        "predicted_per_second": 22.793179104389818
+      }
+    },
+    {
+      "index": 4,
+      "sampling": 1,
+      "role": "paired",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 2254.5660000000003,
+        "prompt_per_token_ms": 17.613796875000002,
+        "prompt_per_second": 56.77367617537033,
+        "predicted_n": 32,
+        "predicted_ms": 1383.979,
+        "predicted_per_token_ms": 44.64448387096774,
+        "predicted_per_second": 22.399183802644405
+      }
+    },
+    {
+      "index": 5,
+      "sampling": 0,
+      "role": "paired",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 2269.223,
+        "prompt_per_token_ms": 17.7283046875,
+        "prompt_per_second": 56.40697278319495,
+        "predicted_n": 32,
+        "predicted_ms": 1355.3890000000001,
+        "predicted_per_token_ms": 43.72222580645162,
+        "predicted_per_second": 22.87166267396297
+      }
+    }
+  ],
+  "load_wall_s": 17.558078048750758,
+  "status": "completed"
+}

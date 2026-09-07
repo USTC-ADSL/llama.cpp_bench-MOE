@@ -1,0 +1,12 @@
+run_e0.py: syntax PASS
+analyze.py: syntax PASS
+perf rejects detailed profile: PASS
+Android counter: minflt delta 4102, majflt delta 0; RUSAGE_SELF brackets PASS
+user file unchanged: AGENTS.md sha256=6c9fe38b4867c3693bdd48465ed6180bd50561f4b7a3b4faef6cb826850b490e
+user file unchanged: docs/Motivation_Exp/Exp1/Exp_require.md sha256=c1cfcc7173aeeed53535704837038cbf1a6f9055dacf2880dfb19d335d5f22c3
+all 125 device files match retained raw records/build artifacts: PASS
+libggml-base.so retained E0 initial sha256 4c66d1163827034851c0be9ac4498e12bdece8005d4ea0355e512560483c5de2; archived at build-android-opencl-hexagon/e0-followup-tested/libggml-base.so
+local rebuilt base library reports ggml_commit bbfd2b22e-dirty; device E0 base reports d46e70701; source ggml.c/header/CMake no changes between those commits; exact tested binary retained
+all performance observations used same deployed libraries; no post-hoc redeployment to reinterpret results
+device workload/watchdog absent; all 125 files verified before removal; only /data/local/tmp/llama-e0-followup removed; model and existing global caches preserved
+host logcat archive restricted to original test PID 26929: 104 raw lines; unrelated system logs omitted

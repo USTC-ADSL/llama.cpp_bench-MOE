@@ -1,0 +1,178 @@
+
+build-android-opencl-hexagon/ggml/src/ggml-hexagon/libggml-htp-v73.so:	file format elf32-hexagon
+
+Disassembly of section .text:
+
+0000a1c0 <hmx_matmul_worker_fn>:
+    a1c0:	0f 6a 00 00	00006a0f { 	immext(#0xa83c0)
+    a1c4:	02 4e 49 6a	6a494e02   	r2 = add(pc,##0xa83dc)
+    a1c8:	80 1c f4 eb	ebf41c80   	memd(r29+#-0x10) = r17:16; 	allocframe(#0x40) } 
+    a1cc:	35 2a 08 70	70082a35 { 	r16 = r0; 	memd(r29+#0x30) = r19:18 } 
+    a1d0:	03 c0 82 91	9182c003 { 	r3 = memw(r2+#0x0) } 
+    a1d4:	02 40 03 75	75034002 { 	p2 = cmp.eq(r3,#0x0)
+    a1d8:	23 40 03 b0	b0034023   	r3 = add(r3,#0x1)
+    a1dc:	18 5a 20 5c	5c205a18   	if (!p2.new) jump:t 0xa204 <hmx_matmul_worker_fn+0x44>
+    a1e0:	00 d4 a2 a1	a1a2d400   	memw(r2+#0x0) = r3.new } 
+    a1e4:	03 40 42 89	89424003 { 	r3 = p2
+    a1e8:	a1 4a 00 78	78004aa1   	r1 = #0x55
+    a1ec:	02 40 04 78	78044002   	r2 = #0x800
+    a1f0:	00 c0 90 91	9190c000   	r0 = memw(r16+#0x0) } 
+    a1f4:	d6 7e fe 5b	5bfe7ed6 { 	call 0x1fa0 <memset@plt>
+    a1f8:	11 c0 63 70	7063c011   	r17 = r3 } 
+    a1fc:	02 c0 71 70	7071c002 { 	r2 = r17 } 
+    a200:	02 c0 42 85	8542c002 { 	p2 = r2 } 
+    a204:	cd 40 90 91	919040cd { 	r13 = memw(r16+#0x18)
+    a208:	02 c0 90 91	9190c002   	r2 = memw(r16+#0x0) } 
+    a20c:	00 44 8d 75	758d4400 { 	p0 = cmp.gtu(r13,#0x20)
+    a210:	86 04 84 02	02840486   	r4 = memw(r16+#0x8); 	r6 = memw(r16+#0x10) } 
+    a214:	87 03 83 01	01830387 { 	r3 = memw(r16+#0x4); 	r7 = memw(r16+#0xc) } 
+    a218:	32 40 00 5c	5c004032 { 	if (p0) jump:nt 0xa27c <hmx_matmul_worker_fn+0xbc>
+    a21c:	a5 c0 90 91	9190c0a5   	r5 = memw(r16+#0x14) } 
+    a220:	fe c3 07 92 <unknown>
+    a224:	47 4b 0d 8c	8c0d4b47 { 	r7 = asl(r13,#0xb)
+    a228:	48 4a 0d 8c	8c0d4a48   	r8 = asl(r13,#0xa)
+    a22c:	0c c0 00 78	7800c00c   	r12 = #0x0 } 
+    a230:	00 41 26 60	60264100 { 	loop1(0xa240,r6)
+    a234:	49 4b 05 8c	8c054b49   	r9 = asl(r5,#0xb)
+    a238:	06 40 00 78	78004006   	r6 = #0x0
+    a23c:	ed ff e7 bf	bfe7ffed   	r13 = add(r7,#-0x1) } 
+    a240:	08 41 05 60	60054108 { 	loop0(0xa254,r5)
+    a244:	1c 48 06 ed	ed06481c   	r28 = mpyi(r6,r8)
+    a248:	0e c2 04 f5	f504c20e   	r15:14 = combine(r4,r2) } 
+    a24c:	3c 43 1c c4	c41c433c { 	r28 = addasl(r3,r28,#0x1)
+    a250:	0e c6 09 ef	ef09c60e   	r14 += mpyi(r9,r6) } 
+    a254:	13 c0 e0 a6 <unknown>
+    a258:	e2 4d 1c 92 <unknown>
+    a25c:	ef ed 0f 92 <unknown>
+    a260:	04 ec ee a6 <unknown>
+    a264:	0e 80 8e b0	b08e800e { 	r14 = add(r14,#0x800)
+    a268:	0f c7 0f f3	f30fc70f   	r15 = add(r15,r7) }  :endloop0
+    a26c:	26 40 06 b0	b0064026 { 	r6 = add(r6,#0x1)
+    a270:	00 80 00 7f	7f008000   	nop
+    a274:	00 c0 00 7f	7f00c000   	nop }  :endloop1
+    a278:	4c c0 00 58	5800c04c { 	jump 0xa310 <hmx_matmul_worker_fn+0x150> } 
+    a27c:	fe c3 07 92 <unknown>
+    a280:	80 45 cd 88	88cd4580 { 	r1:0 = bitsplit(r13,#0x5)
+    a284:	e7 43 0d 76	760d43e7   	r7 = and(r13,#0x1f)
+    a288:	00 44 00 00	00004400   	immext(#0x10000)
+    a28c:	08 c0 00 78	7800c008   	r8 = ##0x10000 } 
+    a290:	ff 7f ff 0f	0fff7fff { 	immext(#0xffffffc0)
+    a294:	ec 6b 27 de	de276bec   	r7 = add(##0xffffffff,asl(r7,#0xb))
+    a298:	49 4a 0d 8c	8c0d4a49   	r9 = asl(r13,#0xa)
+    a29c:	00 c0 07 75	7507c000   	p0 = cmp.eq(r7,#0x0) } 
+    a2a0:	4c 4b 05 8c	8c054b4c { 	r12 = asl(r5,#0xb)
+    a2a4:	0d 40 00 78	7800400d   	r13 = #0x0
+    a2a8:	0e 40 00 78	7800400e   	r14 = #0x0
+    a2ac:	ef ff e8 bf	bfe8ffef   	r15 = add(r8,#-0x1) } 
+    a2b0:	10 41 25 60	60254110 { 	loop1(0xa2c8,r5)
+    a2b4:	0a 49 0e ed	ed0e490a   	r10 = mpyi(r14,r9)
+    a2b8:	1c 40 62 70	7062401c   	r28 = r2
+    a2bc:	00 c0 64 70	7064c000   	r0 = r4 } 
+    a2c0:	2a 43 0a c4	c40a432a { 	r10 = addasl(r3,r10,#0x1)
+    a2c4:	1c ce 0c ef	ef0cce1c   	r28 += mpyi(r12,r14) } 
+    a2c8:	13 c0 e0 a6 <unknown>
+    a2cc:	18 40 01 60	60014018 { 	loop0(0xa2d8,r1)
+    a2d0:	0b 40 60 70	7060400b   	r11 = r0
+    a2d4:	11 c0 6a 70	706ac011   	r17 = r10 } 
+    a2d8:	e2 4f 11 92 <unknown>
+    a2dc:	ef ef 0b 92 <unknown>
+    a2e0:	11 88 11 f3	f3118811 { 	r17 = add(r17,r8)
+    a2e4:	0b c8 0b f3	f30bc80b   	r11 = add(r11,r8) }  :endloop0
+    a2e8:	06 c0 00 5c	5c00c006 { 	if (p0) jump:nt 0xa2f4 <hmx_matmul_worker_fn+0x134> } 
+    a2ec:	e2 47 11 92 <unknown>
+    a2f0:	ef e7 0b 92 <unknown>
+    a2f4:	04 ed fc a6 <unknown>
+    a2f8:	20 40 09 c4	c4094020 { 	r0 = addasl(r0,r9,#0x1)
+    a2fc:	1c 80 9c b0	b09c801c   	r28 = add(r28,#0x800)
+    a300:	00 c0 00 7f	7f00c000   	nop }  :endloop1
+    a304:	2e c0 0e b0	b00ec02e { 	r14 = add(r14,#0x1) } 
+    a308:	01 46 0e f2	f20e4601 { 	p1 = cmp.eq(r14,r6)
+    a30c:	d4 f9 ff 5c	5cfff9d4   	if (!p1.new) jump:t 0xa2b0 <hmx_matmul_worker_fn+0xf0> } 
+    a310:	08 42 00 5c	5c004208 { 	if (p2) jump:nt 0xa320 <hmx_matmul_worker_fn+0x160>
+    a314:	11 d0 90 41	4190d011   	if (p2) r17 = memw(r16+#0x0) } 
+    a318:	35 1e 3c 3e	3e3c1e35 { 	r17:16 = memd(r29+#0x38); 	r19:18 = memd(r29+#0x30) } 
+    a31c:	1e c0 1e 96	961ec01e { 	dealloc_return } 
+    a320:	05 6a 00 00	00006a05 { 	immext(#0xa8140)
+    a324:	12 c4 49 6a	6a49c412   	r18 = add(pc,##0xa8148) } 
+    a328:	fe 7f ff 0f	0fff7ffe { 	immext(#0xffffff80)
+    a32c:	02 47 92 91	91924702   	r2 = memw(r18+##-0x48)
+    a330:	84 c0 90 91	9190c084   	r4 = memw(r16+#0x10) } 
+    a334:	00 40 02 75	75024000 { 	p0 = cmp.eq(r2,#0x0)
+    a338:	86 06 85 05	05850686   	r5 = memw(r16+#0x14); 	r6 = memw(r16+#0x18) } 
+    a33c:	07 40 71 91	91714007 { 	r7 = memuh(r17+#0x0)
+    a340:	28 c0 71 91	9171c028   	r8 = memuh(r17+#0x2) } 
+    a344:	1e 40 00 5c	5c00401e { 	if (p0) jump:nt 0xa380 <hmx_matmul_worker_fn+0x1c0>
+    a348:	93 0b 92 2a	2a920b93   	r2 = memuh(r17+#0x4); 	r3 = memuh(r17+#0x6) } 
+    a34c:	90 69 00 00	00006990 { 	immext(#0xa6400)
+    a350:	01 45 49 6a	6a494501   	r1 = add(pc,##0xa640a)
+    a354:	52 08 63 e8	e8630852   	memw(r29+#0x18) = r3; 	memw(r29+#0x14) = r2 } 
+    a358:	92 69 00 00	00006992 { 	immext(#0xa6480)
+    a35c:	83 5b 49 6a	6a495b83   	r3 = add(pc,##0xa64b7)
+    a360:	60 40 00 78	78004060   	r0 = #0x3
+    a364:	02 e6 04 78	7804e602   	r2 = #0x930 } 
+    a368:	04 48 9d a1	a19d4804 { 	memw(r29+#0x10) = r8
+    a36c:	03 c7 9d a1	a19dc703   	memw(r29+#0xc) = r7 } 
+    a370:	15 08 26 e8	e8260815 { 	memw(r29+#0x8) = r6; 	memw(r29+#0x4) = r5 } 
+    a374:	9e 7d fe 5b	5bfe7d9e { 	call 0x1eb0 <HAP_debug_v2@plt>
+    a378:	00 c4 9d a1	a19dc400   	memw(r29+#0x0) = r4 } 
+    a37c:	14 c0 00 58	5800c014 { 	jump 0xa3a4 <hmx_matmul_worker_fn+0x1e4> } 
+    a380:	92 69 00 00	00006992 { 	immext(#0xa6480)
+    a384:	83 47 49 6a	6a494783   	r3 = add(pc,##0xa648f)
+    a388:	52 08 63 e8	e8630852   	memw(r29+#0x18) = r3; 	memw(r29+#0x14) = r2 } 
+    a38c:	02 66 04 78	78046602 { 	r2 = #0x930
+    a390:	04 48 9d a1	a19d4804   	memw(r29+#0x10) = r8
+    a394:	03 c7 9d a1	a19dc703   	memw(r29+#0xc) = r7 } 
+    a398:	15 08 26 e8	e8260815 { 	memw(r29+#0x8) = r6; 	memw(r29+#0x4) = r5 } 
+    a39c:	ba 47 00 5a	5a0047ba { 	call 0xb310 <_HAP_debug_v2.81>
+    a3a0:	00 c4 9d a1	a19dc400   	memw(r29+#0x0) = r4 } 
+    a3a4:	62 c0 90 91	9190c062 { 	r2 = memw(r16+#0xc) } 
+    a3a8:	fe c3 02 92 <unknown>
+    a3ac:	13 c0 e0 a6 <unknown>
+    a3b0:	c2 c0 90 91	9190c0c2 { 	r2 = memw(r16+#0x18) } 
+    a3b4:	26 40 02 10	10024026 { 	p0 = cmp.eq(r2,#0x0); if (p0.new) jump:nt 0xa400 <hmx_matmul_worker_fn+0x240>
+    a3b8:	23 c0 90 47	4790c023   	if (!p0.new) r3 = memw(r16+#0x4) } 
+    a3bc:	07 40 00 78	78004007 { 	r7 = #0x0
+    a3c0:	e2 7f 03 78	78037fe2   	r2 = #0x7ff
+    a3c4:	84 02 85 06	06850284   	r5 = memw(r16+#0x18); 	r4 = memw(r16+#0x8) } 
+    a3c8:	e8 7f e5 bf	bfe57fe8 { 	r8 = add(r5,#-0x1)
+    a3cc:	20 40 85 75	75854020   	p0 = cmp.gtu(r5,#0x1)
+    a3d0:	06 c7 04 f3	f304c706   	r6 = add(r4,r7) } 
+    a3d4:	00 41 08 60	60084100 { 	loop0(0xa3e4,r8)
+    a3d8:	05 47 03 f3	f3034705   	r5 = add(r3,r7)
+    a3dc:	07 40 87 b0	b0874007   	r7 = add(r7,#0x800)
+    a3e0:	12 c0 20 5c	5c20c012   	if (!p0) jump:nt 0xa3f8 <hmx_matmul_worker_fn+0x238> } 
+    a3e4:	e4 42 05 92 <unknown>
+    a3e8:	ef e2 06 92 <unknown>
+    a3ec:	05 87 03 f3	f3038705 { 	r5 = add(r3,r7)
+    a3f0:	06 47 04 f3	f3044706   	r6 = add(r4,r7)
+    a3f4:	07 c0 87 b0	b087c007   	r7 = add(r7,#0x800) }  :endloop0
+    a3f8:	e4 42 05 92 <unknown>
+    a3fc:	ef e2 06 92 <unknown>
+    a400:	03 40 00 78	78004003 { 	r3 = #0x0
+    a404:	fe 7f ff 0f	0fff7ffe   	immext(#0xffffff80)
+    a408:	02 47 92 91	91924702   	r2 = memw(r18+##-0x48)
+    a40c:	04 c0 90 91	9190c004   	r4 = memw(r16+#0x0) } 
+    a410:	00 c0 02 75	7502c000 { 	p0 = cmp.eq(r2,#0x0) } 
+    a414:	04 e3 e4 a6 <unknown>
+    a418:	95 09 94 28	28940995 { 	r4 = memuh(r17+#0x0); 	r5 = memuh(r17+#0x2) } 
+    a41c:	1a 40 00 5c	5c00401a { 	if (p0) jump:nt 0xa450 <hmx_matmul_worker_fn+0x290>
+    a420:	93 0b 92 2a	2a920b93   	r2 = memuh(r17+#0x4); 	r3 = memuh(r17+#0x6) } 
+    a424:	8c 69 00 00	0000698c { 	immext(#0xa6300)
+    a428:	01 59 49 6a	6a495901   	r1 = add(pc,##0xa6332)
+    a42c:	22 08 33 e8	e8330822   	memw(r29+#0xc) = r3; 	memw(r29+#0x8) = r2 } 
+    a430:	90 69 00 00	00006990 { 	immext(#0xa6400)
+    a434:	03 4b 49 6a	6a494b03   	r3 = add(pc,##0xa6416)
+    a438:	60 40 00 78	78004060   	r0 = #0x3
+    a43c:	02 e7 04 78	7804e702   	r2 = #0x938 } 
+    a440:	38 7d fe 5b	5bfe7d38 { 	call 0x1eb0 <HAP_debug_v2@plt>
+    a444:	04 08 15 e8	e8150804   	memw(r29+#0x4) = r5; 	memw(r29+#0x0) = r4 } 
+    a448:	35 1e 3c 3e	3e3c1e35 { 	r17:16 = memd(r29+#0x38); 	r19:18 = memd(r29+#0x30) } 
+    a44c:	1e c0 1e 96	961ec01e { 	dealloc_return } 
+    a450:	8f 69 00 00	0000698f { 	immext(#0xa63c0)
+    a454:	03 5b 49 6a	6a495b03   	r3 = add(pc,##0xa63f6)
+    a458:	22 08 33 e8	e8330822   	memw(r29+#0xc) = r3; 	memw(r29+#0x8) = r2 } 
+    a45c:	5a 47 00 5a	5a00475a { 	call 0xb310 <_HAP_debug_v2.81>
+    a460:	02 67 04 78	78046702   	r2 = #0x938
+    a464:	04 08 15 e8	e8150804   	memw(r29+#0x4) = r5; 	memw(r29+#0x0) = r4 } 
+    a468:	35 1e 3c 3e	3e3c1e35 { 	r17:16 = memd(r29+#0x38); 	r19:18 = memd(r29+#0x30) } 
+    a46c:	1e c0 1e 96	961ec01e { 	dealloc_return } 

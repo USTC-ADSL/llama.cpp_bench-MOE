@@ -1,0 +1,93 @@
+diff --git a/ggml/src/ggml-hexagon/htp/hmx-queue.c b/ggml/src/ggml-hexagon/htp/hmx-queue.c
+index c369d3dd2..7977e1685 100644
+--- a/ggml/src/ggml-hexagon/htp/hmx-queue.c
++++ b/ggml/src/ggml-hexagon/htp/hmx-queue.c
+@@ -17,7 +17,8 @@
+ static inline void hmx_lock(hmx_queue_t q)
+ {
+     if (!q->hmx_locked) {
+-        HAP_compute_res_hmx_lock(q->hap_rctx);
++        int e0_lock_rc = HAP_compute_res_hmx_lock(q->hap_rctx);
++        FARF(ERROR, "E0-HMX lock rctx=%u rc=%d", q->hap_rctx, e0_lock_rc);
+         q->hmx_locked = true;
+     }
+ }
+diff --git a/ggml/src/ggml-hexagon/htp/matmul-ops.c b/ggml/src/ggml-hexagon/htp/matmul-ops.c
+index 2a87dd19e..76b75ca4d 100644
+--- a/ggml/src/ggml-hexagon/htp/matmul-ops.c
++++ b/ggml/src/ggml-hexagon/htp/matmul-ops.c
+@@ -2343,7 +2343,24 @@ typedef struct {
+ static void hmx_matmul_worker_fn(void * data) {
+     hmx_matmul_job_t * job = (hmx_matmul_job_t *) data;
+     FARF(HIGH, "hmx-mm-job: n_row_tiles %u n_col_tiles %u n_dot_tiles %u", job->n_row_tiles, job->n_col_tiles, job->n_dot_tiles);
++    static int e0_calls = 0;
++    const bool e0_first = e0_calls++ == 0;
++    if (e0_first) memset(job->output, 0x55, 2048);
+     core_dot_chunk_fp16(job->output, job->activation, job->weight, job->scales, job->n_row_tiles, job->n_col_tiles, job->n_dot_tiles);
++    if (e0_first) {
++        volatile uint16_t *p = (volatile uint16_t *)job->output;
++        FARF(ERROR,"E0-HMX worker completed r=%u c=%u k=%u raw=%x,%x,%x,%x",job->n_row_tiles,job->n_col_tiles,job->n_dot_tiles,p[0],p[1],p[2],p[3]);
++        asm volatile(HMX_SET_BIAS("%0") :: "r"(job->scales));
++        asm volatile(HMX_CLRACC_F16());
++        for (uint32_t i=0; i<job->n_dot_tiles; ++i) {
++            const __fp16 *a=job->activation+i*1024, *w=job->weight+i*1024;
++            asm volatile(HMX_LOAD_MPY_F16("%1","%2","%0") :: "r"(2047),"r"(a),"r"(w));
++        }
++        asm volatile(HMX_STORE_AFTER_F16("%0","%1") :: "r"(job->output),"r"(0) : "memory");
++        FARF(ERROR,"E0-HMX single-tile-load diagnostic raw=%x,%x,%x,%x",p[0],p[1],p[2],p[3]);
++        asm volatile("mxmem2(%0) = bias\n" :: "r"(job->output) : "memory");
++        FARF(ERROR,"E0-HMX bias readback addr=%p a=%p w=%p raw=%x,%x,%x,%x tail=%x,%x",job->scales,job->activation,job->weight,p[0],p[1],p[2],p[3],p[64],p[65]);
++    }
+ }
+ 
+ static inline void hmx_matmul_job_init(hmx_matmul_job_t * job,
+@@ -3203,6 +3220,17 @@ static void transfer_output_chunk_scattered_threaded(
+     }
+ }
+ 
++// Temporary bounded E0 diagnosis; removed after the numerical root cause is verified.
++#define E0_HMX_DIAGNOSTICS 1
++#if E0_HMX_DIAGNOSTICS
++static void e0_hmx_half_stats(const char *stage, const void *data, size_t count) {
++    const volatile uint16_t *p = data;
++    unsigned nonzero = 0;
++    for (size_t i=0; i<count; ++i) nonzero += (p[i] & 0x7fff) != 0;
++    FARF(ERROR, "E0-HMX %s count=%u nonzero=%u first=%x,%x,%x,%x", stage,
++         (unsigned)count, nonzero, p[0], p[1], p[2], p[3]);
++}
++#endif
+ static int hmx_mm_id_2d_f32(struct htp_context *ctx,
+                                          float *restrict dst,
+                                          const float *activation,
+@@ -3310,6 +3338,12 @@ static int hmx_mm_id_2d_f32(struct htp_context *ctx,
+         transfer_activation_chunk_gathered_threaded(
+             ctx, vtcm_f16_act, activation, (int) mr, (int) n_rows, k,
+             matrix_rows, cur_a, mapping_stride, ne11, act_nb1, act_nb2, cne1, n_threads, k_valid);
++#if E0_HMX_DIAGNOSTICS
++        if (cur_a==0 && mr==0) {
++            FARF(ERROR, "E0-HMX m=%d k=%d n=%d rows=%u stride=%d ids=%u,%u", m,k,n,(unsigned)n_rows,mapping_stride,matrix_rows[0].i1,matrix_rows[0].i2);
++            e0_hmx_half_stats("activation",vtcm_f16_act,n_rows*k);
++        }
++#endif
+ 
+         // A0: Pre-fetch the first weight chunk (nc = 0)
+         if (n > 0) {
+@@ -3343,9 +3377,18 @@ static int hmx_mm_id_2d_f32(struct htp_context *ctx,
+             }
+ 
+             // C: HMX Compute (Queue-based)
++#if E0_HMX_DIAGNOSTICS
++            if (cur_a==0 && mr==0 && nc==0) {
++                e0_hmx_half_stats("weight",vtcm_scratch0,n_cols*k);
++                e0_hmx_half_stats("scales",vtcm_scales,128);
++            }
++#endif
+             hmx_matmul_job_init(&job, vtcm_output, vtcm_f16_act, vtcm_scratch0, vtcm_scales, n_row_tiles, n_col_tiles, k / HTP_MM_HMX_TILE_N_ROWS);
+             hmx_queue_push(ctx->hmx_queue, hmx_queue_make_desc(hmx_matmul_worker_fn, &job));
+             hmx_queue_pop(ctx->hmx_queue);
++#if E0_HMX_DIAGNOSTICS
++            if (cur_a==0 && mr==0 && nc==0) e0_hmx_half_stats("output",vtcm_output,n_rows*n_cols);
++#endif
+ 
+             // D: Output Store
+             transfer_output_chunk_scattered_threaded(
