@@ -41,11 +41,11 @@ def save(rows):
             previous=list(old) if upgrade else []
         if upgrade:
             with OUT.open('w',newline='') as f:
-                writer=csv.DictWriter(f,fieldnames=FIELDS);writer.writeheader()
+                writer=csv.DictWriter(f,fieldnames=FIELDS,lineterminator='\n');writer.writeheader()
                 for row in previous:row['run_id']='initial_probe';writer.writerow(row)
     new = not OUT.exists()
     with OUT.open('a',newline='') as f:
-        writer=csv.DictWriter(f,fieldnames=FIELDS)
+        writer=csv.DictWriter(f,fieldnames=FIELDS,lineterminator='\n')
         if new: writer.writeheader()
         for row in rows: row.setdefault('run_id',RUN_ID)
         writer.writerows(rows)
