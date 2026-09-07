@@ -208,7 +208,7 @@ def followup_summary():
         ok=load(out/'runs/opencl-perf-regression/status.json')['status']=='completed'
         row('opencl','verdict','opencl-perf-regression','','public_timing_code_regression',int(ok),'boolean','PASS' if ok else 'BLOCKED')
     with (out/'summary.csv').open('w') as f:
-        writer=csv.DictWriter(f,fieldnames=['backend','kind','run','request','metric','value','unit','status'])
+        writer=csv.DictWriter(f,fieldnames=['backend','kind','run','request','metric','value','unit','status'],lineterminator='\n')
         writer.writeheader(); writer.writerows(rows)
     print('followup summary:',len(rows),'rows; OFF-side TTFT/ITL are NA; independent memory latencies excluded')
 
