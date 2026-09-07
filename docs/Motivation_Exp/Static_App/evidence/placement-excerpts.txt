@@ -1,0 +1,47 @@
+placement-B0-2: request begins line 9090
+9117: 0.15.533.518 D node # 24 (FLASH_ATTN):              node_24 (   1M) [  CPU         ] use=1,c=1:0.15.533.518 D  Qcur-0 (view) (permu (   1M) [  CPU         ]0.15.533.518 D  cache_k_l0 (view) (p (   1M) [  CPU         ]0.15.533.518 D  cache_v_l0 (view) (p (   1M) [  CPU         ]0.15.533.519 D      attn_inp_kq_mask (  64K) [  CPU         ]0.15.533.519 D 
+9126: 0.15.533.531 D node # 37 (MUL_MAT_ID):       ffn_moe_gate-0 (   2M) [  CPU         ] use=1,c=1:0.15.533.531 D  blk.0.ffn_gate_exps. (  92M) [  CPU         ]0.15.533.532 D  ffn_norm-0 (reshaped (   1M) [  CPU         ]0.15.533.532 D        ffn_moe_topk-0 (  29K) [  CPU         ]0.15.533.532 D 
+9555: 0.15.537.287 D node #675 (MUL_MAT_ID):      ffn_moe_gate-11 (   2M) [  CPU         ] use=1,c=1:0.15.537.287 D  blk.11.ffn_gate_exps (  92M) [  CPU         ]0.15.537.287 D  ffn_norm-11 (reshape (   1M) [  CPU         ]0.15.537.288 D       ffn_moe_topk-11 (  29K) [  CPU         ]0.15.537.288 D 
+9594: 0.15.537.336 D node #733 (MUL_MAT_ID):      ffn_moe_gate-12 (   2M) [  CPU         ] use=1,c=1:0.15.537.337 D  blk.12.ffn_gate_exps (  92M) [  CPU         ]0.15.537.337 D  ffn_norm-12 (reshape (   1M) [  CPU         ]0.15.537.337 D       ffn_moe_topk-12 (  29K) [  CPU         ]0.15.537.337 D 
+9137: 0.15.533.547 D node # 52 (   MUL_MAT):          ffn_shexp-0 (   1M) [  CPU         ] use=1,c=1:0.15.533.547 D  blk.0.ffn_down_shexp (   6M) [  CPU         ]0.15.533.547 D          ffn_swiglu-0 (   2M) [  CPU         ]0.15.533.548 D 
+9123: 0.15.533.528 D node # 31 (  SOFT_MAX):      ffn_moe_probs-0 (  30K) [  CPU         ] use=2,c=1:0.15.533.528 D      ffn_moe_logits-0 (  30K) [  CPU         ]0.15.533.528 D 
+9122: 0.15.533.526 D node # 30 (   MUL_MAT):     ffn_moe_logits-0 (  30K) [  CPU         ] use=1,c=1:0.15.533.527 D  blk.0.ffn_gate_inp.w ( 480K) [  CPU         ]0.15.533.527 D            ffn_norm-0 (   1M) [  CPU         ]0.15.533.527 D 
+routed_override_count=0
+0.02.636.184 I load_tensors:   CPU_Mapped model buffer size =  7424.21 MiB
+0.02.636.185 I load_tensors:   CPU_REPACK model buffer size =  7587.43 MiB
+placement-B2-1: request begins line 9655
+9684: 0.11.231.104 D node # 24 (FLASH_ATTN):              node_24 (   1M) [ HTP0         ] use=1,c=1:0.11.231.105 D  Qcur-0 (view) (permu (   1M) [ HTP0         ]0.11.231.106 D  cache_k_l0 (view) (p (   1M) [ HTP0         ]0.11.231.107 D  cache_v_l0 (view) (p (   1M) [ HTP0         ]0.11.231.108 D  HTP0#attn_inp_kq_mas (  64K) [ NULL         ]0.11.231.109 D 
+9697: 0.11.231.146 D node # 37 (MUL_MAT_ID):       ffn_moe_gate-0 (   2M) [ HTP0         ] use=1,c=1:0.11.231.147 D  blk.0.ffn_gate_exps. (  92M) [ HTP0         ]0.11.231.148 D  ffn_norm-0 (reshaped (   1M) [ HTP0         ]0.11.231.149 D        ffn_moe_topk-0 (  29K) [ HTP0         ]0.11.231.150 D 
+10170: 0.11.241.546 D node #675 (MUL_MAT_ID):      ffn_moe_gate-11 (   2M) [ HTP0         ] use=1,c=1:0.11.241.547 D  blk.11.ffn_gate_exps (  92M) [ HTP0         ]0.11.241.548 D  ffn_norm-11 (reshape (   1M) [ HTP0         ]0.11.241.549 D       ffn_moe_topk-11 (  29K) [ HTP0         ]0.11.241.550 D 
+10213: 0.11.241.918 D node #733 (MUL_MAT_ID):      ffn_moe_gate-12 (   2M) [ HTP0         ] use=1,c=1:0.11.241.919 D  blk.12.ffn_gate_exps (  92M) [ HTP0         ]0.11.241.920 D  ffn_norm-12 (reshape (   1M) [ HTP0         ]0.11.241.921 D       ffn_moe_topk-12 (  29K) [ HTP0         ]0.11.241.922 D 
+9708: 0.11.231.195 D node # 52 (   MUL_MAT):          ffn_shexp-0 (   1M) [ HTP0         ] use=1,c=1:0.11.231.196 D  blk.0.ffn_down_shexp (   6M) [ HTP0         ]0.11.231.197 D          ffn_swiglu-0 (   2M) [ HTP0         ]0.11.231.197 D 
+9692: 0.11.231.132 D node # 31 (  SOFT_MAX):      ffn_moe_probs-0 (  30K) [  CPU         ] use=2,c=1:0.11.231.133 D  CPU#ffn_moe_logits-0 (  30K) [ NULL         ]0.11.231.134 D 
+9689: 0.11.231.126 D node # 30 (   MUL_MAT):     ffn_moe_logits-0 (  30K) [ HTP0         ] use=1,c=1:0.11.231.127 D  blk.0.ffn_gate_inp.w ( 480K) [ HTP0         ]0.11.231.128 D            ffn_norm-0 (   1M) [ HTP0         ]0.11.231.128 D 
+routed_override_count=0
+0.03.560.660 I load_tensors:   CPU_Mapped model buffer size =   166.92 MiB
+0.03.560.661 I load_tensors:   CPU_REPACK model buffer size =   243.43 MiB
+0.03.560.665 I load_tensors:         HTP0 model buffer size =  7356.29 MiB
+placement-B4-1: request begins line 10568
+10597: 0.16.817.518 D node # 24 (FLASH_ATTN):              node_24 (   1M) [ HTP0         ] use=1,c=1:0.16.817.518 D  Qcur-0 (view) (permu (   1M) [ HTP0         ]0.16.817.519 D  cache_k_l0 (view) (p (   1M) [ HTP0         ]0.16.817.519 D  cache_v_l0 (view) (p (   1M) [ HTP0         ]0.16.817.519 D  HTP0#attn_inp_kq_mas (  64K) [ NULL         ]0.16.817.520 D 
+10612: 0.16.817.532 D node # 37 (MUL_MAT_ID):       ffn_moe_gate-0 (   2M) [  CPU         ] use=1,c=1:0.16.817.532 D  blk.0.ffn_gate_exps. (  92M) [  CPU         ]0.16.817.532 D  CPU#ffn_norm-0 (resh (   1M) [ NULL         ]0.16.817.533 D  CPU#ffn_moe_topk-0#0 (  29K) [ NULL         ]0.16.817.533 D 
+11129: 0.16.826.844 D node #675 (MUL_MAT_ID):      ffn_moe_gate-11 (   2M) [  CPU         ] use=1,c=1:0.16.826.844 D  blk.11.ffn_gate_exps (  92M) [  CPU         ]0.16.826.844 D  CPU#ffn_norm-11 (res (   1M) [ NULL         ]0.16.826.845 D  CPU#ffn_moe_topk-11# (  29K) [ NULL         ]0.16.826.845 D 
+11176: 0.16.829.172 D node #733 (MUL_MAT_ID):      ffn_moe_gate-12 (   2M) [  CPU         ] use=1,c=1:0.16.829.172 D  blk.12.ffn_gate_exps (  92M) [  CPU         ]0.16.829.173 D  CPU#ffn_norm-12 (res (   1M) [ NULL         ]0.16.829.173 D  CPU#ffn_moe_topk-12# (  29K) [ NULL         ]0.16.829.173 D 
+10625: 0.16.817.547 D node # 52 (   MUL_MAT):          ffn_shexp-0 (   1M) [ HTP0         ] use=1,c=1:0.16.817.547 D  blk.0.ffn_down_shexp (   6M) [ HTP0         ]0.16.817.548 D          ffn_swiglu-0 (   2M) [ HTP0         ]0.16.817.548 D 
+10605: 0.16.817.527 D node # 31 (  SOFT_MAX):      ffn_moe_probs-0 (  30K) [  CPU         ] use=2,c=1:0.16.817.527 D  CPU#ffn_moe_logits-0 (  30K) [ NULL         ]0.16.817.527 D 
+10602: 0.16.817.525 D node # 30 (   MUL_MAT):     ffn_moe_logits-0 (  30K) [ HTP0         ] use=1,c=1:0.16.817.525 D  blk.0.ffn_gate_inp.w ( 480K) [ HTP0         ]0.16.817.525 D            ffn_norm-0 (   1M) [ HTP0         ]0.16.817.525 D 
+routed_override_count=72
+0.02.917.636 I load_tensors:   CPU_Mapped model buffer size =   166.92 MiB
+0.02.917.637 I load_tensors:   CPU_REPACK model buffer size =  6925.93 MiB
+0.02.917.638 I load_tensors:         HTP0 model buffer size =   673.79 MiB
+placement-B6-1: request begins line 10112
+10141: 0.14.686.989 D node # 24 (FLASH_ATTN):              node_24 (   1M) [ HTP0         ] use=1,c=1:0.14.686.990 D  Qcur-0 (view) (permu (   1M) [ HTP0         ]0.14.686.991 D  cache_k_l0 (view) (p (   1M) [ HTP0         ]0.14.686.992 D  cache_v_l0 (view) (p (   1M) [ HTP0         ]0.14.686.993 D  HTP0#attn_inp_kq_mas (  64K) [ NULL         ]0.14.686.994 D 
+10156: 0.14.687.036 D node # 37 (MUL_MAT_ID):       ffn_moe_gate-0 (   2M) [  CPU         ] use=1,c=1:0.14.687.037 D  blk.0.ffn_gate_exps. (  92M) [  CPU         ]0.14.687.038 D  CPU#ffn_norm-0 (resh (   1M) [ NULL         ]0.14.687.039 D  CPU#ffn_moe_topk-0#0 (  29K) [ NULL         ]0.14.687.039 D 
+10673: 0.14.692.045 D node #675 (MUL_MAT_ID):      ffn_moe_gate-11 (   2M) [  CPU         ] use=1,c=1:0.14.692.045 D  blk.11.ffn_gate_exps (  92M) [  CPU         ]0.14.692.046 D  CPU#ffn_norm-11 (res (   1M) [ NULL         ]0.14.692.046 D  CPU#ffn_moe_topk-11# (  29K) [ NULL         ]0.14.692.047 D 
+10718: 0.14.692.979 D node #733 (MUL_MAT_ID):      ffn_moe_gate-12 (   2M) [ HTP0         ] use=1,c=1:0.14.692.980 D  blk.12.ffn_gate_exps (  92M) [ HTP0         ]0.14.692.980 D  ffn_norm-12 (reshape (   1M) [ HTP0         ]0.14.692.981 D       ffn_moe_topk-12 (  29K) [ HTP0         ]0.14.692.981 D 
+10169: 0.14.687.087 D node # 52 (   MUL_MAT):          ffn_shexp-0 (   1M) [ HTP0         ] use=1,c=1:0.14.687.088 D  blk.0.ffn_down_shexp (   6M) [ HTP0         ]0.14.687.089 D          ffn_swiglu-0 (   2M) [ HTP0         ]0.14.687.089 D 
+10149: 0.14.687.018 D node # 31 (  SOFT_MAX):      ffn_moe_probs-0 (  30K) [  CPU         ] use=2,c=1:0.14.687.019 D  CPU#ffn_moe_logits-0 (  30K) [ NULL         ]0.14.687.020 D 
+10146: 0.14.687.011 D node # 30 (   MUL_MAT):     ffn_moe_logits-0 (  30K) [ HTP0         ] use=1,c=1:0.14.687.012 D  blk.0.ffn_gate_inp.w ( 480K) [ HTP0         ]0.14.687.013 D            ffn_norm-0 (   1M) [ HTP0         ]0.14.687.014 D 
+routed_override_count=36
+0.03.176.539 I load_tensors:   CPU_Mapped model buffer size =   166.92 MiB
+0.03.176.540 I load_tensors:   CPU_REPACK model buffer size =  3584.68 MiB
+0.03.176.540 I load_tensors:         HTP0 model buffer size =  4015.04 MiB

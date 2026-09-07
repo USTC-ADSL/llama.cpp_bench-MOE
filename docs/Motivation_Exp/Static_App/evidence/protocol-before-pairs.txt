@@ -1,0 +1,21 @@
+# 无配额静态配置与 App 共存
+
+状态：进行中。基线 HEAD `6ca8fa7ef`；K80 Pro `fd8657d6`，复用原 GGUF 与有效 Android 构建。OpenCL 因同机 upstream Q4_0 数值失败保持 BLOCKED。
+
+- [x] 阅读 E0/E0B，确认设备在线、模型大小、参数源码语义。
+- [x] 当前 binary help、部署与执行位置核验。
+- [x] B0/B2/B4/B6 各三次独立启动初筛。
+- [ ] 选出最多两个合理配置，App 配对条件各三次。
+- [ ] 汇总、证据核验、设备清理。
+
+预先固定：512 实际输入 token，128 目标输出，context2048，slot1，F16 KV，t/tb4，b512/ub128，mmap，cache_prompt=false，cache-ram0，temperature0/seed1234/ignore_eos。使用已验证等价的 budget-off 路径，不设人工配额或匿名压力，不改全机策略。E0 perf 仅缓冲 server token-ready 时间戳；watchdog 仅安全停止（MemAvailable<1GiB 持续3秒、thermal≥SEVERE、load300秒/request180秒）。不清 page cache；独立启动不意味着冷文件。
+
+初筛按重复交错配置顺序，每次一个固定真实 prompt，无预热请求。以请求成功、既有数值验收与本次输出合理性为门槛，按 TTFT + server decode 耗时排序选最多两个配置；保留 p95 ITL。放置诊断单独进行，不用详细 profiler，不混入性能排名。
+
+候选 App 为已安装浏览器本地页面与计算器固定算式；任务不得涉及私人内容。正式配对前确认 UI 可控及版本，固定打开顺序、状态和切回动作。每个条件独立重复3次，AB/BA/AB 顺序。判定：无新增用户可感知影响为 pass；额外 reload 或切回延迟相对配对对照同时增加≥500ms且≥50%、仍可继续为 degraded；受保护状态丢失、任务中断或10秒内无法恢复为 fail。PID变化或kill本身不定fail。H1-R 在此操作化为合理静态配置造成可复现用户可感知退化；同类新增影响至少2/3次才称可复现。样本小且任务轻，阴性结果仅限本场景。
+
+运行入口：`python3 tests/run-static-coexist.py`（默认 dry-run）；证据在本目录 `evidence/`，最终逐run表为 `summary.csv`。
+
+正式共存前冻结：12/12 初筛请求成功且128个输出 token 全相同。按上述指标中位数 B2=10.743s、B6=12.483s、B4=15.923s、B0=17.546s，选择 B2 一个最佳配置。每个条件 force-stop 后重新打开两 App（不清数据）；浏览器打开手机 loopback 的图书馆文章并准备固定未提交草稿，随后计算器输入 `12345×67`，回到 Home。App 均在模型加载前已后台。no-LLM 等待15秒（B2加载中位数14.809s取整），LLM按实际加载完成进入请求；请求/对照窗口起点后1秒切回计算器检查算式并按等号，6秒切回浏览器并验证草稿。返回使用 `am start -W --activity-reorder-to-front -n <component>`，不发送新的URL，不刷新页面。浏览器记录两次 rAF 后的页面可见事件及 native loopback 接收时间，计算器记录 framework WaitTime，并用真实 UI/截图确认状态；二者不是相同渲染时间定义。3次配对顺序 noLLM/LLM、LLM/noLLM、noLLM/LLM。保留 UID、adj、退出原因及事件log；初筛性能和带UI取证共存性能分开。
+
+预演缺陷已排除：远端Windows ADB server使reverse无法连接本Linux服务，改为手机本地2600-byte页面服务；普通shell不能注入触摸，使用既有root入口，无权限/策略更改。首次引导取消，计算器拒绝联网提示后可用。首个预演 MAIN/LAUNCHER 返回触发浏览器广告，不能用其页面可见事件判用户已恢复；改为既有任务reorder后第二个无LLM预演成功，截图与草稿验证一致。两次预演不进入正式配对统计。

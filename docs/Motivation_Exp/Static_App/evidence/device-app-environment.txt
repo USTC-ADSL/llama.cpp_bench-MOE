@@ -1,0 +1,21 @@
+$ getprop ro.product.model; getprop ro.build.version.release; uname -r
+24122RKC7C
+16
+6.6.77-android15-8-gca30f3b4bef6-abogki440974771-4k
+$ pm list packages -U com.android.browser; pm list packages -U com.miui.calculator
+package:com.android.browser uid:10134
+package:com.miui.calculator uid:10281
+$ dumpsys package com.android.browser | grep -E "versionName=|versionCode="; dumpsys package com.miui.calculator | grep -E "versionName=|versionCode="
+    versionCode=202210100 minSdk=28 targetSdk=35
+    versionName=20.22.1010623
+    versionCode=200201100 minSdk=28 targetSdk=34
+    versionName=20.2.110122
+    versionCode=316000021 minSdk=29 targetSdk=35
+    versionName=16.2.1
+$ cat /dev/memcg/mimd/critical2/memory.limit_in_bytes; cat /dev/memcg/mimd/memory.limit_in_bytes; cat /dev/memcg/memory.limit_in_bytes
+9223372036854771712
+9223372036854771712
+9223372036854771712
+$ dumpsys power | grep -E "mWakefulness=|mScreenOffTimeoutSetting="
+  mWakefulness=Awake
+  mScreenOffTimeoutSetting=10800000
