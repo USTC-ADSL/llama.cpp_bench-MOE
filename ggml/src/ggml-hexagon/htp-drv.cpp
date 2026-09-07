@@ -1,4 +1,5 @@
 #include <filesystem>
+#include <climits>
 #include <set>
 #include <sstream>
 #include <string>
@@ -23,6 +24,7 @@
 #pragma clang diagnostic ignored "-Wnested-anon-types"
 
 #include "ggml-impl.h"
+#include "ggml-accel-budget.h"
 #include "htp-drv.h"
 #include "libdl.h"
 
@@ -107,20 +109,43 @@ remote_system_request_pfn_t   remote_system_request_pfn   = nullptr;
 //
 
 void * rpcmem_alloc(int heapid, uint32_t flags, int size) {
-    return rpcmem_alloc_pfn(heapid, flags, size);
+    if (!ggml_budget_mode()) return rpcmem_alloc_pfn(heapid, flags, size);
+    if (size <= 0) return nullptr;
+    const auto ticket = ggml_budget_reserve(GGML_BUDGET_RPCMEM, ggml_budget_round(size > 0 ? size : 0, 4096),
+                                            GGML_BUDGET_DEFAULT, "rpcmem_alloc");
+    if (!ticket) return nullptr;
+    void * ptr = rpcmem_alloc_pfn(heapid, flags, size);
+    if (ptr && !ggml_budget_commit(ticket, reinterpret_cast<uintptr_t>(ptr))) {
+        rpcmem_free_pfn(ptr); ggml_budget_cancel(ticket); return nullptr;
+    }
+    else if (!ptr) ggml_budget_cancel(ticket);
+    return ptr;
 }
 
 void * rpcmem_alloc2(int heapid, uint32_t flags, size_t size) {
     if (rpcmem_alloc2_pfn) {
-        return rpcmem_alloc2_pfn(heapid, flags, size);
+        if (!ggml_budget_mode()) return rpcmem_alloc2_pfn(heapid, flags, size);
+        const auto ticket = ggml_budget_reserve(GGML_BUDGET_RPCMEM, ggml_budget_round(size, 4096),
+                                                GGML_BUDGET_DEFAULT, "rpcmem_alloc2");
+        if (!ticket) return nullptr;
+        void * ptr = rpcmem_alloc2_pfn(heapid, flags, size);
+        if (ptr && !ggml_budget_commit(ticket, reinterpret_cast<uintptr_t>(ptr))) {
+            rpcmem_free_pfn(ptr); ggml_budget_cancel(ticket); return nullptr;
+        }
+        else if (!ptr) ggml_budget_cancel(ticket);
+        return ptr;
     } else {
         GGML_LOG_INFO("ggml-hex: rpcmem_alloc2 not found, falling back to rpcmem_alloc\n");
-        return rpcmem_alloc_pfn(heapid, flags, size);
+        // In budget modes, never reserve one size and pass a truncated int to the driver.
+        if (ggml_budget_mode() && size > INT_MAX) return nullptr;
+        return rpcmem_alloc(heapid, flags, size);
     }
 }
 
 void rpcmem_free(void * po) {
-    return rpcmem_free_pfn(po);
+    const auto ticket = ggml_budget_mode() ? ggml_budget_find(GGML_BUDGET_RPCMEM, reinterpret_cast<uintptr_t>(po)) : 0;
+    rpcmem_free_pfn(po);
+    if (ticket) ggml_budget_release(ticket);
 }
 
 int rpcmem_to_fd(void * po) {

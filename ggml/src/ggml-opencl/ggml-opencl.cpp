@@ -32,6 +32,7 @@ typedef const void * (*get_adreno_bin_kernel_func_t)(
 );
 
 #include <CL/cl.h>
+#include "ggml-opencl-budget.h"
 
 #include <inttypes.h>
 #include <string.h>

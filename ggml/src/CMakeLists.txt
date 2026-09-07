@@ -200,6 +200,7 @@ add_library(ggml-base
             ggml.cpp
             ggml-alloc.c
             ggml-backend.cpp
+            ggml-accel-budget.cpp
             ggml-backend-meta.cpp
             ggml-opt.cpp
             ggml-threading.cpp
@@ -216,6 +217,7 @@ set_target_properties(ggml-base PROPERTIES
 configure_file(ggml-version.h.in ${CMAKE_CURRENT_BINARY_DIR}/ggml-version.h @ONLY)
 
 target_include_directories(ggml-base PRIVATE . ${CMAKE_CURRENT_BINARY_DIR})
+target_link_libraries(ggml-base PRIVATE ${CMAKE_DL_LIBS})
 if (GGML_BACKEND_DL)
     target_compile_definitions(ggml-base PUBLIC GGML_BACKEND_DL)
 endif()
