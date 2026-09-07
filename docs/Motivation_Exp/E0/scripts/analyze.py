@@ -22,7 +22,9 @@ def parse_stat(line):
 def counter_sanity():
     synthetic='432 (space ) name (x)) S 1 2 3 4 5 6 701 801 901 1001 11'
     assert parse_stat(synthetic)=={'minflt':701,'majflt':901}
-    events=lines(OUT/'raw/counter.jsonl')
+    evidence=OUT/'raw/counter-final.jsonl'
+    if not evidence.exists(): evidence=OUT/'raw/counter.jsonl'
+    events=lines(evidence)
     checks=[]
     for e in events:
         for k in ['minflt','majflt']:
@@ -30,7 +32,7 @@ def counter_sanity():
     dmin=events[-1]['proc_minflt']-events[0]['proc_minflt']
     dmaj=events[-1]['proc_majflt']-events[0]['proc_majflt']
     assert all(checks) and dmin>=4096 and dmaj==0
-    result=dict(status='PASS',device_comm='E0 ) comm (x)',synthetic_parser=True,
+    result=dict(status='PASS',device_comm='E0 ) comm (x)',synthetic_parser=True,evidence=str(evidence.relative_to(OUT)),
                 bracket_checks=checks,minflt_delta=dmin,majflt_delta=dmaj,
                 meaning='16 MiB anonymous first writes: minor faults, not UFS reads')
     save(OUT/'counter-sanity.json',result)
@@ -65,12 +67,17 @@ def analyze_run(folder):
         brackets={k:all(e['ru_'+k+'_before']<=e['proc_'+k]<=e['ru_'+k+'_after'] for e in group if 'proc_'+k in e) for k in ['minflt','majflt']}
         prefill=[e for e in group if e['event']=='prefill_end']
         n_prefill=sum(e['value'] for e in prefill)
-        r=dict(request=rid,sampling=start['sample'],status='PASS' if len(ready)==32 and n_prefill==128 and all(brackets.values()) else 'BLOCKED',
+        response_file=folder/f'response-{rid-1:02d}.json'
+        response=load(response_file) if response_file.exists() else {}
+        token_match=[e['value'] for e in ready]==response.get('tokens')
+        cache_clear=response.get('timings',{}).get('cache_n')==0
+        r=dict(request=rid,sampling=start['sample'],status='PASS' if len(ready)==32 and n_prefill==128 and all(brackets.values()) and token_match and cache_clear else 'BLOCKED',
                generated=len(ready),prefill_tokens=n_prefill,ttft_ms=(ready[0]['t_us']-start['t_us'])/1000,
                itl_ms=intervals,p95_itl_ms=quantile(intervals,.95),
                minflt_delta=end['proc_minflt']-start['proc_minflt'],majflt_delta=end['proc_majflt']-start['proc_majflt'],
                read_bytes_delta=end['read_bytes']-start['read_bytes'] if min(end['read_bytes'],start['read_bytes'])>=0 else None,
                rusage_bracket_checks=brackets,
+               token_ids_match_response=token_match,cache_n_zero=cache_clear,
                rusage_minflt_delta=end['ru_minflt_before']-start['ru_minflt_before'],
                rusage_majflt_delta=end['ru_majflt_before']-start['ru_majflt_before'],
                boundary_pss_sample_peak_kb=max([e['pss_kb'] for e in group if 'pss_kb' in e]+[e['pss_kb'] for e in async_pss if e['request']==rid],default=-1))

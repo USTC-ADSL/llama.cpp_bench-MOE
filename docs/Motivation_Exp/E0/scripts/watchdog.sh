@@ -48,6 +48,10 @@ while kill -0 "$pid" 2>/dev/null; do
         exit 0
     fi
     read finish rest < /proc/uptime
-    delay=$(awk -v start="$uptime" -v finish="$finish" 'BEGIN {d=1-(finish-start); print d>0?d:0}')
-    sleep "$delay"
+    delay=$(awk -v start="$uptime" -v finish="$finish" 'BEGIN {d=1-(finish-start); print (d>0?d:0)}') || {
+        echo watchdog_interval_error > "$dir/stop_reason"; kill -TERM "$pid"; exit 1;
+    }
+    sleep "$delay" || {
+        echo watchdog_sleep_error > "$dir/stop_reason"; kill -TERM "$pid"; exit 1;
+    }
 done

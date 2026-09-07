@@ -1,0 +1,28 @@
+{
+  "config": "opencl",
+  "profile": true,
+  "pid": 19675,
+  "launcher": "cd /data/local/tmp/llama-e0-20260907; echo $$ > /data/local/tmp/llama-e0-20260907/opencl-profile/pid; while [ ! -f /data/local/tmp/llama-e0-20260907/opencl-profile/go ]; do sleep 0.1; done; exec env LD_LIBRARY_PATH=/data/local/tmp/llama-e0-20260907 ADSP_LIBRARY_PATH=/data/local/tmp/llama-e0-20260907 GGML_HEXAGON_DEVICES=1 E0_TRACE=/data/local/tmp/llama-e0-20260907/opencl-profile/events.jsonl E0_SAMPLE_CONFIG=/data/local/tmp/llama-e0-20260907/opencl-profile/sample GGML_SCHED_DEBUG=2 GGML_HEXAGON_VERBOSE=1 GGML_HEXAGON_PROFILE=1 ./llama-server -m /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf -c 512 -np 1 -t 4 -tb 4 -b 128 -ub 128 -ctk f16 -ctv f16 --load-mode mmap --no-warmup --cache-ram 0 --fit off --host 127.0.0.1 --port 18089 --device GPUOpenCL -ngl 99 --log-verbosity 5 > /data/local/tmp/llama-e0-20260907/opencl-profile/server.log 2>&1",
+  "requests": [
+    {
+      "index": 0,
+      "sampling": 1,
+      "role": "diagnostic",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 1901.508,
+        "prompt_per_token_ms": 14.85553125,
+        "prompt_per_second": 67.31499420459971,
+        "predicted_n": 32,
+        "predicted_ms": 1736.209,
+        "predicted_per_token_ms": 56.00674193548387,
+        "predicted_per_second": 17.8549932640598
+      }
+    }
+  ],
+  "load_wall_s": 19.82069379463792,
+  "status": "completed"
+}

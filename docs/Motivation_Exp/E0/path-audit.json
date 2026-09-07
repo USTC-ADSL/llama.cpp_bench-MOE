@@ -1,0 +1,186 @@
+{
+  "cpu-profile": {
+    "request_start_line": 9088,
+    "scheduler_scope": "assignments after actual 128-token request starts; excludes load-time graph reservation; graph reuse means node counts are not operation invocation counts",
+    "scheduler_node_counts": {
+      "attention": {
+        "CPU": 432
+      },
+      "routed_experts": {
+        "CPU": 144
+      },
+      "shared_experts": {
+        "CPU": 192
+      }
+    },
+    "examples": [
+      {
+        "group": "attention",
+        "backend": "CPU",
+        "line": 9104,
+        "text": "0.20.895.964 D node #  2 (       MUL):          attn_norm-0 (   1M) [  CPU         ] use=3,c=1:0.20.895.978 D                norm-0 (   1M) [  CPU         ]0.20.895.980 D  blk.0.attn_norm.weig (   8K) [  CPU         ]0.20.895.981 D "
+      },
+      {
+        "group": "routed_experts",
+        "backend": "CPU",
+        "line": 9124,
+        "text": "0.20.896.130 D node # 37 (MUL_MAT_ID):       ffn_moe_gate-0 (   2M) [  CPU         ] use=1,c=1:0.20.896.132 D  blk.0.ffn_gate_exps. (  92M) [  CPU         ]0.20.896.133 D  ffn_norm-0 (reshaped (   1M) [  CPU         ]0.20.896.134 D        ffn_moe_topk-0 (  29K) [  CPU         ]0.20.896.135 D "
+      },
+      {
+        "group": "shared_experts",
+        "backend": "CPU",
+        "line": 9135,
+        "text": "0.20.896.217 D node # 52 (   MUL_MAT):          ffn_shexp-0 (   1M) [  CPU         ] use=1,c=1:0.20.896.229 D  blk.0.ffn_down_shexp (   6M) [  CPU         ]0.20.896.231 D          ffn_swiglu-0 (   2M) [  CPU         ]0.20.896.231 D "
+      }
+    ],
+    "htp_kernel_completed_profile_counts": {},
+    "htp_profile_scope": "actual 128-token request only; excludes startup sequence-removal probe",
+    "htp_group_kernel_completed_profile_counts": {},
+    "htp_MUL_MAT_ID_NX_fusion_log_hits": 0,
+    "htp_MUL_MAT_ID_NX_completed_profile_count": 0,
+    "htp_MUL_MAT_ID_NX_lifetime_completed_profile_count": 0,
+    "htp_mapping_peak_bytes": null,
+    "mapping_definition": "peak sum of distinct simultaneously logged HTP mappings; virtual mapped capacity, not total RAM or exclusive physical ownership",
+    "model_buffers": [
+      "0.03.432.565 I load_tensors:   CPU_Mapped model buffer size =  7424.21 MiB",
+      "0.03.432.567 I load_tensors:   CPU_REPACK model buffer size =  7587.43 MiB"
+    ],
+    "kv_evidence": [
+      "0.13.485.229 I llama_context: n_batch               = 128",
+      "0.13.485.230 I llama_context: n_ubatch              = 128",
+      "0.13.600.494 I llama_kv_cache:        CPU KV buffer size =    96.00 MiB",
+      "0.13.626.452 I llama_kv_cache: size =   96.00 MiB (   512 cells,  24 layers,  1/1 seqs), K (f16):   48.00 MiB, V (f16):   48.00 MiB"
+    ],
+    "source_log": "runs/cpu-profile/server.log"
+  },
+  "opencl-profile": {
+    "request_start_line": 8898,
+    "scheduler_scope": "assignments after actual 128-token request starts; excludes load-time graph reservation; graph reuse means node counts are not operation invocation counts",
+    "scheduler_node_counts": {
+      "attention": {
+        "OpenC": 432
+      },
+      "routed_experts": {
+        "OpenC": 144
+      },
+      "shared_experts": {
+        "OpenC": 192
+      }
+    },
+    "examples": [
+      {
+        "group": "attention",
+        "backend": "OpenC",
+        "line": 8916,
+        "text": "0.22.407.785 D node #  2 (       MUL):          attn_norm-0 (   1M) [OpenC         ] use=3,c=1:0.22.407.786 D                norm-0 (   1M) [OpenC         ]0.22.407.787 D  blk.0.attn_norm.weig (   8K) [OpenC         ]0.22.407.788 D "
+      },
+      {
+        "group": "routed_experts",
+        "backend": "OpenC",
+        "line": 8936,
+        "text": "0.22.407.877 D node # 37 (MUL_MAT_ID):       ffn_moe_gate-0 (   2M) [OpenC         ] use=1,c=1:0.22.407.878 D  blk.0.ffn_gate_exps. (  92M) [OpenC         ]0.22.407.879 D  ffn_norm-0 (reshaped (   1M) [OpenC         ]0.22.407.880 D        ffn_moe_topk-0 (  29K) [OpenC         ]0.22.407.880 D "
+      },
+      {
+        "group": "shared_experts",
+        "backend": "OpenC",
+        "line": 8947,
+        "text": "0.22.407.927 D node # 52 (   MUL_MAT):          ffn_shexp-0 (   1M) [OpenC         ] use=1,c=1:0.22.407.928 D  blk.0.ffn_down_shexp (   6M) [OpenC         ]0.22.407.929 D          ffn_swiglu-0 (   2M) [OpenC         ]0.22.407.929 D "
+      }
+    ],
+    "htp_kernel_completed_profile_counts": {},
+    "htp_profile_scope": "actual 128-token request only; excludes startup sequence-removal probe",
+    "htp_group_kernel_completed_profile_counts": {},
+    "htp_MUL_MAT_ID_NX_fusion_log_hits": 0,
+    "htp_MUL_MAT_ID_NX_completed_profile_count": 0,
+    "htp_MUL_MAT_ID_NX_lifetime_completed_profile_count": 0,
+    "htp_mapping_peak_bytes": null,
+    "mapping_definition": "peak sum of distinct simultaneously logged HTP mappings; virtual mapped capacity, not total RAM or exclusive physical ownership",
+    "model_buffers": [
+      "0.04.390.035 I load_tensors:   CPU_Mapped model buffer size =   166.92 MiB",
+      "0.04.390.036 I load_tensors:       OpenCL model buffer size =  7599.83 MiB"
+    ],
+    "kv_evidence": [
+      "0.14.369.721 I llama_context: n_batch               = 128",
+      "0.14.369.722 I llama_context: n_ubatch              = 128",
+      "0.14.381.365 I llama_kv_cache:     OpenCL KV buffer size =    96.00 MiB",
+      "0.14.389.328 I llama_kv_cache: size =   96.00 MiB (   512 cells,  24 layers,  1/1 seqs), K (f16):   48.00 MiB, V (f16):   48.00 MiB"
+    ],
+    "source_log": "runs/opencl-profile/server.log"
+  },
+  "htp-profile": {
+    "request_start_line": 38050,
+    "scheduler_scope": "assignments after actual 128-token request starts; excludes load-time graph reservation; graph reuse means node counts are not operation invocation counts",
+    "scheduler_node_counts": {
+      "attention": {
+        "HTP0": 432
+      },
+      "routed_experts": {
+        "HTP0": 144
+      },
+      "shared_experts": {
+        "HTP0": 192
+      }
+    },
+    "examples": [
+      {
+        "group": "attention",
+        "backend": "HTP0",
+        "line": 40844,
+        "text": "0.20.922.705 D node #  2 (       MUL):          attn_norm-0 (   1M) [ HTP0         ] use=3,c=1:0.20.922.707 D                norm-0 (   1M) [ HTP0         ]0.20.922.709 D  blk.0.attn_norm.weig (   8K) [ HTP0         ]0.20.922.709 D "
+      },
+      {
+        "group": "routed_experts",
+        "backend": "HTP0",
+        "line": 40868,
+        "text": "0.20.922.832 D node # 37 (MUL_MAT_ID):       ffn_moe_gate-0 (   2M) [ HTP0         ] use=1,c=1:0.20.922.834 D  blk.0.ffn_gate_exps. (  92M) [ HTP0         ]0.20.922.835 D  ffn_norm-0 (reshaped (   1M) [ HTP0         ]0.20.922.836 D        ffn_moe_topk-0 (  29K) [ HTP0         ]0.20.922.837 D "
+      },
+      {
+        "group": "shared_experts",
+        "backend": "HTP0",
+        "line": 40879,
+        "text": "0.20.922.896 D node # 52 (   MUL_MAT):          ffn_shexp-0 (   1M) [ HTP0         ] use=1,c=1:0.20.922.897 D  blk.0.ffn_down_shexp (   6M) [ HTP0         ]0.20.922.898 D          ffn_swiglu-0 (   2M) [ HTP0         ]0.20.922.899 D "
+      }
+    ],
+    "htp_kernel_completed_profile_counts": {
+      "hmx-tiled": 140,
+      "hmx-pipe": 24,
+      "hvx-tiled": 6004
+    },
+    "htp_profile_scope": "actual 128-token request only; excludes startup sequence-removal probe",
+    "htp_group_kernel_completed_profile_counts": {
+      "attention": {
+        "hmx-tiled": 48,
+        "hmx-pipe": 24,
+        "hvx-tiled": 1488
+      },
+      "other": {
+        "hvx-tiled": 768
+      },
+      "routed_experts": {
+        "hmx-tiled": 46,
+        "hvx-tiled": 1490
+      },
+      "shared_experts": {
+        "hmx-tiled": 46,
+        "hvx-tiled": 2258
+      }
+    },
+    "htp_MUL_MAT_ID_NX_fusion_log_hits": 768,
+    "htp_MUL_MAT_ID_NX_completed_profile_count": 768,
+    "htp_MUL_MAT_ID_NX_lifetime_completed_profile_count": 792,
+    "htp_mapping_peak_bytes": 7871344640,
+    "mapping_definition": "peak sum of distinct simultaneously logged HTP mappings; virtual mapped capacity, not total RAM or exclusive physical ownership",
+    "model_buffers": [
+      "0.04.943.007 I load_tensors:   CPU_Mapped model buffer size =   166.92 MiB",
+      "0.04.943.030 I load_tensors:   CPU_REPACK model buffer size =   243.43 MiB",
+      "0.04.943.031 I load_tensors:         HTP0 model buffer size =  7356.29 MiB"
+    ],
+    "kv_evidence": [
+      "0.15.697.488 I llama_context: n_batch               = 128",
+      "0.15.697.489 I llama_context: n_ubatch              = 128",
+      "0.15.720.582 I llama_kv_cache:       HTP0 KV buffer size =    96.00 MiB",
+      "0.15.726.472 I llama_kv_cache: size =   96.00 MiB (   512 cells,  24 layers,  1/1 seqs), K (f16):   48.00 MiB, V (f16):   48.00 MiB"
+    ],
+    "source_log": "runs/htp-profile/server.log"
+  }
+}

@@ -1,0 +1,244 @@
+{
+  "config": "cpu",
+  "profile": false,
+  "pid": 12404,
+  "launcher": "cd /data/local/tmp/llama-e0-20260907; echo $$ > /data/local/tmp/llama-e0-20260907/cpu-validated/pid; while [ ! -f /data/local/tmp/llama-e0-20260907/cpu-validated/go ]; do sleep 0.1; done; exec env LD_LIBRARY_PATH=/data/local/tmp/llama-e0-20260907 ADSP_LIBRARY_PATH=/data/local/tmp/llama-e0-20260907 GGML_HEXAGON_DEVICES=1 E0_TRACE=/data/local/tmp/llama-e0-20260907/cpu-validated/events.jsonl E0_SAMPLE_CONFIG=/data/local/tmp/llama-e0-20260907/cpu-validated/sample ./llama-server -m /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf -c 512 -np 1 -t 4 -tb 4 -b 128 -ub 128 -ctk f16 -ctv f16 --load-mode mmap --no-warmup --cache-ram 0 --fit off --host 127.0.0.1 --port 18089 --device none -ngl 0 > /data/local/tmp/llama-e0-20260907/cpu-validated/server.log 2>&1",
+  "requests": [
+    {
+      "index": 0,
+      "sampling": 1,
+      "role": "diagnostic",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 5335.424,
+        "prompt_per_token_ms": 41.683,
+        "prompt_per_second": 23.990595686490895,
+        "predicted_n": 32,
+        "predicted_ms": 1561.82,
+        "predicted_per_token_ms": 50.38129032258065,
+        "predicted_per_second": 19.848638127313006
+      }
+    },
+    {
+      "index": 1,
+      "sampling": 0,
+      "role": "paired",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 2314.131,
+        "prompt_per_token_ms": 18.0791484375,
+        "prompt_per_second": 55.31233970764836,
+        "predicted_n": 32,
+        "predicted_ms": 1552.47,
+        "predicted_per_token_ms": 50.07967741935484,
+        "predicted_per_second": 19.968179739383046
+      }
+    },
+    {
+      "index": 2,
+      "sampling": 1,
+      "role": "paired",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 2293.469,
+        "prompt_per_token_ms": 17.9177265625,
+        "prompt_per_second": 55.81065189893563,
+        "predicted_n": 32,
+        "predicted_ms": 1503.863,
+        "predicted_per_token_ms": 48.511709677419354,
+        "predicted_per_second": 20.61357982741779
+      }
+    },
+    {
+      "index": 3,
+      "sampling": 1,
+      "role": "paired",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 2449.872,
+        "prompt_per_token_ms": 19.139625,
+        "prompt_per_second": 52.247627631157876,
+        "predicted_n": 32,
+        "predicted_ms": 1410.76,
+        "predicted_per_token_ms": 45.50838709677419,
+        "predicted_per_second": 21.97397147636735
+      }
+    },
+    {
+      "index": 4,
+      "sampling": 0,
+      "role": "paired",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 2325.022,
+        "prompt_per_token_ms": 18.164234375,
+        "prompt_per_second": 55.05324250695262,
+        "predicted_n": 32,
+        "predicted_ms": 1697.991,
+        "predicted_per_token_ms": 54.77390322580645,
+        "predicted_per_second": 18.256869441593036
+      }
+    },
+    {
+      "index": 5,
+      "sampling": 0,
+      "role": "paired",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 2312.53,
+        "prompt_per_token_ms": 18.066640625,
+        "prompt_per_second": 55.35063328908165,
+        "predicted_n": 32,
+        "predicted_ms": 1508.558,
+        "predicted_per_token_ms": 48.66316129032258,
+        "predicted_per_second": 20.54942534526349
+      }
+    },
+    {
+      "index": 6,
+      "sampling": 1,
+      "role": "paired",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 2300.255,
+        "prompt_per_token_ms": 17.9707421875,
+        "prompt_per_second": 55.64600446472239,
+        "predicted_n": 32,
+        "predicted_ms": 1427.867,
+        "predicted_per_token_ms": 46.06022580645161,
+        "predicted_per_second": 21.710705548906166
+      }
+    },
+    {
+      "index": 7,
+      "sampling": 1,
+      "role": "paired",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 2229.591,
+        "prompt_per_token_ms": 17.4186796875,
+        "prompt_per_second": 57.40963252901541,
+        "predicted_n": 32,
+        "predicted_ms": 1392.967,
+        "predicted_per_token_ms": 44.93441935483871,
+        "predicted_per_second": 22.254654991826797
+      }
+    },
+    {
+      "index": 8,
+      "sampling": 0,
+      "role": "paired",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 2317.665,
+        "prompt_per_token_ms": 18.1067578125,
+        "prompt_per_second": 55.2279988695519,
+        "predicted_n": 32,
+        "predicted_ms": 1691.742,
+        "predicted_per_token_ms": 54.57232258064516,
+        "predicted_per_second": 18.324307134302984
+      }
+    },
+    {
+      "index": 9,
+      "sampling": 0,
+      "role": "paired",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 2336.214,
+        "prompt_per_token_ms": 18.251671875,
+        "prompt_per_second": 54.78950130424696,
+        "predicted_n": 32,
+        "predicted_ms": 1651.637,
+        "predicted_per_token_ms": 53.278612903225806,
+        "predicted_per_second": 18.769257409467095
+      }
+    },
+    {
+      "index": 10,
+      "sampling": 1,
+      "role": "paired",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 2262.2690000000002,
+        "prompt_per_token_ms": 17.673976562500002,
+        "prompt_per_second": 56.58036245910632,
+        "predicted_n": 32,
+        "predicted_ms": 1420.164,
+        "predicted_per_token_ms": 45.81174193548387,
+        "predicted_per_second": 21.828464881520727
+      }
+    },
+    {
+      "index": 11,
+      "sampling": 1,
+      "role": "paired",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 2246.437,
+        "prompt_per_token_ms": 17.5502890625,
+        "prompt_per_second": 56.97911848852205,
+        "predicted_n": 32,
+        "predicted_ms": 1428.933,
+        "predicted_per_token_ms": 46.09461290322581,
+        "predicted_per_second": 21.694509119741795
+      }
+    },
+    {
+      "index": 12,
+      "sampling": 0,
+      "role": "paired",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 2329.796,
+        "prompt_per_token_ms": 18.20153125,
+        "prompt_per_second": 54.94043255289305,
+        "predicted_n": 32,
+        "predicted_ms": 1592.349,
+        "predicted_per_token_ms": 51.366096774193544,
+        "predicted_per_second": 19.468093991957794
+      }
+    }
+  ],
+  "load_wall_s": 21.188925759866834,
+  "status": "completed"
+}

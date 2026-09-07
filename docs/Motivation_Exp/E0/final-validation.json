@@ -1,0 +1,23 @@
+{
+  "time_utc": "2026-09-07T10:34:33.119132+00:00",
+  "status": "PASS",
+  "scope": "artifact consistency and final E0 bookkeeping; overall experimental acceptance remains BLOCKED",
+  "checks": [
+    "JSON and JSONL parse",
+    "Python script AST parse",
+    "sh -n watchdog.sh",
+    "git diff --check restricted to source/scripts/handoff (raw bytes retained)",
+    "36 final requests: 128 prefill / 32 generated / token IDs / cache_n0 / RUSAGE bracket",
+    "OpenCL 4 PASS; HTP 2 PASS and 2 expected preserved FAIL",
+    "HTP request-only completed NX count 768",
+    "68 lossless gzip archives match original SHA256",
+    "181 device files matched local evidence/artifacts before cleanup",
+    "device test directory removed; model and existing cache retained",
+    "original user file SHA256 unchanged"
+  ],
+  "analysis_command": [
+    "python3",
+    "docs/Motivation_Exp/E0/scripts/analyze.py"
+  ],
+  "device_cleanup": "cleanup.json"
+}

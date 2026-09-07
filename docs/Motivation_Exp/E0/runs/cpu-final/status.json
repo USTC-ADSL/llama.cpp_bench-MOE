@@ -1,0 +1,9 @@
+{
+  "config": "cpu",
+  "profile": false,
+  "pid": 7568,
+  "launcher": "cd /data/local/tmp/llama-e0-20260907; echo $$ > /data/local/tmp/llama-e0-20260907/cpu-final/pid; while [ ! -f /data/local/tmp/llama-e0-20260907/cpu-final/go ]; do sleep 0.1; done; exec env LD_LIBRARY_PATH=/data/local/tmp/llama-e0-20260907 ADSP_LIBRARY_PATH=/data/local/tmp/llama-e0-20260907 GGML_HEXAGON_DEVICES=1 E0_TRACE=/data/local/tmp/llama-e0-20260907/cpu-final/events.jsonl E0_SAMPLE_CONFIG=/data/local/tmp/llama-e0-20260907/cpu-final/sample ./llama-server -m /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf -c 512 -np 1 -t 4 -tb 4 -b 128 -ub 128 -ctk f16 -ctv f16 --load-mode mmap --no-warmup --cache-ram 0 --fit off --host 127.0.0.1 --port 18089 --device none -ngl 0 > /data/local/tmp/llama-e0-20260907/cpu-final/server.log 2>&1",
+  "requests": [],
+  "status": "BLOCKED",
+  "reason": "safety_low_memavailable"
+}

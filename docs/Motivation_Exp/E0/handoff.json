@@ -1,0 +1,168 @@
+{
+  "schema_version": 1,
+  "task": "E0 Android MoE environment and measurement validation",
+  "state": "completed_and_stopped",
+  "repo": "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE",
+  "source_base": "d46e707010c74d2c1f8d3654fdd64abe7cfaacf2",
+  "checkpoint": "3b17c9d2b815ce638e09d7aa59fd4058e56588ac",
+  "device": {
+    "serial": "3B661501LA000000",
+    "model": "PLU110",
+    "soc": "SM8735",
+    "hexagon": "v73"
+  },
+  "model_path": "/data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf",
+  "build_path": "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/build-android-opencl-hexagon",
+  "device_test_path": "/data/local/tmp/llama-e0-20260907",
+  "result_path": "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/docs/Motivation_Exp/E0",
+  "scripts": [
+    "scripts/analyze.py",
+    "scripts/counter_sanity.cpp",
+    "scripts/environment.py",
+    "scripts/expert_sanity.cpp",
+    "scripts/path_audit.py",
+    "scripts/run_e0.py",
+    "scripts/watchdog.sh"
+  ],
+  "instrumentation": [
+    "common/e0-measure.h",
+    "common/common.cpp",
+    "tools/server/server-http.cpp",
+    "tools/server/server-context.cpp"
+  ],
+  "fixed_test": {
+    "input_tokens": 128,
+    "target_generated": 32,
+    "context": 512,
+    "threads": 4,
+    "threads_batch": 4,
+    "batch": 128,
+    "ubatch": 128,
+    "slots": 1,
+    "kv": "F16",
+    "cache_prompt": false,
+    "warmup": false
+  },
+  "passed": [
+    "configured physical Android device and original GGUF identity",
+    "cross build and local device help/backend enumeration",
+    "fixed 128-token input and 32 ready/output IDs for all 33 primary requests",
+    "request KV/prefix reset and cache_n=0",
+    "process stat comm parser and RUSAGE_SELF bracket sanity",
+    "load/context/prefill/decode/token-ready boundary records",
+    "separate scheduler and completed HTP operator profiling",
+    "OpenCL original Q4_0 n1/n128 numerical cases",
+    "HTP HVX n1 numerical cases",
+    "OpenCL six-pair and HTP three-pair sampling checks",
+    "watchdog one-second cadence sanity and exclusive process cleanup",
+    "all 181 device files matched retained local evidence/artifacts before cleanup"
+  ],
+  "blocked_or_pending": [
+    {
+      "id": "cpu_sampling_observer_effect",
+      "status": "BLOCKED",
+      "reason": "after async PSS optimization and six paired repetitions, p95 ITL changes by -11.522% (95% CI -15.670% to -7.349%); TTFT CI also marginally exceeds +/-3%; lower measured time does not establish low perturbation",
+      "evidence": "runs/cpu-validated/analysis.json"
+    },
+    {
+      "id": "htp_hmx_numeric_n128",
+      "status": "BLOCKED",
+      "reason": "same original Q4_0 gate/up and down weights, fixed activations/routes, n128 HMX RRMSE=1 exceeds 0.02; normalized max errors 5.3586 and 22.5671 exceed 0.10",
+      "evidence": "runs/numeric-htp-verified/numeric.jsonl"
+    }
+  ],
+  "invalid_trials": {
+    "numeric-opencl": "watchdog started late",
+    "numeric-opencl-guarded": "watchdog started late",
+    "numeric-htp": "watchdog started late",
+    "cpu-paired": "synchronous PSS overhead about 25%",
+    "cpu-async": "Android awk interval bug caused oversampling",
+    "cpu-async-confirm": "oversampling; manually stopped",
+    "cpu-final": "safety_low_memavailable during overlap with previous cleanup; not OOM",
+    "numeric-htp-final": "Android interval bug caused oversampling; numerical evidence retained, superseded by numeric-htp-verified for guarded acceptance"
+  },
+  "active_run": null,
+  "next": "Stop. No experiment or HMX/CPU optimization is authorized as a continuation of E0. Read REPORT.md and verdict.json if a new task is requested.",
+  "constraints": [
+    "no system policy changes",
+    "no cache eviction",
+    "no dependency upgrades",
+    "no model requantization",
+    "do not loosen numerical tolerance",
+    "do not repair HMX or implement caching/scheduling in E0",
+    "preserve user AGENTS.md and Exp1/Exp_require.md"
+  ],
+  "verdict": "BLOCKED",
+  "result_version": "Git commit containing this final handoff.json; no self-referential commit hash",
+  "model_sha256": "8b704c763230935a096c9c810765c8a5483f1724c83e34e253704138ca040473",
+  "artifacts": "artifacts.json",
+  "manifest": "manifest.json",
+  "code_patch": "raw/instrumentation.patch",
+  "report": "REPORT.md",
+  "cleanup": "cleanup.json",
+  "device_test_path_state": "removed after all 181 files matched local copies/build artifacts",
+  "script_hashes": {
+    "scripts/analyze.py": "a231cdda66e0c0cb919327acd9ab46135196e1abed86e542bf8bb4eb07a2bdd5",
+    "scripts/counter_sanity.cpp": "3c3322a36aabaaf21bd18d02c9f426495a8dc90500a06154f87d25144d4b83c0",
+    "scripts/environment.py": "f3b84bcfd0833fbdd8d57578b08412f2323dbbf50999f2c04b92e306a4ba2ca1",
+    "scripts/expert_sanity.cpp": "6d4014ddf6acd684da02270e5bf7307610cae7138d1ea2589e09d69774d826eb",
+    "scripts/path_audit.py": "f32e1c38e379f2ff9f87abd9640a552f123a6fdd60c8df7406b026c8655367fe",
+    "scripts/run_e0.py": "f7828c4a27bec9b068c6a5a838e283388e5c6458bf08956b151205cf29d8af24",
+    "scripts/watchdog.sh": "d11c0c72cc287b5e7b943579cd1be8b9f27326ae25b9ad9b169eb29e1878aa53"
+  },
+  "primary_runs": {
+    "cpu": {
+      "status": "BLOCKED",
+      "primary_run": "cpu-validated",
+      "requests": 13,
+      "sampling_pairs": 6
+    },
+    "opencl": {
+      "status": "PASS",
+      "primary_run": "opencl-confirm",
+      "requests": 13,
+      "sampling_pairs": 6
+    },
+    "htp": {
+      "status": "BLOCKED",
+      "primary_run": "htp-validated",
+      "requests": 7,
+      "sampling_pairs": 3
+    }
+  },
+  "numeric_runs": [
+    "numeric-opencl-verified",
+    "numeric-htp-verified"
+  ],
+  "profile_runs": [
+    "cpu-profile",
+    "opencl-profile",
+    "htp-profile"
+  ],
+  "startup_probe": {
+    "tokens": 2,
+    "runs_with_no_warmup": true,
+    "clears_kv_before_and_after": true,
+    "request_scope": false,
+    "htp_actual_128_token_request_start_line": 38050
+  },
+  "unknown": {
+    "ion_rpcmem_cgroup_coverage": null,
+    "exclusive_driver_physical_ram": null,
+    "private_e0_cgroup_peak": null,
+    "physical_ufs_bus_bytes": null,
+    "total_ram_sum": null
+  },
+  "build": {
+    "path": "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/build-android-opencl-hexagon",
+    "ndk": "/home/miog/pzw/download/pzw/HeteroCompute/android-ndk-r27d",
+    "hexagon_tools": "/mnt/sda1/pzw/HeteroCompute/hexagon-sdk-temp/tools/HEXAGON_Tools/19.0.04",
+    "commands": "commands.jsonl and raw/build-*.log.gz",
+    "ui": "LLAMA_USE_PREBUILT_UI=OFF, LLAMA_BUILD_UI=OFF (local CMake cache)"
+  },
+  "raw_log_archive": "raw-log-archive.json",
+  "user_files_preserved": {
+    "AGENTS.md": true,
+    "docs/Motivation_Exp/Exp1/Exp_require.md": true
+  }
+}

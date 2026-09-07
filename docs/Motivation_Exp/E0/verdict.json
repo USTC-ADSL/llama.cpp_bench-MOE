@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "task": "E0",
+  "status": "BLOCKED",
+  "work_state": "completed_and_stopped",
+  "meaning": "PASS means only measured tools and available paths within this E0 scope; no ION containment or research motivation claim",
+  "passed": [
+    "configured physical Android device and original GGUF identity",
+    "cross build and local device help/backend enumeration",
+    "fixed 128-token input and 32 ready/output IDs for all 33 primary requests",
+    "request KV/prefix reset and cache_n=0",
+    "process stat comm parser and RUSAGE_SELF bracket sanity",
+    "load/context/prefill/decode/token-ready boundary records",
+    "separate scheduler and completed HTP operator profiling",
+    "OpenCL original Q4_0 n1/n128 numerical cases",
+    "HTP HVX n1 numerical cases",
+    "OpenCL six-pair and HTP three-pair sampling checks",
+    "watchdog one-second cadence sanity and exclusive process cleanup",
+    "all 181 device files matched retained local evidence/artifacts before cleanup"
+  ],
+  "blockers": [
+    {
+      "id": "cpu_sampling_observer_effect",
+      "status": "BLOCKED",
+      "reason": "after async PSS optimization and six paired repetitions, p95 ITL changes by -11.522% (95% CI -15.670% to -7.349%); TTFT CI also marginally exceeds +/-3%; lower measured time does not establish low perturbation",
+      "evidence": "runs/cpu-validated/analysis.json"
+    },
+    {
+      "id": "htp_hmx_numeric_n128",
+      "status": "BLOCKED",
+      "reason": "same original Q4_0 gate/up and down weights, fixed activations/routes, n128 HMX RRMSE=1 exceeds 0.02; normalized max errors 5.3586 and 22.5671 exceed 0.10",
+      "evidence": "runs/numeric-htp-verified/numeric.jsonl"
+    }
+  ],
+  "paths": {
+    "cpu": {
+      "status": "BLOCKED",
+      "primary_run": "cpu-validated",
+      "requests": 13,
+      "sampling_pairs": 6
+    },
+    "opencl": {
+      "status": "PASS",
+      "primary_run": "opencl-confirm",
+      "requests": 13,
+      "sampling_pairs": 6
+    },
+    "htp": {
+      "status": "BLOCKED",
+      "primary_run": "htp-validated",
+      "requests": 7,
+      "sampling_pairs": 3
+    }
+  },
+  "unsupported": [
+    "HTP multiple PDs under local v73 registration policy",
+    "OpenCL Hexagon-style MUL_MAT_ID_NX fusion"
+  ],
+  "unknown": {
+    "ion_rpcmem_cgroup_coverage": null,
+    "exclusive_driver_physical_ram": null,
+    "private_e0_cgroup_peak": null,
+    "physical_ufs_bus_bytes": null,
+    "total_ram_sum": null
+  },
+  "cleanup": "cleanup.json",
+  "report": "REPORT.md"
+}

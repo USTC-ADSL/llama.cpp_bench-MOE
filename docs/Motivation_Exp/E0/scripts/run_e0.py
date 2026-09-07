@@ -34,6 +34,8 @@ def save(path,obj): path.write_text(json.dumps(obj,indent=2,ensure_ascii=False)+
 def start_guarded(remote,executable,extra='',stdout='server.log',stderr=None):
     # Keep ADB foreground transport alive. Android shells can wait for their
     # background jobs even when stdio is redirected; do not rely on `& echo $!`.
+    existing=shell('pidof llama-server e0-expert-sanity',check=False).stdout.strip()
+    if existing: raise RuntimeError('another inference process is still present: '+existing)
     launch=(f'cd {REMOTE}; echo $$ > {remote}/pid; '
             f'while [ ! -f {remote}/go ]; do sleep 0.1; done; '
             f'exec env {ENV} {extra} {executable} > {remote}/{stdout} '+
@@ -62,6 +64,23 @@ def start_guarded(remote,executable,extra='',stdout='server.log',stderr=None):
         raise RuntimeError('safety preflight stop')
     shell(f'touch {remote}/go')
     return process,watch,pid,launch
+
+def stop_guarded(process,watch,pid):
+    shell(f'kill -TERM {pid}',check=False)
+    try: process.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        shell(f'kill -KILL {pid}',check=False)
+        try: process.wait(timeout=5)
+        except subprocess.TimeoutExpired: process.kill(); process.wait()
+    watch.terminate()
+    try: watch.wait(timeout=5)
+    except subprocess.TimeoutExpired: watch.kill(); watch.wait()
+    for _ in range(10):
+        if shell(f'kill -0 {pid}',check=False).returncode: break
+        time.sleep(.5)
+    else: raise RuntimeError('target PID still alive after shutdown')
+    # Allow allocator/driver references to drain after process exit.
+    time.sleep(3)
 
 def prepare():
     online=cmd(['adb','devices','-l']).stdout
@@ -142,6 +161,9 @@ def run_server(config,profile=False,pairs=3,label=None):
         audit=f'for f in /proc/{pid}/fdinfo/*; do echo "FILE $f"; cat "$f"; done; ls -l /sys/class/kgsl/kgsl/proc/{pid} /sys/class/kgsl/kgsl-3d0/proc/{pid} /sys/kernel/dmabuf/buffers/1'
         p=shell('su -c '+Q(audit),check=False)
         (local/'driver-fdinfo-audit.txt').write_text(p.stdout+p.stderr)
+        audit=f'for k in gpumem_mapped gpumem_unmapped imported_mem kernel kernel_max user user_max; do f=/sys/class/kgsl/kgsl/proc/{pid}/$k; if [ -r "$f" ]; then echo "$k $(cat "$f")"; else echo "$k NA"; fi; done'
+        p=shell('su -c '+Q(audit),check=False)
+        (local/'kgsl-counters.txt').write_text(p.stdout+p.stderr)
         prompt_path=OUT/'prompt.json'
         if not prompt_path.exists():
             text=('Explain how a phone can execute a mixture of experts language model using CPU GPU and a neural accelerator. '
@@ -175,13 +197,7 @@ def run_server(config,profile=False,pairs=3,label=None):
     finally:
         reason=shell(f'cat {remote}/stop_reason',check=False).stdout.strip()
         if reason: status['status']='BLOCKED'; status['reason']=reason
-        shell(f'kill -TERM {pid} 2>/dev/null',check=False)
-        try: process.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            shell(f'kill -KILL {pid}',check=False); process.terminate()
-        watch.terminate()
-        try: watch.wait(timeout=5)
-        except subprocess.TimeoutExpired: watch.kill()
+        stop_guarded(process,watch,pid)
         pull(remote+'/.',local)
         save(local/'status.json',status)
     return status
@@ -201,11 +217,7 @@ def numeric(config,label=None):
             if shell(f'test -f {remote}/stop_reason',check=False).returncode==0: break
             time.sleep(1)
     finally:
-        if process.poll() is None: shell(f'kill -TERM {pid}',check=False)
-        try: process.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            shell(f'kill -KILL {pid}',check=False); process.terminate()
-        watch.terminate()
+        stop_guarded(process,watch,pid)
         pull(remote+'/.',local)
         save(local/'execution.json',{'returncode':process.poll(),'launcher':launch,'pid':pid})
     print('numeric',config,'saved',flush=True)
