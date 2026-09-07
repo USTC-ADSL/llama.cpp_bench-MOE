@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "scope": "E0 measurement validation only; status is finalized in verdict.json",
+  "source_base": "d46e707010c74d2c1f8d3654fdd64abe7cfaacf2 plus E0 instrumentation patch",
+  "device": {"serial": "3B661501LA000000", "model": "PLU110", "soc": "SM8735", "android": "16", "gpu": "Adreno 825", "hexagon_arch": "v73", "hexagon_evidence": "runs/numeric-htp-final/backend.log"},
+  "model": {"architecture": "qwen2moe", "blocks": 24, "d_model": 2048, "routed_d_ff": 1408, "shared_d_ff": 5632, "experts": 60, "selected_experts": 4, "expert_type": "Q4_0", "evidence": "raw/model.txt"},
+  "parameters": {
+    "cpu_moe": {"meaning": "load-time CPU buffer override for routed expert tensors matching \\.ffn_(up|down|gate|gate_up)_(ch|)exps; does not match shared experts or attention", "source": ["common/arg.cpp:2786", "common/common.h:1131"], "execution_guarantee": "placement alone is not proof of scheduler execution"},
+    "n_cpu_moe": {"meaning": "same routed-expert override in layers 0 through N-1; N is layer count, not expert count", "source": ["common/common.h:1143", "common/arg.cpp:2793"]},
+    "override_tensor": {"meaning": "regex tensor name -> backend buffer type at load time; not cache, eviction, or quota management", "source": "common/arg.cpp:252"},
+    "load_mode": {"values": ["auto", "none", "mmap", "mlock", "mmap+mlock", "dio"], "selected": "mmap", "meaning": "mmap maps GGUF; device uploads and CPU/backend repack may allocate additional buffers", "source": "common/arg.cpp:2717"},
+    "warmup": {"default": true, "selected": false, "meaning": "BOS/EOS warmup then clear KV/reset performance; not the 128-token request", "source": "common/common.cpp:1511"},
+    "prefix_cache": {"cache_prompt": false, "cache_ram_mib": 0, "meaning": "n_past=0 then seq_rm from zero; re-prefill every request; weight buffers retained", "source": ["tools/server/server-context.cpp (n_past = 0; slot.mem.seq_rm)", "tools/server/server-schema.cpp:31"], "runtime_assertions": ["tokens_evaluated=128", "timings.prompt_n=128", "timings.cache_n=0", "trace prefill_end value=128"]}
+  },
+  "backends": {
+    "CPU": {"available": true, "selected": "--device none -ngl 0", "reference": "ggml_backend_cpu_set_use_ref(true), original Q4_0 weights, four threads on Android"},
+    "OpenCL": {"available": true, "selected": "--device GPUOpenCL -ngl 99", "MUL_MAT_ID_Q4_0": "supported; contiguous Q4_0 weights and F32 activations", "source": "ggml/src/ggml-opencl/ggml-opencl.cpp:8670", "NX": "Hexagon-style MUL_MAT_ID_NX is not implemented here; separate epilogue/combine fusions exist", "driver_capacity_mib": 7580, "max_allocation_mib": 1024, "driver_allocated_bytes": null, "capacity_is_actual_process_ram": false},
+    "HTP": {"available": true, "selected": "GGML_HEXAGON_DEVICES=1 --device HTP0 -ngl 99", "single_pd": true, "multi_pd": "unsupported by this local v73 registration policy; no multi-PD experiment performed", "source": "ggml/src/ggml-hexagon/ggml-hexagon.cpp:6465", "MUL_MAT_ID_Q4_0": "supported with alignment/type/VTCM checks", "NX": "enabled by default; runtime fusion logged", "kernel_policy": "MM_SELECT=3 HMX -> tiled HVX -> flat HVX -> scheduler fallback; FA_SELECT=2 HMX -> HVX -> fallback", "kernel_source": "ggml/src/ggml-hexagon/ggml-hexagon.cpp:3948", "numeric_n1": "PASS (HVX)", "numeric_n128": "FAIL (HMX); retain fixed precision and routes", "driver_capacity_bytes": null, "pd_mapped_bytes": null}
+  },
+  "accounting": {
+    "cgroup": "v1 memory and cgroup2 mounts audited read-only; no new cgroup and no limit writes",
+    "peak_scope": "existing inherited cgroup historical peak; may include other processes and previous workloads",
+    "pss": "sampled maximum, not continuous true peak; synchronous first trial invalid due overhead; async boundary delay retained",
+    "driver": "OpenCL advertised capacities separate from allocations; DMA-BUF fdinfo and available sysfs audited",
+    "pd": "FastRPC session mapping logs; allocator ownership/physical residency not fully observable",
+    "ion_control": "not established; no claim ION/rpcmem is constrained by cgroup",
+    "total_ram_sum": null
+  },
+  "measurement": {
+    "ttft": "CLOCK_MONOTONIC full /completion POST callback entry to first synchronized sampled token ready",
+    "itl": "adjacent server token-ready timestamps, linear-interpolated empirical p95 of 31 intervals",
+    "faults": "process /proc/PID/stat original fields 10/12 after final comm parenthesis, bracketed by RUSAGE_SELF; exact request-boundary deltas",
+    "read_bytes": "separate /proc/PID/io read_bytes request delta; not fault count times page size and not claimed physical UFS traffic",
+    "profiling": "separate scheduler verbosity / HTP profile run; llama_synchronize before completed batch timestamp",
+    "unknown_encoding": "JSON null or raw -1 means NA"
+  }
+}

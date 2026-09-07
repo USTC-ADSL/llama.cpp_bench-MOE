@@ -1,4 +1,5 @@
 #include "common.h"
+#include "e0-measure.h"
 #include "http.h"
 #include "server-http.h"
 #include "server-common.h"
@@ -602,6 +603,9 @@ void server_http_context::get(const std::string & path, const server_http_contex
 void server_http_context::post(const std::string & path, const server_http_context::handler_t & handler) const {
     handlers.emplace(path, handler);
     pimpl->srv->Post(path_prefix + path, [handler](const httplib::Request & req, httplib::Response & res) {
+        if (req.path == "/completion") {
+            e0_measure::event("request_received", -1, true);
+        }
         std::string body = req.body;
         std::map<std::string, uploaded_file> files;
 

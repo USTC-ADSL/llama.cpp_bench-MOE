@@ -1,0 +1,24 @@
+diff --git a/AGENTS.md b/AGENTS.md
+index 32c5a07c8..c58cbf946 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -60,7 +60,7 @@
+ 
+ ### 3.1 基本原则
+ 
+-本项目主要面向 **On-device LLM Inference**。除纯静态分析、代码阅读或用户另有说明外，运行和验证应以 Android ADB 设备为目标环境。
++本项目主要面向 **On-device MoE-LLM Inference by NPU & GPU & CPU**。除纯静态分析、代码阅读或用户另有说明外，运行和验证应以 Android ADB 设备为目标环境。
+ 
+ 不要仅以宿主机上的运行结果替代设备端验证。
+ 
+@@ -121,6 +121,10 @@ adb devices -l
+ 
+ `offline`、`unauthorized` 或其他非 `device` 状态均不能视为可用。
+ 
++### 3.4 模型选择
++
++模型使用 adb 设备下的/data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf
++
+ ---
+ 
+ ## 4. 复杂任务拆分规范

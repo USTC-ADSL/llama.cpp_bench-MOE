@@ -3,6 +3,7 @@
 
 #include "build-info.h"
 #include "common.h"
+#include "e0-measure.h"
 #include "fit.h"
 #include "log.h"
 #include "llama.h"
@@ -1326,7 +1327,9 @@ common_init_result::common_init_result(common_params & params, bool model_only) 
             params.verbosity >= LOG_LEVEL_DEBUG ? GGML_LOG_LEVEL_DEBUG : GGML_LOG_LEVEL_ERROR);
     }
 
+    e0_measure::event("load_start", -1, true);
     llama_model * model = llama_model_load_from_file(params.model.path.c_str(), mparams);
+    e0_measure::event("load_end", model ? 0 : -1, true);
     if (model == NULL) {
         return;
     }
@@ -1395,7 +1398,9 @@ common_init_result::common_init_result(common_params & params, bool model_only) 
         cparams.n_samplers = pimpl->samplers_seq_config.size();
     }
 
+    e0_measure::event("context_start", -1, true);
     llama_context * lctx = llama_init_from_model(model, cparams);
+    e0_measure::event("context_end", lctx ? 0 : -1, true);
     if (lctx == NULL) {
         COM_ERR("failed to create context with model '%s'\n", params.model.path.c_str());
         return;

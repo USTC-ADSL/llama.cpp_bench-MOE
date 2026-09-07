@@ -1,0 +1,136 @@
+{
+  "config": "cpu",
+  "profile": false,
+  "pid": 22740,
+  "launcher": "cd /data/local/tmp/llama-e0-20260907; echo $$ > /data/local/tmp/llama-e0-20260907/cpu-paired/pid; while [ ! -f /data/local/tmp/llama-e0-20260907/cpu-paired/go ]; do sleep 0.1; done; exec env LD_LIBRARY_PATH=/data/local/tmp/llama-e0-20260907 ADSP_LIBRARY_PATH=/data/local/tmp/llama-e0-20260907 GGML_HEXAGON_DEVICES=1 E0_TRACE=/data/local/tmp/llama-e0-20260907/cpu-paired/events.jsonl E0_SAMPLE_CONFIG=/data/local/tmp/llama-e0-20260907/cpu-paired/sample ./llama-server -m /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf -c 512 -np 1 -t 4 -tb 4 -b 128 -ub 128 -ctk f16 -ctv f16 --load-mode mmap --no-warmup --cache-ram 0 --fit off --host 127.0.0.1 --port 18089 --device none -ngl 0 > /data/local/tmp/llama-e0-20260907/cpu-paired/server.log 2>&1",
+  "requests": [
+    {
+      "index": 0,
+      "sampling": 1,
+      "role": "diagnostic",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 4357.746,
+        "prompt_per_token_ms": 34.044890625,
+        "prompt_per_second": 29.372983189015606,
+        "predicted_n": 32,
+        "predicted_ms": 1354.868,
+        "predicted_per_token_ms": 43.70541935483871,
+        "predicted_per_second": 22.88045772724723
+      }
+    },
+    {
+      "index": 1,
+      "sampling": 0,
+      "role": "paired",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 2143.2490000000003,
+        "prompt_per_token_ms": 16.744132812500002,
+        "prompt_per_second": 59.722412094908236,
+        "predicted_n": 32,
+        "predicted_ms": 1332.498,
+        "predicted_per_token_ms": 42.98380645161291,
+        "predicted_per_second": 23.264575256398132
+      }
+    },
+    {
+      "index": 2,
+      "sampling": 1,
+      "role": "paired",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 2524.598,
+        "prompt_per_token_ms": 19.723421875,
+        "prompt_per_second": 50.70114133022366,
+        "predicted_n": 32,
+        "predicted_ms": 1372.3690000000001,
+        "predicted_per_token_ms": 44.26996774193549,
+        "predicted_per_second": 22.588676952044235
+      }
+    },
+    {
+      "index": 3,
+      "sampling": 1,
+      "role": "paired",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 2485.003,
+        "prompt_per_token_ms": 19.4140859375,
+        "prompt_per_second": 51.5089921420618,
+        "predicted_n": 32,
+        "predicted_ms": 1345.208,
+        "predicted_per_token_ms": 43.3938064516129,
+        "predicted_per_second": 23.044763337714315
+      }
+    },
+    {
+      "index": 4,
+      "sampling": 0,
+      "role": "paired",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 2157.739,
+        "prompt_per_token_ms": 16.8573359375,
+        "prompt_per_second": 59.321354436287244,
+        "predicted_n": 32,
+        "predicted_ms": 1317.402,
+        "predicted_per_token_ms": 42.49683870967742,
+        "predicted_per_second": 23.531162090235174
+      }
+    },
+    {
+      "index": 5,
+      "sampling": 0,
+      "role": "paired",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 2137.825,
+        "prompt_per_token_ms": 16.7017578125,
+        "prompt_per_second": 59.87393729608364,
+        "predicted_n": 32,
+        "predicted_ms": 1297.458,
+        "predicted_per_token_ms": 41.85348387096774,
+        "predicted_per_second": 23.892873603615683
+      }
+    },
+    {
+      "index": 6,
+      "sampling": 1,
+      "role": "paired",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 2481.408,
+        "prompt_per_token_ms": 19.386,
+        "prompt_per_second": 51.58361704322707,
+        "predicted_n": 32,
+        "predicted_ms": 1336.511,
+        "predicted_per_token_ms": 43.11325806451613,
+        "predicted_per_second": 23.194721180745987
+      }
+    }
+  ],
+  "load_wall_s": 23.820848636329174,
+  "status": "completed"
+}

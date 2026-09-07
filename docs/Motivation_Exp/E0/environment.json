@@ -1,0 +1,135 @@
+{
+  "schema_version": 1,
+  "serial": "3B661501LA000000",
+  "selection": "AGENTS.md configured default; online",
+  "model_path": "/data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf",
+  "repo_path": "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE",
+  "probes": {
+    "devices": {
+      "command": [
+        "adb",
+        "devices",
+        "-l"
+      ],
+      "returncode": 0,
+      "stdout": "List of devices attached\n3B661501LA000000       device product:PLU110 model:PLU110 device:OP60F0L1 transport_id:4\nfd8657d6               device product:miro model:24122RKC7C device:miro transport_id:1\n\n",
+      "stderr": ""
+    },
+    "head": {
+      "command": [
+        "git",
+        "-C",
+        "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE",
+        "rev-parse",
+        "HEAD"
+      ],
+      "returncode": 0,
+      "stdout": "d46e707010c74d2c1f8d3654fdd64abe7cfaacf2\n",
+      "stderr": ""
+    },
+    "status": {
+      "command": [
+        "git",
+        "-C",
+        "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE",
+        "status",
+        "--short"
+      ],
+      "returncode": 0,
+      "stdout": " M AGENTS.md\n M common/common.cpp\n M tools/server/server-context.cpp\n M tools/server/server-http.cpp\n?? common/e0-measure.h\n?? docs/Motivation_Exp/E0/\n?? docs/Motivation_Exp/Exp1/Exp_require.md\n?? task/handoff/handoff-2026-09-07-e0/\n",
+      "stderr": ""
+    },
+    "identity": {
+      "command": [
+        "adb",
+        "-s",
+        "3B661501LA000000",
+        "shell",
+        "getprop ro.product.model; getprop ro.soc.model; getprop ro.soc.manufacturer; getprop ro.build.version.release; getprop ro.build.version.sdk; getprop ro.build.fingerprint; uname -a; getconf PAGESIZE; id; su -c id"
+      ],
+      "returncode": 0,
+      "stdout": "PLU110\nSM8735\nQTI\n16\n36\nOnePlus/PLU110/OP60F0L1:16/BP2A.250605.015/B.101f19d_13c794a_13c764e:user/release-keys\nLinux localhost 6.6.89-android15-8-g7e1f3c083cc6-abogki467167594-4k #1 SMP PREEMPT Mon Dec  8 04:00:43 UTC 2025 aarch64 Toybox\n4096\nuid=2000(shell) gid=2000(shell) groups=2000(shell),1004(input),1007(log),1011(adb),1015(sdcard_rw),1028(sdcard_r),1078(ext_data_rw),1079(ext_obb_rw),3001(net_bt_admin),3002(net_bt),3003(inet),3006(net_bw_stats),3009(readproc),3011(uhid),3012(readtracefs) context=u:r:shell:s0\nuid=0(root) gid=0(root) groups=0(root) context=u:r:magisk:s0\n",
+      "stderr": ""
+    },
+    "memory_storage": {
+      "command": [
+        "adb",
+        "-s",
+        "3B661501LA000000",
+        "shell",
+        "cat /proc/meminfo; df -k /data; cat /proc/swaps"
+      ],
+      "returncode": 1,
+      "stdout": "MemTotal:       15524920 kB\nMemFree:          823632 kB\nMemAvailable:    8381924 kB\nBuffers:           11452 kB\nCached:          7236632 kB\nSwapCached:        79604 kB\nActive:          4928468 kB\nInactive:        5097888 kB\nActive(anon):    2245204 kB\nInactive(anon):   628164 kB\nActive(file):    2683264 kB\nInactive(file):  4469724 kB\nUnevictable:       78240 kB\nMlocked:           77352 kB\nSwapTotal:       9961468 kB\nSwapFree:        7597588 kB\nDirty:               308 kB\nWriteback:             0 kB\nAnonPages:       2841112 kB\nMapped:          1775540 kB\nShmem:             41256 kB\nKReclaimable:     686712 kB\nSlab:             821144 kB\nSReclaimable:     233812 kB\nSUnreclaim:       587332 kB\nKernelStack:      147384 kB\nShadowCallStack:       0 kB\nPageTables:       225996 kB\nSecPageTables:         0 kB\nNFS_Unstable:          0 kB\nBounce:                0 kB\nWritebackTmp:          0 kB\nCommitLimit:    17723928 kB\nCommitted_AS:   423841688 kB\nVmallocTotal:   257687552 kB\nVmallocUsed:      370856 kB\nVmallocChunk:          0 kB\nPercpu:            13568 kB\nAnonHugePages:         0 kB\nShmemHugePages:        0 kB\nShmemPmdMapped:        0 kB\nFileHugePages:         0 kB\nFilePmdMapped:         0 kB\nCmaTotal:         577536 kB\nCmaFree:               0 kB\nIonTotalCache:    352704 kB\nIonTotalUsed:     947264 kB\nRsvPool:          564648 kB\nGPUTotalUsed:     211064 kB\nZramCompr:        689596 kB\nFilesystem       1K-blocks     Used Available Use% Mounted on\n/dev/block/dm-80 229579836 71157396 158291368  32% /data/user/0\n",
+      "stderr": "cat: /proc/swaps: Permission denied\n"
+    },
+    "thermal": {
+      "command": [
+        "adb",
+        "-s",
+        "3B661501LA000000",
+        "shell",
+        "dumpsys thermalservice"
+      ],
+      "returncode": 0,
+      "stdout": "IsStatusOverride: false\nThermalEventListeners:\n\tcallbacks: 3\n\tkilled: false\n\tbroadcasts count: -1\nThermalStatusListeners:\n\tcallbacks: 11\n\tkilled: false\n\tbroadcasts count: -1\nThermal Status: 0\nCached temperatures:\n\tTemperature{mValue=38.2, mType=2, mName=battery, mStatus=0}\n\tTemperature{mValue=99.8, mType=0, mName=CPU0, mStatus=0}\n\tTemperature{mValue=89.6, mType=0, mName=CPU1, mStatus=0}\n\tTemperature{mValue=90.7, mType=0, mName=CPU2, mStatus=0}\n\tTemperature{mValue=90.4, mType=0, mName=CPU3, mStatus=0}\n\tTemperature{mValue=91.5, mType=0, mName=CPU4, mStatus=0}\n\tTemperature{mValue=99.4, mType=0, mName=CPU5, mStatus=0}\n\tTemperature{mValue=99.8, mType=0, mName=CPU6, mStatus=0}\n\tTemperature{mValue=95.5, mType=0, mName=CPU7, mStatus=0}\n\tTemperature{mValue=62.0, mType=1, mName=GPU0, mStatus=0}\n\tTemperature{mValue=61.2, mType=1, mName=GPU1, mStatus=0}\n\tTemperature{mValue=66.0, mType=1, mName=GPU2, mStatus=0}\n\tTemperature{mValue=68.4, mType=1, mName=GPU3, mStatus=0}\n\tTemperature{mValue=66.4, mType=1, mName=GPU4, mStatus=0}\n\tTemperature{mValue=64.4, mType=1, mName=GPU5, mStatus=0}\n\tTemperature{mValue=-0.01, mType=7, mName=ibat, mStatus=0}\n\tTemperature{mValue=77.6, mType=9, mName=nsp0, mStatus=0}\n\tTemperature{mValue=78.8, mType=9, mName=nsp1, mStatus=0}\n\tTemperature{mValue=70.0, mType=9, mName=nsp3, mStatus=0}\n\tTemperature{mValue=69.6, mType=9, mName=nsp4, mStatus=0}\n\tTemperature{mValue=45.987, mType=3, mName=skin, mStatus=0}\n\tTemperature{mValue=21.0, mType=8, mName=socd, mStatus=0}\n\tTemperature{mValue=4.363, mType=6, mName=vbat, mStatus=0}\n\tTemperature{mValue=35.0, mType=3, mName=shell_skin, mStatus=0}\nHAL Ready: true\nHAL connection:\n\tThermalHAL AIDL 3  connected: yes\nCurrent temperatures from HAL:\n\tTemperature{mValue=21.0, mType=8, mName=socd, mStatus=0}\n\tTemperature{mValue=4.363, mType=6, mName=vbat, mStatus=0}\n\tTemperature{mValue=0.022, mType=7, mName=ibat, mStatus=0}\n\tTemperature{mValue=28.244, mType=3, mName=skin, mStatus=0}\n\tTemperature{mValue=29.6, mType=9, mName=nsp4, mStatus=0}\n\tTemperature{mValue=30.0, mType=9, mName=nsp3, mStatus=0}\n\tTemperature{mValue=30.0, mType=9, mName=nsp1, mStatus=0}\n\tTemperature{mValue=30.4, mType=9, mName=nsp0, mStatus=0}\n\tTemperature{mValue=30.4, mType=1, mName=GPU5, mStatus=0}\n\tTemperature{mValue=30.0, mType=1, mName=GPU4, mStatus=0}\n\tTemperature{mValue=29.6, mType=1, mName=GPU1, mStatus=0}\n\tTemperature{mValue=27.6, mType=2, mName=battery, mStatus=0}\n\tTemperature{mValue=29.9, mType=0, mName=CPU0, mStatus=0}\n\tTemperature{mValue=29.8, mType=0, mName=CPU7, mStatus=0}\n\tTemperature{mValue=29.6, mType=1, mName=GPU0, mStatus=0}\n\tTemperature{mValue=30.7, mType=0, mName=CPU5, mStatus=0}\n\tTemperature{mValue=31.0, mType=0, mName=CPU2, mStatus=0}\n\tTemperature{mValue=29.6, mType=0, mName=CPU4, mStatus=0}\n\tTemperature{mValue=30.0, mType=1, mName=GPU2, mStatus=0}\n\tTemperature{mValue=29.9, mType=0, mName=CPU6, mStatus=0}\n\tTemperature{mValue=30.0, mType=1, mName=GPU3, mStatus=0}\n\tTemperature{mValue=30.6, mType=0, mName=CPU3, mStatus=0}\n\tTemperature{mValue=29.9, mType=0, mName=CPU1, mStatus=0}\nCurrent cooling devices from HAL:\n\tCoolingDevice{mValue=0, mType=2, mName=thermal-pause-2}\n\tCoolingDevice{mValue=0, mType=5, mName=cdsp_hw}\n\tCoolingDevice{mValue=0, mType=2, mName=cpufreq-cpu5}\n\tCoolingDevice{mValue=0, mType=2, mName=thermal-pause-10}\n\tCoolingDevice{mValue=0, mType=2, mName=cpufreq-cpu0}\n\tCoolingDevice{mValue=0, mType=2, mName=thermal-pause-8}\n\tCoolingDevice{mValue=0, mType=2, mName=thermal-pause-4}\n\tCoolingDevice{mValue=0, mType=3, mName=gpu}\n\tCoolingDevice{mValue=0, mType=2, mName=thermal-pause-20}\n\tCoolingDevice{mValue=0, mType=5, mName=cdsp}\n\tCoolingDevice{mValue=0, mType=2, mName=thermal-pause-1}\n\tCoolingDevice{mValue=0, mType=2, mName=cpufreq-cpu7}\n\tCoolingDevice{mValue=0, mType=2, mName=cpufreq-cpu2}\n\tCoolingDevice{mValue=0, mType=9, mName=display-fps}\n\tCoolingDevice{mValue=0, mType=2, mName=thermal-pause-80}\n\tCoolingDevice{mValue=0, mType=2, mName=thermal-pause-40}\nTemperature static thresholds from HAL:\n\tTemperatureThreshold{mType=8, mName=socd, mHotThrottlingThresholds=[NaN, NaN, NaN, 90.0, NaN, NaN, 99.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=6, mName=vbat, mHotThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN], mColdThrottlingThresholds=[NaN, NaN, NaN, 3.2, NaN, NaN, 3.0]}\n\tTemperatureThreshold{mType=7, mName=ibat, mHotThrottlingThresholds=[NaN, NaN, NaN, 7.0, NaN, NaN, 9.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=3, mName=skin, mHotThrottlingThresholds=[NaN, 48.0, 49.0, 50.0, 60.0, 61.0, 90.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=9, mName=nsp4, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=9, mName=nsp3, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=9, mName=nsp1, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=9, mName=nsp0, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=1, mName=GPU5, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=1, mName=GPU4, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=1, mName=GPU1, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=2, mName=battery, mHotThrottlingThresholds=[NaN, NaN, NaN, 80.0, NaN, NaN, 90.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=0, mName=CPU0, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=0, mName=CPU7, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=1, mName=GPU0, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=0, mName=CPU5, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=0, mName=CPU2, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=0, mName=CPU4, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=1, mName=GPU2, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=0, mName=CPU6, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=1, mName=GPU3, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=0, mName=CPU3, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=0, mName=CPU1, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\nTemperature headroom thresholds:\n[NaN, 0.93333334, 0.96666664, 1.0, 1.3333334, 1.3666667, 2.3333333]\n",
+      "stderr": ""
+    },
+    "model": {
+      "command": [
+        "adb",
+        "-s",
+        "3B661501LA000000",
+        "shell",
+        "ls -l /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf; stat /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf"
+      ],
+      "returncode": 0,
+      "stdout": "-rw-rw-rw- 1 shell shell 8149865792 2026-09-01 17:36 /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf\n  File: /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf\n  Size: 8149865792\t Blocks: 15933360\t IO Blocks: 512\t regular file\nDevice: fe50h/65104d\t Inode: 58199\t Links: 1\t Device type: 0,0\nAccess: (0666/-rw-rw-rw-)\tUid: ( 2000/   shell)\tGid: ( 2000/   shell)\nAccess: 2026-09-01 17:36:21.000000000 +0800\nModify: 2026-09-01 17:36:21.000000000 +0800\nChange: 2026-09-01 17:52:01.730336370 +0800\n",
+      "stderr": ""
+    },
+    "cgroup": {
+      "command": [
+        "adb",
+        "-s",
+        "3B661501LA000000",
+        "shell",
+        "cat /proc/cgroups; cat /proc/self/cgroup; cat /proc/mounts | grep -E \"cgroup|memcg\"; ls -l /dev/memcg/apps/memory.*"
+      ],
+      "returncode": 0,
+      "stdout": "#subsys_name\thierarchy\tnum_cgroups\tenabled\ncpuset\t3\t17\t1\ncpu\t2\t28\t1\ncpuacct\t0\t471\t1\nblkio\t1\t6\t1\nmemory\t4\t37\t1\nfreezer\t5\t3\t1\nnet_prio\t0\t471\t1\n5:freezer:/\n4:memory:/\n3:cpuset:/\n2:cpu:/\n1:blkio:/\n0::/system/uid_0/pid_31735\nnone /dev/blkio cgroup rw,nosuid,nodev,noexec,relatime,blkio 0 0\nnone /sys/fs/cgroup cgroup2 rw,nosuid,nodev,noexec,relatime,memory_recursiveprot 0 0\nnone /dev/cpuctl cgroup rw,nosuid,nodev,noexec,relatime,cpu 0 0\nnone /dev/cpuset cgroup rw,nosuid,nodev,noexec,relatime,cpuset,noprefix,cpuset_v2_mode 0 0\nnone /dev/memcg cgroup rw,nosuid,nodev,noexec,relatime,memory 0 0\nnone /dev/freezer cgroup rw,relatime,freezer 0 0\n--w------- 1 root root   0 2026-09-03 21:47 /dev/memcg/apps/memory.aging_anon\n-rw-rw---- 1 root system 0 2026-07-03 21:44 /dev/memcg/apps/memory.app_score\n-rw-rw---- 1 root system 0 2026-07-03 21:44 /dev/memcg/apps/memory.app_uid\n-rw-r--r-- 1 root root   0 2026-09-03 21:47 /dev/memcg/apps/memory.failcnt\n--w------- 1 root root   0 2026-09-03 21:47 /dev/memcg/apps/memory.force_empty\n-rw-rw---- 1 root system 0 2026-07-03 21:44 /dev/memcg/apps/memory.force_shrink_anon\n--w------- 1 root root   0 2026-09-03 21:47 /dev/memcg/apps/memory.force_shrink_anon_percent\n-rw-rw---- 1 root system 0 2026-07-03 21:44 /dev/memcg/apps/memory.force_shrink_file\n--w------- 1 root root   0 2026-09-03 21:47 /dev/memcg/apps/memory.force_swapin\n--w------- 1 root root   0 2026-09-03 21:47 /dev/memcg/apps/memory.force_swapout\n-rw-r--r-- 1 root root   0 2026-09-03 21:47 /dev/memcg/apps/memory.kmem.failcnt\n-rw-r--r-- 1 root root   0 2026-09-03 21:47 /dev/memcg/apps/memory.kmem.limit_in_bytes\n-rw-r--r-- 1 root root   0 2026-09-03 21:47 /dev/memcg/apps/memory.kmem.max_usage_in_bytes\n-r--r--r-- 1 root root   0 2026-09-03 21:47 /dev/memcg/apps/memory.kmem.slabinfo\n-rw-r--r-- 1 root root   0 2026-09-03 21:47 /dev/memcg/apps/memory.kmem.tcp.failcnt\n-rw-r--r-- 1 root root   0 2026-09-03 21:47 /dev/memcg/apps/memory.kmem.tcp.limit_in_bytes\n-rw-r--r-- 1 root root   0 2026-09-03 21:47 /dev/memcg/apps/memory.kmem.tcp.max_usage_in_bytes\n-r--r--r-- 1 root root   0 2026-09-03 21:47 /dev/memcg/apps/memory.kmem.tcp.usage_in_bytes\n-r--r--r-- 1 root root   0 2026-09-03 21:47 /dev/memcg/apps/memory.kmem.usage_in_bytes\n-rw-r--r-- 1 root root   0 2026-09-03 21:47 /dev/memcg/apps/memory.limit_in_bytes\n-rw-r--r-- 1 root root   0 2026-09-03 21:47 /dev/memcg/apps/memory.max_usage_in_bytes\n-rw-r--r-- 1 root root   0 2026-09-03 21:47 /dev/memcg/apps/memory.memsw.failcnt\n-rw-r--r-- 1 root root   0 2026-09-03 21:47 /dev/memcg/apps/memory.memsw.limit_in_bytes\n-rw-r--r-- 1 root root   0 2026-09-03 21:47 /dev/memcg/apps/memory.memsw.max_usage_in_bytes\n-r--r--r-- 1 root root   0 2026-09-03 21:47 /dev/memcg/apps/memory.memsw.usage_in_bytes\n-rw-r--r-- 1 root root   0 2026-09-03 21:47 /dev/memcg/apps/memory.move_charge_at_immigrate\n-rw-r--r-- 1 root root   0 2026-07-03 21:44 /dev/memcg/apps/memory.name\n-rw-r--r-- 1 root root   0 2026-09-03 21:47 /dev/memcg/apps/memory.oom_control\n-r--r--r-- 1 root root   0 2026-09-03 21:47 /dev/memcg/apps/memory.pressure_level\n-rw-r--r-- 1 root root   0 2026-09-03 21:47 /dev/memcg/apps/memory.soft_limit_in_bytes\n-r--r--r-- 1 root root   0 2026-09-03 21:47 /dev/memcg/apps/memory.stat\n-r--r----- 1 root system 0 2026-07-03 21:44 /dev/memcg/apps/memory.swap_stat\n-r--r--r-- 1 root root   0 2026-09-03 21:47 /dev/memcg/apps/memory.swap_stat_array\n-r--r----- 1 root system 0 2026-07-03 21:44 /dev/memcg/apps/memory.swapd_single_memcg_param\n-rw-r--r-- 1 root root   0 1970-01-25 20:01 /dev/memcg/apps/memory.swappiness\n-rw-rw---- 1 root system 0 2026-07-03 21:44 /dev/memcg/apps/memory.ub_ufs2zram_ratio\n-r--r--r-- 1 root root   0 2026-09-03 21:47 /dev/memcg/apps/memory.usage_in_bytes\n-rw-r--r-- 1 root root   0 2026-09-03 21:47 /dev/memcg/apps/memory.use_hierarchy\n",
+      "stderr": ""
+    },
+    "driver_audit": {
+      "command": [
+        "adb",
+        "-s",
+        "3B661501LA000000",
+        "shell",
+        "su -c 'ls -ld /sys/kernel/debug/dma_buf /sys/kernel/dmabuf /sys/kernel/debug/adsprpc /sys/kernel/debug/fastrpc /sys/class/kgsl/kgsl-3d0 /sys/kernel/ion; ls -l /sys/kernel/debug/adsprpc /sys/kernel/debug/fastrpc /sys/kernel/dmabuf /sys/class/kgsl/kgsl-3d0 2>/dev/null'"
+      ],
+      "returncode": 1,
+      "stdout": "lrwxrwxrwx 1 root root 0 2026-09-03 22:16 /sys/class/kgsl/kgsl-3d0 -> ../../devices/platform/soc/3d00000.qcom,kgsl-3d0/kgsl/kgsl-3d0\ndrwxr-xr-x 3 root root 0 2026-09-07 17:18 /sys/kernel/dmabuf\nlrwxrwxrwx 1 root root 0 2026-09-03 22:16 /sys/class/kgsl/kgsl-3d0 -> ../../devices/platform/soc/3d00000.qcom,kgsl-3d0/kgsl/kgsl-3d0\n\n/sys/kernel/dmabuf:\ntotal 0\ndrwxr-xr-x 642 root root 0 2026-09-07 17:18 buffers\n",
+      "stderr": "ls: /sys/kernel/debug/dma_buf: No such file or directory\nls: /sys/kernel/debug/adsprpc: No such file or directory\nls: /sys/kernel/debug/fastrpc: No such file or directory\nls: /sys/kernel/ion: No such file or directory\n"
+    },
+    "existing_processes": {
+      "command": [
+        "adb",
+        "-s",
+        "3B661501LA000000",
+        "shell",
+        "ps -A | grep -E \"llama|fastrpc|cdsp\""
+      ],
+      "returncode": 0,
+      "stdout": "root          1047     2          0      0 0                   0 S [cdsprm-wq]\nroot          1048     2          0      0 0                   0 I [kworker/R-cdspr]\nroot          1593     2          0      0 0                   0 S [glink_cdsp]\nroot          1630     2          0      0 0                   0 S [glink-fastrpcglink-apps-dsp]\nroot          1631     2          0      0 0                   0 S [glink-cdsprmglink-apps-dsp]\nroot          1777     2          0      0 0                   0 S [glink-fastrpcglink-apps-dsp]\nsystem        2939     1    2235292   6460 0                   0 S cdsprpcd\n",
+      "stderr": ""
+    }
+  },
+  "original_user_files": {
+    "AGENTS.md": "6c9fe38b4867c3693bdd48465ed6180bd50561f4b7a3b4faef6cb826850b490e",
+    "docs/Motivation_Exp/Exp1/Exp_require.md": "c1cfcc7173aeeed53535704837038cbf1a6f9055dacf2880dfb19d335d5f22c3"
+  },
+  "initial_dirty_diff": "raw/initial-dirty.patch",
+  "initial_head": "d46e707010c74d2c1f8d3654fdd64abe7cfaacf2",
+  "page_cache_state": "uncontrolled; metadata reads recorded; no eviction",
+  "system_policy_changes": []
+}

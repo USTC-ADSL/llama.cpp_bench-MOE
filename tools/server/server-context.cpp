@@ -9,6 +9,7 @@
 
 #include "build-info.h"
 #include "common.h"
+#include "e0-measure.h"
 #include "fit.h"
 #include "llama.h"
 #include "log.h"
@@ -2087,6 +2088,7 @@ private:
     }
 
     void send_final_response(server_slot & slot) {
+        e0_measure::event("request_end", slot.stats.n_gen, true);
         auto res = std::make_unique<server_task_result_cmpl_final>();
 
         res->id      = slot.task->id;
@@ -3663,9 +3665,13 @@ private:
         // note: the sync is done here too, so that the wait is also covered by the yield
         int ret = 0;
         queue_tasks.yield_to_queue([&]() {
+            e0_measure::event(batch_view.n_tokens > 1 ? "prefill_start" : "decode_start", batch_view.n_tokens, batch_view.n_tokens > 1);
             ret = llama_decode(ctx_tgt, batch_view);
             if (ret == 0 && has_output) {
                 llama_synchronize(ctx_tgt);
+            }
+            if (ret == 0 && has_output) {
+                e0_measure::event(batch_view.n_tokens > 1 ? "prefill_end" : "decode_end", batch_view.n_tokens, batch_view.n_tokens > 1);
             }
         });
 
@@ -3846,6 +3852,8 @@ private:
 
             // here we have synchronized the llama_context (due to the sampling above), so we can do time measurement
             const int64_t t_now = ggml_time_us();
+
+            e0_measure::event("token_ready", id);
 
             slot.stats.n_gen += 1;
 
