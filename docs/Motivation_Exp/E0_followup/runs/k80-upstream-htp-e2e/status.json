@@ -1,0 +1,29 @@
+{
+  "config": "htp",
+  "mode": "memory",
+  "profile": true,
+  "pid": 27876,
+  "launcher": "cd /data/local/tmp/llama-e0-upstream-k80; echo $$ > /data/local/tmp/llama-e0-upstream-k80/k80-upstream-htp-e2e/pid; while [ ! -f /data/local/tmp/llama-e0-upstream-k80/k80-upstream-htp-e2e/go ]; do sleep 0.1; done; exec env LD_LIBRARY_PATH=/data/local/tmp/llama-e0-upstream-k80 ADSP_LIBRARY_PATH=/data/local/tmp/llama-e0-upstream-k80 GGML_HEXAGON_DEVICES=1 GGML_HEXAGON_USE_HMX=1 E0_MODE=memory E0_TRACE=/data/local/tmp/llama-e0-upstream-k80/k80-upstream-htp-e2e/events.jsonl E0_SAMPLE_CONFIG=/data/local/tmp/llama-e0-upstream-k80/k80-upstream-htp-e2e/sample GGML_SCHED_DEBUG=2 GGML_HEXAGON_VERBOSE=1 GGML_HEXAGON_PROFILE=1 ./llama-server -m /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf -c 512 -np 1 -t 4 -tb 4 -b 128 -ub 128 -ctk f16 -ctv f16 --load-mode mmap --no-warmup --cache-ram 0 --fit off --host 127.0.0.1 --port 18089 --device HTP0 -ngl 99 --log-verbosity 5 > /data/local/tmp/llama-e0-upstream-k80/k80-upstream-htp-e2e/server.log 2>&1",
+  "requests": [
+    {
+      "index": 0,
+      "sampling": 1,
+      "role": "diagnostic",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 539.624,
+        "prompt_per_token_ms": 4.2158125,
+        "prompt_per_second": 237.20220005040545,
+        "predicted_n": 32,
+        "predicted_ms": 1881.0,
+        "predicted_per_token_ms": 60.67741935483871,
+        "predicted_per_second": 16.48059542796385
+      }
+    }
+  ],
+  "load_wall_s": 12.175224414095283,
+  "status": "completed"
+}

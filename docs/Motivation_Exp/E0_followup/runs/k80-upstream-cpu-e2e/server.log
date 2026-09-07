@@ -1,0 +1,21 @@
+0.00.083.415 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+0.00.085.647 W srv  llama_server: -----------------
+0.00.085.654 W srv  llama_server: CORS is set to allow all origins ('*') and no API key is set
+0.00.085.654 W srv  llama_server: this can be a security risk (cross-origin attacks)
+0.00.085.655 W srv  llama_server: more info: https://github.com/ggml-org/llama.cpp/pull/25655
+0.00.085.655 W srv  llama_server: -----------------
+0.00.087.587 I srv    load_model: loading model '/data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf'
+0.00.218.051 W load: control-looking token: 128247 '</s>' was not control-type; this is probably a bug in the model. its type will be overridden
+0.09.688.626 I cmn          init: llama threadpool init, n_threads = 4
+0.12.107.076 I srv    load_model: initializing, n_slots = 1, n_ctx_slot = 512, kv_unified = 'false'
+0.12.111.084 W srv          init: --cache-idle-slots requires --cache-ram, disabling
+0.12.117.427 I srv  llama_server: model loaded
+0.12.117.441 I srv  llama_server: listening on http://127.0.0.1:18089
+0.16.854.103 I slot get_availabl: id  0 | task -1 | selected slot by id (0)
+0.16.854.261 I slot launch_slot_: id  0 | task 0 | processing task, is_child = 0
+0.20.761.772 I slot print_timing: id  0 | task 0 | prompt eval time =    2887.72 ms /   128 tokens (   22.56 ms per token,    44.33 tokens per second)
+0.20.761.781 I slot print_timing: id  0 | task 0 |        eval time =    1019.76 ms /    32 tokens (   32.90 ms per token,    30.40 tokens per second)
+0.20.761.782 I slot print_timing: id  0 | task 0 |       total time =    3907.48 ms /   160 tokens
+0.20.761.783 I slot print_timing: id  0 | task 0 |    graphs reused =         30
+0.20.761.880 I slot      release: id  0 | task 0 | stop processing: n_tokens = 159, truncated = 0
+0.23.116.921 I srv    operator(): operator(): cleaning up before exit...

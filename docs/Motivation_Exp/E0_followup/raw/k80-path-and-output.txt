@@ -1,0 +1,12 @@
+CPU and default HTP outputs: all 32 token IDs exactly identical.
+Official upstream: 73ab7599b553c03f6f5d2db24a18ad76f2eb36a3; fd8657d6 / SM8750 / v79.
+Actual request server.log lines 38049..156763; completed HMX profile ops=164, routed expert HMX ops=46.
+38049: 0.14.578.889 I slot   operator(): id  0 | task 0 | new prompt, n_ctx_slot = 512, n_keep = 0, task.n_tokens = 128
+38050: 0.14.578.891 I slot   operator(): id  0 | task 0 | cached n_tokens = 0, memory_seq_rm [0, end)
+38056: 0.14.578.932 D srv        decode: n_batch (effective) = 128, off = 0
+46708: 0.15.118.566 D srv        decode: n_batch (effective) = 128, off = 0
+55336: 0.15.204.489 D srv        decode: n_batch (effective) = 128, off = 0
+43497: 0.14.647.803 D ggml-hex: HTP0 profile-op MUL_MAT_ID_NX|blk.0.ffn_gate_exps.weight x blk.0.ffn_up_exps.weight x ffn_norm-0 (reshaped) x ffn_moe_topk-0 -> ffn_moe_up-0|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:128:1 x 4:128 -> 1408:4:128:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:1048576 x 4:240! -> 4:5632:22528:2883584|hmx-tiled vtcm 8243200|usec 9418 cycles 16094715 start 3472506799 mhz 1708.9
+43499: 0.14.647.837 D ggml-hex: HTP0 profile-op MUL_MAT_ID|blk.0.ffn_down_exps.weight x ffn_moe_swiglu-0 x ffn_moe_topk-0 -> ffn_moe_down-0|1408:2048:60:1 x 1408:4:128:1 x 4:128 -> 2048:4:128:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:22528:2883584 x 4:240! -> 4:8192:32768:4194304|hmx-tiled vtcm 8241152|usec 4870 cycles 8323939 start 3488992401 mhz 1709.2
+CPU content:  mixture of experts language model using CPU GPU and a neural accelerator. Describe token processing and memory measurements with concrete examples. Explain how a phone can execute a mixture of
+HTP content:  mixture of experts language model using CPU GPU and a neural accelerator. Describe token processing and memory measurements with concrete examples. Explain how a phone can execute a mixture of

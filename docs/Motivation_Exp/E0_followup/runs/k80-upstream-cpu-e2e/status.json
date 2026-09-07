@@ -1,0 +1,29 @@
+{
+  "config": "cpu",
+  "mode": "memory",
+  "profile": false,
+  "pid": 26280,
+  "launcher": "cd /data/local/tmp/llama-e0-upstream-k80; echo $$ > /data/local/tmp/llama-e0-upstream-k80/k80-upstream-cpu-e2e/pid; while [ ! -f /data/local/tmp/llama-e0-upstream-k80/k80-upstream-cpu-e2e/go ]; do sleep 0.1; done; exec env LD_LIBRARY_PATH=/data/local/tmp/llama-e0-upstream-k80 ADSP_LIBRARY_PATH=/data/local/tmp/llama-e0-upstream-k80 GGML_HEXAGON_DEVICES=1 GGML_HEXAGON_USE_HMX=1 E0_MODE=memory E0_TRACE=/data/local/tmp/llama-e0-upstream-k80/k80-upstream-cpu-e2e/events.jsonl E0_SAMPLE_CONFIG=/data/local/tmp/llama-e0-upstream-k80/k80-upstream-cpu-e2e/sample ./llama-server -m /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf -c 512 -np 1 -t 4 -tb 4 -b 128 -ub 128 -ctk f16 -ctv f16 --load-mode mmap --no-warmup --cache-ram 0 --fit off --host 127.0.0.1 --port 18089 --device none -ngl 0 > /data/local/tmp/llama-e0-upstream-k80/k80-upstream-cpu-e2e/server.log 2>&1",
+  "requests": [
+    {
+      "index": 0,
+      "sampling": 1,
+      "role": "diagnostic",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 2887.7200000000003,
+        "prompt_per_token_ms": 22.560312500000002,
+        "prompt_per_second": 44.32562713836521,
+        "predicted_n": 32,
+        "predicted_ms": 1019.759,
+        "predicted_per_token_ms": 32.89545161290322,
+        "predicted_per_second": 30.399339451772427
+      }
+    }
+  ],
+  "load_wall_s": 14.478822987526655,
+  "status": "completed"
+}

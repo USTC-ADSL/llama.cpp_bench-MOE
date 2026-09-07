@@ -1,6 +1,6 @@
 # E0 定向补验（2026-09-07）
 
-**结论：CPU 正式 perf 验收仍 BLOCKED；OpenCL 必要回归 PASS；默认 HTP 数值仍 BLOCKED。HMX 根因尚未确定，本次没有交付 HMX 修复。** 全部推理和数值测试均在指定 Android 手机执行。没有采用 HVX-only、CPU fallback、降低 ubatch、关闭默认融合或放宽容差作为验收方案。
+**原 PLU110/v73 的结论：CPU 正式 perf 验收仍 BLOCKED；OpenCL 必要回归 PASS；默认 HTP 数值仍 BLOCKED。HMX 根因尚未确定，本次没有交付 HMX 修复。追加 K80 Pro/v79 的单次 HMX 语义对照通过，见文末。** 全部推理和数值测试均在指定 Android 手机执行。没有采用 HVX-only、CPU fallback、降低 ubatch、关闭默认融合或放宽容差作为验收方案。
 
 - [x] 复用 E0 环境、真实输入和原失败用例，完成输出统计与局部定位
 - [x] 实现 perf/memory 分离，完成三次启动六对计时开销检查及独立 memory 运行
@@ -95,3 +95,29 @@ python3 docs/Motivation_Exp/E0/scripts/analyze.py --followup
 官方原始结果在 `runs/upstream-hmx-numeric/`、`upstream-cpu-e2e/`、`upstream-htp-e2e/`。两边真正的128-token请求都完成164个HMX profile算子，其中46个routed expert算子，不是启动2-token探测。比较见 `raw/upstream-path-and-output.txt`；`raw/upstream-dsp-load.log` 记录成功打开官方专用目录中的v73 DSP库。全模型运行完成只表示计数/传输完成，异常文本不标语义PASS。官方没有E0 token-ready埋点，本次不声称完成其TTFT/ITL或性能验收。
 
 **结论：官方当前版本在同设备、模型和工具链下也复现，不能把故障归为本分支特有修改。** 尚未在上游实现、工具链与设备/固件运行契约之间确定根因。HMX仍BLOCKED，不改变默认选择/融合、不使用HVX-only或CPU回退。追加测试的84个设备文件已逐一hash核对，两套临时设备目录均已清理，源码状态见 `raw/upstream-final-validation.txt`。大型server日志无损保存为 `server.log.gz`，摘录保留原行号。保留worktree与构建，停止测试，不自动展开版本二分。
+
+**用户追加：fd8657d6 / Redmi K80 Pro 的 CPU 与 HMX 语义对照。**
+
+- [x] 指定本地模型存在且 SHA256 与 E0 相同；运行时识别 SM8750 / Hexagon v79
+- [x] 模型传输完成并核对手机端完整 SHA256
+- [x] 复用官方 upstream 构建，完成 CPU 与默认 HTP 的同输入 128/32 语义对照
+- [x] 核验实际 HMX 执行、保存证据并清理测试目录（保留模型）
+
+**本次语义 smoke：PASS。** 设备 `fd8657d6`，Redmi K80 Pro / `24122RKC7C` / SM8750，Android16，内核 `6.6.77-android15-8-gca30f3b4bef6-abogki440974771-4k`。运行时识别 **v79、6 HVX、1 HMX、8 MB VTCM**。复用干净官方 `73ab7599b553c03f6f5d2db24a18ad76f2eb36a3` 与原工具链，仅执行 `cmake --build /mnt/sda1/pzw/moe/llama.cpp-upstream-e0-73ab7599b/build-e0-android --target htp-v79 -j8`，完成后部署。本分支起始 HEAD `81856e756`；本次未修改推理代码，未合并 upstream。
+
+指定本地模型 `models/Qwen1.5-MoE-A2.7B-Chat-Q4_0-GGUF/qwen1.5-moe-a2.7b-chat-q4_0.gguf` 与原手机模型、目标手机最终文件均核验 SHA256 `8b704c763230935a096c9c810765c8a5483f1724c83e34e253704138ca040473`，大小 **8149865792 bytes**。目标保留路径为 `/data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf`。初始 ADB push 较慢，停止后 ADB 自动删除未完成文件；最终用同哈希的原手机副本直接传输：源机 `timeout 3600 nc -l -p 18764 -s 192.168.1.114 cat /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf`，目标机 `timeout 3600 nc -w 10 -W 60 192.168.1.114 18764 > /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf.e0-partial`。完整 hash 校验及写进程退出后改为正式文件名，详见 `raw/k80-model-transfer.txt`。
+
+沿用同一 `E0/prompt.json`，参数仍为128输入/32输出、c512、单slot、t/tb4、b/ub128、F16 KV、mmap、无warmup、无prefix复用。以 import 复用原 runner，设置 `SERIAL=fd8657d6`、`REMOTE=/data/local/tmp/llama-e0-upstream-k80`、上述官方 BUILD；依次执行 `run_server('cpu', label='k80-upstream-cpu-e2e', mode='memory')` 和 `run_server('htp', profile=True, label='k80-upstream-htp-e2e', mode='memory')`。启动环境携带 `GGML_HEXAGON_DEVICES=1 GGML_HEXAGON_USE_HMX=1`；后者在此源码中仍不被读取，实际保持默认 `NHMX=1` 与原融合/shape选择。完整启动和HTTP命令见 `commands.jsonl`、各运行的 `status.json`/`request-00.json`，定向 dry-run 见 `raw/k80-dry-run.txt`。本次不执行 OpenCL 或算子数值测试；runner 通用 plan 中的配对/计时说明不适用于干净官方构建，保存的定向 dry-run 已明确这一点。
+
+| K80 Pro 单请求结果 | CPU | 默认 HTP |
+|---|---:|---:|
+| 实际输入 / 输出 tokens | 128 / 32 | 128 / 32 |
+| cache_n | 0 | 0 |
+| 与CPU逐token相同 | 32/32 | 32/32 |
+| 安全截断 | 无 | 无 |
+
+共同输出为 ` mixture of experts language model using CPU GPU and a neural accelerator. Describe token processing and memory measurements with concrete examples. Explain how a phone can execute a mixture of`。这是原 E0 重复英文 prompt 的续写 smoke，未覆盖多样化问答。HTP 真正请求从 `server.log:38049` 开始，`38050` 明确清空prefix，`38056` 为128 batch；请求内完成 **164个 HMX profile算子，其中46个 routed expert算子**。`43497` 的 gate+up 为 `MUL_MAT_ID_NX / hmx-tiled`，`43499` 的 down 为 `MUL_MAT_ID / hmx-tiled`，原 n128 expert shape 与 NX 融合保留。证据见 `raw/k80-path-and-output.txt`、`raw/k80-dsp-load.log`、`raw/k80-artifact-sha256.txt`、`runs/k80-upstream-{cpu,htp}-e2e/`。
+
+**解释边界：v79 本次端到端语义通过，v73 的全零数值异常仍 BLOCKED。** 同一官方提交/模型在两个设备上行为不同，将排查重点缩小到架构、DSP目标构建或设备/固件运行差异；尚不能确定根因，也不能称为已经修复。未在 v79 重做原算子数值容差验收，不能用32个token相同代替 RRMSE 检查。这两次均为独立 memory/profile 诊断，CSV耗时仅标 DIAGNOSTIC_ONLY，官方无 E0 token-ready 埋点，TTFT/p95 ITL 为 NA，不用于性能排名。没有改变默认HMX选择、降低ubatch、CPU回退或禁用融合。watchdog和退出检查保留，未改变任何全机配置。
+
+收尾：29个设备文件均与本地原始证据或构建产物逐一 SHA256 匹配，HTP大日志无损保存为 `server.log.gz`；确认无遗留推理或项目watchdog进程后，仅清理本次设备测试目录，保留模型，见 `raw/k80-final-validation.txt`。初次架构探测在v79库部署前的失败是缺少DSP库，部署后会话正常；`raw/k80-dsp-load.log:24` 为实际 server 成功打开专用目录库的记录。原有用户文件哈希不变。测试到此停止。
