@@ -1,0 +1,161 @@
+ggml_opencl: selected platform: 'QUALCOMM Snapdragon(TM)'
+
+ggml_opencl: device: 'QUALCOMM Adreno(TM) 825 (OpenCL 3.0 Adreno(TM) 825)'
+ggml_opencl: default device: 'QUALCOMM Adreno(TM) 825 (OpenCL 3.0 Adreno(TM) 825)'
+ggml-hex: Loading driver libcdsprpc.so
+ggml-hex: forcing ndev to 1 for SoCs archs lower than v75.
+ggml-hex: FASTRPC_GET_DOMAINS query failed (0x6c), using static CDSP domains
+ggml-hex: Profiling mode 1 : pmu-evt [  ]
+ggml-hex: Hexagon backend (experimental) : allocating new registry : ndev 1
+ggml-hex: Hexagon Arch version v73
+ggml-hex: HTP0 allocating new session
+ggml-hex: HTP0 hwinfo: threads 4, hvx 4, hmx 1, vtcm 8 MB
+ggml-hex: HTP0 new session : session-id 0 domain-id 3 uri file:///libggml-htp-v73.so?htp_iface_skel_handle_invoke&_modver=1.0&_dom=cdsp&_session=0 handle 0xb400007f05170da0
+ggml-hex: HTP0 allocated buffer: base 0x7eddd6f000 size 43593728 fd 20 pinned 1
+ggml-hex: HTP0 mapped buffer: base 0x7eddd6f000 size 43593728 fd 20 pinned 1
+ggml-hex: HTP0 allocated opqueue : batch-size 1280 depth 32 shm-size 43593728 shm-block-size 1362304
+ggml-hex: HTP0 op batching: n-bufs 16 n-tensors 8192 n-ops 1280 vmem 3102134272
+ggml-hex: HTP0 supports-op MUL_MAT_ID|blk.0.ffn_gate_exps.weight x E0_fixed_activation x E0_fixed_ids -> E0_blk.0.ffn_gate_exps.weight|2048:1408:60:1 x 2048:1 x 4:1 -> 1408:4|q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 4:8192 x 4:16 -> 4:5632|NONE x NONE x NONE -> NONE|yes
+ggml-hex: HTP0 supports-op MUL_MAT_ID|blk.0.ffn_up_exps.weight x E0_fixed_activation x E0_fixed_ids -> E0_blk.0.ffn_up_exps.weight|2048:1408:60:1 x 2048:1 x 4:1 -> 1408:4|q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 4:8192 x 4:16 -> 4:5632|NONE x NONE x NONE -> NONE|yes
+ggml-hex: HTP0 allocated buffer: base 0x7f8c9ef000 size 69632 fd 22 pinned 0
+ggml-hex: HTP0 mapped buffer: base 0x7f8c9ef000 size 69632 fd 22 pinned 0
+ggml-hex: HTP0 init-tensor E0_fixed_activation : base 0x7f8c9ef000 data 0x7f8c9ef000 nbytes 8192
+ggml-hex: HTP0 init-tensor E0_fixed_ids : base 0x7f8c9ef000 data 0x7f8c9f1000 nbytes 16
+ggml-hex: HTP0 init-tensor E0_blk.0.ffn_gate_exps.weight : base 0x7f8c9ef000 data 0x7f8c9f1080 nbytes 22528
+ggml-hex: HTP0 init-tensor E0_blk.0.ffn_up_exps.weight : base 0x7f8c9ef000 data 0x7f8c9f6880 nbytes 22528
+ggml-hex: HTP0 allocated buffer: base 0x7eae25d000 size 194654208 fd 23 pinned 0
+ggml-hex: HTP0 mapped buffer: base 0x7eae25d000 size 194654208 fd 23 pinned 0
+ggml-hex: HTP0 init-tensor blk.0.ffn_gate_exps.weight : base 0x7eae25d000 data 0x7eae25d000 nbytes 97320960
+ggml-hex: HTP0 init-tensor blk.0.ffn_up_exps.weight : base 0x7eae25d000 data 0x7eb3f2d000 nbytes 97320960
+ggml-hex: HTP0 set-tensor blk.0.ffn_gate_exps.weight : data 0xb400007ecbc00000 offset 0 size 97320960 usage 1 flags 0x3
+ggml-hex: HTP0 set-tensor blk.0.ffn_up_exps.weight : data 0xb400007ec5c00000 offset 0 size 97320960 usage 1 flags 0x3
+ggml-hex: HTP0 set-tensor E0_fixed_activation : data 0xb400007f051e2000 offset 0 size 8192 usage 0 flags 0x0
+ggml-hex: HTP0 set-tensor E0_fixed_ids : data 0xb400007f857fed80 offset 0 size 16 usage 0 flags 0x0
+ggml-hex: HTP0 graph-compute n_nodes 2
+ggml-hex: HTP0 execute-op MUL_MAT_ID|blk.0.ffn_gate_exps.weight x E0_fixed_activation x E0_fixed_ids -> E0_blk.0.ffn_gate_exps.weight|2048:1408:60:1 x 2048:1 x 4:1 -> 1408:4|q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 4:8192 x 4:16 -> 4:5632|HTP0 x HTP0 x HTP0 -> HTP0|hvx-tiled vtcm 2727936|flags 0x0
+ggml-hex: HTP0 add-buffer #0 : fd 23 base 0x7eae25d000 size 194654208 : vmem 194654208
+ggml-hex: HTP0 add-tensor #0 blk.0.ffn_gate_exps.weight : bi 0 data 0x7eae25d000 offset 0 size 97320960 flags 0x3 : 2048:1408:60:1
+ggml-hex: HTP0 add-buffer #1 : fd 22 base 0x7f8c9ef000 size 69632 : vmem 194723840
+ggml-hex: HTP0 add-tensor #1 E0_fixed_activation : bi 1 data 0x7f8c9ef000 offset 0 size 8192 flags 0x0 : 2048:1:1:1
+ggml-hex: HTP0 add-tensor #2 E0_fixed_ids : bi 1 data 0x7f8c9f1000 offset 8192 size 16 flags 0x0 : 4:1:1:1
+ggml-hex: HTP0 add-tensor #3 E0_blk.0.ffn_gate_exps.weight : bi 1 data 0x7f8c9f1080 offset 8320 size 22528 flags 0x0 : 1408:4:1:1
+ggml-hex: HTP0 add-tensor #4 blk.0.ffn_up_exps.weight : bi 0 data 0x7eb3f2d000 offset 97320960 size 97320960 flags 0x3 : 2048:1408:60:1
+ggml-hex: HTP0 add-tensor #5 E0_blk.0.ffn_up_exps.weight : bi 1 data 0x7f8c9f6880 offset 30848 size 22528 flags 0x0 : 1408:4:1:1
+ggml-hex: HTP0 fused MUL_MAT_ID_NX (N=2, #0)
+ggml-hex: HTP0 synchronize
+ggml-hex: HTP0 opqueue-push batch #0 : n-bufs 2 n-tensors 6 n-ops 1 vmem 194723840 : b-size 48 t-size 336 o-size 232 m-size 664
+ggml-hex: HTP0 queue-opbatch: 0x7eddd6f000 size 664
+ggml-hex: HTP0 opqueue-pop batch #0 : n-bufs 2 n-tensors 6 n-ops 1 : m-size 664 b-size 48 t-size 336 o-size 232
+ggml-hex: HTP0 profile-op OPBATCH|----|n-ops 1|----|----|----|usec 514 cycles 870417 start 1011883776819 mhz 1693.4
+ggml-hex: HTP0 profile-op MUL_MAT_ID_NX|blk.0.ffn_gate_exps.weight x blk.0.ffn_up_exps.weight x E0_fixed_activation x E0_fixed_ids -> E0_blk.0.ffn_up_exps.weight|2048:1408:60:1 x 2048:1408:60:1 x 2048:1 x 4:1 -> 1408:4|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192 x 4:16 -> 4:5632|hvx-tiled vtcm 2727936|usec 305 cycles 516386 start 2566800882 mhz 1693.1
+ggml-hex: HTP0 synchronize
+ggml-hex: HTP0 get-tensor E0_blk.0.ffn_gate_exps.weight : data 0xb400007f051f46c0 offset 0 size 22528 usage 0 flags 0x0
+ggml-hex: HTP0 get-tensor E0_blk.0.ffn_up_exps.weight : data 0xb400007f04834f80 offset 0 size 22528 usage 0 flags 0x0
+ggml-hex: HTP0 unmapped buffer: base 0x7eae25d000 size 194654208 fd 23
+ggml-hex: HTP0 release ref on buffer: base 0x7eae25d000 size 194654208 fd 23
+ggml-hex: HTP0 unmapped buffer: base 0x7f8c9ef000 size 69632 fd 22
+ggml-hex: HTP0 release ref on buffer: base 0x7f8c9ef000 size 69632 fd 22
+ggml-hex: HTP0 supports-op MUL_MAT_ID|blk.0.ffn_down_exps.weight x E0_fixed_activation x E0_fixed_ids -> E0_blk.0.ffn_down_exps.weight|1408:2048:60:1 x 1408:4 x 4:1 -> 2048:4|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632 x 4:16 -> 4:8192|NONE x NONE x NONE -> NONE|yes
+ggml-hex: HTP0 allocated buffer: base 0x7f8c9ef000 size 69632 fd 22 pinned 0
+ggml-hex: HTP0 mapped buffer: base 0x7f8c9ef000 size 69632 fd 22 pinned 0
+ggml-hex: HTP0 init-tensor E0_fixed_activation : base 0x7f8c9ef000 data 0x7f8c9ef000 nbytes 22528
+ggml-hex: HTP0 init-tensor E0_fixed_ids : base 0x7f8c9ef000 data 0x7f8c9f4800 nbytes 16
+ggml-hex: HTP0 init-tensor E0_blk.0.ffn_down_exps.weight : base 0x7f8c9ef000 data 0x7f8c9f4880 nbytes 32768
+ggml-hex: HTP0 allocated buffer: base 0x7eb3f2d000 size 97333248 fd 23 pinned 0
+ggml-hex: HTP0 mapped buffer: base 0x7eb3f2d000 size 97333248 fd 23 pinned 0
+ggml-hex: HTP0 init-tensor blk.0.ffn_down_exps.weight : base 0x7eb3f2d000 data 0x7eb3f2d000 nbytes 97320960
+ggml-hex: HTP0 set-tensor blk.0.ffn_down_exps.weight : data 0xb400007ebfc00000 offset 0 size 97320960 usage 1 flags 0x3
+ggml-hex: HTP0 set-tensor E0_fixed_activation : data 0xb400007f051f46c0 offset 0 size 22528 usage 0 flags 0x0
+ggml-hex: HTP0 set-tensor E0_fixed_ids : data 0xb400007f857fed10 offset 0 size 16 usage 0 flags 0x0
+ggml-hex: HTP0 graph-compute n_nodes 1
+ggml-hex: HTP0 execute-op MUL_MAT_ID|blk.0.ffn_down_exps.weight x E0_fixed_activation x E0_fixed_ids -> E0_blk.0.ffn_down_exps.weight|1408:2048:60:1 x 1408:4 x 4:1 -> 2048:4|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632 x 4:16 -> 4:8192|HTP0 x HTP0 x HTP0 -> HTP0|hvx-tiled vtcm 2027520|flags 0x0
+ggml-hex: HTP0 add-buffer #0 : fd 23 base 0x7eb3f2d000 size 97333248 : vmem 97333248
+ggml-hex: HTP0 add-tensor #0 blk.0.ffn_down_exps.weight : bi 0 data 0x7eb3f2d000 offset 0 size 97320960 flags 0x3 : 1408:2048:60:1
+ggml-hex: HTP0 add-buffer #1 : fd 22 base 0x7f8c9ef000 size 69632 : vmem 97402880
+ggml-hex: HTP0 add-tensor #1 E0_fixed_activation : bi 1 data 0x7f8c9ef000 offset 0 size 22528 flags 0x0 : 1408:4:1:1
+ggml-hex: HTP0 add-tensor #2 E0_fixed_ids : bi 1 data 0x7f8c9f4800 offset 22528 size 16 flags 0x0 : 4:1:1:1
+ggml-hex: HTP0 add-tensor #3 E0_blk.0.ffn_down_exps.weight : bi 1 data 0x7f8c9f4880 offset 22656 size 32768 flags 0x0 : 2048:4:1:1
+ggml-hex: HTP0 synchronize
+ggml-hex: HTP0 opqueue-push batch #1 : n-bufs 2 n-tensors 4 n-ops 1 vmem 97402880 : b-size 48 t-size 224 o-size 232 m-size 552
+ggml-hex: HTP0 queue-opbatch: 0x7eddebb980 size 552
+ggml-hex: HTP0 opqueue-pop batch #1 : n-bufs 2 n-tensors 4 n-ops 1 : m-size 552 b-size 48 t-size 224 o-size 232
+ggml-hex: HTP0 profile-op OPBATCH|----|n-ops 1|----|----|----|usec 360 cycles 609542 start 1011888533046 mhz 1693.2
+ggml-hex: HTP0 profile-op MUL_MAT_ID|blk.0.ffn_down_exps.weight x E0_fixed_activation x E0_fixed_ids -> E0_blk.0.ffn_down_exps.weight|1408:2048:60:1 x 1408:4 x 4:1 -> 2048:4|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632 x 4:16 -> 4:8192|hvx-tiled vtcm 2027520|usec 160 cycles 271295 start 2571542385 mhz 1695.6
+ggml-hex: HTP0 synchronize
+ggml-hex: HTP0 get-tensor E0_blk.0.ffn_down_exps.weight : data 0xb400007f0482fe00 offset 0 size 32768 usage 0 flags 0x0
+ggml-hex: HTP0 unmapped buffer: base 0x7eb3f2d000 size 97333248 fd 23
+ggml-hex: HTP0 release ref on buffer: base 0x7eb3f2d000 size 97333248 fd 23
+ggml-hex: HTP0 unmapped buffer: base 0x7f8c9ef000 size 69632 fd 22
+ggml-hex: HTP0 release ref on buffer: base 0x7f8c9ef000 size 69632 fd 22
+ggml-hex: HTP0 supports-op MUL_MAT_ID|blk.0.ffn_gate_exps.weight x E0_fixed_activation x E0_fixed_ids -> E0_blk.0.ffn_gate_exps.weight|2048:1408:60:1 x 2048:1:128:1 x 4:128 -> 1408:4:128:1|q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 4:8192:8192:1048576 x 4:16 -> 4:5632:22528:2883584|NONE x NONE x NONE -> NONE|yes
+ggml-hex: HTP0 supports-op MUL_MAT_ID|blk.0.ffn_up_exps.weight x E0_fixed_activation x E0_fixed_ids -> E0_blk.0.ffn_up_exps.weight|2048:1408:60:1 x 2048:1:128:1 x 4:128 -> 1408:4:128:1|q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 4:8192:8192:1048576 x 4:16 -> 4:5632:22528:2883584|NONE x NONE x NONE -> NONE|yes
+ggml-hex: HTP0 allocated buffer: base 0x7eb957c000 size 6832128 fd 22 pinned 0
+ggml-hex: HTP0 mapped buffer: base 0x7eb957c000 size 6832128 fd 22 pinned 0
+ggml-hex: HTP0 init-tensor E0_fixed_activation : base 0x7eb957c000 data 0x7eb957c000 nbytes 1048576
+ggml-hex: HTP0 init-tensor E0_fixed_ids : base 0x7eb957c000 data 0x7eb967c000 nbytes 2048
+ggml-hex: HTP0 init-tensor E0_blk.0.ffn_gate_exps.weight : base 0x7eb957c000 data 0x7eb967c800 nbytes 2883584
+ggml-hex: HTP0 init-tensor E0_blk.0.ffn_up_exps.weight : base 0x7eb957c000 data 0x7eb993c800 nbytes 2883584
+ggml-hex: HTP0 allocated buffer: base 0x7eadbd9000 size 194654208 fd 23 pinned 0
+ggml-hex: HTP0 mapped buffer: base 0x7eadbd9000 size 194654208 fd 23 pinned 0
+ggml-hex: HTP0 init-tensor blk.0.ffn_gate_exps.weight : base 0x7eadbd9000 data 0x7eadbd9000 nbytes 97320960
+ggml-hex: HTP0 init-tensor blk.0.ffn_up_exps.weight : base 0x7eadbd9000 data 0x7eb38a9000 nbytes 97320960
+ggml-hex: HTP0 set-tensor blk.0.ffn_gate_exps.weight : data 0xb400007ec5c00000 offset 0 size 97320960 usage 1 flags 0x3
+ggml-hex: HTP0 set-tensor blk.0.ffn_up_exps.weight : data 0xb400007ecbc00000 offset 0 size 97320960 usage 1 flags 0x3
+ggml-hex: HTP0 set-tensor E0_fixed_activation : data 0xb400007f04a0db40 offset 0 size 1048576 usage 0 flags 0x0
+ggml-hex: HTP0 set-tensor E0_fixed_ids : data 0xb400007f85687800 offset 0 size 2048 usage 0 flags 0x0
+ggml-hex: HTP0 graph-compute n_nodes 2
+ggml-hex: HTP0 execute-op MUL_MAT_ID|blk.0.ffn_gate_exps.weight x E0_fixed_activation x E0_fixed_ids -> E0_blk.0.ffn_gate_exps.weight|2048:1408:60:1 x 2048:1:128:1 x 4:128 -> 1408:4:128:1|q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 4:8192:8192:1048576 x 4:16 -> 4:5632:22528:2883584|HTP0 x HTP0 x HTP0 -> HTP0|hmx-tiled vtcm 8243200|flags 0x0
+ggml-hex: HTP0 add-buffer #0 : fd 23 base 0x7eadbd9000 size 194654208 : vmem 194654208
+ggml-hex: HTP0 add-tensor #0 blk.0.ffn_gate_exps.weight : bi 0 data 0x7eadbd9000 offset 0 size 97320960 flags 0x3 : 2048:1408:60:1
+ggml-hex: HTP0 add-buffer #1 : fd 22 base 0x7eb957c000 size 6832128 : vmem 201486336
+ggml-hex: HTP0 add-tensor #1 E0_fixed_activation : bi 1 data 0x7eb957c000 offset 0 size 1048576 flags 0x0 : 2048:1:128:1
+ggml-hex: HTP0 add-tensor #2 E0_fixed_ids : bi 1 data 0x7eb967c000 offset 1048576 size 2048 flags 0x0 : 4:128:1:1
+ggml-hex: HTP0 add-tensor #3 E0_blk.0.ffn_gate_exps.weight : bi 1 data 0x7eb967c800 offset 1050624 size 2883584 flags 0x0 : 1408:4:128:1
+ggml-hex: HTP0 add-tensor #4 blk.0.ffn_up_exps.weight : bi 0 data 0x7eb38a9000 offset 97320960 size 97320960 flags 0x3 : 2048:1408:60:1
+ggml-hex: HTP0 add-tensor #5 E0_blk.0.ffn_up_exps.weight : bi 1 data 0x7eb993c800 offset 3934208 size 2883584 flags 0x0 : 1408:4:128:1
+ggml-hex: HTP0 fused MUL_MAT_ID_NX (N=2, #0)
+ggml-hex: HTP0 synchronize
+ggml-hex: HTP0 opqueue-push batch #2 : n-bufs 2 n-tensors 6 n-ops 1 vmem 201486336 : b-size 48 t-size 336 o-size 232 m-size 664
+ggml-hex: HTP0 queue-opbatch: 0x7ede008300 size 664
+ggml-hex: HTP0 opqueue-pop batch #2 : n-bufs 2 n-tensors 6 n-ops 1 : m-size 664 b-size 48 t-size 336 o-size 232
+ggml-hex: HTP0 profile-op OPBATCH|----|n-ops 1|----|----|----|usec 13658 cycles 23077384 start 1011894883476 mhz 1689.7
+ggml-hex: HTP0 profile-op MUL_MAT_ID_NX|blk.0.ffn_gate_exps.weight x blk.0.ffn_up_exps.weight x E0_fixed_activation x E0_fixed_ids -> E0_blk.0.ffn_up_exps.weight|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:128:1 x 4:128 -> 1408:4:128:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:1048576 x 4:16 -> 4:5632:22528:2883584|hmx-tiled vtcm 8243200|usec 13436 cycles 22703200 start 2577905865 mhz 1689.7
+ggml-hex: HTP0 synchronize
+ggml-hex: HTP0 get-tensor E0_blk.0.ffn_gate_exps.weight : data 0xb400007ebbc00000 offset 0 size 2883584 usage 0 flags 0x0
+ggml-hex: HTP0 get-tensor E0_blk.0.ffn_up_exps.weight : data 0xb400007ebc2c0000 offset 0 size 2883584 usage 0 flags 0x0
+ggml-hex: HTP0 unmapped buffer: base 0x7eadbd9000 size 194654208 fd 23
+ggml-hex: HTP0 release ref on buffer: base 0x7eadbd9000 size 194654208 fd 23
+ggml-hex: HTP0 unmapped buffer: base 0x7eb957c000 size 6832128 fd 22
+ggml-hex: HTP0 release ref on buffer: base 0x7eb957c000 size 6832128 fd 22
+ggml-hex: HTP0 supports-op MUL_MAT_ID|blk.0.ffn_down_exps.weight x E0_fixed_activation x E0_fixed_ids -> E0_blk.0.ffn_down_exps.weight|1408:2048:60:1 x 1408:4:128:1 x 4:128 -> 2048:4:128:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:22528:2883584 x 4:16 -> 4:8192:32768:4194304|NONE x NONE x NONE -> NONE|yes
+ggml-hex: HTP0 allocated buffer: base 0x7eb953c000 size 7094272 fd 22 pinned 0
+ggml-hex: HTP0 mapped buffer: base 0x7eb953c000 size 7094272 fd 22 pinned 0
+ggml-hex: HTP0 init-tensor E0_fixed_activation : base 0x7eb953c000 data 0x7eb953c000 nbytes 2883584
+ggml-hex: HTP0 init-tensor E0_fixed_ids : base 0x7eb953c000 data 0x7eb97fc000 nbytes 2048
+ggml-hex: HTP0 init-tensor E0_blk.0.ffn_down_exps.weight : base 0x7eb953c000 data 0x7eb97fc800 nbytes 4194304
+ggml-hex: HTP0 allocated buffer: base 0x7eb3869000 size 97333248 fd 23 pinned 0
+ggml-hex: HTP0 mapped buffer: base 0x7eb3869000 size 97333248 fd 23 pinned 0
+ggml-hex: HTP0 init-tensor blk.0.ffn_down_exps.weight : base 0x7eb3869000 data 0x7eb3869000 nbytes 97320960
+ggml-hex: HTP0 set-tensor blk.0.ffn_down_exps.weight : data 0xb400007ebfc00000 offset 0 size 97320960 usage 1 flags 0x3
+ggml-hex: HTP0 set-tensor E0_fixed_activation : data 0xb400007ebbc00000 offset 0 size 2883584 usage 0 flags 0x0
+ggml-hex: HTP0 set-tensor E0_fixed_ids : data 0xb400007f85687800 offset 0 size 2048 usage 0 flags 0x0
+ggml-hex: HTP0 graph-compute n_nodes 1
+ggml-hex: HTP0 execute-op MUL_MAT_ID|blk.0.ffn_down_exps.weight x E0_fixed_activation x E0_fixed_ids -> E0_blk.0.ffn_down_exps.weight|1408:2048:60:1 x 1408:4:128:1 x 4:128 -> 2048:4:128:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:22528:2883584 x 4:16 -> 4:8192:32768:4194304|HTP0 x HTP0 x HTP0 -> HTP0|hmx-tiled vtcm 8241152|flags 0x0
+ggml-hex: HTP0 add-buffer #0 : fd 23 base 0x7eb3869000 size 97333248 : vmem 97333248
+ggml-hex: HTP0 add-tensor #0 blk.0.ffn_down_exps.weight : bi 0 data 0x7eb3869000 offset 0 size 97320960 flags 0x3 : 1408:2048:60:1
+ggml-hex: HTP0 add-buffer #1 : fd 22 base 0x7eb953c000 size 7094272 : vmem 104427520
+ggml-hex: HTP0 add-tensor #1 E0_fixed_activation : bi 1 data 0x7eb953c000 offset 0 size 2883584 flags 0x0 : 1408:4:128:1
+ggml-hex: HTP0 add-tensor #2 E0_fixed_ids : bi 1 data 0x7eb97fc000 offset 2883584 size 2048 flags 0x0 : 4:128:1:1
+ggml-hex: HTP0 add-tensor #3 E0_blk.0.ffn_down_exps.weight : bi 1 data 0x7eb97fc800 offset 2885632 size 4194304 flags 0x0 : 2048:4:128:1
+ggml-hex: HTP0 synchronize
+ggml-hex: HTP0 opqueue-push batch #3 : n-bufs 2 n-tensors 4 n-ops 1 vmem 104427520 : b-size 48 t-size 224 o-size 232 m-size 552
+ggml-hex: HTP0 queue-opbatch: 0x7ede154c80 size 552
+ggml-hex: HTP0 opqueue-pop batch #3 : n-bufs 2 n-tensors 4 n-ops 1 : m-size 552 b-size 48 t-size 224 o-size 232
+ggml-hex: HTP0 profile-op OPBATCH|----|n-ops 1|----|----|----|usec 6999 cycles 11826284 start 1011922594742 mhz 1689.7
+ggml-hex: HTP0 profile-op MUL_MAT_ID|blk.0.ffn_down_exps.weight x E0_fixed_activation x E0_fixed_ids -> E0_blk.0.ffn_down_exps.weight|1408:2048:60:1 x 1408:4:128:1 x 4:128 -> 2048:4:128:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:22528:2883584 x 4:16 -> 4:8192:32768:4194304|hmx-tiled vtcm 8241152|usec 6774 cycles 11448634 start 2605619911 mhz 1690.1
+ggml-hex: HTP0 synchronize
+ggml-hex: HTP0 get-tensor E0_blk.0.ffn_down_exps.weight : data 0xb400007ebc000000 offset 0 size 4194304 usage 0 flags 0x0
+ggml-hex: HTP0 unmapped buffer: base 0x7eb3869000 size 97333248 fd 23
+ggml-hex: HTP0 release ref on buffer: base 0x7eb3869000 size 97333248 fd 23
+ggml-hex: HTP0 unmapped buffer: base 0x7eb953c000 size 7094272 fd 22
+ggml-hex: HTP0 release ref on buffer: base 0x7eb953c000 size 7094272 fd 22

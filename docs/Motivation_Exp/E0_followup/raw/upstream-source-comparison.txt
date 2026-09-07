@@ -1,0 +1,736 @@
+fetched upstream master: 73ab7599b553c03f6f5d2db24a18ad76f2eb36a3
+current branch: 9d8d6d4e605c5a12887d8573d8c9052638779b94
+worktree: /mnt/sda1/pzw/moe/llama.cpp-upstream-e0-73ab7599b
+ggml/src/ggml-hexagon: identical
+ggml/src/ggml-cpu: identical
+src/models/qwen2moe.cpp: identical
+ggml/src/ggml.c: identical
+src/llama-model.cpp: identical
+tracked changes upstream -> current branch:
+ AGENTS.md                                          |  340 +-
+ CMakeUserPresets.json                              |   87 +
+ common/common.cpp                                  |    5 +
+ common/e0-measure.h                                |  184 +
+ docs/Motivation_Exp/E0/.gitignore                  |    1 +
+ docs/Motivation_Exp/E0/REPORT.md                   |   94 +
+ docs/Motivation_Exp/E0/artifacts.json              |   55 +
+ docs/Motivation_Exp/E0/capabilities.json           |  162 +
+ docs/Motivation_Exp/E0/cleanup.json                |   78 +
+ docs/Motivation_Exp/E0/commands.jsonl              |  684 +++
+ docs/Motivation_Exp/E0/counter-sanity.json         |   15 +
+ docs/Motivation_Exp/E0/environment.json            |  144 +
+ docs/Motivation_Exp/E0/final-validation.json       |   23 +
+ docs/Motivation_Exp/E0/handoff.json                |  168 +
+ docs/Motivation_Exp/E0/manifest.json               |   86 +
+ docs/Motivation_Exp/E0/measurement-summary.json    | 5763 ++++++++++++++++++++
+ docs/Motivation_Exp/E0/monitor-sanity.json         |   11 +
+ docs/Motivation_Exp/E0/numeric-sanity.json         |  130 +
+ docs/Motivation_Exp/E0/old-fault-audit.json        |   20 +
+ docs/Motivation_Exp/E0/path-audit.json             |  186 +
+ docs/Motivation_Exp/E0/prompt.json                 |  134 +
+ docs/Motivation_Exp/E0/raw-log-archive.json        |  481 ++
+ docs/Motivation_Exp/E0/raw/analysis-final.txt      |   11 +
+ docs/Motivation_Exp/E0/raw/analysis-progress.txt   |   10 +
+ docs/Motivation_Exp/E0/raw/build-async-pss.log.gz  |  Bin 0 -> 434 bytes
+ docs/Motivation_Exp/E0/raw/build-boundaries.log.gz |  Bin 0 -> 434 bytes
+ .../E0/raw/build-expert-static.log.gz              |  Bin 0 -> 20 bytes
+ docs/Motivation_Exp/E0/raw/build-expert.log.gz     |  Bin 0 -> 20 bytes
+ docs/Motivation_Exp/E0/raw/build-final.log.gz      |  Bin 0 -> 481 bytes
+ docs/Motivation_Exp/E0/raw/build-htp.log.gz        |  Bin 0 -> 509 bytes
+ docs/Motivation_Exp/E0/raw/build-server.log.gz     |  Bin 0 -> 5457 bytes
+ .../E0/raw/build-timing-final.log.gz               |  Bin 0 -> 434 bytes
+ docs/Motivation_Exp/E0/raw/configure.log.gz        |  Bin 0 -> 1385 bytes
+ docs/Motivation_Exp/E0/raw/counter-final.jsonl     |    2 +
+ docs/Motivation_Exp/E0/raw/counter.jsonl           |    2 +
+ docs/Motivation_Exp/E0/raw/cpu-async-runner.log.gz |  Bin 0 -> 594 bytes
+ .../E0/raw/cpu-confirm-runner.log.gz               |  Bin 0 -> 988 bytes
+ docs/Motivation_Exp/E0/raw/cpu-final-runner.log.gz |  Bin 0 -> 66 bytes
+ .../E0/raw/cpu-profile-runner.log.gz               |  Bin 0 -> 238 bytes
+ docs/Motivation_Exp/E0/raw/cpu-runner.log.gz       |  Bin 0 -> 605 bytes
+ .../E0/raw/cpu-validated-runner.log.gz             |  Bin 0 -> 940 bytes
+ .../E0/raw/device-evidence-verification.json       | 1092 ++++
+ .../E0/raw/device-files-before-cleanup.txt         |  181 +
+ .../E0/raw/device-sha256-before-cleanup.txt        |  181 +
+ docs/Motivation_Exp/E0/raw/devices.txt             |    4 +
+ .../E0/raw/driver-interface-audit.txt              |   79 +
+ docs/Motivation_Exp/E0/raw/final-processes.txt     |  848 +++
+ docs/Motivation_Exp/E0/raw/help.txt                |  734 +++
+ .../E0/raw/htp-profile-runner.log.gz               |  Bin 0 -> 233 bytes
+ .../E0/raw/htp-validated-runner.log.gz             |  Bin 0 -> 585 bytes
+ docs/Motivation_Exp/E0/raw/initial-dirty.patch     |   24 +
+ docs/Motivation_Exp/E0/raw/instrumentation.patch   |  240 +
+ docs/Motivation_Exp/E0/raw/model-sha256.txt        |    1 +
+ docs/Motivation_Exp/E0/raw/model.txt               |    1 +
+ .../E0/raw/numeric-htp-final-runner.log.gz         |  Bin 0 -> 38 bytes
+ .../E0/raw/numeric-htp-runner.log.gz               |  Bin 0 -> 38 bytes
+ .../E0/raw/numeric-htp-verified-runner.log.gz      |  Bin 0 -> 38 bytes
+ .../E0/raw/numeric-opencl-final-runner.log.gz      |  Bin 0 -> 41 bytes
+ .../E0/raw/numeric-opencl-guarded-runner.log.gz    |  Bin 0 -> 41 bytes
+ .../E0/raw/numeric-opencl-runner.log.gz            |  Bin 0 -> 41 bytes
+ .../E0/raw/numeric-opencl-verified-runner.log.gz   |  Bin 0 -> 41 bytes
+ .../E0/raw/opencl-confirm-runner.log.gz            |  Bin 0 -> 928 bytes
+ .../E0/raw/opencl-profile-runner.log.gz            |  Bin 0 -> 233 bytes
+ .../E0/raw/opencl-validated-runner.log.gz          |  Bin 0 -> 602 bytes
+ docs/Motivation_Exp/E0/raw/path-audit-summary.txt  |   54 +
+ docs/Motivation_Exp/E0/raw/post-test-idle.txt      |    5 +
+ docs/Motivation_Exp/E0/raw/prepare.log.gz          |  Bin 0 -> 947 bytes
+ .../E0/runs/cpu-async-confirm/analysis.json        | 1038 ++++
+ .../runs/cpu-async-confirm/driver-fdinfo-audit.txt |   83 +
+ .../E0/runs/cpu-async-confirm/events.jsonl         |  748 +++
+ .../runs/cpu-async-confirm/events.jsonl.pss.jsonl  |   23 +
+ docs/Motivation_Exp/E0/runs/cpu-async-confirm/go   |    0
+ .../E0/runs/cpu-async-confirm/mapping-audit.txt    |  685 +++
+ .../E0/runs/cpu-async-confirm/memory.csv           |  545 ++
+ .../Motivation_Exp/E0/runs/cpu-async-confirm/phase |    1 +
+ docs/Motivation_Exp/E0/runs/cpu-async-confirm/pid  |    1 +
+ .../E0/runs/cpu-async-confirm/request-00.json      |  140 +
+ .../E0/runs/cpu-async-confirm/request-01.json      |  140 +
+ .../E0/runs/cpu-async-confirm/request-02.json      |  140 +
+ .../E0/runs/cpu-async-confirm/request-03.json      |  140 +
+ .../E0/runs/cpu-async-confirm/request-04.json      |  140 +
+ .../E0/runs/cpu-async-confirm/request-05.json      |  140 +
+ .../E0/runs/cpu-async-confirm/request-06.json      |  140 +
+ .../E0/runs/cpu-async-confirm/request-07.json      |  140 +
+ .../E0/runs/cpu-async-confirm/response-00.json     |    1 +
+ .../E0/runs/cpu-async-confirm/response-01.json     |    1 +
+ .../E0/runs/cpu-async-confirm/response-02.json     |    1 +
+ .../E0/runs/cpu-async-confirm/response-03.json     |    1 +
+ .../E0/runs/cpu-async-confirm/response-04.json     |    1 +
+ .../E0/runs/cpu-async-confirm/response-05.json     |    1 +
+ .../E0/runs/cpu-async-confirm/response-06.json     |    1 +
+ .../E0/runs/cpu-async-confirm/sample               |    1 +
+ .../E0/runs/cpu-async-confirm/server.log.gz        |  Bin 0 -> 1609 bytes
+ .../E0/runs/cpu-async-confirm/status.json          |  137 +
+ .../E0/runs/cpu-async-confirm/stop_reason          |    1 +
+ .../E0/runs/cpu-async-confirm/watchdog.log.gz      |  Bin 0 -> 594 bytes
+ .../Motivation_Exp/E0/runs/cpu-async/analysis.json |  817 +++
+ .../E0/runs/cpu-async/driver-fdinfo-audit.txt      |   83 +
+ docs/Motivation_Exp/E0/runs/cpu-async/events.jsonl |  690 +++
+ .../E0/runs/cpu-async/events.jsonl.pss.jsonl       |   20 +
+ docs/Motivation_Exp/E0/runs/cpu-async/go           |    0
+ .../E0/runs/cpu-async/mapping-audit.txt            |  687 +++
+ docs/Motivation_Exp/E0/runs/cpu-async/memory.csv   |  336 ++
+ docs/Motivation_Exp/E0/runs/cpu-async/phase        |    1 +
+ docs/Motivation_Exp/E0/runs/cpu-async/pid          |    1 +
+ .../E0/runs/cpu-async/request-00.json              |  140 +
+ .../E0/runs/cpu-async/request-01.json              |  140 +
+ .../E0/runs/cpu-async/request-02.json              |  140 +
+ .../E0/runs/cpu-async/request-03.json              |  140 +
+ .../E0/runs/cpu-async/request-04.json              |  140 +
+ .../E0/runs/cpu-async/request-05.json              |  140 +
+ .../E0/runs/cpu-async/request-06.json              |  140 +
+ .../E0/runs/cpu-async/response-00.json             |    1 +
+ .../E0/runs/cpu-async/response-01.json             |    1 +
+ .../E0/runs/cpu-async/response-02.json             |    1 +
+ .../E0/runs/cpu-async/response-03.json             |    1 +
+ .../E0/runs/cpu-async/response-04.json             |    1 +
+ .../E0/runs/cpu-async/response-05.json             |    1 +
+ .../E0/runs/cpu-async/response-06.json             |    1 +
+ docs/Motivation_Exp/E0/runs/cpu-async/sample       |    1 +
+ .../Motivation_Exp/E0/runs/cpu-async/server.log.gz |  Bin 0 -> 1554 bytes
+ docs/Motivation_Exp/E0/runs/cpu-async/status.json  |  136 +
+ .../E0/runs/cpu-async/watchdog.log.gz              |  Bin 0 -> 433 bytes
+ .../Motivation_Exp/E0/runs/cpu-final/analysis.json |   42 +
+ docs/Motivation_Exp/E0/runs/cpu-final/events.jsonl |    1 +
+ .../E0/runs/cpu-final/events.jsonl.pss.jsonl       |    1 +
+ docs/Motivation_Exp/E0/runs/cpu-final/go           |    0
+ docs/Motivation_Exp/E0/runs/cpu-final/memory.csv   |   18 +
+ docs/Motivation_Exp/E0/runs/cpu-final/phase        |    1 +
+ docs/Motivation_Exp/E0/runs/cpu-final/pid          |    1 +
+ docs/Motivation_Exp/E0/runs/cpu-final/sample       |    1 +
+ .../Motivation_Exp/E0/runs/cpu-final/server.log.gz |  Bin 0 -> 473 bytes
+ docs/Motivation_Exp/E0/runs/cpu-final/status.json  |    9 +
+ docs/Motivation_Exp/E0/runs/cpu-final/stop_reason  |    1 +
+ .../E0/runs/cpu-final/watchdog.log.gz              |  Bin 0 -> 20 bytes
+ .../E0/runs/cpu-paired/analysis.json               |  500 ++
+ .../Motivation_Exp/E0/runs/cpu-paired/events.jsonl |  690 +++
+ docs/Motivation_Exp/E0/runs/cpu-paired/go          |    0
+ .../E0/runs/cpu-paired/mapping-audit.txt           |  680 +++
+ docs/Motivation_Exp/E0/runs/cpu-paired/memory.csv  |   61 +
+ docs/Motivation_Exp/E0/runs/cpu-paired/phase       |    1 +
+ docs/Motivation_Exp/E0/runs/cpu-paired/pid         |    1 +
+ .../E0/runs/cpu-paired/request-00.json             |  140 +
+ .../E0/runs/cpu-paired/request-01.json             |  140 +
+ .../E0/runs/cpu-paired/request-02.json             |  140 +
+ .../E0/runs/cpu-paired/request-03.json             |  140 +
+ .../E0/runs/cpu-paired/request-04.json             |  140 +
+ .../E0/runs/cpu-paired/request-05.json             |  140 +
+ .../E0/runs/cpu-paired/request-06.json             |  140 +
+ .../E0/runs/cpu-paired/response-00.json            |    1 +
+ .../E0/runs/cpu-paired/response-01.json            |    1 +
+ .../E0/runs/cpu-paired/response-02.json            |    1 +
+ .../E0/runs/cpu-paired/response-03.json            |    1 +
+ .../E0/runs/cpu-paired/response-04.json            |    1 +
+ .../E0/runs/cpu-paired/response-05.json            |    1 +
+ .../E0/runs/cpu-paired/response-06.json            |    1 +
+ docs/Motivation_Exp/E0/runs/cpu-paired/sample      |    1 +
+ .../E0/runs/cpu-paired/server.log.gz               |  Bin 0 -> 1582 bytes
+ docs/Motivation_Exp/E0/runs/cpu-paired/status.json |  136 +
+ .../E0/runs/cpu-paired/watchdog.log.gz             |  Bin 0 -> 20 bytes
+ .../E0/runs/cpu-profile/analysis.json              |  123 +
+ .../E0/runs/cpu-profile/driver-fdinfo-audit.txt    |   83 +
+ .../E0/runs/cpu-profile/events.jsonl               |  102 +
+ .../E0/runs/cpu-profile/events.jsonl.pss.jsonl     |    8 +
+ docs/Motivation_Exp/E0/runs/cpu-profile/go         |    0
+ .../E0/runs/cpu-profile/mapping-audit.txt          |  688 +++
+ docs/Motivation_Exp/E0/runs/cpu-profile/memory.csv |   31 +
+ docs/Motivation_Exp/E0/runs/cpu-profile/phase      |    1 +
+ docs/Motivation_Exp/E0/runs/cpu-profile/pid        |    1 +
+ .../E0/runs/cpu-profile/request-00.json            |  140 +
+ .../E0/runs/cpu-profile/response-00.json           |    1 +
+ docs/Motivation_Exp/E0/runs/cpu-profile/sample     |    1 +
+ .../E0/runs/cpu-profile/server.log.gz              |  Bin 0 -> 257249 bytes
+ .../Motivation_Exp/E0/runs/cpu-profile/status.json |   28 +
+ .../E0/runs/cpu-profile/watchdog.log.gz            |  Bin 0 -> 20 bytes
+ .../E0/runs/cpu-validated/analysis.json            |  954 ++++
+ .../E0/runs/cpu-validated/driver-fdinfo-audit.txt  |   83 +
+ .../E0/runs/cpu-validated/events.jsonl             | 1278 +++++
+ .../E0/runs/cpu-validated/events.jsonl.pss.jsonl   |   32 +
+ docs/Motivation_Exp/E0/runs/cpu-validated/go       |    0
+ .../E0/runs/cpu-validated/mapping-audit.txt        |  694 +++
+ .../E0/runs/cpu-validated/memory.csv               |  107 +
+ docs/Motivation_Exp/E0/runs/cpu-validated/phase    |    1 +
+ docs/Motivation_Exp/E0/runs/cpu-validated/pid      |    1 +
+ .../E0/runs/cpu-validated/request-00.json          |  140 +
+ .../E0/runs/cpu-validated/request-01.json          |  140 +
+ .../E0/runs/cpu-validated/request-02.json          |  140 +
+ .../E0/runs/cpu-validated/request-03.json          |  140 +
+ .../E0/runs/cpu-validated/request-04.json          |  140 +
+ .../E0/runs/cpu-validated/request-05.json          |  140 +
+ .../E0/runs/cpu-validated/request-06.json          |  140 +
+ .../E0/runs/cpu-validated/request-07.json          |  140 +
+ .../E0/runs/cpu-validated/request-08.json          |  140 +
+ .../E0/runs/cpu-validated/request-09.json          |  140 +
+ .../E0/runs/cpu-validated/request-10.json          |  140 +
+ .../E0/runs/cpu-validated/request-11.json          |  140 +
+ .../E0/runs/cpu-validated/request-12.json          |  140 +
+ .../E0/runs/cpu-validated/response-00.json         |    1 +
+ .../E0/runs/cpu-validated/response-01.json         |    1 +
+ .../E0/runs/cpu-validated/response-02.json         |    1 +
+ .../E0/runs/cpu-validated/response-03.json         |    1 +
+ .../E0/runs/cpu-validated/response-04.json         |    1 +
+ .../E0/runs/cpu-validated/response-05.json         |    1 +
+ .../E0/runs/cpu-validated/response-06.json         |    1 +
+ .../E0/runs/cpu-validated/response-07.json         |    1 +
+ .../E0/runs/cpu-validated/response-08.json         |    1 +
+ .../E0/runs/cpu-validated/response-09.json         |    1 +
+ .../E0/runs/cpu-validated/response-10.json         |    1 +
+ .../E0/runs/cpu-validated/response-11.json         |    1 +
+ .../E0/runs/cpu-validated/response-12.json         |    1 +
+ docs/Motivation_Exp/E0/runs/cpu-validated/sample   |    1 +
+ .../E0/runs/cpu-validated/server.log.gz            |  Bin 0 -> 2186 bytes
+ .../E0/runs/cpu-validated/status.json              |  244 +
+ .../E0/runs/cpu-validated/watchdog.log.gz          |  Bin 0 -> 20 bytes
+ .../E0/runs/htp-profile/analysis.json              |  122 +
+ .../E0/runs/htp-profile/driver-fdinfo-audit.txt    |  263 +
+ .../E0/runs/htp-profile/events.jsonl               |  102 +
+ .../E0/runs/htp-profile/events.jsonl.pss.jsonl     |    8 +
+ docs/Motivation_Exp/E0/runs/htp-profile/go         |    0
+ .../E0/runs/htp-profile/kgsl-counters.txt          |    7 +
+ .../E0/runs/htp-profile/mapping-audit.txt          |  760 +++
+ docs/Motivation_Exp/E0/runs/htp-profile/memory.csv |   30 +
+ docs/Motivation_Exp/E0/runs/htp-profile/phase      |    1 +
+ docs/Motivation_Exp/E0/runs/htp-profile/pid        |    1 +
+ .../E0/runs/htp-profile/request-00.json            |  140 +
+ .../E0/runs/htp-profile/response-00.json           |    1 +
+ docs/Motivation_Exp/E0/runs/htp-profile/sample     |    1 +
+ .../E0/runs/htp-profile/server.log.gz              |  Bin 0 -> 2363886 bytes
+ .../Motivation_Exp/E0/runs/htp-profile/status.json |   28 +
+ .../E0/runs/htp-profile/watchdog.log.gz            |  Bin 0 -> 20 bytes
+ .../E0/runs/htp-validated/analysis.json            |  543 ++
+ .../E0/runs/htp-validated/driver-fdinfo-audit.txt  |  263 +
+ .../E0/runs/htp-validated/events.jsonl             |  690 +++
+ .../E0/runs/htp-validated/events.jsonl.pss.jsonl   |   20 +
+ docs/Motivation_Exp/E0/runs/htp-validated/go       |    0
+ .../E0/runs/htp-validated/mapping-audit.txt        |  765 +++
+ .../E0/runs/htp-validated/memory.csv               |   62 +
+ docs/Motivation_Exp/E0/runs/htp-validated/phase    |    1 +
+ docs/Motivation_Exp/E0/runs/htp-validated/pid      |    1 +
+ .../E0/runs/htp-validated/request-00.json          |  140 +
+ .../E0/runs/htp-validated/request-01.json          |  140 +
+ .../E0/runs/htp-validated/request-02.json          |  140 +
+ .../E0/runs/htp-validated/request-03.json          |  140 +
+ .../E0/runs/htp-validated/request-04.json          |  140 +
+ .../E0/runs/htp-validated/request-05.json          |  140 +
+ .../E0/runs/htp-validated/request-06.json          |  140 +
+ .../E0/runs/htp-validated/response-00.json         |    1 +
+ .../E0/runs/htp-validated/response-01.json         |    1 +
+ .../E0/runs/htp-validated/response-02.json         |    1 +
+ .../E0/runs/htp-validated/response-03.json         |    1 +
+ .../E0/runs/htp-validated/response-04.json         |    1 +
+ .../E0/runs/htp-validated/response-05.json         |    1 +
+ .../E0/runs/htp-validated/response-06.json         |    1 +
+ docs/Motivation_Exp/E0/runs/htp-validated/sample   |    1 +
+ .../E0/runs/htp-validated/server.log.gz            |  Bin 0 -> 1552 bytes
+ .../E0/runs/htp-validated/status.json              |  136 +
+ .../E0/runs/htp-validated/watchdog.log.gz          |  Bin 0 -> 20 bytes
+ docs/Motivation_Exp/E0/runs/monitor-sanity/go      |    0
+ .../E0/runs/monitor-sanity/memory.csv              |    7 +
+ docs/Motivation_Exp/E0/runs/monitor-sanity/phase   |    1 +
+ docs/Motivation_Exp/E0/runs/monitor-sanity/pid     |    1 +
+ docs/Motivation_Exp/E0/runs/monitor-sanity/sample  |    1 +
+ .../E0/runs/monitor-sanity/server.log.gz           |  Bin 0 -> 20 bytes
+ .../E0/runs/monitor-sanity/watchdog.log.gz         |  Bin 0 -> 20 bytes
+ .../E0/runs/numeric-htp-final/backend.log.gz       |  Bin 0 -> 2430 bytes
+ .../E0/runs/numeric-htp-final/execution.json       |    5 +
+ docs/Motivation_Exp/E0/runs/numeric-htp-final/go   |    0
+ .../E0/runs/numeric-htp-final/memory.csv           |   20 +
+ .../E0/runs/numeric-htp-final/numeric.jsonl        |    5 +
+ .../Motivation_Exp/E0/runs/numeric-htp-final/phase |    1 +
+ docs/Motivation_Exp/E0/runs/numeric-htp-final/pid  |    1 +
+ .../E0/runs/numeric-htp-final/sample               |    1 +
+ .../E0/runs/numeric-htp-final/watchdog.log.gz      |  Bin 0 -> 177 bytes
+ .../E0/runs/numeric-htp-verified/backend.log.gz    |  Bin 0 -> 2439 bytes
+ .../E0/runs/numeric-htp-verified/execution.json    |    5 +
+ .../Motivation_Exp/E0/runs/numeric-htp-verified/go |    0
+ .../E0/runs/numeric-htp-verified/memory.csv        |    5 +
+ .../E0/runs/numeric-htp-verified/numeric.jsonl     |    5 +
+ .../E0/runs/numeric-htp-verified/phase             |    1 +
+ .../E0/runs/numeric-htp-verified/pid               |    1 +
+ .../E0/runs/numeric-htp-verified/sample            |    1 +
+ .../E0/runs/numeric-htp-verified/watchdog.log.gz   |  Bin 0 -> 20 bytes
+ .../E0/runs/numeric-htp/backend.log.gz             |  Bin 0 -> 2440 bytes
+ docs/Motivation_Exp/E0/runs/numeric-htp/exit_code  |    1 +
+ docs/Motivation_Exp/E0/runs/numeric-htp/memory.csv |    1 +
+ .../E0/runs/numeric-htp/numeric.jsonl              |    5 +
+ .../Motivation_Exp/E0/runs/numeric-htp/numeric.pid |    1 +
+ docs/Motivation_Exp/E0/runs/numeric-htp/phase      |    1 +
+ docs/Motivation_Exp/E0/runs/numeric-htp/sample     |    1 +
+ .../E0/runs/numeric-htp/watchdog.log.gz            |  Bin 0 -> 82 bytes
+ .../E0/runs/numeric-htp/wrapper.log.gz             |  Bin 0 -> 20 bytes
+ .../E0/runs/numeric-opencl-final/backend.log.gz    |  Bin 0 -> 769 bytes
+ .../E0/runs/numeric-opencl-final/execution.json    |    5 +
+ .../Motivation_Exp/E0/runs/numeric-opencl-final/go |    0
+ .../E0/runs/numeric-opencl-final/memory.csv        |    4 +
+ .../E0/runs/numeric-opencl-final/numeric.jsonl     |    5 +
+ .../E0/runs/numeric-opencl-final/phase             |    1 +
+ .../E0/runs/numeric-opencl-final/pid               |    1 +
+ .../E0/runs/numeric-opencl-final/sample            |    1 +
+ .../E0/runs/numeric-opencl-final/watchdog.log.gz   |  Bin 0 -> 20 bytes
+ .../E0/runs/numeric-opencl-guarded/backend.log.gz  |  Bin 0 -> 769 bytes
+ .../E0/runs/numeric-opencl-guarded/exit_code       |    1 +
+ .../E0/runs/numeric-opencl-guarded/memory.csv      |    1 +
+ .../E0/runs/numeric-opencl-guarded/numeric.jsonl   |    5 +
+ .../E0/runs/numeric-opencl-guarded/numeric.pid     |    1 +
+ .../E0/runs/numeric-opencl-guarded/phase           |    1 +
+ .../E0/runs/numeric-opencl-guarded/sample          |    1 +
+ .../E0/runs/numeric-opencl-guarded/watchdog.log.gz |  Bin 0 -> 82 bytes
+ .../E0/runs/numeric-opencl-guarded/wrapper.log.gz  |  Bin 0 -> 20 bytes
+ .../E0/runs/numeric-opencl-verified/backend.log.gz |  Bin 0 -> 769 bytes
+ .../E0/runs/numeric-opencl-verified/execution.json |    5 +
+ .../E0/runs/numeric-opencl-verified/go             |    0
+ .../E0/runs/numeric-opencl-verified/memory.csv     |    5 +
+ .../E0/runs/numeric-opencl-verified/numeric.jsonl  |    5 +
+ .../E0/runs/numeric-opencl-verified/phase          |    1 +
+ .../E0/runs/numeric-opencl-verified/pid            |    1 +
+ .../E0/runs/numeric-opencl-verified/sample         |    1 +
+ .../runs/numeric-opencl-verified/watchdog.log.gz   |  Bin 0 -> 20 bytes
+ .../E0/runs/numeric-opencl/backend.log.gz          |  Bin 0 -> 769 bytes
+ .../E0/runs/numeric-opencl/exit_code               |    1 +
+ .../E0/runs/numeric-opencl/memory.csv              |    1 +
+ .../E0/runs/numeric-opencl/numeric.jsonl           |    5 +
+ .../E0/runs/numeric-opencl/numeric.pid             |    1 +
+ docs/Motivation_Exp/E0/runs/numeric-opencl/phase   |    1 +
+ docs/Motivation_Exp/E0/runs/numeric-opencl/sample  |    1 +
+ .../E0/runs/numeric-opencl/watchdog.log.gz         |  Bin 0 -> 82 bytes
+ .../E0/runs/opencl-confirm/analysis.json           |  952 ++++
+ .../E0/runs/opencl-confirm/driver-fdinfo-audit.txt |   83 +
+ .../E0/runs/opencl-confirm/events.jsonl            | 1278 +++++
+ .../E0/runs/opencl-confirm/events.jsonl.pss.jsonl  |   32 +
+ docs/Motivation_Exp/E0/runs/opencl-confirm/go      |    0
+ .../E0/runs/opencl-confirm/mapping-audit.txt       |  920 ++++
+ .../E0/runs/opencl-confirm/memory.csv              |  105 +
+ docs/Motivation_Exp/E0/runs/opencl-confirm/phase   |    1 +
+ docs/Motivation_Exp/E0/runs/opencl-confirm/pid     |    1 +
+ .../E0/runs/opencl-confirm/request-00.json         |  140 +
+ .../E0/runs/opencl-confirm/request-01.json         |  140 +
+ .../E0/runs/opencl-confirm/request-02.json         |  140 +
+ .../E0/runs/opencl-confirm/request-03.json         |  140 +
+ .../E0/runs/opencl-confirm/request-04.json         |  140 +
+ .../E0/runs/opencl-confirm/request-05.json         |  140 +
+ .../E0/runs/opencl-confirm/request-06.json         |  140 +
+ .../E0/runs/opencl-confirm/request-07.json         |  140 +
+ .../E0/runs/opencl-confirm/request-08.json         |  140 +
+ .../E0/runs/opencl-confirm/request-09.json         |  140 +
+ .../E0/runs/opencl-confirm/request-10.json         |  140 +
+ .../E0/runs/opencl-confirm/request-11.json         |  140 +
+ .../E0/runs/opencl-confirm/request-12.json         |  140 +
+ .../E0/runs/opencl-confirm/response-00.json        |    1 +
+ .../E0/runs/opencl-confirm/response-01.json        |    1 +
+ .../E0/runs/opencl-confirm/response-02.json        |    1 +
+ .../E0/runs/opencl-confirm/response-03.json        |    1 +
+ .../E0/runs/opencl-confirm/response-04.json        |    1 +
+ .../E0/runs/opencl-confirm/response-05.json        |    1 +
+ .../E0/runs/opencl-confirm/response-06.json        |    1 +
+ .../E0/runs/opencl-confirm/response-07.json        |    1 +
+ .../E0/runs/opencl-confirm/response-08.json        |    1 +
+ .../E0/runs/opencl-confirm/response-09.json        |    1 +
+ .../E0/runs/opencl-confirm/response-10.json        |    1 +
+ .../E0/runs/opencl-confirm/response-11.json        |    1 +
+ .../E0/runs/opencl-confirm/response-12.json        |    1 +
+ docs/Motivation_Exp/E0/runs/opencl-confirm/sample  |    1 +
+ .../E0/runs/opencl-confirm/server.log.gz           |  Bin 0 -> 2159 bytes
+ .../E0/runs/opencl-confirm/status.json             |  244 +
+ .../E0/runs/opencl-confirm/watchdog.log.gz         |  Bin 0 -> 20 bytes
+ .../E0/runs/opencl-profile/analysis.json           |  124 +
+ .../E0/runs/opencl-profile/driver-fdinfo-audit.txt |   83 +
+ .../E0/runs/opencl-profile/events.jsonl            |  102 +
+ .../E0/runs/opencl-profile/events.jsonl.pss.jsonl  |    8 +
+ docs/Motivation_Exp/E0/runs/opencl-profile/go      |    0
+ .../E0/runs/opencl-profile/kgsl-counters.txt       |    7 +
+ .../E0/runs/opencl-profile/mapping-audit.txt       |  917 ++++
+ .../E0/runs/opencl-profile/memory.csv              |   32 +
+ docs/Motivation_Exp/E0/runs/opencl-profile/phase   |    1 +
+ docs/Motivation_Exp/E0/runs/opencl-profile/pid     |    1 +
+ .../E0/runs/opencl-profile/request-00.json         |  140 +
+ .../E0/runs/opencl-profile/response-00.json        |    1 +
+ docs/Motivation_Exp/E0/runs/opencl-profile/sample  |    1 +
+ .../E0/runs/opencl-profile/server.log.gz           |  Bin 0 -> 257267 bytes
+ .../E0/runs/opencl-profile/status.json             |   28 +
+ .../E0/runs/opencl-profile/watchdog.log.gz         |  Bin 0 -> 20 bytes
+ .../E0/runs/opencl-validated/analysis.json         |  546 ++
+ .../runs/opencl-validated/driver-fdinfo-audit.txt  |   83 +
+ .../E0/runs/opencl-validated/events.jsonl          |  690 +++
+ .../runs/opencl-validated/events.jsonl.pss.jsonl   |   20 +
+ docs/Motivation_Exp/E0/runs/opencl-validated/go    |    0
+ .../E0/runs/opencl-validated/mapping-audit.txt     |  916 ++++
+ .../E0/runs/opencl-validated/memory.csv            |   65 +
+ docs/Motivation_Exp/E0/runs/opencl-validated/phase |    1 +
+ docs/Motivation_Exp/E0/runs/opencl-validated/pid   |    1 +
+ .../E0/runs/opencl-validated/request-00.json       |  140 +
+ .../E0/runs/opencl-validated/request-01.json       |  140 +
+ .../E0/runs/opencl-validated/request-02.json       |  140 +
+ .../E0/runs/opencl-validated/request-03.json       |  140 +
+ .../E0/runs/opencl-validated/request-04.json       |  140 +
+ .../E0/runs/opencl-validated/request-05.json       |  140 +
+ .../E0/runs/opencl-validated/request-06.json       |  140 +
+ .../E0/runs/opencl-validated/response-00.json      |    1 +
+ .../E0/runs/opencl-validated/response-01.json      |    1 +
+ .../E0/runs/opencl-validated/response-02.json      |    1 +
+ .../E0/runs/opencl-validated/response-03.json      |    1 +
+ .../E0/runs/opencl-validated/response-04.json      |    1 +
+ .../E0/runs/opencl-validated/response-05.json      |    1 +
+ .../E0/runs/opencl-validated/response-06.json      |    1 +
+ .../Motivation_Exp/E0/runs/opencl-validated/sample |    1 +
+ .../E0/runs/opencl-validated/server.log.gz         |  Bin 0 -> 1569 bytes
+ .../E0/runs/opencl-validated/status.json           |  136 +
+ .../E0/runs/opencl-validated/watchdog.log.gz       |  Bin 0 -> 20 bytes
+ docs/Motivation_Exp/E0/scripts/analyze.py          |  227 +
+ docs/Motivation_Exp/E0/scripts/counter_sanity.cpp  |   14 +
+ docs/Motivation_Exp/E0/scripts/environment.py      |   45 +
+ docs/Motivation_Exp/E0/scripts/expert_sanity.cpp   |  144 +
+ docs/Motivation_Exp/E0/scripts/path_audit.py       |   75 +
+ docs/Motivation_Exp/E0/scripts/run_e0.py           |  253 +
+ docs/Motivation_Exp/E0/scripts/watchdog.sh         |   61 +
+ docs/Motivation_Exp/E0/verdict.json                |   68 +
+ docs/Motivation_Exp/E0_followup/artifacts.json     |   54 +
+ docs/Motivation_Exp/E0_followup/commands.jsonl     |  373 ++
+ .../E0_followup/raw/build-hmx-diag.log             |  206 +
+ .../E0_followup/raw/build-hmx-worker-diag.log      |    8 +
+ docs/Motivation_Exp/E0_followup/raw/build-perf.log |   27 +
+ docs/Motivation_Exp/E0_followup/raw/counter.jsonl  |    2 +
+ .../E0_followup/raw/cpu-memory-runner.log          |    1 +
+ .../E0_followup/raw/cpu-perf-runner.log            |   18 +
+ .../E0_followup/raw/device-evidence-sha256.txt     |  125 +
+ docs/Motivation_Exp/E0_followup/raw/devices.txt    |    4 +
+ .../E0_followup/raw/final-device-sha256.txt        |   12 +
+ .../E0_followup/raw/final-dry-run.json             |   35 +
+ .../E0_followup/raw/final-validation.txt           |   12 +
+ docs/Motivation_Exp/E0_followup/raw/help.txt       |  734 +++
+ .../E0_followup/raw/hmx-bias-build.log             |    8 +
+ .../E0_followup/raw/hmx-bias-device-sha256.txt     |    1 +
+ .../E0_followup/raw/hmx-bias-diag.log              |   43 +
+ .../E0_followup/raw/hmx-bias-runner.log            |    1 +
+ .../E0_followup/raw/hmx-default-final-runner.log   |    1 +
+ .../E0_followup/raw/hmx-default-restored-build.log |  208 +
+ .../E0_followup/raw/hmx-farf-diag-runner.log       |    1 +
+ .../E0_followup/raw/hmx-farf-diag.log              |   22 +
+ .../E0_followup/raw/hmx-local-diag-logcat.log.gz   |  Bin 0 -> 3203 bytes
+ .../E0_followup/raw/hmx-local-diag-runner.log      |    1 +
+ .../E0_followup/raw/hmx-local-diagnostics.patch    |   93 +
+ .../E0_followup/raw/hmx-lock-build.log             |    8 +
+ .../E0_followup/raw/hmx-lock-diag.log              |   21 +
+ .../E0_followup/raw/hmx-lock-runner.log            |    1 +
+ .../E0_followup/raw/hmx-packet-build.log           |  308 ++
+ .../E0_followup/raw/hmx-repro-runner.log           |    1 +
+ .../E0_followup/raw/hmx-worker-diag-runner.log     |    1 +
+ .../E0_followup/raw/hmx-worker-disassembly.txt     |  178 +
+ .../E0_followup/raw/hmx-worker-verified-runner.log |    1 +
+ .../E0_followup/raw/hmx-worker-verified.log        |   32 +
+ docs/Motivation_Exp/E0_followup/raw/model.txt      |    1 +
+ .../E0_followup/raw/opencl-regression-runner.log   |    4 +
+ .../E0_followup/raw/perf-build-sha256.json         |   14 +
+ docs/Motivation_Exp/E0_followup/raw/prepare.log    |   23 +
+ docs/Motivation_Exp/E0_followup/report.md          |   79 +
+ .../runs/cpu-memory/driver-fdinfo-audit.txt        |   67 +
+ .../E0_followup/runs/cpu-memory/events.jsonl       |  102 +
+ .../runs/cpu-memory/events.jsonl.pss.jsonl         |    8 +
+ docs/Motivation_Exp/E0_followup/runs/cpu-memory/go |    0
+ .../E0_followup/runs/cpu-memory/mapping-audit.txt  |  695 +++
+ .../E0_followup/runs/cpu-memory/memory.csv         |   28 +
+ .../E0_followup/runs/cpu-memory/mode               |    1 +
+ .../E0_followup/runs/cpu-memory/phase              |    1 +
+ .../Motivation_Exp/E0_followup/runs/cpu-memory/pid |    1 +
+ .../E0_followup/runs/cpu-memory/request-00.json    |  140 +
+ .../E0_followup/runs/cpu-memory/response-00.json   |    1 +
+ .../E0_followup/runs/cpu-memory/sample             |    1 +
+ .../E0_followup/runs/cpu-memory/server.log         |   22 +
+ .../E0_followup/runs/cpu-memory/status.json        |   29 +
+ .../E0_followup/runs/cpu-memory/watchdog.log       |    0
+ .../E0_followup/runs/cpu-perf-s1/events.jsonl      |  294 +
+ .../Motivation_Exp/E0_followup/runs/cpu-perf-s1/go |    0
+ .../runs/cpu-perf-s1/loaded-libraries.txt          |  673 +++
+ .../E0_followup/runs/cpu-perf-s1/memory.csv        |   65 +
+ .../E0_followup/runs/cpu-perf-s1/mode              |    1 +
+ .../E0_followup/runs/cpu-perf-s1/phase             |    1 +
+ .../E0_followup/runs/cpu-perf-s1/pid               |    1 +
+ .../E0_followup/runs/cpu-perf-s1/request-00.json   |  140 +
+ .../E0_followup/runs/cpu-perf-s1/request-01.json   |  140 +
+ .../E0_followup/runs/cpu-perf-s1/request-02.json   |  140 +
+ .../E0_followup/runs/cpu-perf-s1/request-03.json   |  140 +
+ .../E0_followup/runs/cpu-perf-s1/request-04.json   |  140 +
+ .../E0_followup/runs/cpu-perf-s1/request-05.json   |  140 +
+ .../E0_followup/runs/cpu-perf-s1/response-00.json  |    1 +
+ .../E0_followup/runs/cpu-perf-s1/response-01.json  |    1 +
+ .../E0_followup/runs/cpu-perf-s1/response-02.json  |    1 +
+ .../E0_followup/runs/cpu-perf-s1/response-03.json  |    1 +
+ .../E0_followup/runs/cpu-perf-s1/response-04.json  |    1 +
+ .../E0_followup/runs/cpu-perf-s1/response-05.json  |    1 +
+ .../E0_followup/runs/cpu-perf-s1/sample            |    1 +
+ .../E0_followup/runs/cpu-perf-s1/server.log        |   57 +
+ .../E0_followup/runs/cpu-perf-s1/status.json       |  119 +
+ .../runs/cpu-perf-s1/threads-after-01.txt          |   17 +
+ .../runs/cpu-perf-s1/threads-after-02.txt          |   17 +
+ .../runs/cpu-perf-s1/threads-after-03.txt          |   17 +
+ .../runs/cpu-perf-s1/threads-after-04.txt          |   17 +
+ .../runs/cpu-perf-s1/threads-after-05.txt          |   17 +
+ .../E0_followup/runs/cpu-perf-s1/watchdog.log      |    0
+ .../E0_followup/runs/cpu-perf-s2/events.jsonl      |  294 +
+ .../Motivation_Exp/E0_followup/runs/cpu-perf-s2/go |    0
+ .../runs/cpu-perf-s2/loaded-libraries.txt          |  667 +++
+ .../E0_followup/runs/cpu-perf-s2/memory.csv        |   70 +
+ .../E0_followup/runs/cpu-perf-s2/mode              |    1 +
+ .../E0_followup/runs/cpu-perf-s2/phase             |    1 +
+ .../E0_followup/runs/cpu-perf-s2/pid               |    1 +
+ .../E0_followup/runs/cpu-perf-s2/request-00.json   |  140 +
+ .../E0_followup/runs/cpu-perf-s2/request-01.json   |  140 +
+ .../E0_followup/runs/cpu-perf-s2/request-02.json   |  140 +
+ .../E0_followup/runs/cpu-perf-s2/request-03.json   |  140 +
+ .../E0_followup/runs/cpu-perf-s2/request-04.json   |  140 +
+ .../E0_followup/runs/cpu-perf-s2/request-05.json   |  140 +
+ .../E0_followup/runs/cpu-perf-s2/response-00.json  |    1 +
+ .../E0_followup/runs/cpu-perf-s2/response-01.json  |    1 +
+ .../E0_followup/runs/cpu-perf-s2/response-02.json  |    1 +
+ .../E0_followup/runs/cpu-perf-s2/response-03.json  |    1 +
+ .../E0_followup/runs/cpu-perf-s2/response-04.json  |    1 +
+ .../E0_followup/runs/cpu-perf-s2/response-05.json  |    1 +
+ .../E0_followup/runs/cpu-perf-s2/sample            |    1 +
+ .../E0_followup/runs/cpu-perf-s2/server.log        |   57 +
+ .../E0_followup/runs/cpu-perf-s2/status.json       |  119 +
+ .../runs/cpu-perf-s2/threads-after-01.txt          |   17 +
+ .../runs/cpu-perf-s2/threads-after-02.txt          |   17 +
+ .../runs/cpu-perf-s2/threads-after-03.txt          |   17 +
+ .../runs/cpu-perf-s2/threads-after-04.txt          |   17 +
+ .../runs/cpu-perf-s2/threads-after-05.txt          |   17 +
+ .../E0_followup/runs/cpu-perf-s2/watchdog.log      |    0
+ .../E0_followup/runs/cpu-perf-s3/events.jsonl      |  294 +
+ .../Motivation_Exp/E0_followup/runs/cpu-perf-s3/go |    0
+ .../runs/cpu-perf-s3/loaded-libraries.txt          |  665 +++
+ .../E0_followup/runs/cpu-perf-s3/memory.csv        |   62 +
+ .../E0_followup/runs/cpu-perf-s3/mode              |    1 +
+ .../E0_followup/runs/cpu-perf-s3/phase             |    1 +
+ .../E0_followup/runs/cpu-perf-s3/pid               |    1 +
+ .../E0_followup/runs/cpu-perf-s3/request-00.json   |  140 +
+ .../E0_followup/runs/cpu-perf-s3/request-01.json   |  140 +
+ .../E0_followup/runs/cpu-perf-s3/request-02.json   |  140 +
+ .../E0_followup/runs/cpu-perf-s3/request-03.json   |  140 +
+ .../E0_followup/runs/cpu-perf-s3/request-04.json   |  140 +
+ .../E0_followup/runs/cpu-perf-s3/request-05.json   |  140 +
+ .../E0_followup/runs/cpu-perf-s3/response-00.json  |    1 +
+ .../E0_followup/runs/cpu-perf-s3/response-01.json  |    1 +
+ .../E0_followup/runs/cpu-perf-s3/response-02.json  |    1 +
+ .../E0_followup/runs/cpu-perf-s3/response-03.json  |    1 +
+ .../E0_followup/runs/cpu-perf-s3/response-04.json  |    1 +
+ .../E0_followup/runs/cpu-perf-s3/response-05.json  |    1 +
+ .../E0_followup/runs/cpu-perf-s3/sample            |    1 +
+ .../E0_followup/runs/cpu-perf-s3/server.log        |   57 +
+ .../E0_followup/runs/cpu-perf-s3/status.json       |  119 +
+ .../runs/cpu-perf-s3/threads-after-01.txt          |   17 +
+ .../runs/cpu-perf-s3/threads-after-02.txt          |   17 +
+ .../runs/cpu-perf-s3/threads-after-03.txt          |   17 +
+ .../runs/cpu-perf-s3/threads-after-04.txt          |   17 +
+ .../runs/cpu-perf-s3/threads-after-05.txt          |   17 +
+ .../E0_followup/runs/cpu-perf-s3/watchdog.log      |    0
+ .../E0_followup/runs/hmx-bias-diag/backend.log     |  141 +
+ .../E0_followup/runs/hmx-bias-diag/execution.json  |    5 +
+ .../E0_followup/runs/hmx-bias-diag/go              |    0
+ .../E0_followup/runs/hmx-bias-diag/memory.csv      |    5 +
+ .../E0_followup/runs/hmx-bias-diag/numeric.jsonl   |    5 +
+ .../E0_followup/runs/hmx-bias-diag/phase           |    1 +
+ .../E0_followup/runs/hmx-bias-diag/pid             |    1 +
+ .../E0_followup/runs/hmx-bias-diag/sample          |    1 +
+ .../E0_followup/runs/hmx-bias-diag/watchdog.log    |    0
+ .../E0_followup/runs/hmx-default-final/backend.log |  141 +
+ .../runs/hmx-default-final/execution.json          |    5 +
+ .../E0_followup/runs/hmx-default-final/go          |    0
+ .../E0_followup/runs/hmx-default-final/memory.csv  |    4 +
+ .../runs/hmx-default-final/numeric.jsonl           |    5 +
+ .../E0_followup/runs/hmx-default-final/phase       |    1 +
+ .../E0_followup/runs/hmx-default-final/pid         |    1 +
+ .../E0_followup/runs/hmx-default-final/sample      |    1 +
+ .../runs/hmx-default-final/watchdog.log            |    0
+ .../E0_followup/runs/hmx-farf-diag/backend.log     |  141 +
+ .../E0_followup/runs/hmx-farf-diag/execution.json  |    5 +
+ .../E0_followup/runs/hmx-farf-diag/go              |    0
+ .../E0_followup/runs/hmx-farf-diag/memory.csv      |    9 +
+ .../E0_followup/runs/hmx-farf-diag/numeric.jsonl   |    5 +
+ .../E0_followup/runs/hmx-farf-diag/phase           |    1 +
+ .../E0_followup/runs/hmx-farf-diag/pid             |    1 +
+ .../E0_followup/runs/hmx-farf-diag/sample          |    1 +
+ .../E0_followup/runs/hmx-farf-diag/watchdog.log    |    0
+ .../E0_followup/runs/hmx-local-diag/backend.log    |  141 +
+ .../E0_followup/runs/hmx-local-diag/execution.json |    5 +
+ .../E0_followup/runs/hmx-local-diag/go             |    0
+ .../E0_followup/runs/hmx-local-diag/memory.csv     |    4 +
+ .../E0_followup/runs/hmx-local-diag/numeric.jsonl  |    5 +
+ .../E0_followup/runs/hmx-local-diag/phase          |    1 +
+ .../E0_followup/runs/hmx-local-diag/pid            |    1 +
+ .../E0_followup/runs/hmx-local-diag/sample         |    1 +
+ .../E0_followup/runs/hmx-local-diag/watchdog.log   |    0
+ .../E0_followup/runs/hmx-lock-diag/backend.log     |  141 +
+ .../E0_followup/runs/hmx-lock-diag/execution.json  |    5 +
+ .../E0_followup/runs/hmx-lock-diag/go              |    0
+ .../E0_followup/runs/hmx-lock-diag/memory.csv      |    5 +
+ .../E0_followup/runs/hmx-lock-diag/numeric.jsonl   |    5 +
+ .../E0_followup/runs/hmx-lock-diag/phase           |    1 +
+ .../E0_followup/runs/hmx-lock-diag/pid             |    1 +
+ .../E0_followup/runs/hmx-lock-diag/sample          |    1 +
+ .../E0_followup/runs/hmx-lock-diag/watchdog.log    |    0
+ .../E0_followup/runs/hmx-repro/backend.log         |  141 +
+ .../E0_followup/runs/hmx-repro/execution.json      |    5 +
+ docs/Motivation_Exp/E0_followup/runs/hmx-repro/go  |    0
+ .../E0_followup/runs/hmx-repro/memory.csv          |    4 +
+ .../E0_followup/runs/hmx-repro/numeric.jsonl       |    5 +
+ .../E0_followup/runs/hmx-repro/phase               |    1 +
+ docs/Motivation_Exp/E0_followup/runs/hmx-repro/pid |    1 +
+ .../E0_followup/runs/hmx-repro/sample              |    1 +
+ .../E0_followup/runs/hmx-repro/watchdog.log        |    0
+ .../E0_followup/runs/hmx-worker-diag/backend.log   |  141 +
+ .../runs/hmx-worker-diag/execution.json            |    5 +
+ .../E0_followup/runs/hmx-worker-diag/go            |    0
+ .../E0_followup/runs/hmx-worker-diag/memory.csv    |    5 +
+ .../E0_followup/runs/hmx-worker-diag/numeric.jsonl |    5 +
+ .../E0_followup/runs/hmx-worker-diag/phase         |    1 +
+ .../E0_followup/runs/hmx-worker-diag/pid           |    1 +
+ .../E0_followup/runs/hmx-worker-diag/sample        |    1 +
+ .../E0_followup/runs/hmx-worker-diag/watchdog.log  |    0
+ .../runs/hmx-worker-verified/backend.log           |  141 +
+ .../runs/hmx-worker-verified/execution.json        |    5 +
+ .../E0_followup/runs/hmx-worker-verified/go        |    0
+ .../runs/hmx-worker-verified/memory.csv            |    4 +
+ .../runs/hmx-worker-verified/numeric.jsonl         |    5 +
+ .../E0_followup/runs/hmx-worker-verified/phase     |    1 +
+ .../E0_followup/runs/hmx-worker-verified/pid       |    1 +
+ .../E0_followup/runs/hmx-worker-verified/sample    |    1 +
+ .../runs/hmx-worker-verified/watchdog.log          |    0
+ .../runs/opencl-perf-regression/events.jsonl       |  196 +
+ .../E0_followup/runs/opencl-perf-regression/go     |    0
+ .../opencl-perf-regression/loaded-libraries.txt    |  885 +++
+ .../runs/opencl-perf-regression/memory.csv         |   49 +
+ .../E0_followup/runs/opencl-perf-regression/mode   |    1 +
+ .../E0_followup/runs/opencl-perf-regression/phase  |    1 +
+ .../E0_followup/runs/opencl-perf-regression/pid    |    1 +
+ .../runs/opencl-perf-regression/request-00.json    |  140 +
+ .../runs/opencl-perf-regression/request-01.json    |  140 +
+ .../runs/opencl-perf-regression/request-02.json    |  140 +
+ .../runs/opencl-perf-regression/request-03.json    |  140 +
+ .../runs/opencl-perf-regression/response-00.json   |    1 +
+ .../runs/opencl-perf-regression/response-01.json   |    1 +
+ .../runs/opencl-perf-regression/response-02.json   |    1 +
+ .../runs/opencl-perf-regression/response-03.json   |    1 +
+ .../E0_followup/runs/opencl-perf-regression/sample |    1 +
+ .../runs/opencl-perf-regression/server.log         |   43 +
+ .../runs/opencl-perf-regression/status.json        |   83 +
+ .../opencl-perf-regression/threads-after-01.txt    |   17 +
+ .../opencl-perf-regression/threads-after-02.txt    |   17 +
+ .../opencl-perf-regression/threads-after-03.txt    |   17 +
+ .../runs/opencl-perf-regression/watchdog.log       |    0
+ docs/Motivation_Exp/E0_followup/summary.csv        |  390 ++
+ docs/Motivation_Exp/Exp1/Exp_report.md             |  289 +
+ docs/Motivation_Exp/Exp1/Exp_report_4GiB.md        |  219 +
+ docs/bugs/2026-09-03-exp1-lmkd-classification.md   |   42 +
+ docs/bugs/2026-09-03-exp1-logcat-decode.md         |   29 +
+ .../2026-09-07-e0-measurement-instrumentation.md   |   41 +
+ .../2026-09-07-e0-perf-isolation-hmx-blocked.md    |    9 +
+ examples/test-cmake/test-cmake.cpp                 |    3 +-
+ ggml/src/ggml-cuda/common.cuh                      |   24 -
+ ggml/src/ggml-cuda/mmvq.cu                         |   55 +-
+ ggml/src/ggml-cuda/vecdotq.cuh                     |   41 +-
+ ggml/src/ggml-openvino/ggml-openvino.cpp           |    4 -
+ ggml/src/ggml-vulkan/ggml-vulkan.cpp               |   45 +-
+ .../ggml-vulkan/vulkan-shaders/get_rows_quant.comp |    6 +-
+ ggml/src/ggml-webgpu/ggml-webgpu.cpp               |   10 +-
+ task/handoff/handoff-2026-09-01-exp1/.gitignore    |    2 +
+ .../handoff-2026-09-01-exp1/aggregate_results.py   |   79 +
+ .../handoff-2026-09-01-exp1/device_monitor.sh      |   49 +
+ .../handoff-2026-09-01-exp1/drop_file_cache.c      |   33 +
+ .../handoff/handoff-2026-09-01-exp1/exp1_runner.py |  683 +++
+ task/handoff/handoff-2026-09-01-exp1/handoff-01.md |   84 +
+ task/handoff/handoff-2026-09-01-exp1/handoff-02.md |   90 +
+ .../handoff-2026-09-01-exp1/results/.gitignore     |    4 +
+ .../handoff-2026-09-01-exp1/results/aggregate.json |  261 +
+ .../results/cpu_mmap/run-01/result.json            |   77 +
+ .../results/cpu_mmap/run-02/result.json            |   77 +
+ .../results/cpu_mmap/run-03/result.json            |   77 +
+ .../results/cpu_mmap/summary.json                  |  233 +
+ .../results/cpu_nommap/run-01/result.json          |   52 +
+ .../results/cpu_nommap/run-02/result.json          |   52 +
+ .../results/cpu_nommap/run-03/result.json          |   52 +
+ .../results/cpu_nommap/summary.json                |  158 +
+ .../results/htp1/run-01/result.json                |   78 +
+ .../results/htp1/run-02/result.json                |   78 +
+ .../results/htp1/run-03/result.json                |   78 +
+ .../results/htp1/summary.json                      |  236 +
+ .../results/htp2/run-01/result.json                |   49 +
+ .../results/htp2/run-02/result.json                |   49 +
+ .../results/htp2/run-03/result.json                |   49 +
+ .../results/htp2/summary.json                      |  149 +
+ .../results/htp4/run-01/result.json                |   49 +
+ .../results/htp4/run-02/result.json                |   49 +
+ .../results/htp4/run-03/result.json                |   49 +
+ .../results/htp4/summary.json                      |  149 +
+ .../results/opencl_mmap/run-01/result.json         |   77 +
+ .../results/opencl_mmap/run-02/result.json         |   77 +
+ .../results/opencl_mmap/run-03/result.json         |   77 +
+ .../results/opencl_mmap/summary.json               |  233 +
+ .../results/prompt_tokens.json                     |  517 ++
+ task/handoff/handoff-2026-09-01-exp1/tasklist.md   |   15 +
+ task/handoff/handoff-2026-09-03-exp1-4g/.gitignore |    6 +
+ .../aggregate_results.py                           |  105 +
+ .../handoff-2026-09-03-exp1-4g/handoff-01.md       |  145 +
+ .../results/aggregate.json                         |  311 ++
+ .../results/cpu_mmap/run-01/result.json            |  120 +
+ .../results/cpu_mmap/run-02/result.json            |  120 +
+ .../results/cpu_mmap/run-03/result.json            |  120 +
+ .../results/cpu_mmap/summary.json                  |  362 ++
+ .../results/cpu_nommap/run-01/result.json          |  120 +
+ .../results/cpu_nommap/run-02/result.json          |  120 +
+ .../results/cpu_nommap/run-03/result.json          |  120 +
+ .../results/cpu_nommap/summary.json                |  362 ++
+ .../results/htp1/run-01/result.json                |  146 +
+ .../results/htp1/run-02/result.json                |  146 +
+ .../results/htp1/run-03/result.json                |  146 +
+ .../results/htp1/summary.json                      |  440 ++
+ .../results/opencl_mmap/run-01/result.json         |  145 +
+ .../results/opencl_mmap/run-02/result.json         |  145 +
+ .../results/opencl_mmap/run-03/result.json         |  145 +
+ .../results/opencl_mmap/summary.json               |  437 ++
+ .../handoff/handoff-2026-09-03-exp1-4g/tasklist.md |   13 +
+ task/handoff/handoff-2026-09-07-e0/handoff-01.md   |   30 +
+ task/handoff/handoff-2026-09-07-e0/handoff-02.md   |   30 +
+ task/handoff/handoff-2026-09-07-e0/tasklist.md     |   15 +
+ tests/test-backend-ops.cpp                         |   49 +-
+ tools/server/server-context.cpp                    |    8 +
+ tools/server/server-http.cpp                       |    4 +
+ 725 files changed, 68524 insertions(+), 359 deletions(-)
+

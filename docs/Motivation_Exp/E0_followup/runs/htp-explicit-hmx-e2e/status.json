@@ -1,0 +1,29 @@
+{
+  "config": "htp",
+  "mode": "memory",
+  "profile": true,
+  "pid": 2054,
+  "launcher": "cd /data/local/tmp/llama-e0-followup; echo $$ > /data/local/tmp/llama-e0-followup/htp-explicit-hmx-e2e/pid; while [ ! -f /data/local/tmp/llama-e0-followup/htp-explicit-hmx-e2e/go ]; do sleep 0.1; done; exec env LD_LIBRARY_PATH=/data/local/tmp/llama-e0-followup ADSP_LIBRARY_PATH=/data/local/tmp/llama-e0-followup GGML_HEXAGON_DEVICES=1 GGML_HEXAGON_USE_HMX=1 E0_MODE=memory E0_TRACE=/data/local/tmp/llama-e0-followup/htp-explicit-hmx-e2e/events.jsonl E0_SAMPLE_CONFIG=/data/local/tmp/llama-e0-followup/htp-explicit-hmx-e2e/sample GGML_SCHED_DEBUG=2 GGML_HEXAGON_VERBOSE=1 GGML_HEXAGON_PROFILE=1 ./llama-server -m /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf -c 512 -np 1 -t 4 -tb 4 -b 128 -ub 128 -ctk f16 -ctv f16 --load-mode mmap --no-warmup --cache-ram 0 --fit off --host 127.0.0.1 --port 18089 --device HTP0 -ngl 99 --log-verbosity 5 > /data/local/tmp/llama-e0-followup/htp-explicit-hmx-e2e/server.log 2>&1",
+  "requests": [
+    {
+      "index": 0,
+      "sampling": 1,
+      "role": "diagnostic",
+      "tokens_evaluated": 128,
+      "tokens_predicted": 32,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 128,
+        "prompt_ms": 786.514,
+        "prompt_per_token_ms": 6.144640625,
+        "prompt_per_second": 162.74344766908155,
+        "predicted_n": 32,
+        "predicted_ms": 3756.669,
+        "predicted_per_token_ms": 121.18287096774193,
+        "predicted_per_second": 8.251991325293764
+      }
+    }
+  ],
+  "load_wall_s": 16.486139550805092,
+  "status": "completed"
+}

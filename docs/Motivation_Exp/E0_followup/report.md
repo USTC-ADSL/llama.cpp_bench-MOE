@@ -7,6 +7,7 @@
 - [x] 完成必要 OpenCL 回归、恢复默认 DSP 并复验原数值用例
 - [ ] CPU decode 开销达到 ±3% 可判定要求
 - [ ] HMX 根因修复、相关算子回归及修复后的 128/32 整模型验收
+- [x] 用户追加：官方 upstream 73ab7599b 独立构建与同机数值/整模型对照（同样失败，非分支特有现象）
 
 仓库 `/mnt/sda1/pzw/moe/llama.cpp_bench-MOE`；起始 HEAD `bbfd2b22e`，与 E0 完成版本无代码漂移。仅原有 `AGENTS.md` 和 `docs/Motivation_Exp/Exp1/Exp_require.md` 用户修改，最终 SHA256 与 E0 环境记录一致。未更新 upstream、依赖或模型。设备 `3B661501LA000000`，PLU110 / SM8735 / v73（运行时报告 4 HVX、1 HMX、8 MB VTCM），Android 16、内核 6.6.89；详细身份沿用 `../E0/environment.json`。模型 `/data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf`，8149865792 bytes，原完整 SHA256 `8b704c763230935a096c9c810765c8a5483f1724c83e34e253704138ca040473`。本次未改写模型，shape/元信息见 `raw/model.txt`。
 
@@ -76,4 +77,21 @@ python3 docs/Motivation_Exp/E0/scripts/analyze.py --followup
 
 构建复用 `build-npu-opencl.sh` 对应缓存，NDK r27d、Hexagon Tools19.0.04，无重新配置或依赖升级。完整手机启动/请求/拷贝命令见 `commands.jsonl`；增量构建日志在 `raw/*build*.log*`，原始响应/token/内存在 `runs/`。各步骤单独增量构建并在成功后部署；诊断命令的具体label及环境在各 `execution.json`。`--prepare` 为首次执行记录，不应直接在现有结果目录重复运行。收尾检查与设备清理记录见 `raw/final-validation.txt`。
 
-收尾：分析器检查全部perf记录、计数/线程/无PSS约束；原Android counter sanity通过，minflt增量4102、majflt增量0，与RUSAGE_SELF bracket一致。125个设备文件全部与保留证据或构建产物逐一hash匹配后，仅删除 `/data/local/tmp/llama-e0-followup`；无遗留推理/watchdog进程，原模型及已有缓存保留。Git检查点为包含本报告的补验提交；任务至此停止。
+初次收尾：分析器检查全部perf记录、计数/线程/无PSS约束；原Android counter sanity通过，minflt增量4102、majflt增量0，与RUSAGE_SELF bracket一致。125个设备文件全部与保留证据或构建产物逐一hash匹配后，仅删除 `/data/local/tmp/llama-e0-followup`；无遗留推理/watchdog进程，原模型及已有缓存保留。
+
+**用户追加：5%阈值、显式HMX变量和官方upstream对照。** decode区间[-5.789%,+1.580%]仍超出±5%，5%敏感性检查也不通过，见CSV的 `sensitivity_5_percent` 行；原±3%判据不变。当前及官方源码均不读取 `GGML_HEXAGON_USE_HMX`，实际变量为 `GGML_HEXAGON_NHMX`（默认1），matmul默认允许HMX。显式携带USE_HMX=1的本分支 `htp-explicit-hmx-e2e` 完成128/32，但输出为“醉，那么，那么……”重复串；`hmx-explicit-variable` 的原n128数值仍失败。新增sanity诊断开关 `E0_WEIGHT_CONTEXT=1` 仅单独分配并标记WEIGHTS buffer，模拟模型加载；与同构建OFF对照均为n1通过、n128全零，见 `hmx-weight-context`、`hmx-weight-context-control`，排除“补上WEIGHTS标记即可修好”。权重/激活/IDs/shape/容差未改。
+
+执行 `git fetch --no-tags upstream master`，固定拉取时最新官方提交 **73ab7599b553c03f6f5d2db24a18ad76f2eb36a3**（2026-09-07，CUDA优化），独立detached worktree为 `/mnt/sda1/pzw/moe/llama.cpp-upstream-e0-73ab7599b`。**官方跟踪源码干净，未加入E0计时埋点，未向本分支merge。** Hexagon目录、CPU目录、Qwen MoE建图、ggml.c和模型加载源码与本分支完全相同，见 `raw/upstream-source-comparison.txt`。
+
+官方树没有自定义build脚本/Android preset，使用现有脚本对应的等价显式CMake参数，保留NDK r27d、Hexagon Tools19.0.04、Android34、armv8.7a、Release、OpenCL/Hexagon。构建目录为worktree下 `build-e0-android`；执行 `cmake --build /mnt/sda1/pzw/moe/llama.cpp-upstream-e0-73ab7599b/build-e0-android --target llama-server htp-v73 -j8`。sanity复用本分支同一源文件，在官方树外编译并链接官方ggml库。完整配置/启动命令在 `commands.jsonl`，日志为 `raw/upstream-configure.log`、`upstream-build.log`、`upstream-helper-build.log`；产物hash为 `raw/upstream-artifact-sha256.txt`。官方整套库单独部署到 `/data/local/tmp/llama-e0-upstream-73ab7599b`，没有混用本分支库。手机help/设备枚举和dry-run通过后，原runner顺序执行数值测试、CPU单请求、HTP单请求详细profile，沿用原watchdog、互斥及退出检查。
+
+| 同机、同模型对照 | 本分支 | 官方73ab7599b |
+|---|---|---|
+| n1 gate/up、down | PASS，RRMSE 0.00380649 / 0.00387328 | 完全相同 |
+| n128 gate/up、down | 全零，RRMSE均1 | 完全相同 |
+| CPU 128/32 | 英文续写，与原输入主题一致 | 32个输出token逐个相同 |
+| 默认HTP 128/32，显式USE_HMX=1 | “醉，那么……”重复输出 | 32个输出token逐个相同 |
+
+官方原始结果在 `runs/upstream-hmx-numeric/`、`upstream-cpu-e2e/`、`upstream-htp-e2e/`。两边真正的128-token请求都完成164个HMX profile算子，其中46个routed expert算子，不是启动2-token探测。比较见 `raw/upstream-path-and-output.txt`；`raw/upstream-dsp-load.log` 记录成功打开官方专用目录中的v73 DSP库。全模型运行完成只表示计数/传输完成，异常文本不标语义PASS。官方没有E0 token-ready埋点，本次不声称完成其TTFT/ITL或性能验收。
+
+**结论：官方当前版本在同设备、模型和工具链下也复现，不能把故障归为本分支特有修改。** 尚未在上游实现、工具链与设备/固件运行契约之间确定根因。HMX仍BLOCKED，不改变默认选择/融合、不使用HVX-only或CPU回退。追加测试的84个设备文件已逐一hash核对，两套临时设备目录均已清理，源码状态见 `raw/upstream-final-validation.txt`。大型server日志无损保存为 `server.log.gz`，摘录保留原行号。保留worktree与构建，停止测试，不自动展开版本二分。

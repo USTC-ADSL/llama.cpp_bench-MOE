@@ -7,3 +7,5 @@ E0 CPU 同时采集 PSS 时 p95 ITL 平均下降11.522%，不能当作无测量�
 HMX n128真实Q4_0 gate/up、down仍全零，RRMSE1；锁成功、bias回读一致，HMX worker实际写零。未确定HMX根因、未宣称修复；临时诊断全部撤出后，默认DSP与原版本hash一致，原n1通过、n128失败。没有用HVX-only、改shape/精度/容差或CPU回退掩盖。修复后相关算子及整模型验收仍缺失。
 
 命令、版本、数值、原始日志和限制统一见 [补验报告](../Motivation_Exp/E0_followup/report.md) 与同目录 `summary.csv`，不另复制证据。
+
+追加官方对照：干净upstream 73ab7599b、相同NDK/Hexagon工具链在同手机上也复现n128全零。官方和本分支的CPU输出逐token相同，HTP也逐token相同但均为异常重复；Hexagon等相关源码完全一致，不能归因于本分支特有修改。显式USE_HMX=1及单独WEIGHTS buffer均未消除失败；该版本实际读取NHMX，默认已启用HMX。±5%的CPU敏感性检查仍不通过。

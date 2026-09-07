@@ -188,17 +188,20 @@ def followup_summary():
             cpu_pass &= verdict=='PASS'
             for suffix,value in [('',statistics.mean(means)),('_ci_low',lo),('_ci_high',hi)]:
                 row('cpu','startup_cluster_bootstrap','cpu-perf-s1..s3','',k+suffix,value*100,'%',verdict)
+            sensitivity_pass=lo>=-.05 and hi<=.05
+            row('cpu','sensitivity_5_percent','cpu-perf-s1..s3','',k,int(sensitivity_pass),'boolean',
+                'PASS' if sensitivity_pass else 'BLOCKED_INCONCLUSIVE_OR_OVERHEAD')
         row('cpu','verdict','cpu-perf-s1..s3','','performance_acceptance',int(cpu_pass),'boolean','PASS' if cpu_pass else 'BLOCKED')
     for folder in sorted((out/'runs').iterdir()):
         if (folder/'numeric.jsonl').exists():
-            kind='numeric_default' if folder.name in ('hmx-repro','hmx-default-final') else 'numeric_diagnostic_not_acceptance'
+            kind='numeric_default' if folder.name in ('hmx-repro','hmx-default-final','hmx-explicit-variable','hmx-weight-context-control','upstream-hmx-numeric') else 'numeric_diagnostic_not_acceptance'
             for r in lines(folder/'numeric.jsonl'):
                 if 'n' not in r: continue
                 for k in ['relative_rmse','max_error_over_ref_rms']:
                     if k in r: row(r['backend'],kind,folder.name,str(r['n'])+'/'+r['operation'],k,r[k],'ratio',r['status'])
                 for k,v in r.get('output_stats',{}).items():
                     row(r['backend'],kind,folder.name,str(r['n'])+'/'+r['operation'],'output_'+k,v,'value',r['status'])
-            if folder.name=='hmx-default-final':
+            if folder.name in ('hmx-default-final','upstream-hmx-numeric'):
                 tests=[r for r in lines(folder/'numeric.jsonl') if 'n' in r]
                 log=(folder/'backend.log').read_text()
                 assert 'hmx-tiled' in log and 'profile-op MUL_MAT_ID_NX' in log
@@ -207,6 +210,16 @@ def followup_summary():
     if (out/'runs/opencl-perf-regression/status.json').exists():
         ok=load(out/'runs/opencl-perf-regression/status.json')['status']=='completed'
         row('opencl','verdict','opencl-perf-regression','','public_timing_code_regression',int(ok),'boolean','PASS' if ok else 'BLOCKED')
+    for name in ['htp-explicit-hmx-e2e','upstream-cpu-e2e','upstream-htp-e2e']:
+        folder=out/'runs'/name
+        if not (folder/'status.json').exists(): continue
+        s=load(folder/'status.json')
+        if s['status']!='completed':
+            row(s['config'],'e2e_diagnostic',name,'','request_completed',0,'boolean','BLOCKED'); continue
+        r=load(folder/'response-00.json')
+        assert r['tokens_evaluated']==128 and r['tokens_predicted']==32 and r['timings']['cache_n']==0
+        for key in ['tokens_evaluated','tokens_predicted']:
+            row(s['config'],'e2e_diagnostic',name,'',key,r[key],'tokens','PASS')
     with (out/'summary.csv').open('w') as f:
         writer=csv.DictWriter(f,fieldnames=['backend','kind','run','request','metric','value','unit','status'],lineterminator='\n')
         writer.writeheader(); writer.writerows(rows)

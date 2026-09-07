@@ -13,6 +13,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <algorithm>
+#include <cstdlib>
 using json = nlohmann::ordered_json;
 struct weight { std::string name; int64_t k, m, experts; std::vector<char> bytes; };
 
@@ -28,26 +29,35 @@ json output_stats(const std::vector<float> & values) {
 }
 
 std::vector<float> compute(ggml_backend_t backend, const std::vector<weight> & ws,
-                          int n, int used, bool broadcast) {
+                          int n, int used, bool broadcast, bool weight_context) {
     auto ctx = ggml_init({16*1024*1024, nullptr, true});
+    auto wctx = weight_context ? ggml_init({16*1024*1024, nullptr, true}) : ctx;
     auto x = ggml_new_tensor_3d(ctx, GGML_TYPE_F32, ws[0].k, broadcast ? 1 : used, n);
     auto ids = ggml_new_tensor_2d(ctx, GGML_TYPE_I32, used, n);
     ggml_set_name(x, "E0_fixed_activation"); ggml_set_name(ids, "E0_fixed_ids");
     std::vector<ggml_tensor *> weights, outputs;
     auto graph = ggml_new_graph_custom(ctx, 128, false);
     for (const auto & w : ws) {
-        auto a = ggml_new_tensor_3d(ctx, GGML_TYPE_Q4_0, w.k, w.m, w.experts);
+        auto a = ggml_new_tensor_3d(wctx, GGML_TYPE_Q4_0, w.k, w.m, w.experts);
         ggml_set_name(a, w.name.c_str());
         auto y = ggml_mul_mat_id(ctx, a, x, ids);
         ggml_set_name(y, ("E0_"+w.name).c_str());
         if (!ggml_backend_supports_op(backend, y)) {
+            if (weight_context) ggml_free(wctx);
             ggml_free(ctx); throw std::runtime_error("unsupported MUL_MAT_ID");
         }
         weights.push_back(a); outputs.push_back(y);
         ggml_build_forward_expand(graph, y);
     }
     auto buffer = ggml_backend_alloc_ctx_tensors(ctx, backend);
-    if (!buffer) { ggml_free(ctx); throw std::runtime_error("allocation_failed"); }
+    auto wbuffer = weight_context ? ggml_backend_alloc_ctx_tensors(wctx, backend) : nullptr;
+    if (!buffer || (weight_context && !wbuffer)) {
+        if (buffer) ggml_backend_buffer_free(buffer);
+        if (wbuffer) ggml_backend_buffer_free(wbuffer);
+        if (weight_context) ggml_free(wctx);
+        ggml_free(ctx); throw std::runtime_error("allocation_failed");
+    }
+    if (wbuffer) ggml_backend_buffer_set_usage(wbuffer, GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
     for (size_t i=0; i<ws.size(); ++i)
         ggml_backend_tensor_set(weights[i], ws[i].bytes.data(), 0, ws[i].bytes.size());
     std::vector<float> activation(ggml_nelements(x));
@@ -66,6 +76,8 @@ std::vector<float> compute(ggml_backend_t backend, const std::vector<weight> & w
         size_t off=out.size(); out.resize(off+ggml_nelements(y));
         ggml_backend_tensor_get(y, out.data()+off, 0, ggml_nbytes(y));
     }
+    if (wbuffer) ggml_backend_buffer_free(wbuffer);
+    if (weight_context) ggml_free(wctx);
     ggml_backend_buffer_free(buffer); ggml_free(ctx);
     return out;
 }
@@ -115,13 +127,14 @@ int main(int argc, char ** argv) {
     auto target=ggml_backend_init_by_name(argv[2],nullptr);
     if (!target) { std::cout << "{\"status\":\"unsupported_backend\"}" << std::endl; return 7; }
     bool pass=true;
+    const bool weight_context = std::getenv("E0_WEIGHT_CONTEXT") && std::string(std::getenv("E0_WEIGHT_CONTEXT")) == "1";
     for (int n : {1,128}) for (int kind=0; kind<2; ++kind) {
         std::vector<weight> ws = kind==0 ? std::vector<weight>{weights[0],weights[1]} : std::vector<weight>{weights[2]};
         json result={{"backend",argv[2]},{"n",n},{"used",used},{"operation",kind==0?"gate_up_NX_candidate":"down_MUL_MAT_ID"},
-                     {"relative_rmse_limit",.02},{"max_error_over_ref_rms_limit",.10}};
+                     {"weight_context",weight_context},{"relative_rmse_limit",.02},{"max_error_over_ref_rms_limit",.10}};
         try {
-            auto ref=compute(cpu,ws,n,used,kind==0);
-            auto got=compute(target,ws,n,used,kind==0);
+            auto ref=compute(cpu,ws,n,used,kind==0,weight_context);
+            auto got=compute(target,ws,n,used,kind==0,weight_context);
             result["reference_stats"]=output_stats(ref);
             result["output_stats"]=output_stats(got);
             double sq=0, refsq=0, maxerr=0; bool finite=true;
