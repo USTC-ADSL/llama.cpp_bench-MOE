@@ -11,4 +11,11 @@ User request: rebuild official upstream and test why K80 specialized Q4_0 MoE ha
 
 Accepted E0B budget policy: approximately 5% overshoot tolerated; residual R and accounting overhead may use evidence-based estimates. This task checks numerical correctness, whose original thresholds remain RRMSE <= .02 and normalized maximum error <= .10.
 
+## Authorized production fix and commit
+
+- [x] Apply only the validated Q4_0 trans4 output packing change in the project backend: one function, 12 removed / 13 added lines, no other runtime logic changes.
+- [x] Incrementally build OpenCL and validate packed bytes plus real expert numerics on K80 and OnePlus. All byte/scale checks exact; K80 off/observe/enforce specialized numerics PASS; OnePlus original/default numerics unchanged and PASS.
+- [x] Run a K80 full-layer inference regression and inspect final source diff. 25/25 layers offloaded; pp128 161.35 / tg32 28.52 t/s, exit 0.
+- [x] Record bug brief, clean device artifacts, and commit the isolated fix. Details in handoff-02.md and docs/bugs/2026-09-08-opencl-q4-moe-repack.md.
+
 Prior findings: same E0B libraries give generic PASS on Adreno825, specialized failure on Adreno830. On K80 diagnostic generic names pass; specialized names with forced router preprocessing and IDs row stride of 60 experts remove n128 abort but all four numerical cases remain RRMSE ~.30-.31. Temporary diagnostic: /tmp/e0b-moe-path-cOes74/expert_sanity.cpp and results.txt. Existing mobilebench deployment is clean official 8f114a9b5, source /home/miog/wcr/llama.cpp, build /home/miog/wcr/mobilebench-llama-server-opencl-android. Its backend also selects specialized MoE.

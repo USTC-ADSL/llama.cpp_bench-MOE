@@ -322,20 +322,21 @@ kernel void kernel_convert_block_q4_0_trans4_ns(
     // extract quantization and unshuffle
     ushort8 pre_block = ((global ushort8 *)(&(b->qs[0])))[0];
 
-    ushort8 post_block = (ushort8)(0);
-
     uchar * pre_block_ptr = (uchar *)(&pre_block);
-    uchar * post_block_ptr = (uchar *)(&post_block);
-
-    for (int i = 0; i < QK4_0 / 4; ++i) {
-        uchar x0 = pre_block_ptr[2*i + 0];
-        uchar x1 = pre_block_ptr[2*i + 1];
-
-        post_block_ptr[i + 0        ] = convert_uchar(x0 & 0x0F) | convert_uchar((x1 & 0x0F) << 4);
-        post_block_ptr[i + QK4_0 / 4] = convert_uchar((x0 & 0xF0) >> 4) | convert_uchar(x1 & 0xF0);
+    uint q0 = 0, q1 = 0, q2 = 0, q3 = 0;
+    for (uint i = 0; i < QK4_0 / 4; ++i) {
+        uint x0 = pre_block_ptr[2*i], x1 = pre_block_ptr[2*i+1];
+        uint lo = (x0 & 15) | ((x1 & 15) << 4);
+        uint hi = (x0 >> 4) | (x1 & 240);
+        if (i < 4) {
+            q0 |= lo << (i*8);
+            q2 |= hi << (i*8);
+        } else {
+            q1 |= lo << ((i-4)*8);
+            q3 |= hi << ((i-4)*8);
+        }
     }
-
-    uint4 q_block = as_uint4(post_block);
+    uint4 q_block = (uint4)(q0, q1, q2, q3);
 
     uint offset = i02 * ne00_blk * ne01 * 4 + i00 * ne01 * 4 + i01;
     dst_q[offset] = q_block.x;

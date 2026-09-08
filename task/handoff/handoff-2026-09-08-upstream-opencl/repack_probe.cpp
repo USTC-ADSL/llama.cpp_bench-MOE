@@ -1,6 +1,7 @@
 #define CL_TARGET_OPENCL_VERSION 200
 #include <CL/cl.h>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <iostream>
@@ -14,8 +15,11 @@ static void check(cl_int code, const char * stage) {
 }
 
 int main(int argc, char ** argv) {
-    if (argc != 2) return 2;
+    if (argc != 2 && argc != 5) return 2;
     try {
+        const bool verify_only = std::getenv("REPACK_VERIFY_ONLY") != nullptr;
+        const bool exhaustive = std::getenv("REPACK_EXHAUSTIVE") != nullptr;
+        bool passed = true;
         std::ifstream input(argv[1]);
         std::string source((std::istreambuf_iterator<char>(input)), {});
         const auto start = source.find("kernel void kernel_convert_block_q4_0_trans4_ns(");
@@ -32,7 +36,10 @@ int main(int argc, char ** argv) {
         check(err, "context");
         cl_command_queue queue = clCreateCommandQueueWithProperties(context, device, nullptr, &err);
         check(err, "queue");
-        const cl_uint K = 2048, M = 64, E = 3;
+        const cl_uint K = argc == 5 ? std::stoul(argv[2]) : 2048;
+        const cl_uint M = argc == 5 ? std::stoul(argv[3]) : 64;
+        const cl_uint E = argc == 5 ? std::stoul(argv[4]) : 3;
+        if (!K || K % 32 || !M || !E) throw std::runtime_error("invalid dimensions");
         const size_t blocks = size_t(K/32)*M*E;
         std::vector<uint8_t> packed(blocks*18), expected_q(blocks*16);
         std::vector<uint16_t> expected_d(blocks);
@@ -43,6 +50,13 @@ int main(int argc, char ** argv) {
             for (int i=0; i<16; ++i) {
                 random ^= random << 13; random ^= random >> 17; random ^= random << 5;
                 packed[b*18+2+i] = uint8_t(random);
+            }
+            if (exhaustive) {
+                for (size_t i=0; i<8; ++i) {
+                    const uint16_t pair = uint16_t(b*8+i);
+                    packed[b*18+2+2*i] = uint8_t(pair);
+                    packed[b*18+3+2*i] = uint8_t(pair >> 8);
+                }
             }
             const size_t kblock = b % (K/32), row = (b/(K/32))%M, expert = b/((K/32)*M);
             expected_d[row+kblock*M+expert*(K/32)*M] = scale;
@@ -64,6 +78,7 @@ int main(int argc, char ** argv) {
         cl_mem d = clCreateBuffer(context, CL_MEM_READ_WRITE, expected_d.size()*2, nullptr, &err);
         check(err, "d");
         for (const std::string variant : {"original", "vload8", "direct_read", "scalar_build", "scalar_private"}) {
+            if (verify_only && variant != "original") continue;
             std::string code = original;
             const std::string unsafe = "((global ushort8 *)(&(b->qs[0])))[0]";
             if (variant == "vload8") code.replace(code.find(unsafe), unsafe.size(), "vload8(0, (global ushort *)(&(b->qs[0])))");
@@ -110,7 +125,7 @@ int main(int argc, char ** argv) {
             check(clSetKernelArg(kernel, 2, sizeof(d), &d), "arg2");
             check(clSetKernelArg(kernel, 3, sizeof(K), &K), "arg3");
             check(clSetKernelArg(kernel, 4, sizeof(M), &M), "arg4");
-            const size_t global[] = {M,K/32,E}, local[] = {64,1,1};
+            const size_t global[] = {(size_t(M)+63)/64*64,K/32,E}, local[] = {64,1,1};
             check(clEnqueueNDRangeKernel(queue, kernel, 3, nullptr, global, local, 0, nullptr, nullptr), "run");
             std::vector<uint8_t> actual_q(expected_q.size());
             std::vector<uint16_t> actual_d(expected_d.size());
@@ -119,13 +134,15 @@ int main(int argc, char ** argv) {
             size_t q_errors=0, d_errors=0;
             for (size_t i=0; i<actual_q.size(); ++i) q_errors += actual_q[i]!=expected_q[i];
             for (size_t i=0; i<actual_d.size(); ++i) d_errors += actual_d[i]!=expected_d[i];
-            std::cout << "{\"variant\":\"" << variant << "\",\"q_bytes\":" << actual_q.size()
+            std::cout << "{\"variant\":\"" << variant << "\",\"K\":" << K << ",\"M\":" << M << ",\"E\":" << E
+                      << ",\"exhaustive\":" << (exhaustive ? "true" : "false") << ",\"q_bytes\":" << actual_q.size()
                       << ",\"q_mismatches\":" << q_errors << ",\"scale_count\":" << actual_d.size()
                       << ",\"scale_mismatches\":" << d_errors << "}" << std::endl;
             clReleaseKernel(kernel); clReleaseProgram(program);
+            if (verify_only && (q_errors || d_errors)) passed = false;
         }
         clReleaseMemObject(in); clReleaseMemObject(q); clReleaseMemObject(d);
         clReleaseCommandQueue(queue); clReleaseContext(context);
-        return 0;
+        return passed ? 0 : 1;
     } catch (const std::exception & e) { std::cerr << e.what() << '\n'; return 1; }
 }
