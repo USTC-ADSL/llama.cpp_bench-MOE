@@ -90,7 +90,7 @@ def main():
              'browser_reload_count','browser_state_preserved','calculator_state_preserved','actual_backend','run']
     fields=primary+[k for k in dict.fromkeys(k for j in rows for k in j) if k not in primary]
     with (OUT/'summary.csv').open('w') as f:
-        w=csv.DictWriter(f,fields);w.writeheader();w.writerows(rows)
+        w=csv.DictWriter(f,fields,lineterminator='\n');w.writeheader();w.writerows(rows)
     for config in BACKENDS:
         group=[j for j in rows if j['stage']=='screen' and j['config']==config]
         assert len(group)==3 and all(j['inference_status']=='success' for j in group)
