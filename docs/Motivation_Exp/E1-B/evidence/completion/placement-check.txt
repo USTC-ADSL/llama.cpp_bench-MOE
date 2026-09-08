@@ -1,0 +1,10 @@
+Actual 512-token request scheduler verification, excluding startup reservation graphs.
+Line numbers refer to decompressed placement-Bx-1/server.log(.gz).
+Parsed all MUL_MAT_ID ffn_moe_{gate,up,down}-layer entries after new prompt task.n_tokens=512 and before first slot decode token; checked every occurrence against expected backend.
+B1: request lines 8896..11754; 72 distinct routed ops OpenC; gate layer0/11/12/23 at 8934/9363/9402/9833.
+B3: request lines 9810..12956; 72 distinct routed ops CPU; gate layer0/11/12/23 at 9850/10323/10366/10841.
+B5: request lines 9354..12356; 36 distinct routed ops CPU (layers0..11), 36 OpenC (layers12..23); gate layer0/11/12/23 at 9394/9867/9908/10339.
+Each configuration also has 72 distinct shared gate/up/down and 72 distinct attention Q/K/V MUL_MAT ops, all OpenC.
+Shared gate0 / Qcur0 example lines: B1=8942/8915, B3=9860/9829, B5=9404/9373.
+B1 loading confirms offloaded 25/25 layers at line1074; CPU embedding/support remains (e.g. line8910).
+All three diagnostics returned 512/128 success. Diagnostics excluded from performance ranking.

@@ -4,7 +4,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json, pathlib, time, urllib.parse
 
 ROOT=pathlib.Path(__file__).resolve().parents[1]
-OUT=ROOT/'docs/Motivation_Exp/Static_App/evidence'
+OUT=ROOT/'docs/Motivation_Exp/E1-B/evidence/completion'
 PAGE='''<!doctype html><html lang="en"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Library workshop task</title>
 <style>body{font:20px sans-serif;margin:20px;background:#fff;color:#123}button,input{font:22px sans-serif;padding:18px;margin:10px 0;width:95%}#status{font-weight:bold;color:#065}p{line-height:1.5}</style>
 <h1>Library workshop</h1><div id="status">READING — no draft prepared</div>

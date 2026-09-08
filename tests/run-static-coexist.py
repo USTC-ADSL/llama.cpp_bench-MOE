@@ -3,15 +3,17 @@
 import argparse, csv, hashlib, importlib.util, json, pathlib, shlex, subprocess, time
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-OUT = ROOT / 'docs/Motivation_Exp/Static_App'
-REMOTE = '/data/local/tmp/llama-static-app'
+OUT = ROOT / 'docs/Motivation_Exp/E1-B'
+REMOTE = '/data/local/tmp/llama-e1b'
 spec = importlib.util.spec_from_file_location('e0', ROOT/'docs/Motivation_Exp/E0/scripts/run_e0.py')
 e = importlib.util.module_from_spec(spec); spec.loader.exec_module(e)
-e.OUT = OUT/'evidence'; e.OUT.mkdir(parents=True, exist_ok=True)
+e.OUT = OUT/'evidence/completion'; e.OUT.mkdir(parents=True, exist_ok=True)
 e.SERIAL = 'fd8657d6'; e.REMOTE = REMOTE
-e.ENV = f'LD_LIBRARY_PATH={REMOTE} ADSP_LIBRARY_PATH={REMOTE} GGML_HEXAGON_DEVICES=1'
-CONFIG = {'B0':['--device','none','-ngl','0'], 'B2':['--device','HTP0','-ngl','99'],
+e.ENV = f'LD_LIBRARY_PATH={REMOTE} ADSP_LIBRARY_PATH={REMOTE} GGML_HEXAGON_DEVICES=1 GGML_OPENCL_KERNEL_CACHE_DIR=off'
+CONFIG = {'B0':['--device','none','-ngl','0'], 'B1':['--device','GPUOpenCL','-ngl','99'],
+          'B2':['--device','HTP0','-ngl','99'], 'B3':['--device','GPUOpenCL','-ngl','99','--cpu-moe'],
           'B4':['--device','HTP0','-ngl','99','--cpu-moe'],
+          'B5':['--device','GPUOpenCL','-ngl','99','--n-cpu-moe','12'],
           'B6':['--device','HTP0','-ngl','99','--n-cpu-moe','12']}
 PROMPT = '''You are helping a small public library plan a Saturday repair workshop. Read the facts below and write a practical recommendation for the volunteer coordinator. Use only these facts. Do not invent attendance numbers or claim that a proposed action has already happened.
 
@@ -64,6 +66,9 @@ def run(config,rep,diagnostic=False, app_callback=None, label=None):
     command=args(config)+(['--log-verbosity','5'] if diagnostic else [])
     process=watch=None; pid=None
     backend={'B0':'CPU (official repack+mmap)', 'B2':'HTP0 routed/shared/attention; CPU embedding/output/router softmax',
+             'B1':'GPUOpenCL all-layer offload; original CPU support ops',
+             'B3':'CPU routed 0-23; GPUOpenCL shared/attention; original CPU support ops',
+             'B5':'CPU routed 0-11; GPUOpenCL routed 12-23/shared/attention; original CPU support ops',
              'B4':'CPU routed 0-23; HTP0 shared/attention; original CPU support ops',
              'B6':'CPU routed 0-11; HTP0 routed 12-23/shared/attention; original CPU support ops'}
     result=dict(stage='placement' if diagnostic else 'screen',config=config,rep=rep,run=name,inference_status='BLOCKED',coexistence_status='NA',actual_backend=backend[config])
@@ -139,8 +144,13 @@ def main():
     if not a.execute:return
     if a.prepare: prepare()
     elif a.screen_all:
-        for rep,order in enumerate([['B0','B2','B4','B6'],['B6','B4','B2','B0'],['B2','B0','B6','B4']],1):
-            for config in order: run(config,rep); summarize(); time.sleep(10)
+        for rep,order in enumerate([['B0','B1','B2','B3','B4','B5','B6'],
+                                   ['B6','B5','B4','B3','B2','B1','B0'],
+                                   ['B2','B5','B0','B6','B1','B4','B3']],1):
+            for config in order:
+                result=run(config,rep); summarize()
+                if result['inference_status']!='success':raise RuntimeError('screening failed: '+result['run'])
+                time.sleep(10)
     elif a.config: run(a.config,a.rep,a.diagnostic); summarize()
 
 if __name__=='__main__': main()

@@ -9,6 +9,8 @@ e=r.e
 BROWSER='com.android.browser/.BrowserActivity'
 CALC='com.miui.calculator/.cal.CalculatorActivity'
 PACKAGES=['com.android.browser','com.miui.calculator']
+CONTROL_WAIT_S=15
+BROWSER_SWITCH_S=6
 
 def ui():
     e.shell('su -c '+shlex.quote(f'uiautomator dump {r.REMOTE}/ui.xml'),timeout=20)
@@ -83,11 +85,14 @@ def setup(name):
         if any(x['event']=='pageshow_painted' for x in events(name)):break
         time.sleep(.25)
     else:raise RuntimeError('browser page readiness unavailable')
-    time.sleep(.5)
+    # Page rAF readiness can precede browser entry-animation input readiness.
+    # This fixed settling interval is outside model load/request measurement.
+    time.sleep(3)
     touch('input tap 500 780')
-    time.sleep(.3)
-    ev=events(name)
-    if not any(x['event']=='armed' and x['draft_ok'] for x in ev):raise RuntimeError('browser draft setup failed')
+    for _ in range(12):
+        if any(x['event']=='armed' and x['draft_ok'] for x in events(name)):break
+        time.sleep(.25)
+    else:raise RuntimeError('browser draft setup failed')
     screenshot(local,'browser-prepared')
     start(CALC);time.sleep(1)
     tree=ui(); buttons={n.attrib.get('resource-id','').split('/')[-1]:n for n in tree.iter('node')}
@@ -119,7 +124,7 @@ def actions(name,local,body=None):
         touch('input tap 895 2195')
         time.sleep(.2)
         screenshot(local,'calculator-continued')
-        time.sleep(max(0,6-(time.monotonic()-t)))
+        time.sleep(max(0,BROWSER_SWITCH_S-(time.monotonic()-t)))
         browser=start(BROWSER)
         time.sleep(.75)
         touch('input tap 500 1280')
@@ -160,7 +165,7 @@ def pair(config,rep,condition,preflight=False):
         e.shell(f'mkdir {remote}; echo perf > {remote}/mode; echo 0 > {remote}/sample; echo idle > {remote}/phase')
         process,watch,pid,_=e.start_guarded(remote,'sleep 180')
         try:
-            time.sleep(15) # preregistered B2 median load window, rounded to seconds
+            time.sleep(CONTROL_WAIT_S) # fixed from selected configuration before formal pairs
             _,data=actions(name,local)
             result=dict(config=config,rep=rep,run=name,inference_status='not_run')
         finally:

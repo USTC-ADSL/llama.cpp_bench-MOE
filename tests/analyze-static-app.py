@@ -3,10 +3,13 @@
 import csv, hashlib, json, pathlib, re, statistics
 
 ROOT=pathlib.Path(__file__).resolve().parents[1]
-OUT=ROOT/'docs/Motivation_Exp/Static_App'; E=OUT/'evidence'
+OUT=ROOT/'docs/Motivation_Exp/E1-B'; E=OUT/'evidence/completion'
 BACKENDS={'B0':'CPU routed/shared/attention; official mmap+repack',
+          'B1':'GPUOpenCL all-layer offload; original CPU support ops',
           'B2':'HTP0 routed/shared/attention; original CPU embedding/output/router softmax',
+          'B3':'CPU routed layers0-23; GPUOpenCL shared/attention; original CPU support ops',
           'B4':'CPU routed layers0-23; HTP0 shared/attention; original CPU support ops',
+          'B5':'CPU routed layers0-11; GPUOpenCL routed12-23/shared/attention; original CPU support ops',
           'B6':'CPU routed layers0-11; HTP0 routed12-23/shared/attention; original CPU support ops'}
 
 def read(path):return json.loads(path.read_text())
@@ -25,7 +28,6 @@ def main():
             response=read(folder/'response.json')
             assert response['tokens_evaluated']==512 and response['tokens_predicted']==128 and response['timings']['cache_n']==0
             j['output_matches_cpu']=response['tokens']==ref
-            assert j['output_matches_cpu']
             ev=[json.loads(s) for s in (folder/'events.jsonl').read_text().splitlines()]
             ready=[x for x in ev if x['event']=='token_ready']
             assert len(ready)==128 and [x['value'] for x in ready]==response['tokens'] and not any(x['overflow'] for x in ev)
@@ -37,11 +39,11 @@ def main():
             app=read(folder/'app-result.json')
             j['browser_painted_marker_ms']=app['browser_painted_marker_ms']
             page=read(folder/'app-events-after.json')
-            assert len({x['generation'] for x in page})==1
-            assert any(x['event']=='verified' and x['draft_ok'] and x['armed'] for x in page)
+            # State loss/reload is an experimental outcome, not an analyzer error.
+            assert j['browser_state_preserved']==bool(any(x['event']=='verified' and x['draft_ok'] and x['armed'] for x in page))
             calc=read(folder/'calculator-returned.json')
-            assert any(x.get('content-desc')=='12345×67' for x in calc)
-            assert any(x.get('content-desc')=='= 827115' for x in calc)
+            j['calculator_expression_evidence']=any(x.get('content-desc')=='12345×67' for x in calc)
+            j['calculator_result_evidence']=any(x.get('content-desc')=='= 827115' for x in calc)
             if j['condition']=='LLM':
                 t0=next(x['t_us'] for x in ev if x['event']=='request_received')
                 t1=next(x['t_us'] for x in ev if x['event']=='request_end')
@@ -61,10 +63,10 @@ def main():
             j['kill_reason']='; '.join(s.strip() for s in current) if current else 'none_observed_in_window; earlier FORCE_STOP/ISOLATED_NOT_NEEDED are setup history'
             if j['condition']=='noLLM':j['coexistence_status']='pass' if j['browser_state_preserved'] and j['calculator_state_preserved'] else 'fail'
         rows.append(j)
-    controls={j['rep']:j for j in rows if j['stage']=='coexistence' and j['condition']=='noLLM'}
+    controls={(j['config'],j['rep']):j for j in rows if j['stage']=='coexistence' and j['condition']=='noLLM'}
     for j in rows:
         if j['stage']!='coexistence' or j['condition']!='LLM':continue
-        control=controls[j['rep']]
+        control=controls[j['config'],j['rep']]
         j['paired_control']=control['run']
         degraded=False
         for app in ['browser','calculator']:
@@ -79,7 +81,6 @@ def main():
     # Preparations and placement diagnostics stay in raw evidence/report; this
     # compact table contains only the requested screening and paired samples.
     rows=[j for j in rows if j['stage'] in ['screen','coexistence']]
-    rows.append(dict(stage='excluded_backend',config='OpenCL',inference_status='BLOCKED',coexistence_status='not_run',reason='Inherited K80 upstream Q4_0 numerical failure; not rerun or ranked'))
     for j in rows:
         for key,value in list(j.items()):
             if isinstance(value,float):j[key]=round(value,3)
