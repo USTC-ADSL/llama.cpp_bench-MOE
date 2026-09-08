@@ -1,10 +1,10 @@
 # E0B 最终报告
 
-2026-09-08；结论：**核心记账及本轮受测预算路径 PASS；完整 LLM RAM 的 4 GiB ±5% 验收仍未闭环，整体不标全部 PASS。**
+2026-09-08；最终结论：**PASS（限定设备、模型、准备流程的工程验收）**。采用用户接受的约5%容忍度和估计R，不宣称任意路径的严格物理RAM硬上限。
 
-使用 fd8657d6（K80 Pro）、原 Qwen1.5-MoE Q4_0 模型及 OpenCL 修复 `252aa4396`。本轮仅增加测试和报告，不修改预算或推理逻辑。接受 R 和记账开销的工程估计，不再要求精确上限或严格开销置信区间。
+范围：fd8657d6（K80 Pro，Adreno830 / HTP v79）、Qwen1.5-MoE-A2.7B-Chat Q4_0、固定128/32、c512、b/ub128、原默认算子路径。使用OpenCL修复 `252aa4396`；收尾仅增加测试和文件级缓存准备，不修改预算、量化、路由或推理逻辑。
 
-## 补验结果
+## 验收结果
 
 | 测试 | 结果 |
 |---|---|
@@ -12,17 +12,20 @@
 | OpenCL / rpcmem / 交替真实分配 | 三组 PASS：各触碰 512 MiB 主机内存和 48×64 MiB 加速器内存；第49块拒绝，used/reserved 最终归零 |
 | 4 GiB 分区下真实模型加载 | GPU、HTP 均 PASS（预期拒绝）：budget_denied 后退出1；cgroup failcnt=0，没有安全截断 |
 | 历史共享账本、并发、回滚、别名、释放生命周期 | 保留 PASS |
+| 文件缓存准备 | 新增六次PASS：确认无其他模型使用者，仅对该GGUF执行DONTNEED；每次残留0，文件元数据不变 |
+| 先入组后加载的页面归属 | 新增十次检查PASS：CPU/OpenCL/HTP加载完成及请求后，含受限加载失败后，全部被检查模型页归属对应实验组，组外0 |
+| 准备流程的功能回归 | CPU off、GPU observe/enforce、HTP enforce共四个128/32请求全部成功，32token逐个相同；GPU/HTP均25/25层卸载 |
 
-预算分区为 **charged 768 MiB + extra 3072 MiB + 估计预留 R 256 MiB = 4 GiB**，接受上界约4.2 GiB（额外204.8 MiB）。三组真实分配的账本峰值均为3072 MiB，独立 cgroup 峰值约529/528/533 MiB；GPU映射增量、rpcmem fd容量与已知申请对应。它们是不同口径，不直接相加冒充实测总物理RAM。
+预算分区为 **charged 768 MiB + extra 3072 MiB + R_est 256 MiB = 4 GiB**，允许约204.8MiB误差。此前三个真实分配用例填满3072MiB extra并正确拒绝下一块；本轮在消除旧缓存归属后，GPU/HTP真实模型仍正确拒绝，cgroup failcnt=0，组外模型缓存0。原先实测的GiB级旧缓存不再作为未控漏项塞进R。
 
-真实模型拒绝时，GPU账本已用2348.00 MiB、待申请1018.55 MiB；HTP已用2075.81 MiB、待申请1018.55 MiB，均超过3072 MiB extra分区。模型未完成加载，不能把预期拒绝写成“4 GiB内推理成功”。
+本轮GPU拒绝时已用2348.00MiB、待申请1018.55MiB；HTP已用2075.81MiB、待申请1018.55MiB。**4 GiB用例通过指正确拒绝，不是模型在4 GiB内完成推理。** 成功请求使用宽松预算，CPU本轮未做4 GiB推理成功验收。
 
-R=256 MiB 是工程预留：本轮CL初始化映射约15.3 MiB，已知DSP另有512 KiB scratch及统一队列/栈块，其余留给运行时及驱动余量；不是隐藏内存峰值实测。最终三模式单请求 prefill+decode 为1918.770 /1895.141 /1921.623 ms，observe/enforce相对off约−1.23%/+0.15%，仅作粗略开销观察，不作稳定因果结论。
+R=256MiB仍是估计预留：可见GPU容量峰值与账本峰值差约32.19MiB、HTP DMA-BUF容量与账本峰值差约1.03MiB，收尾复测一致；另考虑DSP的512KiB scratch、栈/队列及运行时余量。不是完整隐藏物理驻留的实测上界。已有同构建单请求开销粗观察为observe −1.23%、enforce +0.15%，不作稳定因果结论；本轮冷缓存/归属诊断时序不进入性能排名。
 
-## 剩余边界
+## PASS的必要条件与边界
 
-追加实测已确认模型cache跨cgroup归属：关闭探针预读后，加载前2.04GiB模型缓存全部记在根组；OpenCL/HTP ready时分别仍有196.76/57.32MiB在根组，未进私有实验组。五次正式扫描均零major fault、前后驻留数相同。GPU可见分配峰值与账本峰值相差约32.19MiB，HTP可见DMA-BUF容量与账本峰值相差约1.03MiB；这些是粗容量对照，不是完整DSP/驱动物理开销上界。详见[归属核实](../../../task/handoff/handoff-2026-09-08-memory-attribution/handoff-01.md)。
+每次独立运行必须：检查无其他模型使用者 → 文件级回收并核验残留≤16MiB → 进程先入独立cgroup再加载 → 核对组外模型页≤16MiB。实际本轮均为0，十次扫描均零major fault且扫描前后驻留一致。需预热时应在同一组内预热和测量，不能保留热页却换组后直接声称预算有效。不得清全局page cache，也不把不同口径的独立峰值相加当物理RAM。
 
-所以主要缺口已由“归属未知”缩小为**已证实的模型cache归属缺口**，它是可回收缓存而非新增私有副本。驻留/归属随阶段变化，不能把R256MiB直接当所有缓存的固定余量；本次宽松预算观测也不是4GiB下实际越界测试。独立image enforce仍不支持，完整DSP私有驻留未测。受控账本和配额路径可用，但全部LLM RAM的+5%边界仍不能标PASS。
+该PASS是受测普通OpenCL buffer/host rpcmem模型路径的工程收尾，非逐物理页的+5%上界证明。不外推独立image enforce、其他GPU/模型/长上下文、并发模型使用、未经准备的热缓存启动或完整DSP私有heap。独立image仍不支持；这些限制未被隐藏或通过修改推理绕过。
 
-证据：[预算补验](evidence/final/budget.json)、[整模型对照](evidence/final/controls.json)、同目录压缩日志和产物hash；[原始E0B报告](../E0B/report.md)。复现入口：`python3 tests/run-e0-final.py --tests budget --apply --tag <新标签>` 与 `--tests controls`。固定设备临时目录、私有cgroup已清理，模型和原部署保留。
+证据：[本次收尾结果](../../../task/handoff/handoff-2026-09-08-cache-closure/evidence/final/results.json)、[流程与复现](../../../task/handoff/handoff-2026-09-08-cache-closure/handoff-01.md)、[历史预算边界](evidence/final/budget.json)、[三模式对照](evidence/final/controls.json)。新运行使用 `python3 tests/run-cache-closure.py --apply --tag <新标签>`，旧运行器不自动具备本流程。隔离设备目录/cgroup已清理，模型与原部署保留。
