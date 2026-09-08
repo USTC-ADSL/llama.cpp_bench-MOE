@@ -1,0 +1,262 @@
+[
+  {
+    "label": "envelope-opencl",
+    "mode": "enforce",
+    "device": "opencl",
+    "exit_code": 0,
+    "stop": null,
+    "response": null,
+    "initial_cgroup": null,
+    "final_cgroup": "554483712\n0\n",
+    "samples": [
+      {
+        "mem_available_kib": 10174260,
+        "thermal": 0,
+        "counters": "CGROUP\n553967616\n554483712\n0\nSTATUS\nVmRSS:\t  552552 kB\nVmSwap:\t       0 kB\nKGSL\n1827979264\n"
+      },
+      {
+        "mem_available_kib": 7771668,
+        "thermal": 0,
+        "counters": "CGROUP\n553967616\n554483712\n0\nSTATUS\nVmRSS:\t  552680 kB\nVmSwap:\t       0 kB\nKGSL\n3237265408\n"
+      }
+    ],
+    "budget": [
+      {
+        "test": "envelope-opencl",
+        "mode": "enforce",
+        "phase": "exit_budget",
+        "status": "success",
+        "used_bytes": "0",
+        "reserved_bytes": "0",
+        "peak_bytes": "3221225472",
+        "cap_bytes": "3221225472",
+        "denied_count": "1",
+        "unknown_bytes": "0",
+        "detail": "coverage_gaps=0"
+      },
+      {
+        "test": "envelope-opencl",
+        "mode": "enforce",
+        "phase": "buffer",
+        "status": "budget_denied",
+        "requested_bytes": "67108864",
+        "used_bytes": "3221225472",
+        "cap_bytes": "3221225472",
+        "denied_count": "1",
+        "detail": "backend=0"
+      }
+    ],
+    "valid": true
+  },
+  {
+    "label": "envelope-rpcmem",
+    "mode": "enforce",
+    "device": "rpcmem",
+    "exit_code": 0,
+    "stop": null,
+    "response": null,
+    "initial_cgroup": null,
+    "final_cgroup": "553918464\n0\n",
+    "samples": [
+      {
+        "mem_available_kib": 10209268,
+        "thermal": 0,
+        "counters": "CGROUP\n551694336\n551714816\n0\nSTATUS\nVmRSS:\t  531988 kB\nVmSwap:\t       0 kB\nKGSL\n"
+      },
+      {
+        "mem_available_kib": 7777692,
+        "thermal": 0,
+        "counters": "CGROUP\n553623552\n553918464\n0\nSTATUS\nVmRSS:\t  531732 kB\nVmSwap:\t       0 kB\nKGSL\n"
+      }
+    ],
+    "budget": [
+      {
+        "test": "envelope-rpcmem",
+        "mode": "enforce",
+        "phase": "exit_budget",
+        "status": "success",
+        "used_bytes": "0",
+        "reserved_bytes": "0",
+        "peak_bytes": "3221225472",
+        "cap_bytes": "3221225472",
+        "denied_count": "1",
+        "unknown_bytes": "0",
+        "detail": "coverage_gaps=0"
+      },
+      {
+        "test": "envelope-rpcmem",
+        "mode": "enforce",
+        "phase": "rpcmem_alloc2",
+        "status": "budget_denied",
+        "requested_bytes": "67108864",
+        "used_bytes": "3221225472",
+        "cap_bytes": "3221225472",
+        "denied_count": "1",
+        "detail": "backend=1"
+      }
+    ],
+    "valid": true
+  },
+  {
+    "label": "envelope-mixed",
+    "mode": "enforce",
+    "device": "mixed",
+    "exit_code": 0,
+    "stop": null,
+    "response": null,
+    "initial_cgroup": null,
+    "final_cgroup": "559370240\n0\n",
+    "samples": [
+      {
+        "mem_available_kib": 10207924,
+        "thermal": 0,
+        "counters": "CGROUP\n557604864\n557867008\n0\nSTATUS\nVmRSS:\t  552496 kB\nVmSwap:\t       0 kB\nKGSL\n1022672896\n"
+      },
+      {
+        "mem_available_kib": 7772952,
+        "thermal": 0,
+        "counters": "CGROUP\n559091712\n559370240\n0\nSTATUS\nVmRSS:\t  552496 kB\nVmSwap:\t       0 kB\nKGSL\n1626652672\n"
+      }
+    ],
+    "budget": [
+      {
+        "test": "envelope-mixed",
+        "mode": "enforce",
+        "phase": "exit_budget",
+        "status": "success",
+        "used_bytes": "0",
+        "reserved_bytes": "0",
+        "peak_bytes": "3221225472",
+        "cap_bytes": "3221225472",
+        "denied_count": "1",
+        "unknown_bytes": "0",
+        "detail": "coverage_gaps=0"
+      },
+      {
+        "test": "envelope-mixed",
+        "mode": "enforce",
+        "phase": "buffer",
+        "status": "budget_denied",
+        "requested_bytes": "67108864",
+        "used_bytes": "3221225472",
+        "cap_bytes": "3221225472",
+        "denied_count": "1",
+        "detail": "backend=0"
+      }
+    ],
+    "valid": true
+  },
+  {
+    "label": "model-cap-GPUOpenCL",
+    "mode": "enforce",
+    "device": "GPUOpenCL",
+    "exit_code": 1,
+    "stop": null,
+    "response": null,
+    "initial_cgroup": null,
+    "final_cgroup": "170659840\n0\n",
+    "samples": [
+      {
+        "mem_available_kib": 11380240,
+        "thermal": 0,
+        "counters": "CGROUP\n111157248\n111161344\n0\nSTATUS\nVmRSS:\t  129560 kB\nVmSwap:\t       0 kB\nKGSL\n411238400\n"
+      },
+      {
+        "mem_available_kib": 10952236,
+        "thermal": 0,
+        "counters": "CGROUP\n114515968\n170659840\n0\nSTATUS\nVmRSS:\t  131876 kB\nVmSwap:\t       0 kB\nKGSL\n424947712\n"
+      },
+      {
+        "mem_available_kib": 10947352,
+        "thermal": 0,
+        "counters": "CGROUP\n121016320\n170659840\n0\nSTATUS\nVmRSS:\t  139488 kB\nVmSwap:\t       0 kB\nKGSL\n425795584\n"
+      },
+      {
+        "mem_available_kib": 10937020,
+        "thermal": 0,
+        "counters": "CGROUP\n127737856\n170659840\n0\nSTATUS\nVmRSS:\t  146772 kB\nVmSwap:\t       0 kB\nKGSL\n426463232\n"
+      },
+      {
+        "mem_available_kib": 10922900,
+        "thermal": 0,
+        "counters": "CGROUP\n138907648\n170659840\n0\nSTATUS\nVmRSS:\t  158532 kB\nVmSwap:\t       0 kB\nKGSL\n427270144\n"
+      },
+      {
+        "mem_available_kib": 10906156,
+        "thermal": 0,
+        "counters": "CGROUP\n150941696\n170659840\n0\nSTATUS\nVmRSS:\t  171024 kB\nVmSwap:\t       0 kB\nKGSL\n427655168\n"
+      }
+    ],
+    "budget": [
+      {
+        "test": "model-cap-GPUOpenCL",
+        "mode": "enforce",
+        "phase": "exit_budget",
+        "status": "success",
+        "used_bytes": "395149312",
+        "reserved_bytes": "0",
+        "peak_bytes": "2462056448",
+        "cap_bytes": "3221225472",
+        "denied_count": "1",
+        "unknown_bytes": "0",
+        "detail": "coverage_gaps=0"
+      },
+      {
+        "test": "model-cap-GPUOpenCL",
+        "mode": "enforce",
+        "phase": "buffer",
+        "status": "budget_denied",
+        "requested_bytes": "1068032000",
+        "used_bytes": "2462056448",
+        "cap_bytes": "3221225472",
+        "denied_count": "1",
+        "detail": "backend=0"
+      }
+    ],
+    "valid": true
+  },
+  {
+    "label": "model-cap-HTP0",
+    "mode": "enforce",
+    "device": "HTP0",
+    "exit_code": 1,
+    "stop": null,
+    "response": null,
+    "initial_cgroup": null,
+    "final_cgroup": "96739328\n0\n",
+    "samples": [
+      {
+        "mem_available_kib": 11381696,
+        "thermal": 0,
+        "counters": "CGROUP\n94199808\n94203904\n0\nSTATUS\nVmRSS:\t   94420 kB\nVmSwap:\t       0 kB\nKGSL\n16039936\n"
+      }
+    ],
+    "budget": [
+      {
+        "test": "model-cap-HTP0",
+        "mode": "enforce",
+        "phase": "exit_budget",
+        "status": "success",
+        "used_bytes": "43593728",
+        "reserved_bytes": "0",
+        "peak_bytes": "2176643072",
+        "cap_bytes": "3221225472",
+        "denied_count": "1",
+        "unknown_bytes": "0",
+        "detail": "coverage_gaps=0"
+      },
+      {
+        "test": "model-cap-HTP0",
+        "mode": "enforce",
+        "phase": "rpcmem_alloc2",
+        "status": "budget_denied",
+        "requested_bytes": "1068027904",
+        "used_bytes": "2176643072",
+        "cap_bytes": "3221225472",
+        "denied_count": "1",
+        "detail": "backend=1"
+      }
+    ],
+    "valid": true
+  }
+]
