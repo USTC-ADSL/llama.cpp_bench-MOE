@@ -21,6 +21,8 @@ R=256 MiB 是工程预留：本轮CL初始化映射约15.3 MiB，已知DSP另有
 
 ## 剩余边界
 
-缺的不是“精确到每个字节”：当前没有证据判断真实模型缓存页跨cgroup归属、DSP/驱动隐藏驻留造成的误差是否小于约205 MiB。填满受控extra账本及正确拒绝大模型，不能单独证明全部LLM RAM都在容忍范围内。独立image enforce仍不支持；原E0B独立算子运行器的路由前置条件也未在本轮改写。故可使用**已验证的配额路径**，但不能宣称完整物理RAM约束已验收。
+追加实测已确认模型cache跨cgroup归属：关闭探针预读后，加载前2.04GiB模型缓存全部记在根组；OpenCL/HTP ready时分别仍有196.76/57.32MiB在根组，未进私有实验组。五次正式扫描均零major fault、前后驻留数相同。GPU可见分配峰值与账本峰值相差约32.19MiB，HTP可见DMA-BUF容量与账本峰值相差约1.03MiB；这些是粗容量对照，不是完整DSP/驱动物理开销上界。详见[归属核实](../../../task/handoff/handoff-2026-09-08-memory-attribution/handoff-01.md)。
+
+所以主要缺口已由“归属未知”缩小为**已证实的模型cache归属缺口**，它是可回收缓存而非新增私有副本。驻留/归属随阶段变化，不能把R256MiB直接当所有缓存的固定余量；本次宽松预算观测也不是4GiB下实际越界测试。独立image enforce仍不支持，完整DSP私有驻留未测。受控账本和配额路径可用，但全部LLM RAM的+5%边界仍不能标PASS。
 
 证据：[预算补验](evidence/final/budget.json)、[整模型对照](evidence/final/controls.json)、同目录压缩日志和产物hash；[原始E0B报告](../E0B/report.md)。复现入口：`python3 tests/run-e0-final.py --tests budget --apply --tag <新标签>` 与 `--tests controls`。固定设备临时目录、私有cgroup已清理，模型和原部署保留。
