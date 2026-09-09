@@ -1,63 +1,118 @@
-# E1-B：共同内存配额静态扫描前置审核
+# E1-B：共同内存配额下的官方静态配置单次扫描
 
-2026-09-09。**前置条件未满足，按任务停止条件结束；未启动受控扫描。** E1-B 仅为本任务命名，与历史 App 共存实验无关。本次请求数、模型启动数、配额试验数均为 0。`results.csv` 只有字段头：每行必须对应实际请求，不能虚构 C1/W、重复、失败或零耗时。前置阻塞不是 `budget_denied`、driver 失败、unsupported、OOM 或安全截断。
+2026-09-09。E1-B 仅用于本任务命名。按用户最后追加指示，正式阶段每配置/分区只做一次独立启动、同 server 的 C1/W；取消三次重复、额外归属复验、关键点五输入复验及串行20请求。R 沿用用户明确接受的 **R_est=256MiB**，全程固定，不再要求独立校准。结果是限定设备与 wrapper 口径下的单次观测，不宣称全局最优、稳定退化或严格 total-RAM cap。
 
-## 已有验证与真正缺项
+**结论：无约束下B0–B6全部完成C1/W；5GiB已测16个配置/分区全部在加载阶段失败，其中13个为budget_denied、3个为300秒加载安全超时。没有观测到这些配置在预算压力下自动换出/轮换加速器权重并继续推理。** 用户随后澄清目的只是了解llama.cpp有无自动swap支撑，并要求失败即可报告；本轮在B4/T5E2完成并清理后停止，未继续剩余分区。没有把未执行点记为失败。
 
-已读取根目录 AGENTS.md、[E0 原报告](../E0/REPORT.md)、[E0 补验](../E0_followup/report.md)、[E0B 原报告](../E0B/report.md)、[E1 报告](../E1/report.md)，并沿 E1 引用读取 [E0 最终报告](../E0_E0B_final/E0.md)和 [E0B 最终报告](../E0_E0B_final/E0B.md)。结果入口实际为 E0_followup/summary.csv、E0B/results.csv、E1/summary.csv；已检查相关验收与逐请求行。E0 使用大写 REPORT.md，E0 与 E1 没有同名 results.csv；这些命名差异不构成缺项，不要求另交 JSON 或日志清单。
+范围：5GiB的B0/E0、B1/E0.5、B2/E1未执行；所有observe补充候选及4/3GiB均取消。原计划的公平完整分区扫描未完成，因此受限数据不能用于给七类baseline做全面排名，尤其不能推断CPU-only在5GiB不可行。已完成：已有验收复用、dry-run/小测试、单次无约束对照、16个受限加载尝试、结果整理和设备清理；其余扫描按用户要求终止。
 
-| 检查 | 本次采用的结论 |
-|---|---|
-| CPU/HTP 数值与计时、修复后 K80 OpenCL | 复用最终 E0 的限定工程 PASS；不沿用已经解除的旧 OpenCL 阻塞 |
-| 两后端同一账本、并发预留、回滚、别名、池与异步释放 | 复用 E0B/results.csv 的 two_dso_one_manager、concurrent_shared_cap、retained_pool、inflight_release、async_completion_release 等 PASS |
-| 普通 OpenCL buffer / host rpcmem 分配边界 | 复用最终 E0B 的真实分配 PASS；两后端交替使用同一 extra cap，非各自一份 |
-| 模型 mmap 页归属 | 复用最终 E0B：六次文件级准备、十次归属检查 PASS，组外模型页为 0；不再把已解决的旧缓存归属当作阻塞 |
-| wrapper 开销 | 保留最终 E0B 的约 5% 工程接受范围及 observe −1.23%、enforce +0.15% 单请求粗观察；不改写旧表的 INCONCLUSIVE，也不要求重做已接受测试 |
-| **独立校准并冻结 R** | **未满足。最终 E0B 第 23 行明确“R=256MiB仍是估计预留”，并明确不是完整隐藏物理驻留的实测上界。没有将可见容量差转换为本次独立残余校准的依据。** |
-| 残余覆盖范围 | 最终 E0B 第 29 行仍排除完整 DSP 私有 heap 和独立 image enforce；DSP/runtime 部分容量未知不能用随意选定的 R 掩盖。独立 image 限制不等于本次所有 B 配置都会触发它 |
+正式阶段共 23 次启动、30 行结果，其中完整 C1/W 成功的启动为 7 次。正式逐行状态：`{'success': 14, 'budget_denied': 13, 'safety_stopped': 3}`。包括此前校准在内，results.csv 共 40 行：`{'success': 22, 'measurement_invalid': 2, 'budget_denied': 13, 'safety_stopped': 3}`。加载失败行代表拟执行 C1 的尝试，实际请求未发送、tokens 为0；没有添加虚构的 W 行。
 
-最终 E0B 的 PASS 是“限定设备、模型、准备流程的工程验收”，使用用户当时接受的估计 R；这与本次明确要求的独立校准 R 不同。停止依据是实际校准/覆盖边界，不是文件少、没有独立 JSON，或把全部历史验收判为失败。没有追加实现 DSP 计账、缓存、流式调度或更改官方 fallback 来绕过前置条件。
+## 预算与执行设置
 
-## 预算定义及真实口径
+设备 `fd8657d6`（实际为 Redmi K80 Pro / 24122RKC7C，Adreno830、HTP v79；不冒充普通 K80）。MemTotal=15476712KiB，8个在线CPU核。模型为 `/data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf`，8149865792 bytes，沿用 E0 的 Qwen1.5-MoE-A2.7B-Chat Q4_0；实际架构 qwen2moe，24层、60 routed experts、top4。
 
-本任务固定定义为 `B_total = B_charged + B_extra + R`，1 GiB = 1073741824 bytes：
+`B_total = B_charged + B_extra + R_est`，1GiB=1073741824 bytes；R_est=268435456 bytes。B_charged 约束实验组已记账页；B_extra 是 OpenCL/HTP 共用的未记账 backing 账本 cap，两后端不各获一份。used/reserved、pool-idle、in-flight、pending-free 都占额，沿用已有最终释放语义。同 run 不借配额。
 
-- 名义预算顺序：无约束、5、4、3 GiB。有限分区候选 `B_extra ∈ {0, 0.5, 1, 2} GiB`，`B_charged = B_total − B_extra − R`；只可执行满足初始化需求、charged 为正的分区。CPU-only 无未记账 backing 时才可取 extra=0。各 baseline 必须有相同候选校准机会；粗候选均不合适才按 observe 需求补一个候选。
-- `B_charged` 限制该实验 cgroup 已记账页；`B_extra` 是 OpenCL 与 Hexagon **共享**的未记账 backing 容量 cap。pool-idle、in-flight、pending-free 继续占额，真实生命周期结束才退费。同 run 固定分区，不按使用情况动态借额度。
-- R 必须独立校准后冻结。本次 R 为未确定，不能沿用 `R_est=268435456` 冒充校准值，因此没有有效的数值分区 ID，也没有实际写入任何 cap。无约束对照也未启动。
-- v2 严格无 swap 条件为该组 `memory.max=B_charged`、`memory.swap.max=0`，代码 cap 为 B_extra，均须在模型加载及 backend 初始化前生效；不得把 memory.max 设为 B_total，不改全机 swap。
-- 历史目标设备使用 **cgroup v1**。现有 `tests/run-cache-closure.py:67–70` 使用 `memory.limit_in_bytes`；宽松 case 实际 charged=12 GiB、extra=64 GiB，受限 case 为 charged=768 MiB、extra=3072 MiB，未在此处设置 memsw 或无 swap 条件。v1 本身不是本次单独停止理由，但不得将其称为 v2 严格无 swap 或严格 total-RAM cap。本次未进行设备 controller/swap 复测。
+| 名义预算 GiB | extra=0 的 charged | extra=0.5 的 charged | extra=1 的 charged | extra=2 的 charged |
+|---|---:|---:|---:|---:|
+| 5 | 4.75 | 4.25 | 3.75 | 2.75 |
+| 4 | 3.75 | 3.25 | 2.75 | 1.75 |
+| 3 | 2.75 | 2.25 | 1.75 | 0.75 |
 
-历史 4 GiB 分区为 768 MiB charged + 3072 MiB extra + 256 MiB **R_est**，不属于本任务的粗 extra 候选。其 GPU/HTP 结果是预期 `budget_denied`、exit 1、cgroup failcnt=0，不是 4 GiB 内推理成功，不导入本次结果表。独立峰值不相加，不用 KGSL、DMA-BUF、PSS 或不同时间的 cgroup 峰值拼成总 RAM。
+原计划：B0无加速backing，有限预算只取extra=0；B1–B6初始化/模型路径需要正extra，粗候选为0.5/1/2GiB，各配置分配相同候选机会。粗候选均失败时，按该配置无约束observe生命周期extra峰值向上取整到1/16GiB补一个候选；与粗候选重合则再加1/16GiB，且须charged>0。本次提前停止，尚未执行补充候选。上述4/3GiB分区仅为固定定义，没有实际运行。observe峰值不是任意fallback路径的物理下界，不构成全局不可部署证明。
 
-## 已定位配置、runner 与未执行请求
+实际控制器为 **cgroup v1**，专用目录 `/dev/memcg/llama-e1-budget/<run_id>`。有限分区在 exec/backend初始化/模型加载前设置 `memory.limit_in_bytes=B_charged`、`memory.memsw.limit_in_bytes=B_charged`、`memory.swappiness=0`，然后只将本次子进程移入组。真实口径是该组受记账的 memory 与 memory+swap 限额；swappiness=0 不等价 v2 的 memory.swap.max=0，不宣称严格无 swap。未修改全机 swap/LMKD/SELinux。启动 shell 继承 oom_score_adj=-1000；专用组 oom_kill_disable=0。保留该启动政策，不能把配额下等待/回收后的 watchdog 退出改写成 kernel OOM kill。
 
-共享实现为 `ggml/src/ggml-accel-budget.cpp` 的 `BudgetManager`，位于 ggml-base；OpenCL 入口为 `ggml/src/ggml-opencl/ggml-opencl-budget.h`，HTP host 入口为 `ggml/src/ggml-hexagon/htp-drv.cpp:111–148`。环境接口为 `GGML_ACCEL_BUDGET_MODE=off|observe|enforce`、`GGML_ACCEL_BUDGET_EXTRA_BYTES` 及两后端 COVERAGE 分类变量。unknown 不自动归为 charged。
+无约束组 memory/memsw 不设有限 cap，wrapper 使用 observe、extra非约束参考值64GiB；这个数不是实际RAM。有限组使用 enforce、extra cap 在第一次初始化前冻结。当前未覆盖完整 DSP/runtime 私有容量，独立 image enforce 仍有限制；复用 [E0B 最终工程验收](../E0_E0B_final/E0B.md) 的范围及用户接受的 R_est，不把 coverage_gaps=0 解释为完整物理覆盖。
 
-预算小测试入口为 `tests/run-accel-budget.py`，模型对照为 `tests/run-accel-budget-model.py`；最新已验证缓存准备/先入组流程在 `tests/run-cache-closure.py`。静态配置和 server token-ready 测量在 `tests/run-static-coexist.py`，后续 OpenCL 复验在 `tests/run-e1b-completion.py`。旧静态 runner 不自动具备最新缓存归属流程，不能直接把旧无配额初筛改个目录名当作本次扫描。
+前置资料已读取AGENTS.md、E0/REPORT.md与E0_followup/summary.csv、E0B/report.md与results.csv、E1/report.md与summary.csv，以及E0_E0B_final/E0.md和E0B.md；实际文件命名差异未判作缺项。复用最终工程PASS中的覆盖、跨DSO共享账本、池/in-flight/pending-free释放和开销验证，不要求另交JSON/日志清单。共享BudgetManager位于ggml/src/ggml-accel-budget.cpp，仅归属ggml-base；OpenCL入口为ggml/src/ggml-opencl/ggml-opencl-budget.h，HTP为ggml/src/ggml-hexagon/htp-drv.cpp。执行复用tests/run-cache-closure.py的文件准备/先入组，以及tests/run-static-coexist.py和E0/scripts/watchdog.sh的计时/安全逻辑。
 
-| ID | 参数核心 | routed CPU 层数 | 既有实际放置依据 |
+USB供电、原有DVFS/融合/异步提交策略；正式 run 启动门限统一为 thermal=0 且电池≤38°C。早期校准门限35°C，在正式数据开始前调整，校准不并入正式比较。保留运行自身温升。原 watchdog 每秒观察：MemAvailable<1GiB持续3秒或HAL thermal≥SEVERE停止，加载300秒/每请求180秒超时；这些是安全截断，不是交互SLO或OOM。C1/W之间等待watchdog实际观察到idle，使W获得独立超时窗口；不清权重或文件缓存。
+
+原计划预算顺序无约束→5→4→3GiB，实际在5GiB阶段结束；粗候选顺序用Python Random(9092026 + 预算GiB×100)打乱，无约束取0。每点只启动一次，实际顺序、时间、起止温度保留在CSV。起跑另要求MemAvailable≥2GiB及USB供电，等待冷却不计入加载时间。
+
+每个独立启动前，复用已验证 `model-cache-prepare --evict <GGUF>`：检查无模型持有者，仅对该文件DONTNEED并确认残留≤16MiB、元数据不变。无全局drop_caches。模型先入组后加载。按用户“直接测试、不用验证”追加指示，正式阶段不再运行 model-page-charge 归属探针；相关列留空，不能解释为本次重新证明组外页为0。历史缓存归属闭环依据 [E0B最终报告](../E0_E0B_final/E0B.md)。
+
+## 静态配置、输入与实际命令
+
+| ID | 放置参数 | routed CPU层数 | 既有已核验范围 |
 |---|---|---:|---|
-| B0 | `--device none -ngl 0 --load-mode mmap` | 24 | CPU routed/shared/attention，官方 repack |
-| B1 | `--device GPUOpenCL -ngl 99` | 0 | 全层 OpenCL，保留官方 CPU 支持操作 |
-| B2 | `--device HTP0 -ngl 99`，单 PD | 0 | HTP routed/shared/attention，CPU embedding/output/router softmax 等支持操作 |
-| B3 | B1 + `--cpu-moe` | 24 | routed CPU，shared/attention OpenCL |
-| B4 | B2 + `--cpu-moe` | 24 | routed CPU，shared/attention HTP |
-| B5 | B1 + `--n-cpu-moe 12` | 12 | 前 12 层 routed CPU，后 12 层 routed 及 shared/attention OpenCL |
-| B6 | B2 + `--n-cpu-moe 12` | 12 | 前 12 层 routed CPU，后 12 层 routed 及 shared/attention HTP |
+| B0 | `--device none -ngl 0` | 24 | CPU routed/shared/attention，mmap+官方repack |
+| B1 | `--device GPUOpenCL -ngl 99` | 0 | OpenCL全层，保留CPU支持操作 |
+| B2 | `--device HTP0 -ngl 99` | 0 | HTP单PD，保留CPU embedding/output/router softmax等 |
+| B3 | `B1 + --cpu-moe` | 24 | routed CPU；shared/attention OpenCL |
+| B4 | `B2 + --cpu-moe` | 24 | routed CPU；shared/attention HTP |
+| B5 | `B1 + --n-cpu-moe 12` | 12 | 前12层routed CPU，后12层及shared/attention OpenCL |
+| B6 | `B2 + --n-cpu-moe 12` | 12 | 前12层routed CPU，后12层及shared/attention HTP |
 
-本地 `common/arg.cpp:2787–2801` 确认参数与前 N 层语义；模型实际架构是 **qwen2moe**（E0/REPORT.md:10），`src/models/qwen2moe.cpp:132–165` 分别建立 routed 和 shared 分支。0/12/24 是 routed 专家权重的 CPU 层数，不是专家数量。E1/report.md:31 已核验 B1/B3/B5 的实际请求放置。表中是既有结果，本次实际 fallback 均未测；未来中间申请失败后官方 fallback 成功仍应记 success。
+参数由本地 common/arg.cpp:2787–2801 及设备 --help 确认；qwen2moe.cpp 的 routed/shared 是分离分支。0/12/24是专家CPU层数，不是专家数量；--cpu-moe不把shared搬到CPU。放置依据复用 [E1](../E1/report.md)，本次记录日志的实际offloaded层数与最终成功/拒绝，不重跑独立放置诊断。未启用新缓存/预取/流式调度、改量化或强制绕过官方fallback。
 
-以下为用户指定而**未执行**的协议：实际输入 512 tokens、目标输出 128、c2048、slot1、F16 KV、logical batch512；同一 server 首次 C1、第二次 W，W 清请求 KV/prefix、保留权重并验证 cache_n=0 和重新 prefill512。校准输入两条，保留输入五条；初始 t/tb/ub=4/4/128，每类最多公平试 4/4/128、6/6/128、4/4/256、6/6/256，按可用核数缩减，保留默认融合/异步提交。未准备或消耗输入，未做 6/18 层或 12 层部分 offload 补点。
+mmap并不保证所有CPU专家最终存储都直接映射GGUF。当前官方构建启用CPU_REPACK；CPU override在 src/llama-model-loader.cpp:1227 进入CPU候选buffer选择，src/llama-model.cpp:1030 优先考虑extra buffer。直接用mmap创建backend buffer还要求默认buffer类型（src/llama-model.cpp:1734）；CPU_REPACK属于非默认类型，会另行分配并repack（ggml/src/ggml-cpu/repack.cpp:4726）。因此CPU-MoE也可能承受额外已记账分配压力。本次未关闭repack；源码机制不能替代逐run的RSS/分配证据，也不能据超时直接断言具体驻留构成。
 
-若前置条件通过才进入 dry-run、小测试、每点一个输入三次独立启动及 C1/W、关键点五条输入各三次、两边界代表配置各串行 20 请求。本次全部未进入。供电/温度/DVFS 政策与随机顺序尚未实际冻结；不声称完成热状态控制。继承安全规则为 MemAvailable<1 GiB 持续 3 秒或 thermal≥SEVERE 停止，加载/请求超时 300/180 秒；起跑超温不启动，运行自身温升不删样本，安全截断不是交互 SLO 或 OOM。
+对“自动swap”的回答应拆开：① 本地src/llama-mmap.cpp:471–481使用MAP_SHARED、PROT_READ映射模型，内核可以回收干净文件页，之后从GGUF重新读入；这属于文件按需分页，不需要把这些干净页写进swap。② 匿名内存的swap/zram由内核与系统/组策略决定，不是llama.cpp自行管理的模型交换。本轮memory与memsw同限、swappiness=0限制了该路径，未评估打开系统swap后的效果。③ 本次所测静态offload分配在13次extra拒绝后直接加载失败，未出现通过自动减小offload或逐层交换继续成功的行为；不能把这一有限测试外推为所有llama.cpp版本/选项都无任何相关机制。对本轮的CPU_REPACK及加速器另行分配，单靠mmap选项也不能保证文件按需分页能覆盖全部容量。
 
-## 实际操作与结论
+各类只使用共同初始组合 `(t,tb,ub)=(4,4,128)`，没有从四种允许组合中分别挑选有利结果，也未追加6/18层或部分offload点。固定 logical batch512、context2048、slot1、F16 KV、mmap、no-warmup、cache-ram0、fit off；OpenCL磁盘kernel cache延续E1设为off。每次请求temperature0/seed1234、ignore_eos=true、cache_prompt=false，目标128输出；C1为首请求，W为同server第二请求，成功行均实际prefill512、输出128、cache_n=0。C1不称为完全冷权重，官方启动探测保持原样。
 
-本次只做文件/源码审核、Git 状态检查与 `adb devices -l`。起点 HEAD 为 `b4ee03e20426b68f589546c75f3f7d3be41c154e`；在线设备为 `fd8657d6`（model 24122RKC7C）及 `3B661501LA000000`（PLU110），均为 device。历史验收将 fd8657d6 识别为 **Redmi K80 Pro / Adreno830 / HTP v79**；不能把这些证据写成普通 Redmi K80 的新实测，本次未切换到其他设备。
+本地确有 `--fit`：common/arg.cpp:2895–2896将其定义为调整未设置的参数以适应设备内存。本轮为固定静态配置显式使用 `--fit off`，因此没有测试该启动参数拟合功能；它与推理期间自动换出权重不是同一机制。本轮失败不能解释为已启用并否定了所有自动内存适配能力。
 
-未执行 runner dry-run、构建、部署、模型加载或请求，因为前置停止条件已触发；无实际 server 启动命令/分区可记录。模型路径沿用 `/data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf`，本次未触碰模型、文件缓存、cgroup、swap、供电或 DVFS，没有设备临时产物需要清理。
+```sh
+# 专用组已经创建；所有变量取自该行固定分区
+echo "$B_charged" > "$group/memory.limit_in_bytes"
+echo "$B_charged" > "$group/memory.memsw.limit_in_bytes"
+echo 0 > "$group/memory.swappiness"
+echo $$ > "$group/cgroup.procs"
+# 随后 exec：完整 env/命令逐行保存在 results.csv 的 command 列
+./llama-server -m /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf \
+  -c 2048 -np 1 -t 4 -tb 4 -b 512 -ub 128 -ctk f16 -ctv f16 \
+  --load-mode mmap --no-warmup --cache-ram 0 --fit off \
+  --host 127.0.0.1 --port 18091 <上述放置参数>
+```
 
-**同配置退化、最佳已扫描边界及约 1.5× 门槛均为未测。** 不能得出低预算不可部署、CPU-MoE 已足够或需要新缓存/调度的结论，也不能宣称全局最优。已有 E1 无约束结果保留在原目录，不与本次缺失的预算点拼接性能曲线。解除本次缺项需要符合本协议的独立 R 校准及明确残余覆盖范围；本轮按指令只报告缺项并停止。
+环境统一为本次私有目录的 LD_LIBRARY_PATH/ADSP_LIBRARY_PATH、GGML_HEXAGON_DEVICES=1、GGML_OPENCL_KERNEL_CACHE_DIR=off、GGML_ACCEL_BUDGET_REPORT=1、两后端COVERAGE=extra、E0_MODE=perf。GGML_ACCEL_BUDGET_MODE及EXTRA_BYTES按上述分区设置。实际执行入口：`python3 /tmp/e1b_scan.py plan`、`prepare`、`small`、部分`calibration`/定向`run`，随后`scan`。等待期间的host runner重启按run_id跳过已完成点，没有增加正式重复。原构建有效、未重新编译；部署逐文件hash核对。OpenCL库SHA256为 `70bac8ab6b0a692507e180e04ece6c9dc5e3e1d4bca4901416b832cbb666c20f`，HTP v79库为 `48b3aeb4fa140d8ec0469c60f46ac381811d1a25d8bf6ec4619bba9fcf19900f`，与E1已验证产物一致。
 
-仅交付本报告和 results.csv。保留工作区原有 E1 目录迁移、AGENTS.md 及其他修改；未删除历史文件，未新增图、manifest、handoff、完整日志或额外汇总。
+正式单次扫描固定输入ID `cal1`（叙述/规划类）。其文本为以下主题、一换行、以下补充句组用单个空格连接重复20次；经本模型 `/tokenize`、add_special=false 后截取前512个token ID，HTTP请求直接传该数组。两条校准输入和五条保留输入已经冻结；按追加指示，五条保留输入未运行，代码类 cal2 只存在于先前无约束校准，未用于受限预算结论。
+
+> Plan a volunteer repair workshop at a public library. There are four volunteers, six tables, thirty chairs, and a quiet reading session from ten until eleven. Electrical repairs are prohibited. Explain safety, priorities, staffing and closing checks.
+
+> Use these facts as a planning exercise. State assumptions clearly. Distinguish requirements from suggestions. Explain the sequence of actions, the reason for each action, and ways to check the outcome. Include a concise example. Avoid unsupported claims.
+
+## 结果与边界
+
+时间口径：加载是启动器go放行到health成功的墙钟，含轮询误差；加载未完成时load_ms为空。TTFT是server接收完整POST到首token-ready；p95 ITL为127个相邻token-ready间隔的线性插值95分位数。完整请求时间为同一请求的接收至末token-ready，不含加载，不拼不同配置的最好分量。以下按完整C1请求时间选择该配置/预算的最佳已扫描成功分区；每行C1/W来自同一次启动。
+
+| 预算 | 配置 | 分区/结果 | load s | C1 TTFT ms | C1 p95 ITL ms | C1完整 s | W完整 s | C1相对同配置无约束 |
+|---|---|---|---:|---:|---:|---:|---:|---:|
+| 无约束 | B0 | U | 19.51 | 10650.15 | 47.00 | 16.36 | 14.86 | 1.00× |
+| 无约束 | B1 | U | 42.15 | 3188.82 | 43.57 | 8.56 | 8.53 | 1.00× |
+| 无约束 | B2 | U | 14.67 | 2071.36 | 77.35 | 10.70 | 10.65 | 1.00× |
+| 无约束 | B3 | U | 30.63 | 6759.42 | 56.47 | 13.81 | 13.26 | 1.00× |
+| 无约束 | B4 | U | 22.09 | 7527.34 | 58.94 | 14.77 | 13.38 | 1.00× |
+| 无约束 | B5 | U | 43.56 | 5896.60 | 50.96 | 12.17 | 11.10 | 1.00× |
+| 无约束 | B6 | U | 18.29 | 5634.53 | 65.90 | 13.30 | 12.82 | 1.00× |
+| 5GiB | B0 | 未测 | NA | NA | NA | NA | NA | NA |
+| 5GiB | B1 | budget_denied×2 | NA | NA | NA | NA | NA | NA |
+| 5GiB | B2 | budget_denied×2 | NA | NA | NA | NA | NA | NA |
+| 5GiB | B3 | safety_stopped×1, budget_denied×2 | NA | NA | NA | NA | NA | NA |
+| 5GiB | B4 | budget_denied×1, safety_stopped×2 | NA | NA | NA | NA | NA | NA |
+| 5GiB | B5 | budget_denied×3 | NA | NA | NA | NA | NA | NA |
+| 5GiB | B6 | budget_denied×3 | NA | NA | NA | NA | NA | NA |
+
+- 无约束最短完整C1的已扫描成功点：**B1 / U**，C1 8.56s，TTFT 3188.82ms，p95 ITL 43.57ms，加载 42.15s。
+- 5GiB：没有完整C1/W成功点；这只表示当前配置、候选与安全窗口内未完成，不外推全局不可部署。
+
+charged_peak_bytes 是该独立cgroup的生命周期 max_usage；extra_peak_bytes 是共享账本退出SUMMARY中的生命周期 used+reserved峰值。它们包含加载及同server全部请求，在C1/W行重复附带，peak_scope已明确；不是每请求独占峰值，二者不相加。若强制终止来不及输出SUMMARY，extra峰值留空，不能以cap或0冒充实测峰值。普通CPU正式点无加速backing时extra为0。swap_peak_sample_bytes未独立测量，留空。
+
+## 失败、限制与收尾
+
+预算拒绝、驱动失败、unsupported、明确kernel OOM、未知SIGKILL及安全截断分别记状态；fallback最终成功仍记success。Cgroup failcnt不单独证明OOM。所有启动/请求失败和原始数值保留在同一结果表，没有按失败或运行后温升删行。
+
+13个预算拒绝的临时日志均为GGML_BUDGET_DENIAL后模型加载失败；原始拒绝记录已逐条写入CSV reason，字段顺序为operation、backend枚举、请求bytes、当时已占用bytes、cap bytes、count。HTP日志中的rpcmem_alloc failed在这些点是预算拒绝的后果，未重复记为driver_failed。3个安全超时分别为B3/T5E2、B4/T5E1、B4/T5E2；其charged峰值分别为2952790016、4026531840、2952790016 bytes，达到各自上限，extra退出峰值缺失。没有得到明确kernel OOM kill证据。
+
+B4/T5E2加载期间一次只读快照：memory.usage_in_bytes=2952716288，限额2952790016；memory.stat的rss=2884288512、cache=25563136、swap=0、workingset_refault_file=29379441、pgmajfault=1813；memory.oom_control为under_oom=0、oom_kill=0。该时刻显示已记账容量接近上限并有大量文件refault，支持存在回收压力的解释；这是单时刻观测，不是swap峰值、完整OOM历史或CPU_REPACK独占RSS测量。
+
+前置跨后端mixed分配小测试8项、lifecycle19项均通过。早期校准B3/cal1/r1的C1/W完成推理，但运行后的归属探针检查失败，保留2行measurement_invalid及耗时；组外页观察值7471104 bytes小于16MiB，原执行未保存完整探针细项，不能追认确切失败子条件。已在途的r2检查通过，同样保留。用户随后明确取消进一步验证，正式阶段不再运行该探针，未将这些测量无效行伪装成OOM或预算拒绝。
+
+本轮每点仅一次，正式受限扫描只用一种输入；**两类输入、相邻预算下约1.5×稳定退化的建议推进门槛未评估**。有限预算没有成功请求，无法计算同配置的有限/无约束延迟退化，失败和300秒安全阈值不替代延迟比值。不能用C1/W当作两次独立重复，不能做稳定因果/显著性宣称。本次不能判定CPU-MoE在目标预算下已足够，也不能凭失败就建议必须开发新调度；用户的自动swap摸底到此结束。
+
+已执行 `python3 /tmp/e1b_scan.py cleanup`，返回CLEANUP PASS：本次server已退出，专用实验组及observer为空后删除，本次部署目录已删除；GGUF模型和其他实验目录保留。仅交付本报告与results.csv，历史E1目录迁移及用户其他修改保留。计算用临时时序/日志与临时runner不归档，不新增图、manifest、handoff或额外汇总。
