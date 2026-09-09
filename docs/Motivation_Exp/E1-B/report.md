@@ -2,11 +2,11 @@
 
 2026-09-09。E1-B 仅用于本任务命名。按用户最后追加指示，正式阶段每配置/分区只做一次独立启动、同 server 的 C1/W；取消三次重复、额外归属复验、关键点五输入复验及串行20请求。R 沿用用户明确接受的 **R_est=256MiB**，全程固定，不再要求独立校准。结果是限定设备与 wrapper 口径下的单次观测，不宣称全局最优、稳定退化或严格 total-RAM cap。
 
-**结论：无约束下B0–B6全部完成C1/W；5GiB已测16个配置/分区全部在加载阶段失败，其中13个为budget_denied、3个为300秒加载安全超时。没有观测到这些配置在预算压力下自动换出/轮换加速器权重并继续推理。** 用户随后澄清目的只是了解llama.cpp有无自动swap支撑，并要求失败即可报告；本轮在B4/T5E2完成并清理后停止，未继续剩余分区。没有把未执行点记为失败。
+**结论：无约束下B0–B6全部完成C1/W；5GiB已测17个配置/分区全部在加载阶段失败，其中13个为budget_denied、4个为300秒加载安全超时。CPU-only补测同样触发加载安全超时，未进入推理。没有观测到这些配置在预算压力下自动换出/轮换权重并继续推理。** 用户澄清目的只是了解llama.cpp有无自动swap支撑，并要求失败即可报告；原扫描在B4/T5E2完成并清理后停止。随后按用户明确追加要求，仅补跑一次B0/T5E0，不重跑其他点。没有把未执行点记为失败。
 
-范围：5GiB的B0/E0、B1/E0.5、B2/E1未执行；所有observe补充候选及4/3GiB均取消。原计划的公平完整分区扫描未完成，因此受限数据不能用于给七类baseline做全面排名，尤其不能推断CPU-only在5GiB不可行。已完成：已有验收复用、dry-run/小测试、单次无约束对照、16个受限加载尝试、结果整理和设备清理；其余扫描按用户要求终止。
+范围：5GiB的B1/E0.5、B2/E1未执行；所有observe补充候选及4/3GiB均取消。原计划的公平完整分区扫描未完成，因此受限数据不能用于给七类baseline做全面排名。CPU-only仅证明本次构建、参数、组策略及300秒加载窗口内未完成，不外推所有CPU配置或启用swap后的可行性。已完成：已有验收复用、dry-run/小测试、单次无约束对照、17个受限加载尝试、结果整理和设备清理；其余扫描按用户要求终止。
 
-正式阶段共 23 次启动、30 行结果，其中完整 C1/W 成功的启动为 7 次。正式逐行状态：`{'success': 14, 'budget_denied': 13, 'safety_stopped': 3}`。包括此前校准在内，results.csv 共 40 行：`{'success': 22, 'measurement_invalid': 2, 'budget_denied': 13, 'safety_stopped': 3}`。加载失败行代表拟执行 C1 的尝试，实际请求未发送、tokens 为0；没有添加虚构的 W 行。
+正式阶段共 24 次启动、31 行结果，其中完整 C1/W 成功的启动为 7 次。正式逐行状态：`{'success': 14, 'budget_denied': 13, 'safety_stopped': 4}`。包括此前校准在内，results.csv 共 41 行：`{'success': 22, 'measurement_invalid': 2, 'budget_denied': 13, 'safety_stopped': 4}`。加载失败行代表拟执行 C1 的尝试，实际请求未发送、tokens 为0；没有添加虚构的 W 行。
 
 ## 预算与执行设置
 
@@ -30,7 +30,7 @@
 
 USB供电、原有DVFS/融合/异步提交策略；正式 run 启动门限统一为 thermal=0 且电池≤38°C。早期校准门限35°C，在正式数据开始前调整，校准不并入正式比较。保留运行自身温升。原 watchdog 每秒观察：MemAvailable<1GiB持续3秒或HAL thermal≥SEVERE停止，加载300秒/每请求180秒超时；这些是安全截断，不是交互SLO或OOM。C1/W之间等待watchdog实际观察到idle，使W获得独立超时窗口；不清权重或文件缓存。
 
-原计划预算顺序无约束→5→4→3GiB，实际在5GiB阶段结束；粗候选顺序用Python Random(9092026 + 预算GiB×100)打乱，无约束取0。每点只启动一次，实际顺序、时间、起止温度保留在CSV。起跑另要求MemAvailable≥2GiB及USB供电，等待冷却不计入加载时间。
+原计划预算顺序无约束→5→4→3GiB，实际在5GiB阶段结束；原粗候选顺序用Python Random(9092026 + 预算GiB×100)打乱，无约束取0。后续B0/T5E0是用户指定的单点补测，固定排在最后，未声称该点顺序随机。每点只启动一次，实际顺序、时间、起止温度保留在CSV。起跑另要求MemAvailable≥2GiB及USB供电，等待冷却不计入加载时间。
 
 每个独立启动前，复用已验证 `model-cache-prepare --evict <GGUF>`：检查无模型持有者，仅对该文件DONTNEED并确认残留≤16MiB、元数据不变。无全局drop_caches。模型先入组后加载。按用户“直接测试、不用验证”追加指示，正式阶段不再运行 model-page-charge 归属探针；相关列留空，不能解释为本次重新证明组外页为0。历史缓存归属闭环依据 [E0B最终报告](../E0_E0B_final/E0B.md)。
 
@@ -90,7 +90,7 @@ echo $$ > "$group/cgroup.procs"
 | 无约束 | B4 | U | 22.09 | 7527.34 | 58.94 | 14.77 | 13.38 | 1.00× |
 | 无约束 | B5 | U | 43.56 | 5896.60 | 50.96 | 12.17 | 11.10 | 1.00× |
 | 无约束 | B6 | U | 18.29 | 5634.53 | 65.90 | 13.30 | 12.82 | 1.00× |
-| 5GiB | B0 | 未测 | NA | NA | NA | NA | NA | NA |
+| 5GiB | B0 | T5E0；safety_stopped×1 | NA | NA | NA | NA | NA | NA |
 | 5GiB | B1 | budget_denied×2 | NA | NA | NA | NA | NA | NA |
 | 5GiB | B2 | budget_denied×2 | NA | NA | NA | NA | NA | NA |
 | 5GiB | B3 | safety_stopped×1, budget_denied×2 | NA | NA | NA | NA | NA | NA |
@@ -107,7 +107,11 @@ charged_peak_bytes 是该独立cgroup的生命周期 max_usage；extra_peak_byte
 
 预算拒绝、驱动失败、unsupported、明确kernel OOM、未知SIGKILL及安全截断分别记状态；fallback最终成功仍记success。Cgroup failcnt不单独证明OOM。所有启动/请求失败和原始数值保留在同一结果表，没有按失败或运行后温升删行。
 
-13个预算拒绝的临时日志均为GGML_BUDGET_DENIAL后模型加载失败；原始拒绝记录已逐条写入CSV reason，字段顺序为operation、backend枚举、请求bytes、当时已占用bytes、cap bytes、count。HTP日志中的rpcmem_alloc failed在这些点是预算拒绝的后果，未重复记为driver_failed。3个安全超时分别为B3/T5E2、B4/T5E1、B4/T5E2；其charged峰值分别为2952790016、4026531840、2952790016 bytes，达到各自上限，extra退出峰值缺失。没有得到明确kernel OOM kill证据。
+13个预算拒绝的临时日志均为GGML_BUDGET_DENIAL后模型加载失败；原始拒绝记录已逐条写入CSV reason，字段顺序为operation、backend枚举、请求bytes、当时已占用bytes、cap bytes、count。HTP日志中的rpcmem_alloc failed在这些点是预算拒绝的后果，未重复记为driver_failed。原3个安全超时分别为B3/T5E2、B4/T5E1、B4/T5E2；其charged峰值分别为2952790016、4026531840、2952790016 bytes，达到各自上限，extra退出峰值缺失。CPU-only补测增加第4个加载安全超时，详见下段。没有得到明确kernel OOM kill证据。
+
+CPU-only补测：`scan-B0-T5E0-cal1-r1`，2026-09-09T13:20:38Z启动，命令复用上文公共参数并加 `--device none -ngl 0`；wrapper为enforce/extra=0，cgroup memory与memsw均为5100273664 bytes（4.75GiB），R=268435456 bytes。一次启动后加载触发 `safety_load_timeout`，exit=143，未发送C1/W；load_ms、TTFT及ITL留空。charged峰值5100273664 bytes，extra=0，extra拒绝数0，cgroup failcnt=0。电池温度36.1→40.7°C，最低MemAvailable=6172924KiB，最高thermal状态0。该行保留为安全截断，不记成预算拒绝或OOM。
+
+该CPU-only加载过程的一次只读快照为：memory.usage_in_bytes=5100187648、rss=5004357632、cache=50372608、swap=0、workingset_refault_file=73410654、pgmajfault=4469，oom_control的under_oom=0、oom_kill=0。它显示组内大量匿名RSS及文件页反复读入，不能把“CPU-only+mmap”理解为全部权重只占可回收文件页；这与上文官方CPU_REPACK另行分配机制相容，但该快照没有逐buffer归因，也不是swap峰值或完整OOM历史。未尝试关闭repack、改变swap政策或延长安全窗口。
 
 B4/T5E2加载期间一次只读快照：memory.usage_in_bytes=2952716288，限额2952790016；memory.stat的rss=2884288512、cache=25563136、swap=0、workingset_refault_file=29379441、pgmajfault=1813；memory.oom_control为under_oom=0、oom_kill=0。该时刻显示已记账容量接近上限并有大量文件refault，支持存在回收压力的解释；这是单时刻观测，不是swap峰值、完整OOM历史或CPU_REPACK独占RSS测量。
 
@@ -115,4 +119,4 @@ B4/T5E2加载期间一次只读快照：memory.usage_in_bytes=2952716288，限�
 
 本轮每点仅一次，正式受限扫描只用一种输入；**两类输入、相邻预算下约1.5×稳定退化的建议推进门槛未评估**。有限预算没有成功请求，无法计算同配置的有限/无约束延迟退化，失败和300秒安全阈值不替代延迟比值。不能用C1/W当作两次独立重复，不能做稳定因果/显著性宣称。本次不能判定CPU-MoE在目标预算下已足够，也不能凭失败就建议必须开发新调度；用户的自动swap摸底到此结束。
 
-已执行 `python3 /tmp/e1b_scan.py cleanup`，返回CLEANUP PASS：本次server已退出，专用实验组及observer为空后删除，本次部署目录已删除；GGUF模型和其他实验目录保留。仅交付本报告与results.csv，历史E1目录迁移及用户其他修改保留。计算用临时时序/日志与临时runner不归档，不新增图、manifest、handoff或额外汇总。
+原扫描已执行 `python3 /tmp/e1b_scan.py cleanup`，返回CLEANUP PASS。CPU-only补测使用临时入口 `python3 /tmp/e1b_cpu_once.py`，重新部署相同构建产物并核对传输hash，仅运行上述一个点，沿用文件级模型缓存准备与原watchdog，未追加校准或推理重复；结束后同样返回CLEANUP PASS。两次清理均在server退出、专用组为空后删除本次实验组及部署目录；GGUF模型和其他实验目录保留。仅交付本报告与results.csv，历史E1目录迁移及用户其他修改保留。计算用临时时序/日志与临时runner不归档，不新增图、manifest、handoff或额外汇总。
