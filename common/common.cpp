@@ -1293,7 +1293,7 @@ common_init_result::common_init_result(common_params & params, bool model_only) 
     auto mparams = common_model_params_to_llama(params);
     auto cparams = common_context_params_to_llama(params);
 
-    if (params.fit_params) {
+    if (params.fit_params && params.weight_config.empty()) {
         COM_TRC("%s", "fitting params to device memory ...\n");
         COM_TRC("%s", "(for bugs during this step try to reproduce them with -fit off, or provide --verbose logs if the bug only occurs with -fit on)\n");
 
@@ -1706,6 +1706,7 @@ struct llama_model_params common_model_params_to_llama(common_params & params) {
         mparams.kv_overrides = params.kv_overrides.data();
     }
 
+    mparams.weight_config = params.weight_config.empty() ? nullptr : params.weight_config.c_str();
     if (params.tensor_buft_overrides.empty()) {
         mparams.tensor_buft_overrides = NULL;
     } else {

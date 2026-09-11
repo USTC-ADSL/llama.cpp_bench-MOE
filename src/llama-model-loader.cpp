@@ -1,4 +1,5 @@
 #include "llama-model-loader.h"
+#include "llama-weight-manager.h"
 
 #include "ggml-alloc.h"
 #include "ggml.h"
@@ -1078,14 +1079,14 @@ ggml_backend_buffer_type_t llama_model_loader::lazy_read::buft() {
     return ggml_backend_dev_buffer_type(cpu_dev);
 }
 
-bool llama_model_loader::lazy_read::add(const std::string & name, const ggml_tensor * t, const llama_tensor_weight * w) {
-    if (mode == LLAMA_LAZY_MODE_OFF) {
+bool llama_model_loader::lazy_read::add(const std::string & name, const ggml_tensor * t, const llama_tensor_weight * w, bool force) {
+    if (!force && mode == LLAMA_LAZY_MODE_OFF) {
         return false;
     }
 
     // do not lazy-read small tensors, it has significant overhead and is not worth it
     constexpr size_t auto_min_size = 4ull * 1024 * 1024 * 1024;
-    if (mode != LLAMA_LAZY_MODE_ON && ggml_nbytes(t) <= auto_min_size) {
+    if (!force && mode != LLAMA_LAZY_MODE_ON && ggml_nbytes(t) <= auto_min_size) {
         return false;
     }
 
@@ -1111,6 +1112,7 @@ struct ggml_tensor * llama_model_loader::create_tensor(
         const buft_list_t * buft_list_layer, const LLM_TN_IMPL & tn, const std::initializer_list<int64_t> & ne, int flags) {
     // set below, before buft_for_tensor() runs
     bool is_lazy = false;
+    ggml_backend_dev_t managed_device = nullptr;
 
     auto ctx_for_buft = [&](ggml_backend_buffer_type_t buft) -> ggml_context * {
         const ctx_key key { buft, is_lazy };
@@ -1201,7 +1203,7 @@ struct ggml_tensor * llama_model_loader::create_tensor(
             }
         }
 
-        if (is_lazy) {
+        if (is_lazy && !weight_manager) {
             return lazy_read::buft();
         }
 
@@ -1220,6 +1222,23 @@ struct ggml_tensor * llama_model_loader::create_tensor(
                 break;
             default:
                 GGML_ABORT("invalid layer %d for tensor %s", info.layer, tn.str().c_str());
+        }
+
+        if (weight_manager) {
+            managed_device = weight_manager->weight_device(tn.str(), buft_list->front().first);
+            auto target_buft = ggml_backend_dev_buffer_type(managed_device);
+            if (!weight_buft_supported(hparams, t_meta, op, target_buft, managed_device)) {
+                if (is_lazy || weight_manager->weight_device(tn.str(), nullptr)) {
+                    throw std::runtime_error(format("weight policy: %s cannot execute %s on %s",
+                        tn.str().c_str(), ggml_op_name(op), ggml_backend_dev_name(managed_device)));
+                }
+                managed_device = ggml_backend_dev_by_type(GGML_BACKEND_DEVICE_TYPE_CPU);
+                target_buft = ggml_backend_dev_buffer_type(managed_device);
+                if (!weight_buft_supported(hparams, t_meta, op, target_buft, managed_device)) {
+                    throw std::runtime_error("weight policy: no compatible default placement for " + tn.str());
+                }
+            }
+            return is_lazy ? lazy_read::buft() : target_buft;
         }
 
         ggml_backend_buffer_type_t buft = nullptr;
@@ -1332,9 +1351,15 @@ struct ggml_tensor * llama_model_loader::create_tensor(
         return NULL;
     }
 
-    if (flags & TENSOR_READ_LAZY) {
+    if (!weight_manager && (flags & TENSOR_READ_LAZY)) {
         // the decision must not depend on the load mode, or the memory-fit pass (no_alloc, no mmap)
         is_lazy = lazy.add(tn.str(), cur, no_alloc ? nullptr : &require_weight(tn.str().c_str()));
+    }
+    if (weight_manager && weight_manager->is_swap(tn.str())) {
+        is_lazy = lazy.add(tn.str(), cur, no_alloc ? nullptr : &require_weight(tn.str().c_str()), true);
+        if (!is_lazy) {
+            throw std::runtime_error("weight swap requires mmap source support");
+        }
     }
 
     ggml_tensor t_meta = *cur;
@@ -1372,6 +1397,11 @@ struct ggml_tensor * llama_model_loader::create_tensor(
 
     struct ggml_tensor * tensor = ggml_dup_tensor(ctx, &t_meta);
     ggml_set_name(tensor, ggml_get_name(&t_meta));
+
+    if (weight_manager) {
+        const auto & source = require_weight(tn.str().c_str());
+        weight_manager->register_weight(tensor, source.idx, source.offs, managed_device);
+    }
 
     if (duplicated) {
         size_data += ggml_nbytes(&t_meta);

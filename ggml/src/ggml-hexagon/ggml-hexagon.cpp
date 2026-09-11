@@ -1270,6 +1270,14 @@ static void ggml_backend_hexagon_buffer_set_tensor(ggml_backend_buffer_t buffer,
         return;
     }
 
+    // A complete Q4_0 matrix slice can be repacked independently. In particular,
+    // expert cache updates must not allocate a shadow of the entire expert bank.
+    if (tensor->type == GGML_TYPE_Q4_0 && ggml_is_contiguous(tensor) &&
+        offset % tensor->nb[2] == 0 && size % tensor->nb[2] == 0 && extra->shadow_buf.empty()) {
+        repack_q4_0_tiled(tensor, data, offset, size);
+        return;
+    }
+
     if (offset == 0 && size == ggml_nbytes(tensor) && extra->shadow_buf.empty()) {
         repack_tensor_tiled(tensor, data, size);
         return;

@@ -10,6 +10,7 @@
 #include "ggml-opencl.h"
 #include "ggml-backend.h"
 #include "ggml-impl.h"
+#include "ggml-quants.h"
 #include "ggml-backend-impl.h"
 #include "ggml.h"
 
@@ -9349,6 +9350,87 @@ static enum ggml_status ggml_backend_opencl_buffer_init_tensor(ggml_backend_buff
     return GGML_STATUS_SUCCESS;
 }
 
+#ifdef GGML_OPENCL_SOA_Q
+// Refresh complete expert slices without rebuilding the bank's SoA objects.
+static void ggml_opencl_set_q4_0_expert_slice(
+        ggml_backend_buffer_t buffer, ggml_tensor * tensor, const void * data, size_t offset, size_t size) {
+    auto * ctx = static_cast<ggml_backend_opencl_buffer_context *>(buffer->context);
+    auto * dev = static_cast<ggml_backend_opencl_device_context *>(buffer->buft->device->context);
+    auto * backend = dev->backend_ctx;
+    GGML_ASSERT(tensor->view_src == nullptr && ggml_is_contiguous(tensor));
+    GGML_ASSERT(tensor->ne[3] == 1 && offset % tensor->nb[2] == 0 && size % tensor->nb[2] == 0);
+    bool transposed = false;
+#ifdef GGML_OPENCL_USE_ADRENO_KERNELS
+    transposed = use_adreno_moe_kernels(backend, tensor);
+#endif
+    ggml_tensor_extra_cl_q4_0 * extra;
+    if (ctx->q4_0_soa_tensors.count(tensor)) {
+        extra = static_cast<ggml_tensor_extra_cl_q4_0 *>(tensor->extra);
+    } else {
+        extra = ctx->ggml_opencl_alloc_temp_tensor_extra_q4_0();
+        const size_t blocks = ggml_nelements(tensor) / QK4_0;
+        cl_int err;
+        const size_t base_offset = static_cast<char *>(tensor->data) - static_cast<char *>(ggml_backend_opencl_buffer_get_base(buffer));
+        cl_buffer_region scales {align_to(base_offset, backend->alignment), blocks * sizeof(ggml_half)};
+        extra->d = clCreateSubBuffer(ctx->buffer[0], CL_MEM_READ_WRITE, CL_BUFFER_CREATE_TYPE_REGION, &scales, &err);
+        CL_CHECK(err);
+        cl_buffer_region quants {align_to(scales.origin + scales.size, backend->alignment), blocks * (QK4_0 / 2)};
+        extra->q = clCreateSubBuffer(ctx->buffer[0], CL_MEM_READ_WRITE, CL_BUFFER_CREATE_TYPE_REGION, &quants, &err);
+        CL_CHECK(err);
+        if (transposed) {
+            cl_image_format format = {CL_R, CL_UNSIGNED_INT32};
+            cl_image_desc desc = {};
+            desc.image_type = CL_MEM_OBJECT_IMAGE1D_BUFFER;
+            desc.image_width = ggml_nelements(tensor) / 8;
+            desc.buffer = extra->q;
+            extra->q_img = clCreateImage(backend->context, CL_MEM_READ_ONLY, &format, &desc, nullptr, &err);
+            CL_CHECK(err);
+        }
+        tensor->extra = extra;
+        ctx->q4_0_soa_tensors.insert(tensor);
+    }
+    const size_t blocks_per_row = tensor->ne[0] / QK4_0;
+    const size_t rows = tensor->ne[1];
+    const size_t slices = size / tensor->nb[2];
+    const size_t blocks = size / sizeof(block_q4_0);
+    const size_t scale_bytes = blocks * sizeof(ggml_half);
+    std::vector<uint8_t> converted(size);
+    auto * scales = converted.data();
+    auto * quants = converted.data() + scale_bytes;
+    const auto * source = static_cast<const block_q4_0 *>(data);
+    for (size_t e = 0; e < slices; ++e) {
+        for (size_t row = 0; row < rows; ++row) {
+            for (size_t k = 0; k < blocks_per_row; ++k) {
+                const size_t index = (e * rows + row) * blocks_per_row + k;
+                const auto & block = source[index];
+                if (!transposed) {
+                    memcpy(scales + index * sizeof(ggml_half), &block.d, sizeof(block.d));
+                    memcpy(quants + index * 16, block.qs, 16);
+                    continue;
+                }
+                const size_t scale_index = (e * blocks_per_row + k) * rows + row;
+                memcpy(scales + scale_index * sizeof(ggml_half), &block.d, sizeof(block.d));
+                uint8_t unpacked[16];
+                for (size_t i = 0; i < 8; ++i) {
+                    const uint8_t x0 = block.qs[2 * i], x1 = block.qs[2 * i + 1];
+                    unpacked[i] = (x0 & 15) | ((x1 & 15) << 4);
+                    unpacked[i + 8] = (x0 >> 4) | (x1 & 240);
+                }
+                for (size_t limb = 0; limb < 4; ++limb) {
+                    const size_t dest = ((e * blocks_per_row + k) * rows * 4 + limb * rows + row) * 4;
+                    memcpy(quants + dest, unpacked + limb * 4, 4);
+                }
+            }
+        }
+    }
+    const size_t first_block = offset / sizeof(block_q4_0);
+    CL_CHECK(clEnqueueWriteBuffer(backend->queue, extra->d, CL_TRUE, first_block * sizeof(ggml_half),
+        scale_bytes, scales, 0, nullptr, nullptr));
+    CL_CHECK(clEnqueueWriteBuffer(backend->queue, extra->q, CL_TRUE, first_block * 16,
+        blocks * 16, quants, 0, nullptr, nullptr));
+}
+#endif
+
 static void ggml_backend_opencl_buffer_set_tensor(ggml_backend_buffer_t buffer, ggml_tensor * tensor, const void * data, size_t offset, size_t size) {
     ggml_backend_opencl_device_context * dev_ctx = (ggml_backend_opencl_device_context *) buffer->buft->device->context;
     ggml_backend_opencl_context * backend_ctx = dev_ctx->backend_ctx;
@@ -9357,6 +9439,12 @@ static void ggml_backend_opencl_buffer_set_tensor(ggml_backend_buffer_t buffer, 
     cl_command_queue queue = backend_ctx->queue;
 
 #ifdef GGML_OPENCL_SOA_Q
+    if (tensor->type == GGML_TYPE_Q4_0 && tensor->ne[2] > 1 && tensor->ne[3] == 1 &&
+        offset % tensor->nb[2] == 0 && size % tensor->nb[2] == 0 &&
+        (offset != 0 || size != ggml_nbytes(tensor))) {
+        ggml_opencl_set_q4_0_expert_slice(buffer, tensor, data, offset, size);
+        return;
+    }
     if (tensor->type == GGML_TYPE_Q1_0) {
         ggml_tensor_extra_cl * extra_orig = (ggml_tensor_extra_cl *)tensor->extra;
         GGML_ASSERT(extra_orig && "Tesnors in OpenCL backend should have been allocated and initialized");
@@ -23806,6 +23894,12 @@ static void ggml_cl_mul_mat_id(ggml_backend_t backend, const ggml_tensor * src0,
     const int max_post_router_tile = (ne20 * ne21 / n_tile_size) + ne02;
 
     GGML_UNUSED(max_post_router_tile);
+
+    // Externally supplied IDs can change without running the router's argsort.
+    // Their remapping may also differ between consecutive expert matmuls.
+    if (src2->op == GGML_OP_NONE || (src2->view_src && src2->view_src->op == GGML_OP_NONE)) {
+        backend_ctx->toggle_reorder = true;
+    }
 
     cl_kernel kernel;
 

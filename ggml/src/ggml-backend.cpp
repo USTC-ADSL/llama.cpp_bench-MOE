@@ -781,6 +781,7 @@ struct ggml_backend_sched_split {
     int inputs_capacity;
     // graph view of this split
     struct ggml_cgraph graph;
+    struct ggml_tensor * managed_node;
 };
 
 struct ggml_backend_sched {
@@ -825,6 +826,8 @@ struct ggml_backend_sched {
 
     ggml_backend_sched_eval_callback callback_eval;
     void * callback_eval_user_data;
+
+    struct ggml_backend_sched_weight_provider weight_provider;
 
     char * context_buffer;
     size_t context_buffer_size;
@@ -919,6 +922,17 @@ static char causes[GGML_DEFAULT_GRAPH_SIZE*16 + GGML_SCHED_MAX_SPLITS_DEBUG*GGML
 
 // returns the backend that should be used for the node based on the current locations
 static int ggml_backend_sched_backend_id_from_cur(ggml_backend_sched_t sched, struct ggml_tensor * tensor) {
+    if (sched->weight_provider.get_device && !ggml_is_view_op(tensor->op)) {
+        auto dev = sched->weight_provider.get_device(tensor, sched->weight_provider.user_data);
+        if (dev) {
+            for (int i = 0; i < sched->n_backends; ++i) {
+                if (ggml_backend_get_device(sched->backends[i]) == dev) {
+                    return i;
+                }
+            }
+            GGML_ABORT("weight provider requested unavailable device %s", ggml_backend_dev_name(dev));
+        }
+    }
     // assign pre-allocated nodes to their backend
     int cur_backend_id = ggml_backend_sched_backend_from_buffer(sched, tensor, tensor);
     if (cur_backend_id != -1) {
@@ -1214,6 +1228,10 @@ void ggml_backend_sched_split_graph(ggml_backend_sched_t sched, struct ggml_cgra
         if (ggml_is_view_op(node->op)) {
             continue;
         }
+        if (sched->weight_provider.get_device &&
+            sched->weight_provider.get_device(node, sched->weight_provider.user_data)) {
+            continue;
+        }
         int * node_backend_id = &tensor_backend_id(node);
         if (*node_backend_id == -1) {
             // unassigned node: find the backend with the most supported inputs
@@ -1309,6 +1327,7 @@ void ggml_backend_sched_split_graph(ggml_backend_sched_t sched, struct ggml_cgra
         }
         split->i_start = 0;
         split->n_inputs = 0;
+        split->managed_node = nullptr;
         int cur_backend_id = split->backend_id;
         for (; i < graph->n_nodes; i++) {
             struct ggml_tensor * node = graph->nodes[i];
@@ -1322,7 +1341,9 @@ void ggml_backend_sched_split_graph(ggml_backend_sched_t sched, struct ggml_cgra
             GGML_ASSERT(node_backend_id != -1); // all nodes should be assigned by now, this can happen if there is no CPU fallback
 
             // check if we should start a new split based on the sources of the current node
-            bool need_new_split = false;
+            const bool managed = sched->weight_provider.get_device &&
+                sched->weight_provider.get_device(node, sched->weight_provider.user_data);
+            bool need_new_split = split->managed_node != nullptr || (managed && i > split->i_start);
             if (node_backend_id == cur_backend_id && split->n_inputs > 0) {
                 for (int j = 0; j < GGML_MAX_SRC; j++) {
                     struct ggml_tensor * src = node->src[j];
@@ -1358,13 +1379,21 @@ void ggml_backend_sched_split_graph(ggml_backend_sched_t sched, struct ggml_cgra
                 split->backend_id = node_backend_id;
                 split->i_start = i;
                 split->n_inputs = 0;
+                split->managed_node = nullptr;
                 cur_backend_id = node_backend_id;
+            }
+
+            if (managed) {
+                split->managed_node = node;
             }
 
             // find inputs that are not on the same backend
             for (int j = 0; j < GGML_MAX_SRC; j++) {
                 struct ggml_tensor * src = node->src[j];
                 if (src == NULL) {
+                    continue;
+                }
+                if (managed && sched->weight_provider.is_managed(src, sched->weight_provider.user_data)) {
                     continue;
                 }
 
@@ -1788,7 +1817,18 @@ static enum ggml_status ggml_backend_sched_compute_splits(ggml_backend_sched_t s
             }
         }
 
-        if (!sched->callback_eval) {
+        if (split->managed_node) {
+            auto * node = split->managed_node;
+            const bool observe = sched->callback_eval && sched->callback_eval(node, true, sched->callback_eval_user_data);
+            ggml_backend_synchronize(split_backend);
+            const auto status = sched->weight_provider.compute(split_backend, node, sched->weight_provider.user_data);
+            if (status != GGML_STATUS_SUCCESS) {
+                return status;
+            }
+            if (observe && !sched->callback_eval(node, false, sched->callback_eval_user_data)) {
+                return GGML_STATUS_ABORTED;
+            }
+        } else if (!sched->callback_eval) {
             enum ggml_status ec = ggml_backend_graph_compute_async(split_backend, &split->graph);
             if (ec != GGML_STATUS_SUCCESS) {
                 return ec;
@@ -2039,6 +2079,12 @@ void ggml_backend_sched_set_eval_callback(ggml_backend_sched_t sched, ggml_backe
     GGML_ASSERT(sched);
     sched->callback_eval = callback;
     sched->callback_eval_user_data = user_data;
+}
+
+void ggml_backend_sched_set_weight_provider(ggml_backend_sched_t sched, struct ggml_backend_sched_weight_provider provider) {
+    GGML_ASSERT(sched->is_reset);
+    GGML_ASSERT(!provider.get_device || (provider.is_managed && provider.compute));
+    sched->weight_provider = provider;
 }
 
 int ggml_backend_sched_get_n_splits(ggml_backend_sched_t sched) {

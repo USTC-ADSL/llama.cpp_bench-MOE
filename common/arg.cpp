@@ -2813,6 +2813,13 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
     ).set_env("LLAMA_ARG_N_CPU_FFN"));
     GGML_ASSERT(params.n_gpu_layers < 0); // string_format would need to be extended for a default >= 0
     add_opt(common_arg(
+        {"--weight-config"}, "FILE",
+        "JSON weight placement/cache policy (disables automatic memory fitting)",
+        [](common_params & params, const std::string & value) {
+            params.weight_config = value;
+        }
+    ).set_env("LLAMA_ARG_WEIGHT_CONFIG"));
+    add_opt(common_arg(
         {"-ngl", "--gpu-layers", "--n-gpu-layers"}, "N",
         string_format("max. number of layers to store in VRAM, either an exact number, 'auto', or 'all' (default: %s)", params.n_gpu_layers == -1 ? "auto" : "all"),
         [](common_params & params, const std::string & value) {

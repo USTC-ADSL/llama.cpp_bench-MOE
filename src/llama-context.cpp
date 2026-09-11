@@ -1,4 +1,5 @@
 #include "llama-context.h"
+#include "llama-weight-manager.h"
 
 #include "ggml.h"
 #include "llama-arch.h"
@@ -407,7 +408,7 @@ llama_context::llama_context(
             auto * buft = ggml_backend_get_default_buffer_type(backend.get());
             auto backend_type = ggml_backend_dev_type(ggml_backend_get_device(backend.get()));
 
-            if (backend_type == GGML_BACKEND_DEVICE_TYPE_CPU && !model.devices.empty()) {
+            if (backend_type == GGML_BACKEND_DEVICE_TYPE_CPU && !model.devices.empty() && !model.weight_manager()) {
                 // use the host buffer of the first device CPU for faster transfer of the intermediate state
                 const auto & dev = model.devices[0];
                 auto * host_buft = ggml_backend_dev_host_buffer_type(dev.dev);
@@ -426,6 +427,7 @@ llama_context::llama_context(
         // TODO: move these checks to ggml_backend_sched
         // enabling pipeline parallelism in the scheduler increases memory usage, so it is only done when necessary
         bool pipeline_parallel =
+            !model.weight_manager() &&
             model.n_devices() > 1 &&
             model.n_gpu_layers() > model.hparams.n_layer_all &&
             model.split_mode() == LLAMA_SPLIT_MODE_LAYER &&
@@ -476,11 +478,28 @@ llama_context::llama_context(
             sampling.token_ids_full_vocab[i] = i;
         }
     }
+    if (auto * manager = model.weight_manager()) {
+        manager->attach_context(this);
+        try {
+            std::map<ggml_backend_buffer_type_t, size_t> runtime;
+            for (const auto & item : memory_breakdown()) {
+                runtime[item.first] = item.second.context + item.second.compute;
+            }
+            manager->set_runtime(runtime);
+            manager->write_report();
+        } catch (...) {
+            manager->detach_context(this);
+            throw;
+        }
+    }
 }
 
 llama_context::~llama_context() {
     // wait for any pending asynchronous copies into the output buffers before they are freed
     synchronize();
+    if (auto * manager = model.weight_manager()) {
+        manager->detach_context(this);
+    }
 
     // when training, ggml_opt allocates extra buffers through the scheduler, so the sizes no longer match the expectation
     if (!model.hparams.no_alloc && !opt_ctx) {
@@ -602,7 +621,10 @@ void llama_context::sched_reserve() {
     gf_res_prev.reset(new llm_graph_result(max_nodes));
     gf_res_reserve.reset(new llm_graph_result(max_nodes));
 
-    sched.reset(ggml_backend_sched_new(backend_ptrs.data(), backend_buft.data(), backend_ptrs.size(), max_nodes, cparams.pipeline_parallel, cparams.op_offload));
+    sched.reset(ggml_backend_sched_new(backend_ptrs.data(), backend_buft.data(), backend_ptrs.size(), max_nodes, cparams.pipeline_parallel, cparams.op_offload && !model.weight_manager()));
+    if (auto * manager = model.weight_manager()) {
+        ggml_backend_sched_set_weight_provider(sched.get(), manager->provider());
+    }
 
     llama_memory_context_ptr mctx;
     if (memory) {
@@ -2122,7 +2144,7 @@ uint32_t llama_context::output_reserve(int32_t n_outputs) {
         // try to use the host buffer of the device where the output tensor is allocated for faster transfer to system memory
         auto * output_dev = model.dev_output();
         auto * output_dev_host_buft = output_dev ? ggml_backend_dev_host_buffer_type(output_dev) : nullptr;
-        if (output_dev_host_buft) {
+        if (output_dev_host_buft && !model.weight_manager()) {
             buft = output_dev_host_buft;
         }
         buf_output.reset(ggml_backend_buft_alloc_buffer(buft, new_size));
@@ -2492,6 +2514,18 @@ llm_graph_params llama_context::graph_params(
 ggml_status llama_context::graph_compute(
             ggml_cgraph * gf,
                    bool   batched) {
+    if (auto * manager = model.weight_manager()) {
+        try {
+            std::map<ggml_backend_buffer_type_t, size_t> runtime;
+            for (const auto & item : memory_breakdown()) {
+                runtime[item.first] = item.second.context + item.second.compute;
+            }
+            manager->set_runtime(runtime);
+        } catch (const std::exception & e) {
+            LLAMA_LOG_ERROR("weight runtime budget: %s\n", e.what());
+            return GGML_STATUS_ALLOC_FAILED;
+        }
+    }
     int n_threads        = batched ? cparams.n_threads_batch : cparams.n_threads;
     ggml_threadpool_t tp = batched ? threadpool_batch        : threadpool;
 
@@ -2509,6 +2543,9 @@ ggml_status llama_context::graph_compute(
     }
 
     auto status = ggml_backend_sched_graph_compute_async(sched.get(), gf);
+    if (auto * manager = model.weight_manager()) {
+        manager->write_report();
+    }
     if (status != GGML_STATUS_SUCCESS) {
         LLAMA_LOG_ERROR("%s: ggml_backend_sched_graph_compute_async failed with error %d\n", __func__, status);
     }
@@ -3358,6 +3395,9 @@ void llama_context::perf_reset() {
 
 llama_memory_breakdown llama_context::memory_breakdown() const {
     std::map<ggml_backend_buffer_type_t, llama_memory_breakdown_data> ret;
+    if (model.weight_manager() && buf_output) {
+        ret[ggml_backend_buffer_get_type(buf_output.get())].context += ggml_backend_buffer_get_size(buf_output.get());
+    }
     for (const auto & [buft, size] : model.memory_breakdown()) {
         ret[buft].model += size;
     }

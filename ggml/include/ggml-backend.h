@@ -353,6 +353,17 @@ extern "C" {
     // Set a callback to be called for each resulting node during graph compute
     GGML_API void                 ggml_backend_sched_set_eval_callback(ggml_backend_sched_t sched, ggml_backend_sched_eval_callback callback, void * user_data);
 
+    // A provider owns the storage of selected read-only inputs. Its compute callback
+    // executes one isolated node synchronously, without modifying the original graph.
+    struct ggml_backend_sched_weight_provider {
+        bool (*is_managed)(const struct ggml_tensor * tensor, void * user_data);
+        ggml_backend_dev_t (*get_device)(const struct ggml_tensor * node, void * user_data);
+        enum ggml_status (*compute)(ggml_backend_t backend, struct ggml_tensor * node, void * user_data);
+        void * user_data;
+    };
+    GGML_API void ggml_backend_sched_set_weight_provider(
+        ggml_backend_sched_t sched, struct ggml_backend_sched_weight_provider provider);
+
     //
     // Meta backend
     //

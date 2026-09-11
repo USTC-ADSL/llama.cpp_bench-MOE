@@ -731,6 +731,7 @@ struct llama_model {
     llama_split_mode split_mode() const;
 
     std::map<ggml_backend_buffer_type_t, size_t> memory_breakdown() const;
+    class llama_weight_manager * weight_manager() const;
 
     // total number of parameters in the model
     uint64_t n_elements() const;

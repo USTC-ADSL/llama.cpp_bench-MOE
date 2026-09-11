@@ -40,6 +40,8 @@ add_library(llama
             llama-quant.cpp
             llama-sampler.cpp
             llama-vocab.cpp
+            llama-weight-manager.cpp
+            llama-weight-manager.h
             unicode-data.cpp
             unicode.cpp
             unicode.h

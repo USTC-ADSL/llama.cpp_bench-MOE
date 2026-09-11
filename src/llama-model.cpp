@@ -7,6 +7,7 @@
 #include "llama-mmap.h"
 #include "llama-cparams.h"
 #include "llama-model-loader.h"
+#include "llama-weight-manager.h"
 
 #include "llama-kv-cache.h"
 #include "llama-kv-cache-iswa.h"
@@ -1159,6 +1160,7 @@ struct llama_model::impl {
 
     // contexts where the model tensors metadata is stored as well as the corresponding buffers:
     std::vector<std::pair<ggml_context_ptr, std::vector<ggml_backend_buffer_ptr>>> ctxs_bufs;
+    std::unique_ptr<llama_weight_manager> weight_manager;
 
     buft_list_t cpu_buft_list;
     std::map<ggml_backend_dev_t, buft_list_t> gpu_buft_list;
@@ -1400,6 +1402,20 @@ void llama_model_base::load_vocab(llama_model_loader & ml) {
 }
 
 bool llama_model_base::load_tensors(llama_model_loader & ml) {
+    if (params.weight_config && params.weight_config[0]) {
+        if (ml.no_alloc || ml.files.empty() || ml.use_direct_io || params.split_mode == LLAMA_SPLIT_MODE_TENSOR ||
+            (params.tensor_buft_overrides && params.tensor_buft_overrides[0].pattern)) {
+            throw std::runtime_error("weight config requires file loading, buffered I/O, and no tensor split/overrides");
+        }
+        pimpl->weight_manager.reset(new llama_weight_manager(params.weight_config));
+        std::vector<ggml_backend_dev_t> selected_devices;
+        for (const auto & device : devices) { selected_devices.push_back(device.dev); }
+        pimpl->weight_manager->validate_devices(selected_devices, hparams.n_layer_all);
+        ml.weight_manager = pimpl->weight_manager.get();
+        // Fixed CPU weights use owned buffers; only streamed sources are mapped.
+        ml.use_mmap = false;
+        LLAMA_LOG_INFO("weight manager: fixed weights use owned buffers; swap sources use lazy mappings\n");
+    }
     const auto & split_mode   = params.split_mode;
     const bool use_mlock      = params.load_mode == LLAMA_LOAD_MODE_MLOCK || params.load_mode == LLAMA_LOAD_MODE_MMAP_MLOCK;
     const auto & tensor_split = params.tensor_split;
@@ -1431,6 +1447,10 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
 
     // build a list of buffer types for the CPU and GPU devices
     pimpl->cpu_buft_list = make_cpu_buft_list(devices, params.use_extra_bufts, params.no_host);
+    if (ml.weight_manager) {
+        auto cpu = ggml_backend_dev_by_type(GGML_BACKEND_DEVICE_TYPE_CPU);
+        pimpl->cpu_buft_list = {{cpu, ggml_backend_dev_buffer_type(cpu)}};
+    }
     for (const auto & dev : devices) {
         buft_list_t buft_list = make_gpu_buft_list(dev.dev, split_mode, tensor_split);
         // add CPU buffer types as a fallback
@@ -1479,6 +1499,19 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
     const int i_gpu_start = std::max(n_layer_all + 1 - n_gpu_layers, 0);
     const int act_gpu_layers = devices.empty() ? 0 : std::min(n_gpu_layers, n_layer_all + 1);
     auto get_layer_buft_list = [&](int il) -> llama_model::impl::layer_dev {
+        if (ml.weight_manager) {
+            auto * selected = ml.weight_manager->layer_device(il, nullptr);
+            if (selected) {
+                if (selected == cpu_dev) {
+                    return {cpu_dev, &pimpl->cpu_buft_list};
+                }
+                auto it = pimpl->gpu_buft_list.find(selected);
+                if (it == pimpl->gpu_buft_list.end()) {
+                    throw std::runtime_error(format("weight config backend %s is not selected by --device", ggml_backend_dev_name(selected)));
+                }
+                return {selected, &it->second};
+            }
+        }
         const bool is_swa = il < n_layer_all && hparams.is_swa(il);
         if (il < i_gpu_start || (il - i_gpu_start) >= act_gpu_layers) {
             LLAMA_LOG_DEBUG("load_tensors: layer %3d assigned to device %s, is_swa = %d\n", il, ggml_backend_dev_name(cpu_dev), is_swa);
@@ -1760,6 +1793,9 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
                     t->buffer = buf; // set dummy buffer for weights so that the backend scheduler won't try to allocate them
                 }
             } else {
+                if (ml.weight_manager) {
+                    ml.weight_manager->check_fixed(buft, ggml_backend_alloc_ctx_tensors_from_buft_size(ctx, buft));
+                }
                 buf = ggml_backend_alloc_ctx_tensors_from_buft(ctx, buft); // real buffer
             }
             if (buf == nullptr) {
@@ -1781,6 +1817,9 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
             // indicate that this buffer contains weights
             // this is used by ggml_backend_sched to improve op scheduling: ops that use a weight are preferably scheduled to the backend that contains the weight
             ggml_backend_buffer_set_usage(buf.get(), GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
+            if (ml.weight_manager && !ctx_key.lazy) {
+                ml.weight_manager->add_fixed(buf.get());
+            }
         }
 
         pimpl->ctxs_bufs.emplace_back(std::move(ctx_ptr), std::move(bufs));
@@ -1837,6 +1876,11 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
         }
     }
 
+    if (ml.weight_manager) {
+        ml.weight_manager->adopt_files(std::move(ml.files));
+        ml.weight_manager->write_report();
+    }
+
     return true;
 }
 
@@ -1888,7 +1932,14 @@ llama_split_mode llama_model::split_mode() const {
     return params.split_mode;
 }
 
+llama_weight_manager * llama_model::weight_manager() const {
+    return pimpl->weight_manager.get();
+}
+
 std::map<ggml_backend_buffer_type_t, size_t> llama_model::memory_breakdown() const {
+    if (pimpl->weight_manager) {
+        return pimpl->weight_manager->memory_breakdown();
+    }
     std::map<ggml_backend_buffer_type_t, size_t> ret;
     for (const auto & [ctx, bufs] : pimpl->ctxs_bufs) {
         if (hparams.no_alloc) {
@@ -2746,6 +2797,7 @@ llama_model_params llama_model_default_params() {
     llama_model_params result = {
         /*.devices                     =*/ nullptr,
         /*.tensor_buft_overrides       =*/ nullptr,
+        /*.weight_config               =*/ nullptr,
         /*.n_gpu_layers                =*/ -1,
         /*.split_mode                  =*/ LLAMA_SPLIT_MODE_LAYER,
         /*.load_mode                   =*/ LLAMA_LOAD_MODE_AUTO,
