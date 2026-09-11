@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Audit retained E1-B heavy pairs; optional read-only device export collection."""
+"""Audit retained E1 heavy pairs; optional read-only device export collection."""
 import argparse
 import csv
 import importlib.util
@@ -8,7 +8,7 @@ import pathlib
 import re
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-OUT = ROOT / 'docs/Motivation_Exp/E1-B/evidence/heavy'
+OUT = ROOT / 'docs/Motivation_Exp/E1/evidence/heavy'
 
 
 def read(path):

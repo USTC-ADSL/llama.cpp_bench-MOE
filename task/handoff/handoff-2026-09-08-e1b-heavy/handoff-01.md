@@ -1,8 +1,8 @@
-# E1-B 较重任务补验进行中
+# E1 较重任务补验进行中
 
-用户同意增加两个App，验证原轻量场景可能内存需求太低。仓库/mnt/sda1/pzw/moe/llama.cpp_bench-MOE；唯一设备fd8657d6在线。原E1-B已完成，起点1e79e8bd0；用户AGENTS.md/Exp1文件不动。新evidence/heavy、protocol-heavy.md，原report/summary/completion不覆盖。
+用户同意增加两个App，验证原轻量场景可能内存需求太低。仓库/mnt/sda1/pzw/moe/llama.cpp_bench-MOE；唯一设备fd8657d6在线。原E1已完成，起点1e79e8bd0；用户AGENTS.md/Exp1文件不动。新evidence/heavy、protocol-heavy.md，原report/summary/completion不覆盖。
 
-主线程完整读取AGENTS.md、E1-B报告/最终handoff以及相关App/static/E0 runner；新代码仅tests/run-e1b-heavy.py与tests/E1BTaskFront.java。沿用当前固定OpenCL库70bac8...6620f及模型，无后端重建；唯一新编译是javac+d8的task-front.dex，hash1c26a5...dc35。远端/data/local/tmp/llama-e1b-heavy已部署，/sdcard/Download/E1B-heavy只有生成素材。helper用于从最近任务恢复指定taskId，不发新Intent、不改优先级。
+主线程完整读取AGENTS.md、E1报告/最终handoff以及相关App/static/E0 runner；新代码仅tests/run-e1b-heavy.py与tests/E1BTaskFront.java。沿用当前固定OpenCL库70bac8...6620f及模型，无后端重建；唯一新编译是javac+d8的task-front.dex，hash1c26a5...dc35。远端/data/local/tmp/llama-e1b-heavy已部署，/sdcard/Download/E1B-heavy只有生成素材。helper用于从最近任务恢复指定taskId，不发新Intent、不改优先级。
 
 实际使用多看com.duokan.reader8.4.19 UID10285、编辑器com.miui.mediaeditor2.4.0.2.1 UID10305，后者进程名带:photo_editor。WPS首次联网/隐私协议选择退出，未同意；编辑器“不同意”仍能本地标记保存。多看只确认复制本测试外部文档，不加书架、不登录。app-environment.txt记录元数据。
 
@@ -20,6 +20,6 @@
 
 尚需：实现/执行独立分析（当前新runner只有生成/部署/诊断/预演/配对，没有analyzer）；21旧初筛不重跑，本次12正式条件。检查LLM3+3成功、token匹配、first_frame正且合理、状态和继续功能、图像save_action_us在request_received..request_end内，日志导出start/end可量化与推理重叠；PDFtaskrestore在请求中。stage正常result都有task/condition/state/continue/first_frame等，raw app-result/graphics/export-check与E0 traces全部保留。若真实状态fail或degraded，保留结果不筛掉。
 
-然后写独立短report-heavy.md，并在原E1-B/report.md追加链接及限定结论；不要覆盖原轻量结果。收尾逐一验证远端测试产物/模型hash，pull应用输出后清理精确MediaStore IDs/输出路径，删除本任务两个目录；别清App数据或DCIM目录，注意多看可能复制了本测试PDF需定位精确复制路径，不触碰私人文件。raw导出JPG被ignore，可用hash/尺寸/标记检查及截图作为版本证据，不能谎称raw图全在Git。
+然后写独立短report-heavy.md，并在原E1/report.md追加链接及限定结论；不要覆盖原轻量结果。收尾逐一验证远端测试产物/模型hash，pull应用输出后清理精确MediaStore IDs/输出路径，删除本任务两个目录；别清App数据或DCIM目录，注意多看可能复制了本测试PDF需定位精确复制路径，不触碰私人文件。raw导出JPG被ignore，可用hash/尺寸/标记检查及截图作为版本证据，不能谎称raw图全在Git。
 
 每分钟中文进度；子代理只读单轮，已完成entrypoints探子，不复用。主线程最终验证/修改。按阶段Git封板，尚未提交本轮新文件。新的任务清单前两项已完成。

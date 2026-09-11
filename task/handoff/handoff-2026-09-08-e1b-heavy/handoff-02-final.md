@@ -1,6 +1,6 @@
-# E1-B 较重任务补验收尾
+# E1 较重任务补验收尾
 
-任务完成。用户后续明确要求减少实验量，因此只完成原定image/PDF各三对，没有追加实验、重跑或额外交叉验证。最终报告docs/Motivation_Exp/E1-B/report-heavy.md，原report.md只加补验链接/限定结论，原初筛和轻量证据不变。
+任务完成。用户后续明确要求减少实验量，因此只完成原定image/PDF各三对，没有追加实验、重跑或额外交叉验证。最终报告docs/Motivation_Exp/E1/report-heavy.md，原report.md只加补验链接/限定结论，原初筛和轻量证据不变。
 
 - 12/12条件最终PASS；6/6 LLM请求成功，512输入/128输出/cache0，token逐项匹配原CPU，trace无溢出，无stop_reason，thermal0。
 - 六对均变慢，但HWUI帧延迟增量204～410ms，未达500ms AND 50%门槛；12次状态/继续操作保留、返回PID不变。H1-R仍not supported，限两个任务。

@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""E1-B heavier installed-App tasks. Synthetic assets only; dry-run by default."""
+"""E1 heavier installed-App tasks. Synthetic assets only; dry-run by default."""
 import argparse, concurrent.futures, hashlib, importlib.util, json, pathlib, re, shlex, subprocess, time
 
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 spec=importlib.util.spec_from_file_location('apps',ROOT/'tests/run-app-pairs.py')
 p=importlib.util.module_from_spec(spec);spec.loader.exec_module(p)
 r=p.r;e=p.e
-OUT=ROOT/'docs/Motivation_Exp/E1-B/evidence/heavy'
+OUT=ROOT/'docs/Motivation_Exp/E1/evidence/heavy'
 REMOTE='/data/local/tmp/llama-e1b-heavy'
 ASSETS='/sdcard/Download/E1B-heavy'
 WPS='cn.wps.moffice_eng.xiaomi.lite'
@@ -264,7 +264,7 @@ def assets():
         d.text((size,size),label,fill='black',font=ImageFont.truetype(font,size))
         return im
     image=out/'E1B-48MP.jpg'
-    raster(8000,6000,'E1-B TEST IMAGE / 48 MP',180).save(image,quality=90)
+    raster(8000,6000,'E1 TEST IMAGE / 48 MP',180).save(image,quality=90)
     # Minimal PDF with distinct embedded JPEG per page; bounded host memory.
     target=out/'E1B-raster-160pages.pdf';offsets=[0]
     with target.open('wb') as f:
@@ -278,7 +278,7 @@ def assets():
         for i in range(160):
             n=3+3*i
             obj(n,f'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 576 768] /Resources << /XObject << /Im0 {n+1} 0 R >> >> /Contents {n+2} 0 R >>'.encode())
-            b=io.BytesIO();raster(1536,2048,f'E1-B PAGE {i+1:03d} / 160',64).save(b,format='JPEG',quality=85);jpg=b.getvalue()
+            b=io.BytesIO();raster(1536,2048,f'E1 PAGE {i+1:03d} / 160',64).save(b,format='JPEG',quality=85);jpg=b.getvalue()
             obj(n+1,f'<< /Type /XObject /Subtype /Image /Width 1536 /Height 2048 /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length {len(jpg)} >>\nstream\n'.encode()+jpg+b'\nendstream')
             content=b'q 576 0 0 768 0 0 cm /Im0 Do Q\n'
             obj(n+2,f'<< /Length {len(content)} >>\nstream\n'.encode()+content+b'endstream')
@@ -316,7 +316,7 @@ def main():
     print('EXECUTE' if a.execute else 'DRY-RUN',a.stage,a.task,flush=True)
     if not a.execute:return
     OUT.mkdir(parents=True,exist_ok=True)
-    if not (OUT/'prompt.json').exists():e.save(OUT/'prompt.json',json.loads((ROOT/'docs/Motivation_Exp/E1-B/evidence/completion/prompt.json').read_text()))
+    if not (OUT/'prompt.json').exists():e.save(OUT/'prompt.json',json.loads((ROOT/'docs/Motivation_Exp/E1/evidence/completion/prompt.json').read_text()))
     if a.stage=='assets':assets()
     elif a.stage=='deploy':deploy()
     elif a.stage=='open':assert a.task;print(open_task(a.task))

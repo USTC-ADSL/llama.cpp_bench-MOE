@@ -3,7 +3,7 @@
 import argparse, csv, hashlib, importlib.util, json, pathlib, shlex, subprocess, time
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-OUT = ROOT / 'docs/Motivation_Exp/E1-B'
+OUT = ROOT / 'docs/Motivation_Exp/E1'
 REMOTE = '/data/local/tmp/llama-e1b'
 spec = importlib.util.spec_from_file_location('e0', ROOT/'docs/Motivation_Exp/E0/scripts/run_e0.py')
 e = importlib.util.module_from_spec(spec); spec.loader.exec_module(e)

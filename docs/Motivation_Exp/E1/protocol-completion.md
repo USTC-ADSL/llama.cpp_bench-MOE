@@ -1,6 +1,6 @@
-# E1-B 补验协议（正式运行前固定）
+# E1 补验协议（正式运行前固定）
 
-原Static_App改名E1-B，范围仍为无配额静态配置与真实App共存。旧报告/CSV分别保留report-before-opencl.md、summary-before-opencl.csv，旧evidence不覆盖。OpenCL旧阻塞由252aa4396修复及E0数值回归解除；E0B已有工程收尾，不再引用其旧BLOCKED阻止本实验。
+原Static_App改名E1，范围仍为无配额静态配置与真实App共存。旧报告/CSV分别保留report-before-opencl.md、summary-before-opencl.csv，旧evidence不覆盖。OpenCL旧阻塞由252aa4396修复及E0数值回归解除；E0B已有工程收尾，不再引用其旧BLOCKED阻止本实验。
 
 原B0/B2/B4/B6不变，新增对称OpenCL定义：B1=GPUOpenCL -ngl99；B3=B1+--cpu-moe；B5=B1+--n-cpu-moe12。完整B0..B6七配置同一当前构建各三次独立启动；OpenCL磁盘kernel cache显式off，不切通用路径。顺序：0/1/2/3/4/5/6，6/5/4/3/2/1/0，2/5/0/6/1/4/3。无全局cache清理、无文件级cache回收、无预算/人为压力；独立启动不称冷文件。
 

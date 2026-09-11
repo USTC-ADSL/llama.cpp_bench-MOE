@@ -1,6 +1,6 @@
-# E1-B 完成收尾
+# E1 完成收尾
 
-目标已完成：Static_App改名E1-B，补齐旧OpenCL覆盖，最终报告`docs/Motivation_Exp/E1-B/report.md`。旧308个文件经git blob逐一核对内容完全不变；新证据`evidence/completion/`，CSV27正式行。
+目标已完成：Static_App改名E1，补齐旧OpenCL覆盖，最终报告`docs/Motivation_Exp/E1/report.md`。旧308个文件经git blob逐一核对内容完全不变；新证据`evidence/completion/`，CSV27正式行。
 
 - 21/21初筛、3/3放置诊断、3/3共存LLM请求全部成功；27份输出均128token逐项匹配CPU，512输入/cache0；无trace溢出/安全停止。
 - 初筛B1全层OpenCL最佳，median(TTFT+decode)=8601.329ms；B2=10884.553ms。load B1=45.649s比B2=14.879s慢，不能混淆排序口径。

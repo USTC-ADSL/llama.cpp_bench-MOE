@@ -3,7 +3,7 @@
 import csv, hashlib, json, pathlib, re, statistics
 
 ROOT=pathlib.Path(__file__).resolve().parents[1]
-OUT=ROOT/'docs/Motivation_Exp/E1-B'; E=OUT/'evidence/completion'
+OUT=ROOT/'docs/Motivation_Exp/E1'; E=OUT/'evidence/completion'
 BACKENDS={'B0':'CPU routed/shared/attention; official mmap+repack',
           'B1':'GPUOpenCL all-layer offload; original CPU support ops',
           'B2':'HTP0 routed/shared/attention; original CPU embedding/output/router softmax',

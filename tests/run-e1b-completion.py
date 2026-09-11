@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""E1-B missing OpenCL placement and winner App pairs; dry-run by default."""
+"""E1 missing OpenCL placement and winner App pairs; dry-run by default."""
 import argparse,gzip,hashlib,importlib.util,json,math,shlex,statistics,subprocess,time
 from pathlib import Path
 
