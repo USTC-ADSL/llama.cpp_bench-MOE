@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "budgets": {
+    "CPU": {
+      "total_mib": 12288,
+      "reserve_mib": 128,
+      "expert_slots": 32
+    },
+    "GPUOpenCL": {
+      "total_mib": 12288,
+      "reserve_mib": 128,
+      "expert_slots": 32
+    },
+    "HTP0": {
+      "total_mib": 12288,
+      "reserve_mib": 128,
+      "expert_slots": 32
+    }
+  },
+  "layers": [
+    {
+      "first": 0,
+      "last": 7,
+      "backend": "CPU"
+    },
+    {
+      "first": 8,
+      "last": 15,
+      "backend": "GPUOpenCL"
+    },
+    {
+      "first": 16,
+      "last": 23,
+      "backend": "HTP0"
+    }
+  ],
+  "weights": [],
+  "report": "/data/local/tmp/llama-weight-manager/semnatural-mixed-fixed.weights.json"
+}

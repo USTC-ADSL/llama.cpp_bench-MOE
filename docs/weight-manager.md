@@ -122,3 +122,35 @@ reference before its swap case. `--case` accepts multiple sequential cases;
 12 rounds of partial Q4_0 uploads against complete uploads, including buffer reset.
 `weight-manager-api-probe.cpp` checks explicit prefetch, view eviction and pinning.
 Build commands and device evidence are recorded in the task handoff directory.
+
+`--semantic` selects a complete delivery-note question rendered through the
+model's chat template (119 input tokens on the tested Qwen model). It generates
+32 tokens freely, without reference-token input, saves `.prompt.txt`,
+`.prompt.tokens.txt` and `.output.txt`, and checks the recipient, contents,
+delivery day and cancelled earlier date. EOG is suppressed when necessary to
+reach the fixed output count; `.summary.json` records how often this happened.
+The readable answers also need inspection: keyword checks alone do not establish
+general semantic quality, and the 32-token limit can truncate a sentence.
+The result field `semantic_checks` contains only keyword-presence checks; it does
+not detect contradictions in an appended explanation.
+
+Add `--stop-eog` for semantic assessment with natural termination and a maximum of
+32 output tokens. This requires `--semantic`. The summary records `max_steps`,
+actual `steps`, `stop_eog` and `stopped_eog`. Saved logits cover generated text
+tokens; the terminating EOG decision is not included. Use fixed-length mode when
+an equal decode workload is needed, and inspect EOG suppression before interpreting
+the continued text as a natural answer.
+
+```sh
+python3 tests/run-weight-manager.py --deploy --semantic --tag semantic01 --ubatch 4 --slots 32 --case cpu-ref cpu-swap gpu-ref gpu-swap htp-ref htp-swap mixed-fixed mixed-swap-4g
+python3 tests/run-weight-manager.py --semantic --stop-eog --tag natural01 --ubatch 4 --slots 32 --case mixed-fixed mixed-swap-4g
+```
+
+On the tested 119-token question, all four reference/swap pairs produced identical
+32-token sequences and saved logits. CPU, OpenCL and HTP answers retrieved the
+correct facts, with the explanation truncated. Both mixed runs appended an
+incorrect explanation after EOG was suppressed. With natural termination, both
+mixed runs stopped after 18 tokens containing the four correct facts and remained
+identical. The model used labeled lines rather than the requested two sentences.
+See the [semantic test record](../task/handoff/handoff-2026-09-11-weight-manager/handoff-02-semantic.md)
+for evidence and limitations.
