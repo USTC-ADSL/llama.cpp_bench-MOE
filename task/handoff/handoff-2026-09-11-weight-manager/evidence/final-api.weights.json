@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "host_staging_peak_bytes": 8192,
+  "accounting": "backend buffers plus configured reserve; excludes OS file-cache residency",
+  "devices": {
+    "CPU": {
+      "total_bytes": 8388608,
+      "reserve_bytes": 0,
+      "fixed_bytes": 0,
+      "runtime_bytes": 0,
+      "cache_bytes": 12288,
+      "peak_bytes": 20480,
+      "hits": 1,
+      "misses": 5,
+      "evictions": 2,
+      "read_bytes": 20480,
+      "upload_bytes": 20480,
+      "operations": 0
+    }
+  },
+  "weights": [
+    {
+      "name": "expert",
+      "backend": "CPU",
+      "residency": "swap",
+      "source_bytes": 12288,
+      "pin_experts": [
+        0
+      ]
+    },
+    {
+      "name": "whole",
+      "backend": "CPU",
+      "residency": "swap",
+      "source_bytes": 4096,
+      "pin_experts": []
+    }
+  ]
+}

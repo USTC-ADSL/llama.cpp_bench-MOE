@@ -1,0 +1,21 @@
+[1/8] Building CXX object src/CMakeFiles/llama.dir/llama-context.cpp.o
+[2/8] Building CXX object src/CMakeFiles/llama.dir/llama-model-loader.cpp.o
+[3/8] Building CXX object src/CMakeFiles/llama.dir/llama-weight-manager.cpp.o
+[4/8] Building CXX object src/CMakeFiles/llama.dir/llama-model.cpp.o
+[5/8] Building CXX object ggml/src/ggml-opencl/CMakeFiles/ggml-opencl.dir/ggml-opencl.cpp.o
+/home/miog/pzw/download/pzw/moe/llama.cpp_bench-MOE/ggml/src/ggml-opencl/ggml-opencl.cpp:1398:66: warning: unused parameter 'backend_ctx' [-Wunused-parameter]
+ 1398 | static bool use_adreno_bin_kernels(ggml_backend_opencl_context * backend_ctx) {
+      |                                                                  ^
+/home/miog/pzw/download/pzw/moe/llama.cpp_bench-MOE/ggml/src/ggml-opencl/ggml-opencl.cpp:7488:102: warning: cast from 'const ggml_tensor *' to 'ggml_tensor *' drops const qualifier [-Wcast-qual]
+ 7488 |     backend_ctx->enqueue_ndrange_kernel(kernel, 3, global_work_size, local_work_size, (ggml_tensor *)glu);
+      |                                                                                                      ^
+/home/miog/pzw/download/pzw/moe/llama.cpp_bench-MOE/ggml/src/ggml-opencl/ggml-opencl.cpp:7632:77: warning: cast from 'const ggml_tensor *' to 'ggml_tensor *' drops const qualifier [-Wcast-qual]
+ 7632 |     backend_ctx->enqueue_ndrange_kernel(kernel, 2, gws, lws, (ggml_tensor *)dst);
+      |                                                                             ^
+/home/miog/pzw/download/pzw/moe/llama.cpp_bench-MOE/ggml/src/ggml-opencl/ggml-opencl.cpp:8426:9: warning: TODO: implement BF16, Q4_0, Q4_1, Q5_0, Q5_1, Q8_0, IQ4_NL support (https://github.com/ggml-org/llama.cpp/pull/14661) [-W#pragma-messages]
+ 8426 | #pragma message("TODO: implement BF16, Q4_0, Q4_1, Q5_0, Q5_1, Q8_0, IQ4_NL support (https://github.com/ggml-org/llama.cpp/pull/14661)")
+      |         ^
+4 warnings generated.
+[6/8] Linking CXX shared library bin/libggml-opencl.so
+[7/8] Linking CXX shared library bin/libggml.so
+[8/8] Linking CXX shared library bin/libllama.so

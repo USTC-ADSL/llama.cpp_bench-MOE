@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "budgets": {
+    "CPU": {
+      "total_mib": 3072,
+      "reserve_mib": 128,
+      "expert_slots": 8
+    }
+  },
+  "layers": [],
+  "weights": [
+    {
+      "pattern": "ffn_(gate|up|down)_exps\\.weight$",
+      "residency": "swap"
+    },
+    {
+      "pattern": "blk\\.0\\.(attn_q|ffn_gate_shexp)\\.weight$",
+      "residency": "swap"
+    }
+  ],
+  "report": "/data/local/tmp/llama-weight-manager/dev03-cpu-whole-swap.weights.json"
+}
