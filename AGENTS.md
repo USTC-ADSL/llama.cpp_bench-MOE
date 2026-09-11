@@ -60,7 +60,7 @@
 
 ### 3.1 基本原则
 
-本项目主要面向 **On-device LLM Inference**。除纯静态分析、代码阅读或用户另有说明外，运行和验证应以 Android ADB 设备为目标环境。
+本项目主要面向 **On-device MoE-LLM Inference by NPU & GPU & CPU**。除纯静态分析、代码阅读或用户另有说明外，运行和验证应以 Android ADB 设备为目标环境。
 
 不要仅以宿主机上的运行结果替代设备端验证。
 
@@ -106,7 +106,7 @@ adb devices -l
 当用户没有指定目标设备时，默认使用：
 
 ```text
-3B661501LA000000
+fd8657d6
 ```
 
 执行前必须确认该设备处于 `device` 状态。
@@ -120,6 +120,10 @@ adb devices -l
 如果没有任何处于 `device` 状态的 ADB 设备，应停止设备端构建部署或测试，并通知用户连接设备。
 
 `offline`、`unauthorized` 或其他非 `device` 状态均不能视为可用。
+
+### 3.4 模型选择
+
+模型使用 adb 设备下的/data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf
 
 ---
 
