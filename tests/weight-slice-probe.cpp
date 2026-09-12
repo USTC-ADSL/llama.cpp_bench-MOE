@@ -43,7 +43,7 @@ struct matrix_case {
         require(weight_buffer && node_buffer, "buffer allocation failed");
         ggml_backend_buffer_set_usage(weight_buffer.get(), GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
         graph = ggml_new_graph_custom(nodes.get(), 8, false);
-        ggml_graph_add_node(graph, out);
+        ggml_build_forward_expand(graph, out);
         std::vector<float> input(width * tokens);
         for (size_t i = 0; i < input.size(); ++i) { input[i] = std::sin(float(i) * 0.13f); }
         ggml_backend_tensor_set(x, input.data(), 0, input.size() * sizeof(float));
@@ -58,6 +58,8 @@ struct matrix_case {
         require(ggml_backend_graph_compute(backend, graph) == GGML_STATUS_SUCCESS, "compute failed");
         std::vector<float> result(ggml_nelements(out));
         ggml_backend_tensor_get(out, result.data(), 0, ggml_nbytes(out));
+        require(std::any_of(result.begin(), result.end(), [](float v) { return std::abs(v) > 1e-8f; }),
+                "probe computation produced only zero results");
         return result;
     }
 };
@@ -132,6 +134,11 @@ int main(int argc, char ** argv) {
             }
             matrix_case full(backend.get(), tokens);
             ggml_backend_tensor_set(full.w, data.data(), 0, data.size());
+            std::vector<uint8_t> restored(data.size());
+            ggml_backend_tensor_get(sliced.w, restored.data(), 0, restored.size());
+            require(restored == data, "slice readback differs from source bytes");
+            ggml_backend_tensor_get(full.w, restored.data(), 0, restored.size());
+            require(restored == data, "full readback differs from source bytes");
             auto expected = full.compute(backend.get(), step);
             auto actual = sliced.compute(backend.get(), step);
             double error = 0;

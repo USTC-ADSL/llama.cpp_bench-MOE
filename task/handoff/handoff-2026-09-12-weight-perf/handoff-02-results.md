@@ -92,6 +92,14 @@ passed tokens1 and4 with max_abs=0. The original OpenCL tokens4 replacement test
 also passed12rounds, including reset at round6. Commands and verified probe hash
 are in evidence/slice-results.json; the selected logs are retained.
 
+Follow-up correction: preparation testing found that the old manual slice graph
+did not mark CPU nodes for computation, so the original CPU zero-difference result
+was not valid numerical evidence. The probe now uses standard graph traversal and
+requires nonzero output. All three backends have been rerun successfully, including
+CPU tokens1/4 at slot128 and full/slice byte roundtrips through replacement/reset.
+See [the validation correction](../../../docs/bugs/2026-09-12-weight-conversion-validation.md).
+This does not affect the model-level semantic or llama-bench results in this report.
+
 The actual4GiB configs were tested with a119-token delivery-note prompt, greedy
 generation, natural EOG enabled, maximum32output tokens, default CPU layouts.
 All four executions exited0 and every checked logit was finite:

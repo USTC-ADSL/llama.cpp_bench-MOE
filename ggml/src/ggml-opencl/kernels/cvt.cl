@@ -375,21 +375,15 @@ kernel void kernel_restore_block_q4_0_trans4_ns(
     q_block.z = src_q[src_q_offset + ne01 * 2];
     q_block.w = src_q[src_q_offset + ne01 * 3];
 
-    ushort8 post_block = as_ushort8(q_block);
-    ushort8 pre_block = (ushort8)(0);
-
-    uchar * pre_block_ptr = (uchar *)(&pre_block);
-    uchar * post_block_ptr = (uchar *)(&post_block);
-
-    for (int i = 0; i < QK4_0 / 4; ++i) {
-        uchar x0 = post_block_ptr[i + 0];
-        uchar x1 = post_block_ptr[i + QK4_0 / 4];
-
-        pre_block_ptr[2 * i + 0] = convert_uchar(x0 & 0x0F) | convert_uchar((x1 & 0x0F) << 4);
-        pre_block_ptr[2 * i + 1] = convert_uchar((x0 & 0xF0) >> 4) | convert_uchar(x1 & 0xF0);
+    for (uint i = 0; i < QK4_0 / 4; ++i) {
+        uint shift = (i % 4) * 8;
+        uint lo = ((i < 4 ? q_block.x : q_block.y) >> shift) & 0xFFu;
+        uint hi = ((i < 4 ? q_block.z : q_block.w) >> shift) & 0xFFu;
+        // Reassemble byte pairs without narrowing a shifted nibble on Adreno.
+        uint pair = (lo & 0x0Fu) | ((hi & 0x0Fu) << 4) |
+                    ((lo & 0xF0u) << 4) | ((hi & 0xF0u) << 8);
+        ((__global ushort *) b->qs)[i] = (ushort) pair;
     }
-
-    ((__global ushort8 *)(&(b->qs[0])))[0] = pre_block;
 }
 
 //------------------------------------------------------------------------------
