@@ -1,0 +1,51 @@
+{
+  "probe_sha256": "2bb9d29b41ee402f1e0f865e767039b438f01a2731cfd28a6a0556a317b92836",
+  "cases": [
+    {
+      "case": "slice-CPU-1-128",
+      "command": "cd /data/local/tmp/llama-weight-prepare && exec env LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 GGML_OPENCL_KERNEL_CACHE_DIR=off ./weight-slice-probe CPU 1 128",
+      "exit": 0
+    },
+    {
+      "case": "slice-CPU-4-128",
+      "command": "cd /data/local/tmp/llama-weight-prepare && exec env LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 GGML_OPENCL_KERNEL_CACHE_DIR=off ./weight-slice-probe CPU 4 128",
+      "exit": 0
+    },
+    {
+      "case": "slice-CPU-4",
+      "command": "cd /data/local/tmp/llama-weight-prepare && exec env LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 GGML_OPENCL_KERNEL_CACHE_DIR=off ./weight-slice-probe CPU 4",
+      "exit": 0
+    },
+    {
+      "case": "slice-GPUOpenCL-1-128",
+      "command": "cd /data/local/tmp/llama-weight-prepare && exec env LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 GGML_OPENCL_KERNEL_CACHE_DIR=off ./weight-slice-probe GPUOpenCL 1 128",
+      "exit": 0
+    },
+    {
+      "case": "slice-GPUOpenCL-4-128",
+      "command": "cd /data/local/tmp/llama-weight-prepare && exec env LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 GGML_OPENCL_KERNEL_CACHE_DIR=off ./weight-slice-probe GPUOpenCL 4 128",
+      "exit": 0
+    },
+    {
+      "case": "slice-GPUOpenCL-4",
+      "command": "cd /data/local/tmp/llama-weight-prepare && exec env LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 GGML_OPENCL_KERNEL_CACHE_DIR=off ./weight-slice-probe GPUOpenCL 4",
+      "exit": 0
+    },
+    {
+      "case": "slice-HTP0-1-128",
+      "command": "cd /data/local/tmp/llama-weight-prepare && exec env LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 GGML_OPENCL_KERNEL_CACHE_DIR=off ./weight-slice-probe HTP0 1 128",
+      "exit": 0
+    },
+    {
+      "case": "slice-HTP0-4-128",
+      "command": "cd /data/local/tmp/llama-weight-prepare && exec env LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 GGML_OPENCL_KERNEL_CACHE_DIR=off ./weight-slice-probe HTP0 4 128",
+      "exit": 0
+    },
+    {
+      "case": "slice-HTP0-4",
+      "command": "cd /data/local/tmp/llama-weight-prepare && exec env LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 GGML_OPENCL_KERNEL_CACHE_DIR=off ./weight-slice-probe HTP0 4",
+      "exit": 0
+    }
+  ],
+  "validation": "All nine exit0; standard graph traversal sets CPU compute flags. Nonzero computation required. Full/slice raw roundtrips checked in replacement/reset cases."
+}

@@ -9354,6 +9354,8 @@ static enum ggml_status ggml_backend_opencl_buffer_init_tensor(ggml_backend_buff
 // Refresh complete expert slices without rebuilding the bank's SoA objects.
 static void ggml_opencl_set_q4_0_expert_slice(
         ggml_backend_buffer_t buffer, ggml_tensor * tensor, const void * data, size_t offset, size_t size) {
+    static const bool profile = getenv("GGML_OPENCL_PROFILE_EXPERT_PREPARE") != nullptr;
+    const int64_t start_us = profile ? ggml_time_us() : 0;
     auto * ctx = static_cast<ggml_backend_opencl_buffer_context *>(buffer->context);
     auto * dev = static_cast<ggml_backend_opencl_device_context *>(buffer->buft->device->context);
     auto * backend = dev->backend_ctx;
@@ -9394,6 +9396,7 @@ static void ggml_opencl_set_q4_0_expert_slice(
     const size_t slices = size / tensor->nb[2];
     const size_t blocks = size / sizeof(block_q4_0);
     const size_t scale_bytes = blocks * sizeof(ggml_half);
+    const int64_t convert_us = profile ? ggml_time_us() : 0;
     std::vector<uint8_t> converted(size);
     auto * scales = converted.data();
     auto * quants = converted.data() + scale_bytes;
@@ -9423,11 +9426,18 @@ static void ggml_opencl_set_q4_0_expert_slice(
             }
         }
     }
+    const int64_t upload_us = profile ? ggml_time_us() : 0;
     const size_t first_block = offset / sizeof(block_q4_0);
     CL_CHECK(clEnqueueWriteBuffer(backend->queue, extra->d, CL_TRUE, first_block * sizeof(ggml_half),
         scale_bytes, scales, 0, nullptr, nullptr));
     CL_CHECK(clEnqueueWriteBuffer(backend->queue, extra->q, CL_TRUE, first_block * 16,
         blocks * 16, quants, 0, nullptr, nullptr));
+    if (profile) {
+        const int64_t end_us = ggml_time_us();
+        fprintf(stderr, "OPENCL_EXPERT_PREPARE bytes=%zu init_us=%lld repack_us=%lld write_us=%lld\n",
+                size, (long long) (convert_us - start_us), (long long) (upload_us - convert_us),
+                (long long) (end_us - upload_us));
+    }
 }
 #endif
 
