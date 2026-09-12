@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "budgets": {
+    "CPU": {
+      "total_mib": 2018,
+      "reserve_mib": 128,
+      "expert_slots": 34
+    },
+    "GPUOpenCL": {
+      "total_mib": 1422,
+      "reserve_mib": 128,
+      "expert_slots": 34
+    },
+    "HTP0": {
+      "total_mib": 1422,
+      "reserve_mib": 128,
+      "expert_slots": 34
+    }
+  },
+  "layers": [
+    {
+      "first": 0,
+      "last": 7,
+      "backend": "CPU"
+    },
+    {
+      "first": 8,
+      "last": 15,
+      "backend": "GPUOpenCL"
+    },
+    {
+      "first": 16,
+      "last": 23,
+      "backend": "HTP0"
+    }
+  ],
+  "weights": [
+    {
+      "pattern": "ffn_(gate|up|down)_exps\\.weight$",
+      "residency": "swap"
+    },
+    {
+      "pattern": "^(?:blk\\.0\\.ffn_down_exps\\.weight|blk\\.0\\.ffn_gate_exps\\.weight|blk\\.0\\.ffn_up_exps\\.weight|blk\\.8\\.ffn_down_exps\\.weight|blk\\.8\\.ffn_gate_exps\\.weight|blk\\.8\\.ffn_up_exps\\.weight|blk\\.16\\.ffn_down_exps\\.weight|blk\\.16\\.ffn_gate_exps\\.weight|blk\\.16\\.ffn_up_exps\\.weight|blk\\.1\\.ffn_down_exps\\.weight|blk\\.1\\.ffn_gate_exps\\.weight|blk\\.1\\.ffn_up_exps\\.weight|blk\\.9\\.ffn_down_exps\\.weight|blk\\.9\\.ffn_gate_exps\\.weight|blk\\.9\\.ffn_up_exps\\.weight|blk\\.17\\.ffn_down_exps\\.weight|blk\\.17\\.ffn_gate_exps\\.weight|blk\\.17\\.ffn_up_exps\\.weight|blk\\.2\\.ffn_down_exps\\.weight|blk\\.2\\.ffn_gate_exps\\.weight|blk\\.2\\.ffn_up_exps\\.weight|blk\\.10\\.ffn_down_exps\\.weight|blk\\.10\\.ffn_gate_exps\\.weight|blk\\.10\\.ffn_up_exps\\.weight|blk\\.18\\.ffn_down_exps\\.weight|blk\\.18\\.ffn_gate_exps\\.weight|blk\\.18\\.ffn_up_exps\\.weight|blk\\.3\\.ffn_down_exps\\.weight|blk\\.3\\.ffn_gate_exps\\.weight)$",
+      "residency": "fixed"
+    }
+  ]
+}

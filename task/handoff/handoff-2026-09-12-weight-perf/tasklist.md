@@ -17,8 +17,11 @@ swap remain separately observed. No system-wide settings are changed.
 - [x] Add weight configuration to the existing llama-bench timing harness and deploy incrementally
 - [x] Compare default and all-fixed CPU/OpenCL/HTP throughput with repeated device samples
 - [x] Diagnose any material gap; apply and regress a scoped fix if appropriate
-- [ ] Measure actual 6/5/4 GiB resident weight capacities where the baseline comparison permits
-- [ ] Review evidence, record commands and limits, clean device artifacts and commit
+- [x] Calibrate and benchmark 6 GiB fixed+cache capacity on all four configurations
+- [x] Calibrate and benchmark 5 GiB fixed+cache capacity on all four configurations
+- [x] Calibrate and benchmark 4 GiB fixed+cache capacity on all four configurations
+- [x] Validate supported high-slot probes and assess natural output at the tightest budget; record CPU layout limitation
+- [x] Review evidence, record commands and limits, clean device artifacts and prepare final test checkpoint
 
 ## Measured Before Fix
 
@@ -48,6 +51,25 @@ Use fixed whole expert banks plus small swap pools instead. Single-backend fixed
 banks follow layer order; mixed banks rotate CPU/GPU/HTP layer groups to distribute
 fixed capacity. Generated configs retain the exact selections. Adjust residual
 slot capacity to put total fixed+cache within one slot group of 6/5/4 GiB.
+
+Baseline/CPU-fix checkpoint is d08ea1ad6. perfreg01 default-layout CPU semantic
+comparison passed with identical logits and 18 correct output tokens. s6run01 TG
+means CPU/GPU/HTP/mixed=19.079/6.536/6.487/8.706 tok/s; s5run01 means
+15.116/4.753/4.420/6.517. s4run01 means 10.654/3.426/3.261/4.425. Throughput uses three repetitions,
+separate from gen1 report-enabled capacity checks. Weight caches persist between
+repetitions; these are warm-run throughput samples, not cold-start or mlock tests.
+Device shell Max locked memory soft/hard limits are both 65536 bytes. Actual
+VmSwap is nonzero in several runs and must remain explicit in the final limits.
+
+Supported high-slot128 tests passed on CPU/OpenCL/HTP with tokens1 and4, max_abs=0;
+OpenCL replacement/reset regression also passed. The 119-token natural-prompt
+4 GiB test completed on all four placements. CPU retrieved the facts but appended
+an incorrect explanation without EOG suppression; GPU was correct and stopped,
+HTP/mixed had correct facts with continuations reaching the token cap. Canonical
+CPU all-fixed vs actual4GiB control (canon01) produced identical18-token answers
+and all2734848 saved logits, max_abs=0. Enabling optimized fixed CPU layouts with
+canonical swapped experts changes numerical paths and remains a consistency
+limitation. See handoff-02-results.md for final results and evidence.
 
 ## Initial Findings
 

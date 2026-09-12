@@ -1,0 +1,61 @@
+{
+  "probe_sha256": "8a7c9585c69bfb92d82cf232f9949a0a680006e23df06e7205d741d1a08caacd",
+  "cases": [
+    {
+      "case": "slice-CPU-1-128",
+      "command": "cd /data/local/tmp/llama-weight-perf && exec env LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 GGML_OPENCL_KERNEL_CACHE_DIR=off ./weight-slice-probe CPU 1 128",
+      "exit": 0,
+      "summary": [
+        "device=CPU tokens=1 high_slot=128 max_abs=0"
+      ]
+    },
+    {
+      "case": "slice-CPU-4-128",
+      "command": "cd /data/local/tmp/llama-weight-perf && exec env LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 GGML_OPENCL_KERNEL_CACHE_DIR=off ./weight-slice-probe CPU 4 128",
+      "exit": 0,
+      "summary": [
+        "device=CPU tokens=4 high_slot=128 max_abs=0"
+      ]
+    },
+    {
+      "case": "slice-GPUOpenCL-1-128",
+      "command": "cd /data/local/tmp/llama-weight-perf && exec env LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 GGML_OPENCL_KERNEL_CACHE_DIR=off ./weight-slice-probe GPUOpenCL 1 128",
+      "exit": 0,
+      "summary": [
+        "device=GPUOpenCL tokens=1 high_slot=128 max_abs=0"
+      ]
+    },
+    {
+      "case": "slice-GPUOpenCL-4-128",
+      "command": "cd /data/local/tmp/llama-weight-perf && exec env LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 GGML_OPENCL_KERNEL_CACHE_DIR=off ./weight-slice-probe GPUOpenCL 4 128",
+      "exit": 0,
+      "summary": [
+        "device=GPUOpenCL tokens=4 high_slot=128 max_abs=0"
+      ]
+    },
+    {
+      "case": "slice-HTP0-1-128",
+      "command": "cd /data/local/tmp/llama-weight-perf && exec env LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 GGML_OPENCL_KERNEL_CACHE_DIR=off ./weight-slice-probe HTP0 1 128",
+      "exit": 0,
+      "summary": [
+        "device=HTP0 tokens=1 high_slot=128 max_abs=0"
+      ]
+    },
+    {
+      "case": "slice-HTP0-4-128",
+      "command": "cd /data/local/tmp/llama-weight-perf && exec env LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 GGML_OPENCL_KERNEL_CACHE_DIR=off ./weight-slice-probe HTP0 4 128",
+      "exit": 0,
+      "summary": [
+        "device=HTP0 tokens=4 high_slot=128 max_abs=0"
+      ]
+    },
+    {
+      "case": "slice-GPUOpenCL-4-reset",
+      "command": "cd /data/local/tmp/llama-weight-perf && exec env LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 GGML_OPENCL_KERNEL_CACHE_DIR=off ./weight-slice-probe GPUOpenCL 4",
+      "exit": 0,
+      "summary": [
+        "device=GPUOpenCL tokens=4 rounds=12 reset_round=6 max_abs=0 PASS"
+      ]
+    }
+  ]
+}

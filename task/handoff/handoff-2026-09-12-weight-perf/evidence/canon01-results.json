@@ -1,0 +1,26 @@
+{
+  "device": "fd8657d6",
+  "probe_sha256": "e420c579286415257059f214f5d08e5b9c9b558631bfe6167fe0df7da3bd5a1b",
+  "commands": [
+    "cd /data/local/tmp/llama-weight-perf && exec env LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 GGML_OPENCL_KERNEL_CACHE_DIR=off WEIGHT_PROBE_SEMANTIC=1 WEIGHT_PROBE_STOP_EOG=1 ./weight-manager-probe /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf none /data/local/tmp/llama-weight-perf/fix01-cpu-fixed.config.json /data/local/tmp/llama-weight-perf/canon01-cpu-fixed 4",
+    "cd /data/local/tmp/llama-weight-perf && exec env LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 GGML_OPENCL_KERNEL_CACHE_DIR=off WEIGHT_PROBE_SEMANTIC=1 WEIGHT_PROBE_STOP_EOG=1 ./weight-manager-probe /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf none /data/local/tmp/llama-weight-perf/s4run01-cpu-swap.config.json /data/local/tmp/llama-weight-perf/canon01-cpu-swap 4"
+  ],
+  "exit_codes": [0, 0],
+  "prompt_tokens": 119,
+  "generated_tokens": 18,
+  "natural_eog_both": true,
+  "canonical_tokens_identical": true,
+  "canonical_saved_logits_identical": true,
+  "canonical_saved_float_count": 2734848,
+  "canonical_max_abs": 0.0,
+  "canonical_rmse": 0.0,
+  "canonical_logits_sha256_both": "667a7ea306744a75ef4c9c974dcb56e802db05f4e526c6eb12275148d2a80dbe",
+  "optimized_fixed_vs_4g_first18": {
+    "reference": "../../handoff-2026-09-11-weight-manager/evidence/perfreg01-cpu-fixed",
+    "candidate": "s4semantic01-cpu",
+    "max_abs": 1.9092960357666016,
+    "rmse": 0.13236205175239135,
+    "first_step_max_abs": 0.43761253356933594
+  },
+  "interpretation": "Canonical CPU all-fixed and actual 4 GiB swap are identical on this prompt. Optimized fixed weights plus canonical swapped experts change the numerical path; the optimized 4 GiB CPU answer appended an incorrect explanation. This does not establish general language quality or isolate the first differing ARM arithmetic instruction."
+}

@@ -1,0 +1,77 @@
+{
+  "probe_sha256": "e420c579286415257059f214f5d08e5b9c9b558631bfe6167fe0df7da3bd5a1b",
+  "cases": [
+    {
+      "case": "cpu",
+      "command": "cd /data/local/tmp/llama-weight-perf && exec env LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 GGML_OPENCL_KERNEL_CACHE_DIR=off WEIGHT_PROBE_DEFAULT_LAYOUT=1 WEIGHT_PROBE_SEMANTIC=1 WEIGHT_PROBE_STOP_EOG=1 ./weight-manager-probe /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf none /data/local/tmp/llama-weight-perf/s4run01-cpu-swap.config.json /data/local/tmp/llama-weight-perf/s4semantic01-cpu 4",
+      "exit": 0,
+      "summary": {
+        "steps": 32,
+        "max_steps": 32,
+        "vocab": 151936,
+        "prompt_tokens": 119,
+        "semantic": true,
+        "teacher_forced": false,
+        "default_layout": true,
+        "suppressed_eog": 0,
+        "stop_eog": true,
+        "stopped_eog": false
+      },
+      "output": "Recipient: Bob\nContents: Three books\nDelivery day: Friday\nCancelled date: Monday\n\nThe delivery was scheduled for Friday, but it was cancelled on Monday"
+    },
+    {
+      "case": "gpu",
+      "command": "cd /data/local/tmp/llama-weight-perf && exec env LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 GGML_OPENCL_KERNEL_CACHE_DIR=off WEIGHT_PROBE_DEFAULT_LAYOUT=1 WEIGHT_PROBE_SEMANTIC=1 WEIGHT_PROBE_STOP_EOG=1 ./weight-manager-probe /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf GPUOpenCL /data/local/tmp/llama-weight-perf/s4run01-gpu-swap.config.json /data/local/tmp/llama-weight-perf/s4semantic01-gpu 4",
+      "exit": 0,
+      "summary": {
+        "steps": 23,
+        "max_steps": 32,
+        "vocab": 151936,
+        "prompt_tokens": 119,
+        "semantic": true,
+        "teacher_forced": false,
+        "default_layout": true,
+        "suppressed_eog": 0,
+        "stop_eog": true,
+        "stopped_eog": true
+      },
+      "output": "Recipient: Bob. Contents: Three books. Delivery day: Friday. The proposed delivery date of Monday was cancelled."
+    },
+    {
+      "case": "htp",
+      "command": "cd /data/local/tmp/llama-weight-perf && exec env LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 GGML_OPENCL_KERNEL_CACHE_DIR=off WEIGHT_PROBE_DEFAULT_LAYOUT=1 WEIGHT_PROBE_SEMANTIC=1 WEIGHT_PROBE_STOP_EOG=1 ./weight-manager-probe /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf HTP0 /data/local/tmp/llama-weight-perf/s4run01-htp-swap.config.json /data/local/tmp/llama-weight-perf/s4semantic01-htp 4",
+      "exit": 0,
+      "summary": {
+        "steps": 32,
+        "max_steps": 32,
+        "vocab": 151936,
+        "prompt_tokens": 119,
+        "semantic": true,
+        "teacher_forced": false,
+        "default_layout": true,
+        "suppressed_eog": 0,
+        "stop_eog": true,
+        "stopped_eog": false
+      },
+      "output": "Recipient: Bob\nContents: Three books\nDelivery day: Friday\nCancelled date: Monday\n\nThe delivery was initially proposed for Monday but was cancelled and rescheduled"
+    },
+    {
+      "case": "mixed",
+      "command": "cd /data/local/tmp/llama-weight-perf && exec env LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 GGML_OPENCL_KERNEL_CACHE_DIR=off WEIGHT_PROBE_DEFAULT_LAYOUT=1 WEIGHT_PROBE_SEMANTIC=1 WEIGHT_PROBE_STOP_EOG=1 ./weight-manager-probe /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf GPUOpenCL,HTP0 /data/local/tmp/llama-weight-perf/s4run01-mixed-swap.config.json /data/local/tmp/llama-weight-perf/s4semantic01-mixed 4",
+      "exit": 0,
+      "summary": {
+        "steps": 32,
+        "max_steps": 32,
+        "vocab": 151936,
+        "prompt_tokens": 119,
+        "semantic": true,
+        "teacher_forced": false,
+        "default_layout": true,
+        "suppressed_eog": 0,
+        "stop_eog": true,
+        "stopped_eog": false
+      },
+      "output": "Recipient: Bob\nContents: Three books\nDelivery day: Friday\nCancelled date: Monday\n\nAlice's delivery to Bob for the three books is scheduled for Friday"
+    }
+  ]
+}

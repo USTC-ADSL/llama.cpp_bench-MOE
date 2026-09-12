@@ -74,6 +74,11 @@ replacement recreates its backend buffer to release derived layout objects.
 Fixed CPU weights retain the normal optimized CPU buffer types, including weight
 repacking when enabled. CPU swap sources and cache slots keep the canonical
 layout required by partial loading.
+These CPU paths need not produce identical logits. In the 4 GiB default-layout
+test, their combination changed natural termination and produced an incorrect
+continuation on one question. A canonical-layout all-fixed/swap control produced
+identical logits and correct facts on that question. Optimized partial CPU repacking
+is not implemented; see the [throughput and layout record](../task/handoff/handoff-2026-09-12-weight-perf/handoff-02-results.md).
 
 Internal interfaces are in `src/llama-weight-manager.h`: `prefetch()` loads a whole
 ordinary weight or specified experts; `evict()` invalidates the weight's cache

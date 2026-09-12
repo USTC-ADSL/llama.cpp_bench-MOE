@@ -79,3 +79,12 @@ samples are retained. These are synthetic PP/TG throughput tests, not a language
 quality benchmark. Full residency means application fixed buffers, not mlock.
 Evidence: task/handoff/handoff-2026-09-12-weight-perf/evidence, plus perfreg01-* in
 task/handoff/handoff-2026-09-11-weight-manager/evidence.
+
+The completed 4 GiB sweep exposed a remaining numerical-consistency limitation:
+optimized fixed CPU weights combined with canonical swapped experts changed the
+answer's termination and produced an incorrect continuation on the natural prompt.
+Repeating all-fixed versus actual 4 GiB swap with canonical CPU layouts produced
+identical saved logits and the same correct 18-token answer (canon01). This does
+not invalidate the all-fixed performance fix, but the optimized CPU swap path is
+not semantically identical to all-fixed on this case. Partial CPU_REPACK upload
+requires further implementation. See the [final test record](../../task/handoff/handoff-2026-09-12-weight-perf/handoff-02-results.md).
