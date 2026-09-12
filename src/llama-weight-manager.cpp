@@ -710,17 +710,28 @@ void llama_weight_manager::evict(const ggml_tensor * tensor) {
 }
 
 void llama_weight_manager::write_report() const {
+    if (pimpl->report_path.empty()) { return; }
     std::lock_guard<std::recursive_mutex> lock(pimpl->mutex);
     wm_json report = {{"version", 1}, {"host_staging_peak_bytes", pimpl->staging_peak},
         {"accounting", "backend buffers plus configured reserve; excludes OS file-cache residency"},
         {"devices", wm_json::object()}, {"weights", wm_json::array()}};
     for (const auto & item : pimpl->budgets) {
         const auto & b = item.second;
+        uint64_t cached_source_bytes = 0;
+        for (const auto & pool : pimpl->pools) {
+            if (pool->device != item.first) { continue; }
+            for (const auto & slot : pool->slots) {
+                if (slot.owner) {
+                    cached_source_bytes += pool->experts ? slot.owner->nb[2] : ggml_nbytes(slot.owner);
+                }
+            }
+        }
         report["devices"][ggml_backend_dev_name(item.first)] = {
             {"total_bytes", b.total}, {"reserve_bytes", b.reserve}, {"fixed_bytes", b.fixed},
             {"runtime_bytes", b.runtime}, {"cache_bytes", b.cache}, {"peak_bytes", b.peak},
             {"hits", b.hits}, {"misses", b.misses}, {"evictions", b.evictions},
             {"read_bytes", b.read_bytes}, {"upload_bytes", b.upload_bytes}, {"operations", b.operations},
+            {"cached_source_bytes", cached_source_bytes},
         };
     }
     std::vector<const impl::weight *> sorted;

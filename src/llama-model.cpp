@@ -1449,7 +1449,11 @@ bool llama_model_base::load_tensors(llama_model_loader & ml) {
     pimpl->cpu_buft_list = make_cpu_buft_list(devices, params.use_extra_bufts, params.no_host);
     if (ml.weight_manager) {
         auto cpu = ggml_backend_dev_by_type(GGML_BACKEND_DEVICE_TYPE_CPU);
-        pimpl->cpu_buft_list = {{cpu, ggml_backend_dev_buffer_type(cpu)}};
+        // Keep CPU kernel layouts while excluding implicit placement on another device.
+        auto & list = pimpl->cpu_buft_list;
+        list.erase(std::remove_if(list.begin(), list.end(), [cpu](const buft_list_t::value_type & entry) {
+            return entry.first != cpu;
+        }), list.end());
     }
     for (const auto & dev : devices) {
         buft_list_t buft_list = make_gpu_buft_list(dev.dev, split_mode, tensor_split);

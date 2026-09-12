@@ -1238,6 +1238,11 @@ struct ggml_tensor * llama_model_loader::create_tensor(
                     throw std::runtime_error("weight policy: no compatible default placement for " + tn.str());
                 }
             }
+            if (!is_lazy && ggml_backend_dev_type(managed_device) == GGML_BACKEND_DEVICE_TYPE_CPU) {
+                // Fixed weights support normal repacking; swap sources must remain canonical.
+                auto optimized = select_weight_buft(hparams, t_meta, op, buft_list_cpu);
+                if (optimized) { target_buft = optimized; }
+            }
             return is_lazy ? lazy_read::buft() : target_buft;
         }
 

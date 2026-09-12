@@ -71,6 +71,9 @@ Layout conversion remains in backend `set_tensor` implementations: OpenCL conver
 complete Q4_0 expert slices to its SoA/Adreno layout; HTP repacks them to its tiled
 layout. Repeated expert uploads reuse the bank's storage and metadata. Whole-tensor
 replacement recreates its backend buffer to release derived layout objects.
+Fixed CPU weights retain the normal optimized CPU buffer types, including weight
+repacking when enabled. CPU swap sources and cache slots keep the canonical
+layout required by partial loading.
 
 Internal interfaces are in `src/llama-weight-manager.h`: `prefetch()` loads a whole
 ordinary weight or specified experts; `evict()` invalidates the weight's cache
@@ -88,6 +91,10 @@ Cache capacity is charged even when slots are empty. Reports include actual
 backend buffer sizes, peak accounted bytes, hits, misses, evictions, reads and
 uploads. CPU host staging is reported separately. Model memory breakdown excludes
 the virtual address size of lazy source mappings.
+`cached_source_bytes` counts source-format bytes in occupied cache slots, excluding
+unused slots and backend layout overhead. It is distinct from allocated cache
+capacity and does not measure physical page residency. Omitting `report` disables
+report construction and file I/O during inference.
 
 These are application allocation budgets, not separate physical RAM banks or an
 OS-enforced process limit. CPU, GPU and HTP share phone DRAM. File page cache,
@@ -154,3 +161,12 @@ mixed runs stopped after 18 tokens containing the four correct facts and remaine
 identical. The model used labeled lines rather than the requested two sentences.
 See the [semantic test record](../task/handoff/handoff-2026-09-11-weight-manager/handoff-02-semantic.md)
 for evidence and limitations.
+
+`llama-bench --weight-config FILE` uses the normal synchronized benchmark timer
+with the configured weight manager. The scalar option applies to all tests in an
+invocation. `--no-repack` provides a diagnostic baseline without extra CPU buffer
+types; omit it when comparing to normal default performance. Machine-readable
+results include both settings. Model loading is outside the timing interval;
+weight reads/uploads on cache misses remain inside it. Report files are updated
+during compute when enabled, so capacity diagnostics and report-free throughput
+runs should be kept separate.

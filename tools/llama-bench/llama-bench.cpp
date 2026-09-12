@@ -375,6 +375,8 @@ struct cmd_params {
     bool                             no_warmup;
     output_formats                   output_format;
     output_formats                   output_format_stderr;
+    std::string                      weight_config;
+    bool                             no_repack;
 };
 
 static const cmd_params cmd_params_defaults = {
@@ -420,6 +422,8 @@ static const cmd_params cmd_params_defaults = {
     /* no_warmup            */ false,
     /* output_format        */ MARKDOWN,
     /* output_format_stderr */ NONE,
+    /* weight_config        */ "",
+    /* no_repack            */ false,
 };
 
 static void print_usage(int /* argc */, char ** argv) {
@@ -437,6 +441,8 @@ static void print_usage(int /* argc */, char ** argv) {
     printf("  -v, --verbose                               verbose output\n");
     printf("  --progress                                  print test progress indicators\n");
     printf("  --no-warmup                                 skip warmup runs before benchmarking\n");
+    printf("  --weight-config <file>                      weight placement/residency configuration (all tests)\n");
+    printf("  -nr, --no-repack                            disable extra CPU weight buffer types (all tests)\n");
     printf("  -fitt, --fit-target <MiB>                   fit model to device memory with this margin per device in MiB (default: off)\n");
     printf("  -fitc, --fit-ctx <n>                        minimum ctx size for --fit-target (default: 4096)\n");
     if (llama_supports_rpc()) {
@@ -537,6 +543,7 @@ static cmd_params parse_cmd_params(int argc, char ** argv) {
     params.progress             = cmd_params_defaults.progress;
     params.no_warmup            = cmd_params_defaults.no_warmup;
     params.offline              = cmd_params_defaults.offline;
+    params.no_repack            = cmd_params_defaults.no_repack;
 
     if (const char * env = getenv("HF_TOKEN")) {
         params.hf_token = env;
@@ -559,6 +566,14 @@ static cmd_params parse_cmd_params(int argc, char ** argv) {
                 }
                 auto p = string_split<std::string>(argv[i], split_delim);
                 params.model.insert(params.model.end(), p.begin(), p.end());
+            } else if (arg == "--weight-config") {
+                if (++i >= argc) {
+                    invalid_param = true;
+                    break;
+                }
+                params.weight_config = argv[i];
+            } else if (arg == "-nr" || arg == "--no-repack") {
+                params.no_repack = true;
             } else if (arg == "-hf" || arg == "-hfr" || arg == "--hf-repo") {
                 if (++i >= argc) {
                     invalid_param = true;
@@ -1260,6 +1275,8 @@ struct cmd_params_instance {
     bool               no_host;
     size_t             fit_target;
     uint32_t           fit_min_ctx;
+    std::string        weight_config;
+    bool               no_repack;
 
     llama_model_params to_llama_mparams() const {
         llama_model_params mparams = llama_model_default_params();
@@ -1274,6 +1291,8 @@ struct cmd_params_instance {
         mparams.main_gpu      = main_gpu;
         mparams.tensor_split  = tensor_split.data();
         mparams.no_host       = no_host;
+        mparams.weight_config = weight_config.empty() ? nullptr : weight_config.c_str();
+        mparams.use_extra_bufts = !no_repack;
 
         if (n_cpu_moe <= 0) {
             if (tensor_buft_overrides.empty()) {
@@ -1316,7 +1335,7 @@ struct cmd_params_instance {
 
     bool equal_mparams(const cmd_params_instance & other) const {
         return model == other.model && n_gpu_layers == other.n_gpu_layers && n_cpu_moe == other.n_cpu_moe &&
-               split_mode == other.split_mode &&
+               split_mode == other.split_mode && weight_config == other.weight_config && no_repack == other.no_repack &&
                main_gpu == other.main_gpu && tensor_split == other.tensor_split &&
                load_mode == other.load_mode && lazy_mode == other.lazy_mode &&
                devices == other.devices && no_host == other.no_host &&
@@ -1405,6 +1424,8 @@ static std::vector<cmd_params_instance> get_cmd_params_instances(const cmd_param
                 /* .no_host               = */ noh,
                 /* .fit_target            = */ fpt,
                 /* .fit_min_ctx           = */ fpc,
+                /* .weight_config         = */ params.weight_config,
+                /* .no_repack             = */ params.no_repack,
             };
             instances.push_back(instance);
         }
@@ -1442,6 +1463,8 @@ static std::vector<cmd_params_instance> get_cmd_params_instances(const cmd_param
                 /* .no_host               = */ noh,
                 /* .fit_target            = */ fpt,
                 /* .fit_min_ctx           = */ fpc,
+                /* .weight_config         = */ params.weight_config,
+                /* .no_repack             = */ params.no_repack,
             };
             instances.push_back(instance);
         }
@@ -1479,6 +1502,8 @@ static std::vector<cmd_params_instance> get_cmd_params_instances(const cmd_param
                 /* .no_host               = */ noh,
                 /* .fit_target            = */ fpt,
                 /* .fit_min_ctx           = */ fpc,
+                /* .weight_config         = */ params.weight_config,
+                /* .no_repack             = */ params.no_repack,
             };
             instances.push_back(instance);
         }
@@ -1526,12 +1551,16 @@ struct test {
     int                      n_depth;
     std::string              test_time;
     std::vector<uint64_t>    samples_ns;
+    std::string              weight_config;
+    bool                     no_repack;
 
     test(const cmd_params_instance & inst, const llama_model * lmodel, const llama_context * ctx) :
         cpu_info(get_cpu_info()),
         gpu_info(get_gpu_info()) {
 
         model_filename = inst.model;
+        weight_config  = inst.weight_config;
+        no_repack      = inst.no_repack;
         char buf[128];
         llama_model_desc(lmodel, buf, sizeof(buf));
         model_type     = buf;
@@ -1621,7 +1650,8 @@ struct test {
             "embeddings",
             "no_op_offload",  "no_host",        "fit_target",    "fit_min_ctx",
             "n_prompt",       "n_gen",          "n_depth",
-            "test_time",      "avg_ns",         "stddev_ns",     "avg_ts",         "stddev_ts"
+            "test_time",      "avg_ns",         "stddev_ns",     "avg_ts",         "stddev_ts",
+            "weight_config",  "no_repack"
         };
         return fields;
     }
@@ -1637,7 +1667,7 @@ struct test {
             return INT;
         }
         if (field == "f16_kv" || field == "no_kv_offload" || field == "cpu_strict" ||
-            field == "embeddings" || field == "no_host") {
+            field == "embeddings" || field == "no_host" || field == "no_repack") {
             return BOOL;
         }
         if (field == "avg_ts" || field == "stddev_ts") {
@@ -1726,7 +1756,9 @@ struct test {
                                             std::to_string(avg_ns()),
                                             std::to_string(stdev_ns()),
                                             std::to_string(avg_ts()),
-                                            std::to_string(stdev_ts()) };
+                                            std::to_string(stdev_ts()),
+                                            weight_config,
+                                            std::to_string(no_repack) };
         return values;
     }
 

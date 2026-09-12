@@ -84,7 +84,7 @@ def deploy(tag):
     shell(f"chmod 755 {REMOTE}/weight-manager-probe")
 
 
-def run(case, tag, ubatch, slots, semantic, stop_eog):
+def run(case, tag, ubatch, slots, semantic, stop_eog, default_layout):
     prefix = f"{tag}-{case}"
     local = OUT / prefix
     assert not local.with_suffix(".log").exists(), "use a fresh tag"
@@ -114,6 +114,8 @@ def run(case, tag, ubatch, slots, semantic, stop_eog):
         env.append("WEIGHT_PROBE_SEMANTIC=1")
     if stop_eog:
         env.append("WEIGHT_PROBE_STOP_EOG=1")
+    if default_layout:
+        env.append("WEIGHT_PROBE_DEFAULT_LAYOUT=1")
     command = f"cd {shlex.quote(REMOTE)} && exec " + shlex.join(env + argv)
     started = time.monotonic()
     samples = []
@@ -201,6 +203,7 @@ def main():
     parser.add_argument("--slots", type=int)
     parser.add_argument("--semantic", action="store_true", help="natural chat prompt near 128 tokens, 32 freely generated tokens and fact checks")
     parser.add_argument("--stop-eog", action="store_true", help="allow semantic generation to finish naturally before 32 tokens")
+    parser.add_argument("--default-layout", action="store_true", help="retain default CPU weight repacking for fixed-weight regression")
     args = parser.parse_args()
     if args.stop_eog and not args.semantic:
         parser.error("--stop-eog requires --semantic")
@@ -210,7 +213,7 @@ def main():
     if args.deploy:
         deploy(args.tag)
     for case in args.case:
-        run(case, args.tag, args.ubatch, args.slots, args.semantic, args.stop_eog)
+        run(case, args.tag, args.ubatch, args.slots, args.semantic, args.stop_eog, args.default_layout)
 
 
 if __name__ == "__main__":

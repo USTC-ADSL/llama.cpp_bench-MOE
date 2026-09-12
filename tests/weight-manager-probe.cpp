@@ -55,14 +55,15 @@ int main(int argc, char ** argv) {
     const bool cpu_only = devices.empty();
     const bool semantic = std::getenv("WEIGHT_PROBE_SEMANTIC") != nullptr;
     const bool stop_eog = semantic && std::getenv("WEIGHT_PROBE_STOP_EOG") != nullptr;
+    const bool default_layout = std::getenv("WEIGHT_PROBE_DEFAULT_LAYOUT") != nullptr;
     const int steps = semantic ? 32 : 8;
     devices.push_back(nullptr);
     auto mp = llama_model_default_params();
     mp.devices = devices.data();
     mp.n_gpu_layers = cpu_only ? 0 : 99;
     mp.load_mode = LLAMA_LOAD_MODE_MMAP;
-    // Match the manager's canonical CPU layout; CPU_REPACK uses different kernels.
-    mp.use_extra_bufts = false;
+    // Canonical layout isolates swap correctness; opt in to test fixed-weight repacking.
+    mp.use_extra_bufts = default_layout;
     if (std::getenv("WEIGHT_PROBE_LAZY_ON")) { mp.lazy_mode = LLAMA_LAZY_MODE_ON; }
     mp.weight_config = std::string(argv[3]) == "-" ? nullptr : argv[3];
     std::unique_ptr<llama_model, decltype(&llama_model_free)> model(llama_model_load_from_file(argv[1], mp), llama_model_free);
@@ -149,6 +150,7 @@ int main(int argc, char ** argv) {
     summary << "{\"steps\":" << generated << ",\"max_steps\":" << steps << ",\"vocab\":" << n_vocab << ",\"prompt_tokens\":" << count
             << ",\"semantic\":" << (semantic ? "true" : "false")
             << ",\"teacher_forced\":" << (!teacher.empty() ? "true" : "false")
+            << ",\"default_layout\":" << (default_layout ? "true" : "false")
             << ",\"suppressed_eog\":" << suppressed_eog
             << ",\"stop_eog\":" << (stop_eog ? "true" : "false")
             << ",\"stopped_eog\":" << (stopped_eog ? "true" : "false") << "}\n";
