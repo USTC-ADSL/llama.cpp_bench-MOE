@@ -1,0 +1,62 @@
+ggml_opencl: selected platform: 'QUALCOMM Snapdragon(TM)'
+
+ggml_opencl: device: 'QUALCOMM Adreno(TM) 830 (OpenCL 3.0 Adreno(TM) 830)'
+ggml_opencl: default device: 'QUALCOMM Adreno(TM) 830 (OpenCL 3.0 Adreno(TM) 830)'
+ggml-hex: Loading driver libcdsprpc.so
+ggml-hex: Profiling mode 0 : pmu-evt [ 0x3,0x111,0x100,0x105,0x240,0x256,0x7d,0x8c ]
+ggml-hex: Hexagon backend (experimental) : allocating new registry : ndev 1
+ggml-hex: Hexagon Arch version v79
+ggml-hex: HTP0 hwinfo: threads 6, hvx 6, hmx 0, vtcm 8 MB
+ggml-hex: HTP0 new session : session-id 0 domain-id 3 uri file:///libggml-htp-v79.so?htp_iface_skel_handle_invoke&_modver=1.0&_dom=cdsp&_session=0 handle 0xb400007b33b0b490
+ggml-hex: HTP0 op batching: n-bufs 16 n-tensors 8192 n-ops 1280 vmem 3311849472
+CASE_BEGIN backend=HTP0 tokens=1
+VALIDATE expert_full T=1 nrmse=0.0122563328 worst_token=0.0122563328 max_abs=0.00294900686
+VALIDATE expert_gate T=1 nrmse=0.0036231067 worst_token=0.0036231067 max_abs=0.00572741032
+VALIDATE expert_up T=1 nrmse=0.00366509565 worst_token=0.00366509565 max_abs=0.00590161979
+VALIDATE expert_down_isolated T=1 nrmse=0.0113555522 worst_token=0.0113555522 max_abs=0.00273786485
+VALIDATE expert_full T=1 nrmse=0.0122563328 worst_token=0.0122563328 max_abs=0.00294900686
+CASE_DONE backend=HTP0 tokens=1 full_median_us=479.688
+CASE_BEGIN backend=HTP0 tokens=2
+VALIDATE expert_full T=2 nrmse=0.012381841 worst_token=0.012556895 max_abs=0.00294900686
+VALIDATE expert_gate T=2 nrmse=0.00375798117 worst_token=0.00390740601 max_abs=0.00572741032
+VALIDATE expert_up T=2 nrmse=0.00391264434 worst_token=0.00417370453 max_abs=0.00590161979
+VALIDATE expert_down_isolated T=2 nrmse=0.011374832 worst_token=0.0114019954 max_abs=0.00273786485
+VALIDATE expert_full T=2 nrmse=0.012381841 worst_token=0.012556895 max_abs=0.00294900686
+CASE_DONE backend=HTP0 tokens=2 full_median_us=511.172
+CASE_BEGIN backend=HTP0 tokens=4
+VALIDATE expert_full T=4 nrmse=0.012644639 worst_token=0.0131955988 max_abs=0.00374080613
+VALIDATE expert_gate T=4 nrmse=0.00383920012 worst_token=0.00402343713 max_abs=0.00590099394
+VALIDATE expert_up T=4 nrmse=0.00389134132 worst_token=0.00417370453 max_abs=0.00606109202
+VALIDATE expert_down_isolated T=4 nrmse=0.01142097 worst_token=0.011651405 max_abs=0.00273786485
+VALIDATE expert_full T=4 nrmse=0.012644639 worst_token=0.0131955988 max_abs=0.00374080613
+CASE_DONE backend=HTP0 tokens=4 full_median_us=620.286
+CASE_BEGIN backend=HTP0 tokens=8
+VALIDATE expert_full T=8 nrmse=0.0126890423 worst_token=0.0131955988 max_abs=0.00374080613
+VALIDATE expert_gate T=8 nrmse=0.00385875445 worst_token=0.00402343713 max_abs=0.00766801834
+VALIDATE expert_up T=8 nrmse=0.00383489128 worst_token=0.00417370453 max_abs=0.00666685402
+VALIDATE expert_down_isolated T=8 nrmse=0.011629237 worst_token=0.0123998202 max_abs=0.0030785799
+VALIDATE expert_full T=8 nrmse=0.0126890423 worst_token=0.0131955988 max_abs=0.00374080613
+CASE_DONE backend=HTP0 tokens=8 full_median_us=809.401
+CASE_BEGIN backend=HTP0 tokens=16
+VALIDATE expert_full T=16 nrmse=0.012930491 worst_token=0.0147925908 max_abs=0.00374080613
+VALIDATE expert_gate T=16 nrmse=0.00392230205 worst_token=0.00422537493 max_abs=0.00766801834
+VALIDATE expert_up T=16 nrmse=0.00388268496 worst_token=0.00417370453 max_abs=0.00685527921
+VALIDATE expert_down_isolated T=16 nrmse=0.0117847542 worst_token=0.0138770733 max_abs=0.00345237553
+VALIDATE expert_full T=16 nrmse=0.012930491 worst_token=0.0147925908 max_abs=0.00374080613
+CASE_DONE backend=HTP0 tokens=16 full_median_us=1269.922
+CASE_BEGIN backend=HTP0 tokens=32
+VALIDATE expert_full T=32 nrmse=0.012965547 worst_token=0.0147925908 max_abs=0.00397658348
+VALIDATE expert_gate T=32 nrmse=0.00391018 worst_token=0.00422537493 max_abs=0.00797054172
+VALIDATE expert_up T=32 nrmse=0.00388386942 worst_token=0.00417370453 max_abs=0.00836861134
+VALIDATE expert_down_isolated T=32 nrmse=0.0117978764 worst_token=0.0138770733 max_abs=0.00346320891
+VALIDATE expert_full T=32 nrmse=0.012965547 worst_token=0.0147925908 max_abs=0.00397658348
+CASE_DONE backend=HTP0 tokens=32 full_median_us=2134.922
+CASE_BEGIN backend=HTP0 tokens=64
+VALIDATE expert_full T=64 nrmse=0.0129826117 worst_token=0.0150300264 max_abs=0.00441986509
+VALIDATE expert_gate T=64 nrmse=0.00391647875 worst_token=0.00427345938 max_abs=0.00797054172
+VALIDATE expert_up T=64 nrmse=0.00390432485 worst_token=0.00417370453 max_abs=0.00836861134
+VALIDATE expert_down_isolated T=64 nrmse=0.0117475399 worst_token=0.0142347262 max_abs=0.00402496755
+VALIDATE expert_full T=64 nrmse=0.0129826117 worst_token=0.0150300264 max_abs=0.00441986509
+CASE_DONE backend=HTP0 tokens=64 full_median_us=3887.812
+CASE_BEGIN backend=HTP0 tokens=128
+CASE_UNSUPPORTED backend=HTP0 tokens=128 node=expert_gate op=MUL_MAT_ID

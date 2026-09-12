@@ -1,0 +1,2181 @@
+{
+  "runs": [
+    "steady01",
+    "steady02",
+    "steady03"
+  ],
+  "samples_per_case": 300,
+  "scope": "resident same-expert FFN host elapsed time including backend dispatch and synchronization",
+  "paths": {
+    "hmx": {
+      "1": {
+        "matrix_paths": [
+          "hvx-tiled"
+        ],
+        "matrix_ops": [
+          "MUL_MAT_ID",
+          "MUL_MAT_ID_NX"
+        ],
+        "trace_events": [
+          "HVX_COMP"
+        ],
+        "evidence": [
+          "ggml-hex: HTP0 profile-op MUL_MAT_ID_NX|blk.0.ffn_gate_exps.weight x blk.0.ffn_up_exps.weight x expert_input x expert_ids -> expert_up|2048:1408:60:1 x 2048:1408:60:1 x 2048:1 x 1:1 -> 1408:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192 x 4:240 -> 4:5632|hvx-tiled vtcm 4055040|usec 91 cycles 178450 start 1390601434 mhz 1961.0",
+          "ggml-hex: HTP0 profile-op MUL_MAT_ID|blk.0.ffn_down_exps.weight x expert_swiglu x expert_ids -> expert_full|1408:2048:60:1 x 1408:1 x 1:1 -> 2048:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632 x 4:240 -> 4:8192|hvx-tiled vtcm 2787840|usec 41 cycles 80940 start 1390801391 mhz 1974.1",
+          "ggml-hex: HTP0 trace-evt HVX_COMP: thread 0 info 0 start 1390650246"
+        ],
+        "unsupported": false
+      },
+      "2": {
+        "matrix_paths": [
+          "hvx-tiled"
+        ],
+        "matrix_ops": [
+          "MUL_MAT_ID",
+          "MUL_MAT_ID_NX"
+        ],
+        "trace_events": [
+          "HVX_COMP"
+        ],
+        "evidence": [
+          "ggml-hex: HTP0 profile-op MUL_MAT_ID_NX|blk.0.ffn_gate_exps.weight x blk.0.ffn_up_exps.weight x expert_input x expert_ids -> expert_up|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:2:1 x 1:2 -> 1408:1:2:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:16384 x 4:240! -> 4:5632:5632:11264|hvx-tiled vtcm 4128768|usec 110 cycles 214218 start 1399485971 mhz 1947.4",
+          "ggml-hex: HTP0 profile-op MUL_MAT_ID|blk.0.ffn_down_exps.weight x expert_swiglu x expert_ids -> expert_full|1408:2048:60:1 x 1408:1:2:1 x 1:2 -> 2048:1:2:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:5632:11264 x 4:240! -> 4:8192:8192:16384|hvx-tiled vtcm 2838528|usec 49 cycles 96905 start 1399722281 mhz 1977.7",
+          "ggml-hex: HTP0 trace-evt HVX_COMP: thread 0 info 0 start 1399538704"
+        ],
+        "unsupported": false
+      },
+      "4": {
+        "matrix_paths": [
+          "hvx-tiled"
+        ],
+        "matrix_ops": [
+          "MUL_MAT_ID",
+          "MUL_MAT_ID_NX"
+        ],
+        "trace_events": [
+          "HVX_COMP"
+        ],
+        "evidence": [
+          "ggml-hex: HTP0 profile-op MUL_MAT_ID_NX|blk.0.ffn_gate_exps.weight x blk.0.ffn_up_exps.weight x expert_input x expert_ids -> expert_up|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:4:1 x 1:4 -> 1408:1:4:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:32768 x 4:240! -> 4:5632:5632:22528|hvx-tiled vtcm 4276224|usec 183 cycles 356392 start 1408262517 mhz 1947.5",
+          "ggml-hex: HTP0 profile-op MUL_MAT_ID|blk.0.ffn_down_exps.weight x expert_swiglu x expert_ids -> expert_full|1408:2048:60:1 x 1408:1:4:1 x 1:4 -> 2048:1:4:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:5632:22528 x 4:240! -> 4:8192:8192:32768|hvx-tiled vtcm 2939904|usec 85 cycles 165699 start 1408642990 mhz 1949.4",
+          "ggml-hex: HTP0 trace-evt HVX_COMP: thread 0 info 0 start 1408320374"
+        ],
+        "unsupported": false
+      },
+      "8": {
+        "matrix_paths": [
+          "hmx-tiled"
+        ],
+        "matrix_ops": [
+          "MUL_MAT_ID",
+          "MUL_MAT_ID_NX"
+        ],
+        "trace_events": [
+          "HMX_COMP",
+          "HVX_COMP"
+        ],
+        "evidence": [
+          "ggml-hex: HTP0 profile-op MUL_MAT_ID_NX|blk.0.ffn_gate_exps.weight x blk.0.ffn_up_exps.weight x expert_input x expert_ids -> expert_up|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:8:1 x 1:8 -> 1408:1:8:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:65536 x 4:240! -> 4:5632:5632:45056|hmx-tiled vtcm 7792640|usec 185 cycles 361136 start 1419023519 mhz 1952.1",
+          "ggml-hex: HTP0 profile-op MUL_MAT_ID|blk.0.ffn_down_exps.weight x expert_swiglu x expert_ids -> expert_full|1408:2048:60:1 x 1408:1:8:1 x 1:8 -> 2048:1:8:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:5632:45056 x 4:240! -> 4:8192:8192:65536|hmx-tiled vtcm 7792640|usec 87 cycles 169246 start 1419413147 mhz 1945.4",
+          "ggml-hex: HTP0 trace-evt HVX_COMP: thread 0 info 0 start 1419399492",
+          "ggml-hex: HTP0 trace-evt HMX_COMP: thread 10 info 7 start 1419201205"
+        ],
+        "unsupported": false
+      },
+      "16": {
+        "matrix_paths": [
+          "hmx-tiled"
+        ],
+        "matrix_ops": [
+          "MUL_MAT_ID",
+          "MUL_MAT_ID_NX"
+        ],
+        "trace_events": [
+          "HMX_COMP",
+          "HVX_COMP"
+        ],
+        "evidence": [
+          "ggml-hex: HTP0 profile-op MUL_MAT_ID_NX|blk.0.ffn_gate_exps.weight x blk.0.ffn_up_exps.weight x expert_input x expert_ids -> expert_up|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:16:1 x 1:16 -> 1408:1:16:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:131072 x 4:240! -> 4:5632:5632:90112|hmx-tiled vtcm 7792640|usec 189 cycles 368475 start 1429520861 mhz 1949.6",
+          "ggml-hex: HTP0 profile-op MUL_MAT_ID|blk.0.ffn_down_exps.weight x expert_swiglu x expert_ids -> expert_full|1408:2048:60:1 x 1408:1:16:1 x 1:16 -> 2048:1:16:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:5632:90112 x 4:240! -> 4:8192:8192:131072|hmx-tiled vtcm 7792640|usec 88 cycles 171665 start 1429925534 mhz 1950.7",
+          "ggml-hex: HTP0 trace-evt HVX_COMP: thread 0 info 0 start 1429908722",
+          "ggml-hex: HTP0 trace-evt HMX_COMP: thread 10 info 8 start 1429704691"
+        ],
+        "unsupported": false
+      },
+      "32": {
+        "matrix_paths": [
+          "hmx-tiled"
+        ],
+        "matrix_ops": [
+          "MUL_MAT_ID",
+          "MUL_MAT_ID_NX"
+        ],
+        "trace_events": [
+          "HMX_COMP",
+          "HVX_COMP"
+        ],
+        "evidence": [
+          "ggml-hex: HTP0 profile-op MUL_MAT_ID_NX|blk.0.ffn_gate_exps.weight x blk.0.ffn_up_exps.weight x expert_input x expert_ids -> expert_up|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:32:1 x 1:32 -> 1408:1:32:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:262144 x 4:240! -> 4:5632:5632:180224|hmx-tiled vtcm 7792640|usec 212 cycles 413200 start 1441394477 mhz 1949.1",
+          "ggml-hex: HTP0 profile-op MUL_MAT_ID|blk.0.ffn_down_exps.weight x expert_swiglu x expert_ids -> expert_full|1408:2048:60:1 x 1408:1:32:1 x 1:32 -> 2048:1:32:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:5632:180224 x 4:240! -> 4:8192:8192:262144|hmx-tiled vtcm 7792640|usec 93 cycles 180776 start 1441865453 mhz 1943.8",
+          "ggml-hex: HTP0 trace-evt HVX_COMP: thread 0 info 0 start 1441838417",
+          "ggml-hex: HTP0 trace-evt HMX_COMP: thread 10 info 9 start 1441618680"
+        ],
+        "unsupported": false
+      },
+      "64": {
+        "matrix_paths": [
+          "hmx-tiled"
+        ],
+        "matrix_ops": [
+          "MUL_MAT_ID",
+          "MUL_MAT_ID_NX"
+        ],
+        "trace_events": [
+          "HMX_COMP",
+          "HVX_COMP"
+        ],
+        "evidence": [
+          "ggml-hex: HTP0 profile-op MUL_MAT_ID_NX|blk.0.ffn_gate_exps.weight x blk.0.ffn_up_exps.weight x expert_input x expert_ids -> expert_up|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:64:1 x 1:64 -> 1408:1:64:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:524288 x 4:240! -> 4:5632:5632:360448|hmx-tiled vtcm 8013824|usec 252 cycles 490777 start 1455828909 mhz 1947.5",
+          "ggml-hex: HTP0 profile-op MUL_MAT_ID|blk.0.ffn_down_exps.weight x expert_swiglu x expert_ids -> expert_full|1408:2048:60:1 x 1408:1:64:1 x 1:64 -> 2048:1:64:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:5632:360448 x 4:240! -> 4:8192:8192:524288|hmx-tiled vtcm 8013824|usec 134 cycles 261027 start 1456403809 mhz 1948.0",
+          "ggml-hex: HTP0 trace-evt HVX_COMP: thread 0 info 0 start 1456356585",
+          "ggml-hex: HTP0 trace-evt HMX_COMP: thread 10 info 10 start 1456057725"
+        ],
+        "unsupported": false
+      },
+      "128": {
+        "matrix_paths": [
+          "hmx-tiled"
+        ],
+        "matrix_ops": [
+          "MUL_MAT_ID",
+          "MUL_MAT_ID_NX"
+        ],
+        "trace_events": [
+          "HMX_COMP",
+          "HVX_COMP"
+        ],
+        "evidence": [
+          "ggml-hex: HTP0 profile-op MUL_MAT_ID_NX|blk.0.ffn_gate_exps.weight x blk.0.ffn_up_exps.weight x expert_input x expert_ids -> expert_up|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:128:1 x 1:128 -> 1408:1:128:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:1048576 x 4:240! -> 4:5632:5632:720896|hmx-tiled vtcm 8275968|usec 366 cycles 711917 start 1475825447 mhz 1945.1",
+          "ggml-hex: HTP0 profile-op MUL_MAT_ID|blk.0.ffn_down_exps.weight x expert_swiglu x expert_ids -> expert_full|1408:2048:60:1 x 1408:1:128:1 x 1:128 -> 2048:1:128:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:5632:720896 x 4:240! -> 4:8192:8192:1048576|hmx-tiled vtcm 8331264|usec 184 cycles 357261 start 1476679116 mhz 1941.6",
+          "ggml-hex: HTP0 trace-evt HVX_COMP: thread 0 info 0 start 1476596723",
+          "ggml-hex: HTP0 trace-evt HMX_COMP: thread 10 info 11 start 1476111724"
+        ],
+        "unsupported": false
+      }
+    },
+    "hvx": {
+      "1": {
+        "matrix_paths": [
+          "hvx-tiled"
+        ],
+        "matrix_ops": [
+          "MUL_MAT_ID",
+          "MUL_MAT_ID_NX"
+        ],
+        "trace_events": [
+          "HVX_COMP"
+        ],
+        "evidence": [
+          "ggml-hex: HTP0 profile-op MUL_MAT_ID_NX|blk.0.ffn_gate_exps.weight x blk.0.ffn_up_exps.weight x expert_input x expert_ids -> expert_up|2048:1408:60:1 x 2048:1408:60:1 x 2048:1 x 1:1 -> 1408:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192 x 4:240 -> 4:5632|hvx-tiled vtcm 4055040|usec 90 cycles 176538 start 1532604223 mhz 1961.5",
+          "ggml-hex: HTP0 profile-op MUL_MAT_ID|blk.0.ffn_down_exps.weight x expert_swiglu x expert_ids -> expert_full|1408:2048:60:1 x 1408:1 x 1:1 -> 2048:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632 x 4:240 -> 4:8192|hvx-tiled vtcm 2787840|usec 41 cycles 81480 start 1532802489 mhz 1987.3",
+          "ggml-hex: HTP0 trace-evt HVX_COMP: thread 0 info 0 start 1532653258"
+        ],
+        "unsupported": false
+      },
+      "2": {
+        "matrix_paths": [
+          "hvx-tiled"
+        ],
+        "matrix_ops": [
+          "MUL_MAT_ID",
+          "MUL_MAT_ID_NX"
+        ],
+        "trace_events": [
+          "HVX_COMP"
+        ],
+        "evidence": [
+          "ggml-hex: HTP0 profile-op MUL_MAT_ID_NX|blk.0.ffn_gate_exps.weight x blk.0.ffn_up_exps.weight x expert_input x expert_ids -> expert_up|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:2:1 x 1:2 -> 1408:1:2:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:16384 x 4:240! -> 4:5632:5632:11264|hvx-tiled vtcm 4128768|usec 113 cycles 221142 start 1541036698 mhz 1957.0",
+          "ggml-hex: HTP0 profile-op MUL_MAT_ID|blk.0.ffn_down_exps.weight x expert_swiglu x expert_ids -> expert_full|1408:2048:60:1 x 1408:1:2:1 x 1:2 -> 2048:1:2:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:5632:11264 x 4:240! -> 4:8192:8192:16384|hvx-tiled vtcm 2838528|usec 50 cycles 98158 start 1541282149 mhz 1963.2",
+          "ggml-hex: HTP0 trace-evt HVX_COMP: thread 0 info 0 start 1541092287"
+        ],
+        "unsupported": false
+      },
+      "4": {
+        "matrix_paths": [
+          "hvx-tiled"
+        ],
+        "matrix_ops": [
+          "MUL_MAT_ID",
+          "MUL_MAT_ID_NX"
+        ],
+        "trace_events": [
+          "HVX_COMP"
+        ],
+        "evidence": [
+          "ggml-hex: HTP0 profile-op MUL_MAT_ID_NX|blk.0.ffn_gate_exps.weight x blk.0.ffn_up_exps.weight x expert_input x expert_ids -> expert_up|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:4:1 x 1:4 -> 1408:1:4:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:32768 x 4:240! -> 4:5632:5632:22528|hvx-tiled vtcm 4276224|usec 183 cycles 356761 start 1549862297 mhz 1949.5",
+          "ggml-hex: HTP0 profile-op MUL_MAT_ID|blk.0.ffn_down_exps.weight x expert_swiglu x expert_ids -> expert_full|1408:2048:60:1 x 1408:1:4:1 x 1:4 -> 2048:1:4:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:5632:22528 x 4:240! -> 4:8192:8192:32768|hvx-tiled vtcm 2939904|usec 84 cycles 164553 start 1550244129 mhz 1959.0",
+          "ggml-hex: HTP0 trace-evt HVX_COMP: thread 0 info 0 start 1549919301"
+        ],
+        "unsupported": false
+      },
+      "8": {
+        "matrix_paths": [
+          "hvx-tiled"
+        ],
+        "matrix_ops": [
+          "MUL_MAT_ID",
+          "MUL_MAT_ID_NX"
+        ],
+        "trace_events": [
+          "HVX_COMP"
+        ],
+        "evidence": [
+          "ggml-hex: HTP0 profile-op MUL_MAT_ID_NX|blk.0.ffn_gate_exps.weight x blk.0.ffn_up_exps.weight x expert_input x expert_ids -> expert_up|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:8:1 x 1:8 -> 1408:1:8:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:65536 x 4:240! -> 4:5632:5632:45056|hvx-tiled vtcm 1130496|usec 328 cycles 638780 start 1560098481 mhz 1947.5",
+          "ggml-hex: HTP0 profile-op MUL_MAT_ID|blk.0.ffn_down_exps.weight x expert_swiglu x expert_ids -> expert_full|1408:2048:60:1 x 1408:1:8:1 x 1:8 -> 2048:1:8:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:5632:45056 x 4:240! -> 4:8192:8192:65536|hvx-tiled vtcm 777216|usec 155 cycles 301734 start 1560766429 mhz 1946.7",
+          "ggml-hex: HTP0 trace-evt HVX_COMP: thread 0 info 0 start 1560157934"
+        ],
+        "unsupported": false
+      },
+      "16": {
+        "matrix_paths": [
+          "hvx-tiled"
+        ],
+        "matrix_ops": [
+          "MUL_MAT_ID",
+          "MUL_MAT_ID_NX"
+        ],
+        "trace_events": [
+          "HVX_COMP"
+        ],
+        "evidence": [
+          "ggml-hex: HTP0 profile-op MUL_MAT_ID_NX|blk.0.ffn_gate_exps.weight x blk.0.ffn_up_exps.weight x expert_input x expert_ids -> expert_up|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:16:1 x 1:16 -> 1408:1:16:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:131072 x 4:240! -> 4:5632:5632:90112|hvx-tiled vtcm 1720320|usec 617 cycles 1197933 start 1572730116 mhz 1941.5",
+          "ggml-hex: HTP0 profile-op MUL_MAT_ID|blk.0.ffn_down_exps.weight x expert_swiglu x expert_ids -> expert_full|1408:2048:60:1 x 1408:1:16:1 x 1:16 -> 2048:1:16:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:5632:90112 x 4:240! -> 4:8192:8192:131072|hvx-tiled vtcm 1182720|usec 291 cycles 566190 start 1573964883 mhz 1945.7",
+          "ggml-hex: HTP0 trace-evt HVX_COMP: thread 0 info 0 start 1572797321"
+        ],
+        "unsupported": false
+      },
+      "32": {
+        "matrix_paths": [
+          "hvx-tiled"
+        ],
+        "matrix_ops": [
+          "MUL_MAT_ID",
+          "MUL_MAT_ID_NX"
+        ],
+        "trace_events": [
+          "HVX_COMP"
+        ],
+        "evidence": [
+          "ggml-hex: HTP0 profile-op MUL_MAT_ID_NX|blk.0.ffn_gate_exps.weight x blk.0.ffn_up_exps.weight x expert_input x expert_ids -> expert_up|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:32:1 x 1:32 -> 1408:1:32:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:262144 x 4:240! -> 4:5632:5632:180224|hvx-tiled vtcm 2899968|usec 1192 cycles 2313438 start 1590823531 mhz 1940.8",
+          "ggml-hex: HTP0 profile-op MUL_MAT_ID|blk.0.ffn_down_exps.weight x expert_swiglu x expert_ids -> expert_full|1408:2048:60:1 x 1408:1:32:1 x 1:32 -> 2048:1:32:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:5632:180224 x 4:240! -> 4:8192:8192:262144|hvx-tiled vtcm 1993728|usec 569 cycles 1104223 start 1593190192 mhz 1940.6",
+          "ggml-hex: HTP0 trace-evt HVX_COMP: thread 0 info 0 start 1590908857"
+        ],
+        "unsupported": false
+      },
+      "64": {
+        "matrix_paths": [
+          "hvx-tiled"
+        ],
+        "matrix_ops": [
+          "MUL_MAT_ID",
+          "MUL_MAT_ID_NX"
+        ],
+        "trace_events": [
+          "HVX_COMP"
+        ],
+        "evidence": [
+          "ggml-hex: HTP0 profile-op MUL_MAT_ID_NX|blk.0.ffn_gate_exps.weight x blk.0.ffn_up_exps.weight x expert_input x expert_ids -> expert_up|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:64:1 x 1:64 -> 1408:1:64:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:524288 x 4:240! -> 4:5632:5632:360448|hvx-tiled vtcm 5259264|usec 2345 cycles 4552162 start 1619653995 mhz 1941.2",
+          "ggml-hex: HTP0 profile-op MUL_MAT_ID|blk.0.ffn_down_exps.weight x expert_swiglu x expert_ids -> expert_full|1408:2048:60:1 x 1408:1:64:1 x 1:64 -> 2048:1:64:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:5632:360448 x 4:240! -> 4:8192:8192:524288|hvx-tiled vtcm 3615744|usec 1120 cycles 2172939 start 1624285353 mhz 1940.1",
+          "ggml-hex: HTP0 trace-evt HVX_COMP: thread 0 info 0 start 1619768091"
+        ],
+        "unsupported": false
+      },
+      "128": {
+        "matrix_paths": [],
+        "matrix_ops": [],
+        "trace_events": [],
+        "evidence": [
+          "ggml-hex: HTP0 supported MUL_MAT_ID VTCM size needed (9977856) > budget (8388608)",
+          "CASE_UNSUPPORTED backend=HTP0 tokens=128 node=expert_gate op=MUL_MAT_ID"
+        ],
+        "unsupported": true
+      }
+    }
+  },
+  "backends": {
+    "cpu": {
+      "1": {
+        "status": "ok",
+        "timings": {
+          "full": {
+            "count": 300,
+            "median_us": 77.969,
+            "mean_us": 91.64895,
+            "p95_us": 116.719,
+            "amortized_us_per_token": 77.969,
+            "expert_tokens_per_second": 12825.610178404238
+          },
+          "gate": {
+            "count": 300,
+            "median_us": 25.885,
+            "mean_us": 30.63868,
+            "p95_us": 38.125,
+            "amortized_us_per_token": 25.885,
+            "expert_tokens_per_second": 38632.412594166504
+          },
+          "up": {
+            "count": 300,
+            "median_us": 26.0415,
+            "mean_us": 30.656626666666668,
+            "p95_us": 38.177,
+            "amortized_us_per_token": 26.0415,
+            "expert_tokens_per_second": 38400.24576157288
+          },
+          "down": {
+            "count": 300,
+            "median_us": 25.938,
+            "mean_us": 29.982496666666666,
+            "p95_us": 38.073,
+            "amortized_us_per_token": 25.938,
+            "expert_tokens_per_second": 38553.47366797749
+          }
+        },
+        "run_medians_us": {
+          "full": [
+            77.89099999999999,
+            77.969,
+            77.969
+          ],
+          "gate": [
+            25.781,
+            25.938,
+            25.833
+          ],
+          "up": [
+            25.782,
+            26.25,
+            26.094
+          ],
+          "down": [
+            26.094,
+            25.833,
+            25.8595
+          ]
+        },
+        "validation_worst_token_nrmse": 0.008972088314377673
+      },
+      "2": {
+        "status": "ok",
+        "timings": {
+          "full": {
+            "count": 300,
+            "median_us": 149.167,
+            "mean_us": 152.28126,
+            "p95_us": 158.438,
+            "amortized_us_per_token": 74.5835,
+            "expert_tokens_per_second": 13407.791267505547
+          },
+          "gate": {
+            "count": 300,
+            "median_us": 49.584,
+            "mean_us": 51.27168666666667,
+            "p95_us": 51.25,
+            "amortized_us_per_token": 24.792,
+            "expert_tokens_per_second": 40335.59212649241
+          },
+          "up": {
+            "count": 300,
+            "median_us": 49.375,
+            "mean_us": 50.671506666666666,
+            "p95_us": 51.823,
+            "amortized_us_per_token": 24.6875,
+            "expert_tokens_per_second": 40506.329113924054
+          },
+          "down": {
+            "count": 300,
+            "median_us": 49.896,
+            "mean_us": 51.724156666666666,
+            "p95_us": 55.312,
+            "amortized_us_per_token": 24.948,
+            "expert_tokens_per_second": 40083.37341670675
+          }
+        },
+        "run_medians_us": {
+          "full": [
+            149.1405,
+            149.0885,
+            149.219
+          ],
+          "gate": [
+            49.532,
+            49.583,
+            49.687
+          ],
+          "up": [
+            49.479,
+            49.375,
+            49.375
+          ],
+          "down": [
+            50.208,
+            49.922,
+            49.532
+          ]
+        },
+        "validation_worst_token_nrmse": 0.00925746017498553
+      },
+      "4": {
+        "status": "ok",
+        "timings": {
+          "full": {
+            "count": 300,
+            "median_us": 290.0,
+            "mean_us": 293.5852233333333,
+            "p95_us": 312.396,
+            "amortized_us_per_token": 72.5,
+            "expert_tokens_per_second": 13793.103448275862
+          },
+          "gate": {
+            "count": 300,
+            "median_us": 96.25,
+            "mean_us": 97.54534333333334,
+            "p95_us": 97.708,
+            "amortized_us_per_token": 24.0625,
+            "expert_tokens_per_second": 41558.44155844156
+          },
+          "up": {
+            "count": 300,
+            "median_us": 96.25,
+            "mean_us": 97.26010666666667,
+            "p95_us": 98.438,
+            "amortized_us_per_token": 24.0625,
+            "expert_tokens_per_second": 41558.44155844156
+          },
+          "down": {
+            "count": 300,
+            "median_us": 96.562,
+            "mean_us": 97.53765666666666,
+            "p95_us": 99.115,
+            "amortized_us_per_token": 24.1405,
+            "expert_tokens_per_second": 41424.16271411114
+          }
+        },
+        "run_medians_us": {
+          "full": [
+            290.052,
+            290.0,
+            289.687
+          ],
+          "gate": [
+            96.25,
+            96.354,
+            96.094
+          ],
+          "up": [
+            96.4585,
+            96.25,
+            96.146
+          ],
+          "down": [
+            96.718,
+            96.43299999999999,
+            96.459
+          ]
+        },
+        "validation_worst_token_nrmse": 0.009803465477483992
+      },
+      "8": {
+        "status": "ok",
+        "timings": {
+          "full": {
+            "count": 300,
+            "median_us": 577.657,
+            "mean_us": 589.5890566666667,
+            "p95_us": 666.562,
+            "amortized_us_per_token": 72.207125,
+            "expert_tokens_per_second": 13849.048830015043
+          },
+          "gate": {
+            "count": 300,
+            "median_us": 191.563,
+            "mean_us": 193.95591666666667,
+            "p95_us": 204.115,
+            "amortized_us_per_token": 23.945375,
+            "expert_tokens_per_second": 41761.71807708169
+          },
+          "up": {
+            "count": 300,
+            "median_us": 191.614,
+            "mean_us": 194.56854666666666,
+            "p95_us": 201.927,
+            "amortized_us_per_token": 23.95175,
+            "expert_tokens_per_second": 41750.602774327555
+          },
+          "down": {
+            "count": 300,
+            "median_us": 192.136,
+            "mean_us": 196.76978333333332,
+            "p95_us": 221.563,
+            "amortized_us_per_token": 24.017,
+            "expert_tokens_per_second": 41637.173668651376
+          }
+        },
+        "run_medians_us": {
+          "full": [
+            578.281,
+            577.656,
+            577.032
+          ],
+          "gate": [
+            191.719,
+            191.4845,
+            191.563
+          ],
+          "up": [
+            191.875,
+            191.51,
+            191.563
+          ],
+          "down": [
+            192.448,
+            192.083,
+            191.979
+          ]
+        },
+        "validation_worst_token_nrmse": 0.010288965775537418
+      },
+      "16": {
+        "status": "ok",
+        "timings": {
+          "full": {
+            "count": 300,
+            "median_us": 1154.0625,
+            "mean_us": 1161.3503266666667,
+            "p95_us": 1195.052,
+            "amortized_us_per_token": 72.12890625,
+            "expert_tokens_per_second": 13864.067154075277
+          },
+          "gate": {
+            "count": 300,
+            "median_us": 382.396,
+            "mean_us": 384.5545,
+            "p95_us": 395.625,
+            "amortized_us_per_token": 23.89975,
+            "expert_tokens_per_second": 41841.441856086356
+          },
+          "up": {
+            "count": 300,
+            "median_us": 382.761,
+            "mean_us": 386.02814333333333,
+            "p95_us": 412.5,
+            "amortized_us_per_token": 23.9225625,
+            "expert_tokens_per_second": 41801.54195437884
+          },
+          "down": {
+            "count": 300,
+            "median_us": 383.281,
+            "mean_us": 385.94514333333336,
+            "p95_us": 400.677,
+            "amortized_us_per_token": 23.9550625,
+            "expert_tokens_per_second": 41744.829511507225
+          }
+        },
+        "run_medians_us": {
+          "full": [
+            1154.922,
+            1153.203,
+            1153.437
+          ],
+          "gate": [
+            382.344,
+            382.5,
+            382.396
+          ],
+          "up": [
+            384.323,
+            382.474,
+            382.448
+          ],
+          "down": [
+            383.125,
+            383.282,
+            383.2815
+          ]
+        },
+        "validation_worst_token_nrmse": 0.010635277169563718
+      },
+      "32": {
+        "status": "ok",
+        "timings": {
+          "full": {
+            "count": 300,
+            "median_us": 2348.385,
+            "mean_us": 2374.28089,
+            "p95_us": 2506.562,
+            "amortized_us_per_token": 73.38703125,
+            "expert_tokens_per_second": 13626.385792789511
+          },
+          "gate": {
+            "count": 300,
+            "median_us": 765.729,
+            "mean_us": 788.1414533333333,
+            "p95_us": 873.75,
+            "amortized_us_per_token": 23.92903125,
+            "expert_tokens_per_second": 41790.24171736998
+          },
+          "up": {
+            "count": 300,
+            "median_us": 768.4635,
+            "mean_us": 796.05037,
+            "p95_us": 878.49,
+            "amortized_us_per_token": 24.014484375,
+            "expert_tokens_per_second": 41641.53534943429
+          },
+          "down": {
+            "count": 300,
+            "median_us": 769.4010000000001,
+            "mean_us": 787.0014266666667,
+            "p95_us": 854.323,
+            "amortized_us_per_token": 24.043781250000002,
+            "expert_tokens_per_second": 41590.795956854745
+          }
+        },
+        "run_medians_us": {
+          "full": [
+            2326.6409999999996,
+            2343.2815,
+            2391.4845
+          ],
+          "gate": [
+            765.156,
+            764.6875,
+            797.6305
+          ],
+          "up": [
+            767.344,
+            764.688,
+            786.12
+          ],
+          "down": [
+            768.6980000000001,
+            765.5989999999999,
+            793.0989999999999
+          ]
+        },
+        "validation_worst_token_nrmse": 0.010635277169563718
+      },
+      "64": {
+        "status": "ok",
+        "timings": {
+          "full": {
+            "count": 300,
+            "median_us": 4760.2345000000005,
+            "mean_us": 4794.45377,
+            "p95_us": 4949.375,
+            "amortized_us_per_token": 74.37866406250001,
+            "expert_tokens_per_second": 13444.71580129088
+          },
+          "gate": {
+            "count": 300,
+            "median_us": 1533.4895000000001,
+            "mean_us": 1574.1906333333334,
+            "p95_us": 1741.354,
+            "amortized_us_per_token": 23.960773437500002,
+            "expert_tokens_per_second": 41734.87982800012
+          },
+          "up": {
+            "count": 300,
+            "median_us": 1537.708,
+            "mean_us": 1592.3694933333334,
+            "p95_us": 1770.469,
+            "amortized_us_per_token": 24.0266875,
+            "expert_tokens_per_second": 41620.38566489866
+          },
+          "down": {
+            "count": 300,
+            "median_us": 1541.5365000000002,
+            "mean_us": 1576.4682233333333,
+            "p95_us": 1736.094,
+            "amortized_us_per_token": 24.086507812500003,
+            "expert_tokens_per_second": 41517.018896406276
+          }
+        },
+        "run_medians_us": {
+          "full": [
+            4738.0205000000005,
+            4785.0779999999995,
+            4759.3485
+          ],
+          "gate": [
+            1532.396,
+            1533.1505,
+            1538.203
+          ],
+          "up": [
+            1558.854,
+            1533.9065,
+            1535.6255
+          ],
+          "down": [
+            1536.25,
+            1541.9270000000001,
+            1553.4895000000001
+          ]
+        },
+        "validation_worst_token_nrmse": 0.010646629619776127
+      },
+      "128": {
+        "status": "ok",
+        "timings": {
+          "full": {
+            "count": 300,
+            "median_us": 9701.172,
+            "mean_us": 9706.914033333333,
+            "p95_us": 10186.51,
+            "amortized_us_per_token": 75.79040625,
+            "expert_tokens_per_second": 13194.282092926504
+          },
+          "gate": {
+            "count": 300,
+            "median_us": 3181.7709999999997,
+            "mean_us": 3206.71388,
+            "p95_us": 3423.125,
+            "amortized_us_per_token": 24.857585937499998,
+            "expert_tokens_per_second": 40229.16796966218
+          },
+          "up": {
+            "count": 300,
+            "median_us": 3216.51,
+            "mean_us": 3231.3338633333333,
+            "p95_us": 3462.292,
+            "amortized_us_per_token": 25.128984375,
+            "expert_tokens_per_second": 39794.684300686145
+          },
+          "down": {
+            "count": 300,
+            "median_us": 3180.8075,
+            "mean_us": 3205.4633533333335,
+            "p95_us": 3408.646,
+            "amortized_us_per_token": 24.85005859375,
+            "expert_tokens_per_second": 40241.35380717004
+          }
+        },
+        "run_medians_us": {
+          "full": [
+            9595.755000000001,
+            9670.9375,
+            9763.88
+          ],
+          "gate": [
+            3108.9579999999996,
+            3224.4790000000003,
+            3207.891
+          ],
+          "up": [
+            3198.5935,
+            3231.094,
+            3221.25
+          ],
+          "down": [
+            3149.1409999999996,
+            3188.099,
+            3208.0730000000003
+          ]
+        },
+        "validation_worst_token_nrmse": 0.010780101151940285
+      }
+    },
+    "opencl": {
+      "1": {
+        "status": "ok",
+        "timings": {
+          "full": {
+            "count": 300,
+            "median_us": 426.4585,
+            "mean_us": 450.2080066666667,
+            "p95_us": 723.386,
+            "amortized_us_per_token": 426.4585,
+            "expert_tokens_per_second": 2344.8940518245035
+          },
+          "gate": {
+            "count": 300,
+            "median_us": 262.26599999999996,
+            "mean_us": 274.58125666666666,
+            "p95_us": 542.031,
+            "amortized_us_per_token": 262.26599999999996,
+            "expert_tokens_per_second": 3812.922757810773
+          },
+          "up": {
+            "count": 300,
+            "median_us": 259.7135,
+            "mean_us": 277.56040666666667,
+            "p95_us": 545.417,
+            "amortized_us_per_token": 259.7135,
+            "expert_tokens_per_second": 3850.3966871186904
+          },
+          "down": {
+            "count": 300,
+            "median_us": 260.99,
+            "mean_us": 269.12949,
+            "p95_us": 547.5,
+            "amortized_us_per_token": 260.99,
+            "expert_tokens_per_second": 3831.5644277558526
+          }
+        },
+        "run_medians_us": {
+          "full": [
+            413.9845,
+            423.5155,
+            434.323
+          ],
+          "gate": [
+            259.76599999999996,
+            257.8125,
+            277.24
+          ],
+          "up": [
+            255.26049999999998,
+            256.5105,
+            271.45849999999996
+          ],
+          "down": [
+            250.2605,
+            259.6615,
+            270.72900000000004
+          ]
+        },
+        "validation_worst_token_nrmse": 2.0988261891224736e-07
+      },
+      "2": {
+        "status": "ok",
+        "timings": {
+          "full": {
+            "count": 300,
+            "median_us": 1909.3490000000002,
+            "mean_us": 1930.23578,
+            "p95_us": 2210.156,
+            "amortized_us_per_token": 954.6745000000001,
+            "expert_tokens_per_second": 1047.4774386453182
+          },
+          "gate": {
+            "count": 300,
+            "median_us": 946.0155,
+            "mean_us": 959.72672,
+            "p95_us": 1199.063,
+            "amortized_us_per_token": 473.00775,
+            "expert_tokens_per_second": 2114.130265307492
+          },
+          "up": {
+            "count": 300,
+            "median_us": 934.8955000000001,
+            "mean_us": 950.0500233333333,
+            "p95_us": 1153.594,
+            "amortized_us_per_token": 467.44775000000004,
+            "expert_tokens_per_second": 2139.2765287671186
+          },
+          "down": {
+            "count": 300,
+            "median_us": 862.005,
+            "mean_us": 866.48682,
+            "p95_us": 1054.375,
+            "amortized_us_per_token": 431.0025,
+            "expert_tokens_per_second": 2320.172156774033
+          }
+        },
+        "run_medians_us": {
+          "full": [
+            1905.8075,
+            1915.3905,
+            1906.667
+          ],
+          "gate": [
+            948.0205000000001,
+            949.922,
+            938.4635000000001
+          ],
+          "up": [
+            938.75,
+            937.4739999999999,
+            930.5465
+          ],
+          "down": [
+            863.2555,
+            859.0105,
+            863.125
+          ]
+        },
+        "validation_worst_token_nrmse": 0.0008572319366834951
+      },
+      "4": {
+        "status": "ok",
+        "timings": {
+          "full": {
+            "count": 300,
+            "median_us": 1891.328,
+            "mean_us": 1929.5060866666668,
+            "p95_us": 2127.031,
+            "amortized_us_per_token": 472.832,
+            "expert_tokens_per_second": 2114.9160801299404
+          },
+          "gate": {
+            "count": 300,
+            "median_us": 938.4635,
+            "mean_us": 976.1029933333333,
+            "p95_us": 1170.781,
+            "amortized_us_per_token": 234.615875,
+            "expert_tokens_per_second": 4262.286173090376
+          },
+          "up": {
+            "count": 300,
+            "median_us": 936.562,
+            "mean_us": 964.57167,
+            "p95_us": 1149.584,
+            "amortized_us_per_token": 234.1405,
+            "expert_tokens_per_second": 4270.939884385657
+          },
+          "down": {
+            "count": 300,
+            "median_us": 868.3335,
+            "mean_us": 899.1701666666667,
+            "p95_us": 1102.5,
+            "amortized_us_per_token": 217.083375,
+            "expert_tokens_per_second": 4606.525027538382
+          }
+        },
+        "run_medians_us": {
+          "full": [
+            1894.245,
+            1901.3539999999998,
+            1886.979
+          ],
+          "gate": [
+            936.3019999999999,
+            936.927,
+            944.974
+          ],
+          "up": [
+            935.443,
+            935.0260000000001,
+            945.0260000000001
+          ],
+          "down": [
+            869.297,
+            867.2655,
+            865.052
+          ]
+        },
+        "validation_worst_token_nrmse": 0.00086805860984141
+      },
+      "8": {
+        "status": "ok",
+        "timings": {
+          "full": {
+            "count": 300,
+            "median_us": 1899.6095,
+            "mean_us": 1933.2250066666666,
+            "p95_us": 2121.302,
+            "amortized_us_per_token": 237.4511875,
+            "expert_tokens_per_second": 4211.391867644376
+          },
+          "gate": {
+            "count": 300,
+            "median_us": 939.6095,
+            "mean_us": 984.5359166666667,
+            "p95_us": 1189.636,
+            "amortized_us_per_token": 117.4511875,
+            "expert_tokens_per_second": 8514.175303676686
+          },
+          "up": {
+            "count": 300,
+            "median_us": 937.8910000000001,
+            "mean_us": 947.99756,
+            "p95_us": 1095.468,
+            "amortized_us_per_token": 117.23637500000001,
+            "expert_tokens_per_second": 8529.775848152929
+          },
+          "down": {
+            "count": 300,
+            "median_us": 865.0260000000001,
+            "mean_us": 885.6895933333334,
+            "p95_us": 1065.104,
+            "amortized_us_per_token": 108.12825000000001,
+            "expert_tokens_per_second": 9248.276930404403
+          }
+        },
+        "run_medians_us": {
+          "full": [
+            1900.4165,
+            1899.714,
+            1895.5735
+          ],
+          "gate": [
+            939.245,
+            937.9165,
+            947.5775
+          ],
+          "up": [
+            941.7705000000001,
+            937.969,
+            934.0625
+          ],
+          "down": [
+            864.1145,
+            871.797,
+            860.3125
+          ]
+        },
+        "validation_worst_token_nrmse": 0.00086805860984141
+      },
+      "16": {
+        "status": "ok",
+        "timings": {
+          "full": {
+            "count": 300,
+            "median_us": 2258.177,
+            "mean_us": 2287.3279133333335,
+            "p95_us": 2468.75,
+            "amortized_us_per_token": 141.1360625,
+            "expert_tokens_per_second": 7085.361333500429
+          },
+          "gate": {
+            "count": 300,
+            "median_us": 1075.0,
+            "mean_us": 1128.5477866666668,
+            "p95_us": 1323.854,
+            "amortized_us_per_token": 67.1875,
+            "expert_tokens_per_second": 14883.720930232557
+          },
+          "up": {
+            "count": 300,
+            "median_us": 1080.3125,
+            "mean_us": 1107.52273,
+            "p95_us": 1312.709,
+            "amortized_us_per_token": 67.51953125,
+            "expert_tokens_per_second": 14810.529360717384
+          },
+          "down": {
+            "count": 300,
+            "median_us": 968.1510000000001,
+            "mean_us": 999.4635166666667,
+            "p95_us": 1205.416,
+            "amortized_us_per_token": 60.509437500000004,
+            "expert_tokens_per_second": 16526.34764618329
+          }
+        },
+        "run_medians_us": {
+          "full": [
+            2262.6825,
+            2260.7545,
+            2252.8905
+          ],
+          "gate": [
+            1072.683,
+            1075.625,
+            1076.641
+          ],
+          "up": [
+            1096.094,
+            1079.5835,
+            1077.812
+          ],
+          "down": [
+            970.3905,
+            972.136,
+            964.037
+          ]
+        },
+        "validation_worst_token_nrmse": 0.0008793716963167707
+      },
+      "32": {
+        "status": "ok",
+        "timings": {
+          "full": {
+            "count": 300,
+            "median_us": 3038.1504999999997,
+            "mean_us": 3055.29898,
+            "p95_us": 3303.854,
+            "amortized_us_per_token": 94.94220312499999,
+            "expert_tokens_per_second": 10532.723773888096
+          },
+          "gate": {
+            "count": 300,
+            "median_us": 1338.0990000000002,
+            "mean_us": 1367.2045366666666,
+            "p95_us": 1625.781,
+            "amortized_us_per_token": 41.815593750000005,
+            "expert_tokens_per_second": 23914.523514328906
+          },
+          "up": {
+            "count": 300,
+            "median_us": 1354.453,
+            "mean_us": 1366.48717,
+            "p95_us": 1576.562,
+            "amortized_us_per_token": 42.32665625,
+            "expert_tokens_per_second": 23625.773651798918
+          },
+          "down": {
+            "count": 300,
+            "median_us": 1159.0105,
+            "mean_us": 1174.9663433333333,
+            "p95_us": 1351.094,
+            "amortized_us_per_token": 36.219078125,
+            "expert_tokens_per_second": 27609.758496579623
+          }
+        },
+        "run_medians_us": {
+          "full": [
+            3025.8595,
+            3064.1925,
+            3038.1504999999997
+          ],
+          "gate": [
+            1361.354,
+            1331.5625,
+            1337.1095
+          ],
+          "up": [
+            1366.4845,
+            1346.6399999999999,
+            1350.13
+          ],
+          "down": [
+            1174.5320000000002,
+            1152.344,
+            1158.4115
+          ]
+        },
+        "validation_worst_token_nrmse": 0.0008956233880112758
+      },
+      "64": {
+        "status": "ok",
+        "timings": {
+          "full": {
+            "count": 300,
+            "median_us": 3438.203,
+            "mean_us": 3466.7157866666666,
+            "p95_us": 3755.052,
+            "amortized_us_per_token": 53.721921875,
+            "expert_tokens_per_second": 18614.375009270832
+          },
+          "gate": {
+            "count": 300,
+            "median_us": 1428.4634999999998,
+            "mean_us": 1463.6555133333334,
+            "p95_us": 1660.937,
+            "amortized_us_per_token": 22.319742187499997,
+            "expert_tokens_per_second": 44803.38489572888
+          },
+          "up": {
+            "count": 300,
+            "median_us": 1433.5155,
+            "mean_us": 1453.98001,
+            "p95_us": 1648.698,
+            "amortized_us_per_token": 22.3986796875,
+            "expert_tokens_per_second": 44645.48866056907
+          },
+          "down": {
+            "count": 300,
+            "median_us": 1406.328,
+            "mean_us": 1427.4565633333334,
+            "p95_us": 1661.25,
+            "amortized_us_per_token": 21.973875,
+            "expert_tokens_per_second": 45508.58690149098
+          }
+        },
+        "run_medians_us": {
+          "full": [
+            3441.9790000000003,
+            3453.151,
+            3414.401
+          ],
+          "gate": [
+            1430.182,
+            1431.354,
+            1420.5729999999999
+          ],
+          "up": [
+            1430.7289999999998,
+            1441.3020000000001,
+            1428.4119999999998
+          ],
+          "down": [
+            1404.609,
+            1408.125,
+            1406.432
+          ]
+        },
+        "validation_worst_token_nrmse": 0.0009288118137529309
+      },
+      "128": {
+        "status": "ok",
+        "timings": {
+          "full": {
+            "count": 300,
+            "median_us": 5491.276,
+            "mean_us": 5598.658693333334,
+            "p95_us": 6035.677,
+            "amortized_us_per_token": 42.90059375,
+            "expert_tokens_per_second": 23309.70069615878
+          },
+          "gate": {
+            "count": 300,
+            "median_us": 2012.2655,
+            "mean_us": 2111.29357,
+            "p95_us": 2421.771,
+            "amortized_us_per_token": 15.72082421875,
+            "expert_tokens_per_second": 63609.896407805034
+          },
+          "up": {
+            "count": 300,
+            "median_us": 2044.1145000000001,
+            "mean_us": 2097.8824366666668,
+            "p95_us": 2373.594,
+            "amortized_us_per_token": 15.969644531250001,
+            "expert_tokens_per_second": 62618.80144189574
+          },
+          "down": {
+            "count": 300,
+            "median_us": 2287.7345,
+            "mean_us": 2329.02376,
+            "p95_us": 2613.385,
+            "amortized_us_per_token": 17.87292578125,
+            "expert_tokens_per_second": 55950.548457436824
+          }
+        },
+        "run_medians_us": {
+          "full": [
+            5491.015,
+            5497.5,
+            5478.594
+          ],
+          "gate": [
+            2014.062,
+            2017.3175,
+            2004.375
+          ],
+          "up": [
+            2037.1615,
+            2039.193,
+            2046.328
+          ],
+          "down": [
+            2287.057,
+            2303.1769999999997,
+            2280.5209999999997
+          ]
+        },
+        "validation_worst_token_nrmse": 0.0009288118137529309
+      }
+    },
+    "hmx": {
+      "1": {
+        "status": "ok",
+        "timings": {
+          "full": {
+            "count": 300,
+            "median_us": 485.3125,
+            "mean_us": 487.81947,
+            "p95_us": 587.5,
+            "amortized_us_per_token": 485.3125,
+            "expert_tokens_per_second": 2060.5280103026403
+          },
+          "gate": {
+            "count": 300,
+            "median_us": 404.063,
+            "mean_us": 385.1267466666667,
+            "p95_us": 439.479,
+            "amortized_us_per_token": 404.063,
+            "expert_tokens_per_second": 2474.861593365391
+          },
+          "up": {
+            "count": 300,
+            "median_us": 404.219,
+            "mean_us": 384.8333333333333,
+            "p95_us": 430.521,
+            "amortized_us_per_token": 404.219,
+            "expert_tokens_per_second": 2473.9064714919386
+          },
+          "down": {
+            "count": 300,
+            "median_us": 403.35900000000004,
+            "mean_us": 385.32899,
+            "p95_us": 447.187,
+            "amortized_us_per_token": 403.35900000000004,
+            "expert_tokens_per_second": 2479.181076906676
+          }
+        },
+        "run_medians_us": {
+          "full": [
+            484.375,
+            482.839,
+            490.9375
+          ],
+          "gate": [
+            403.85400000000004,
+            401.276,
+            405.964
+          ],
+          "up": [
+            405.313,
+            401.875,
+            405.23400000000004
+          ],
+          "down": [
+            403.151,
+            401.953,
+            405.156
+          ]
+        },
+        "validation_worst_token_nrmse": 0.012256332763966744
+      },
+      "2": {
+        "status": "ok",
+        "timings": {
+          "full": {
+            "count": 300,
+            "median_us": 514.844,
+            "mean_us": 508.3746566666667,
+            "p95_us": 567.031,
+            "amortized_us_per_token": 257.422,
+            "expert_tokens_per_second": 3884.671861767836
+          },
+          "gate": {
+            "count": 300,
+            "median_us": 416.875,
+            "mean_us": 407.1147433333333,
+            "p95_us": 461.302,
+            "amortized_us_per_token": 208.4375,
+            "expert_tokens_per_second": 4797.6011994003
+          },
+          "up": {
+            "count": 300,
+            "median_us": 416.979,
+            "mean_us": 415.8696033333333,
+            "p95_us": 475.937,
+            "amortized_us_per_token": 208.4895,
+            "expert_tokens_per_second": 4796.4046151005205
+          },
+          "down": {
+            "count": 300,
+            "median_us": 413.3595,
+            "mean_us": 404.08804,
+            "p95_us": 465.521,
+            "amortized_us_per_token": 206.67975,
+            "expert_tokens_per_second": 4838.403375270194
+          }
+        },
+        "run_medians_us": {
+          "full": [
+            515.3385000000001,
+            513.8019999999999,
+            515.0785000000001
+          ],
+          "gate": [
+            417.839,
+            416.09400000000005,
+            416.7445
+          ],
+          "up": [
+            417.5,
+            416.25,
+            417.083
+          ],
+          "down": [
+            413.75,
+            412.812,
+            413.3595
+          ]
+        },
+        "validation_worst_token_nrmse": 0.012556895009648034
+      },
+      "4": {
+        "status": "ok",
+        "timings": {
+          "full": {
+            "count": 300,
+            "median_us": 623.047,
+            "mean_us": 612.80141,
+            "p95_us": 677.865,
+            "amortized_us_per_token": 155.76175,
+            "expert_tokens_per_second": 6420.061407887366
+          },
+          "gate": {
+            "count": 300,
+            "median_us": 452.37,
+            "mean_us": 439.55066,
+            "p95_us": 498.75,
+            "amortized_us_per_token": 113.0925,
+            "expert_tokens_per_second": 8842.319340362978
+          },
+          "up": {
+            "count": 300,
+            "median_us": 453.073,
+            "mean_us": 432.27624333333335,
+            "p95_us": 497.812,
+            "amortized_us_per_token": 113.26825,
+            "expert_tokens_per_second": 8828.599364782276
+          },
+          "down": {
+            "count": 300,
+            "median_us": 447.3435,
+            "mean_us": 423.54031333333336,
+            "p95_us": 488.697,
+            "amortized_us_per_token": 111.835875,
+            "expert_tokens_per_second": 8941.674574460118
+          }
+        },
+        "run_medians_us": {
+          "full": [
+            584.0889999999999,
+            623.6195,
+            624.427
+          ],
+          "gate": [
+            412.4735,
+            454.14099999999996,
+            453.22900000000004
+          ],
+          "up": [
+            385.1825,
+            453.9585,
+            453.724
+          ],
+          "down": [
+            348.2555,
+            448.177,
+            448.35900000000004
+          ]
+        },
+        "validation_worst_token_nrmse": 0.013195598781221674
+      },
+      "8": {
+        "status": "ok",
+        "timings": {
+          "full": {
+            "count": 300,
+            "median_us": 622.1095,
+            "mean_us": 613.1794933333333,
+            "p95_us": 694.427,
+            "amortized_us_per_token": 77.7636875,
+            "expert_tokens_per_second": 12859.472488364187
+          },
+          "gate": {
+            "count": 300,
+            "median_us": 429.87,
+            "mean_us": 416.18506,
+            "p95_us": 476.146,
+            "amortized_us_per_token": 53.73375,
+            "expert_tokens_per_second": 18610.277525763602
+          },
+          "up": {
+            "count": 300,
+            "median_us": 440.521,
+            "mean_us": 422.20731666666666,
+            "p95_us": 555.782,
+            "amortized_us_per_token": 55.065125,
+            "expert_tokens_per_second": 18160.314718254067
+          },
+          "down": {
+            "count": 300,
+            "median_us": 433.22950000000003,
+            "mean_us": 423.9828,
+            "p95_us": 497.656,
+            "amortized_us_per_token": 54.153687500000004,
+            "expert_tokens_per_second": 18465.963190410625
+          }
+        },
+        "run_medians_us": {
+          "full": [
+            591.8225,
+            625.3905,
+            596.719
+          ],
+          "gate": [
+            381.3805,
+            452.0575,
+            419.531
+          ],
+          "up": [
+            373.9585,
+            451.9275,
+            393.385
+          ],
+          "down": [
+            352.552,
+            450.0,
+            394.7655
+          ]
+        },
+        "validation_worst_token_nrmse": 0.0005576656500535382
+      },
+      "16": {
+        "status": "ok",
+        "timings": {
+          "full": {
+            "count": 300,
+            "median_us": 598.62,
+            "mean_us": 607.9742866666667,
+            "p95_us": 720.834,
+            "amortized_us_per_token": 37.41375,
+            "expert_tokens_per_second": 26728.141391867965
+          },
+          "gate": {
+            "count": 300,
+            "median_us": 387.943,
+            "mean_us": 399.9414766666667,
+            "p95_us": 476.667,
+            "amortized_us_per_token": 24.2464375,
+            "expert_tokens_per_second": 41243.172321707054
+          },
+          "up": {
+            "count": 300,
+            "median_us": 384.47950000000003,
+            "mean_us": 412.26856333333336,
+            "p95_us": 498.958,
+            "amortized_us_per_token": 24.029968750000002,
+            "expert_tokens_per_second": 41614.7024743842
+          },
+          "down": {
+            "count": 300,
+            "median_us": 352.91650000000004,
+            "mean_us": 395.6137033333333,
+            "p95_us": 465.156,
+            "amortized_us_per_token": 22.057281250000003,
+            "expert_tokens_per_second": 45336.50311050914
+          }
+        },
+        "run_medians_us": {
+          "full": [
+            598.9839999999999,
+            599.9995,
+            596.5105
+          ],
+          "gate": [
+            386.953,
+            401.48400000000004,
+            385.625
+          ],
+          "up": [
+            358.125,
+            396.276,
+            368.7765
+          ],
+          "down": [
+            354.97400000000005,
+            353.02099999999996,
+            350.96299999999997
+          ]
+        },
+        "validation_worst_token_nrmse": 0.0005576656500535382
+      },
+      "32": {
+        "status": "ok",
+        "timings": {
+          "full": {
+            "count": 300,
+            "median_us": 622.5,
+            "mean_us": 656.43435,
+            "p95_us": 785.729,
+            "amortized_us_per_token": 19.453125,
+            "expert_tokens_per_second": 51405.62248995984
+          },
+          "gate": {
+            "count": 300,
+            "median_us": 394.27049999999997,
+            "mean_us": 409.93767,
+            "p95_us": 501.771,
+            "amortized_us_per_token": 12.320953124999999,
+            "expert_tokens_per_second": 81162.55210572437
+          },
+          "up": {
+            "count": 300,
+            "median_us": 390.911,
+            "mean_us": 413.62049666666667,
+            "p95_us": 502.5,
+            "amortized_us_per_token": 12.21596875,
+            "expert_tokens_per_second": 81860.06533456464
+          },
+          "down": {
+            "count": 300,
+            "median_us": 359.0105,
+            "mean_us": 407.16185666666667,
+            "p95_us": 495.989,
+            "amortized_us_per_token": 11.219078125,
+            "expert_tokens_per_second": 89133.88327082356
+          }
+        },
+        "run_medians_us": {
+          "full": [
+            623.3335,
+            615.26,
+            625.807
+          ],
+          "gate": [
+            395.23400000000004,
+            393.151,
+            393.594
+          ],
+          "up": [
+            394.0105,
+            389.1405,
+            389.6355
+          ],
+          "down": [
+            360.20849999999996,
+            355.755,
+            373.1515
+          ]
+        },
+        "validation_worst_token_nrmse": 0.000582734927779202
+      },
+      "64": {
+        "status": "ok",
+        "timings": {
+          "full": {
+            "count": 300,
+            "median_us": 717.031,
+            "mean_us": 748.1956666666666,
+            "p95_us": 852.813,
+            "amortized_us_per_token": 11.203609375,
+            "expert_tokens_per_second": 89256.94983898883
+          },
+          "gate": {
+            "count": 300,
+            "median_us": 416.0935,
+            "mean_us": 441.27083666666664,
+            "p95_us": 534.062,
+            "amortized_us_per_token": 6.5014609375,
+            "expert_tokens_per_second": 153811.583213869
+          },
+          "up": {
+            "count": 300,
+            "median_us": 412.8385,
+            "mean_us": 435.22707333333335,
+            "p95_us": 534.687,
+            "amortized_us_per_token": 6.4506015625,
+            "expert_tokens_per_second": 155024.30127035148
+          },
+          "down": {
+            "count": 300,
+            "median_us": 388.3075,
+            "mean_us": 451.00659333333334,
+            "p95_us": 537.032,
+            "amortized_us_per_token": 6.0673046875,
+            "expert_tokens_per_second": 164817.8312291161
+          }
+        },
+        "run_medians_us": {
+          "full": [
+            707.995,
+            709.844,
+            730.469
+          ],
+          "gate": [
+            414.0885,
+            416.4845,
+            421.90099999999995
+          ],
+          "up": [
+            390.5985,
+            414.115,
+            435.5465
+          ],
+          "down": [
+            382.031,
+            384.01099999999997,
+            429.0365
+          ]
+        },
+        "validation_worst_token_nrmse": 0.000582734927779202
+      },
+      "128": {
+        "status": "ok",
+        "timings": {
+          "full": {
+            "count": 300,
+            "median_us": 938.594,
+            "mean_us": 951.4636966666667,
+            "p95_us": 1054.739,
+            "amortized_us_per_token": 7.332765625,
+            "expert_tokens_per_second": 136374.19374085066
+          },
+          "gate": {
+            "count": 300,
+            "median_us": 533.8805,
+            "mean_us": 518.63611,
+            "p95_us": 595.469,
+            "amortized_us_per_token": 4.17094140625,
+            "expert_tokens_per_second": 239754.027352563
+          },
+          "up": {
+            "count": 300,
+            "median_us": 533.2295,
+            "mean_us": 522.2623933333333,
+            "p95_us": 589.375,
+            "amortized_us_per_token": 4.16585546875,
+            "expert_tokens_per_second": 240046.7340985448
+          },
+          "down": {
+            "count": 300,
+            "median_us": 541.8495,
+            "mean_us": 515.71113,
+            "p95_us": 587.031,
+            "amortized_us_per_token": 4.23319921875,
+            "expert_tokens_per_second": 236227.9562867549
+          }
+        },
+        "run_medians_us": {
+          "full": [
+            943.4635,
+            932.6825,
+            938.2295
+          ],
+          "gate": [
+            537.969,
+            503.568,
+            538.203
+          ],
+          "up": [
+            534.6614999999999,
+            509.74,
+            532.6825
+          ],
+          "down": [
+            545.2080000000001,
+            535.807,
+            541.4065
+          ]
+        },
+        "validation_worst_token_nrmse": 0.000582734927779202
+      }
+    },
+    "hvx": {
+      "1": {
+        "status": "ok",
+        "timings": {
+          "full": {
+            "count": 300,
+            "median_us": 480.9375,
+            "mean_us": 475.3643833333333,
+            "p95_us": 566.719,
+            "amortized_us_per_token": 480.9375,
+            "expert_tokens_per_second": 2079.272254710851
+          },
+          "gate": {
+            "count": 300,
+            "median_us": 400.781,
+            "mean_us": 392.0236066666667,
+            "p95_us": 450.053,
+            "amortized_us_per_token": 400.781,
+            "expert_tokens_per_second": 2495.1282620683114
+          },
+          "up": {
+            "count": 300,
+            "median_us": 402.005,
+            "mean_us": 395.8185966666667,
+            "p95_us": 452.968,
+            "amortized_us_per_token": 402.005,
+            "expert_tokens_per_second": 2487.5312496113233
+          },
+          "down": {
+            "count": 300,
+            "median_us": 400.7815,
+            "mean_us": 385.7215366666667,
+            "p95_us": 440.834,
+            "amortized_us_per_token": 400.7815,
+            "expert_tokens_per_second": 2495.125149239673
+          }
+        },
+        "run_medians_us": {
+          "full": [
+            480.286,
+            480.782,
+            487.8905
+          ],
+          "gate": [
+            400.625,
+            400.96299999999997,
+            401.6665
+          ],
+          "up": [
+            401.6405,
+            402.057,
+            403.4375
+          ],
+          "down": [
+            401.5625,
+            399.688,
+            400.651
+          ]
+        },
+        "validation_worst_token_nrmse": 0.012256332763966744
+      },
+      "2": {
+        "status": "ok",
+        "timings": {
+          "full": {
+            "count": 300,
+            "median_us": 510.573,
+            "mean_us": 504.78143,
+            "p95_us": 577.656,
+            "amortized_us_per_token": 255.2865,
+            "expert_tokens_per_second": 3917.167574470252
+          },
+          "gate": {
+            "count": 300,
+            "median_us": 413.281,
+            "mean_us": 396.43626,
+            "p95_us": 434.219,
+            "amortized_us_per_token": 206.6405,
+            "expert_tokens_per_second": 4839.322398077821
+          },
+          "up": {
+            "count": 300,
+            "median_us": 413.672,
+            "mean_us": 401.39614666666665,
+            "p95_us": 470.885,
+            "amortized_us_per_token": 206.836,
+            "expert_tokens_per_second": 4834.748303003345
+          },
+          "down": {
+            "count": 300,
+            "median_us": 410.4945,
+            "mean_us": 397.12411333333336,
+            "p95_us": 453.125,
+            "amortized_us_per_token": 205.24725,
+            "expert_tokens_per_second": 4872.172465160922
+          }
+        },
+        "run_medians_us": {
+          "full": [
+            510.4685,
+            510.156,
+            511.979
+          ],
+          "gate": [
+            412.89,
+            414.375,
+            412.3175
+          ],
+          "up": [
+            413.724,
+            413.64549999999997,
+            413.22950000000003
+          ],
+          "down": [
+            409.922,
+            410.781,
+            409.453
+          ]
+        },
+        "validation_worst_token_nrmse": 0.012556895009648034
+      },
+      "4": {
+        "status": "ok",
+        "timings": {
+          "full": {
+            "count": 300,
+            "median_us": 620.6775,
+            "mean_us": 648.20015,
+            "p95_us": 732.656,
+            "amortized_us_per_token": 155.169375,
+            "expert_tokens_per_second": 6444.570650619686
+          },
+          "gate": {
+            "count": 300,
+            "median_us": 451.719,
+            "mean_us": 461.5989666666667,
+            "p95_us": 555.416,
+            "amortized_us_per_token": 112.92975,
+            "expert_tokens_per_second": 8855.062549948087
+          },
+          "up": {
+            "count": 300,
+            "median_us": 451.562,
+            "mean_us": 457.11424,
+            "p95_us": 532.813,
+            "amortized_us_per_token": 112.8905,
+            "expert_tokens_per_second": 8858.141296211816
+          },
+          "down": {
+            "count": 300,
+            "median_us": 445.755,
+            "mean_us": 459.2229266666667,
+            "p95_us": 554.688,
+            "amortized_us_per_token": 111.43875,
+            "expert_tokens_per_second": 8973.539276059719
+          }
+        },
+        "run_medians_us": {
+          "full": [
+            620.573,
+            619.323,
+            621.4585
+          ],
+          "gate": [
+            451.406,
+            450.937,
+            454.16700000000003
+          ],
+          "up": [
+            451.276,
+            449.687,
+            453.88
+          ],
+          "down": [
+            445.573,
+            445.157,
+            447.188
+          ]
+        },
+        "validation_worst_token_nrmse": 0.013195598781221674
+      },
+      "8": {
+        "status": "ok",
+        "timings": {
+          "full": {
+            "count": 300,
+            "median_us": 829.1145,
+            "mean_us": 842.54637,
+            "p95_us": 916.875,
+            "amortized_us_per_token": 103.6393125,
+            "expert_tokens_per_second": 9648.848259197011
+          },
+          "gate": {
+            "count": 300,
+            "median_us": 477.5265,
+            "mean_us": 497.07206333333335,
+            "p95_us": 567.813,
+            "amortized_us_per_token": 59.6908125,
+            "expert_tokens_per_second": 16752.996954095743
+          },
+          "up": {
+            "count": 300,
+            "median_us": 466.745,
+            "mean_us": 485.18974000000003,
+            "p95_us": 588.594,
+            "amortized_us_per_token": 58.343125,
+            "expert_tokens_per_second": 17139.980074773164
+          },
+          "down": {
+            "count": 300,
+            "median_us": 465.443,
+            "mean_us": 475.29586666666665,
+            "p95_us": 560.104,
+            "amortized_us_per_token": 58.180375,
+            "expert_tokens_per_second": 17187.926341141665
+          }
+        },
+        "run_medians_us": {
+          "full": [
+            805.1565,
+            835.0519999999999,
+            834.844
+          ],
+          "gate": [
+            459.01099999999997,
+            479.193,
+            491.84950000000003
+          ],
+          "up": [
+            452.8905,
+            509.6875,
+            460.495
+          ],
+          "down": [
+            412.318,
+            473.9065,
+            480.10400000000004
+          ]
+        },
+        "validation_worst_token_nrmse": 0.013195598781221674
+      },
+      "16": {
+        "status": "ok",
+        "timings": {
+          "full": {
+            "count": 300,
+            "median_us": 1269.584,
+            "mean_us": 1304.4637500000001,
+            "p95_us": 1399.062,
+            "amortized_us_per_token": 79.349,
+            "expert_tokens_per_second": 12602.553277293979
+          },
+          "gate": {
+            "count": 300,
+            "median_us": 668.6195,
+            "mean_us": 660.4135166666666,
+            "p95_us": 746.771,
+            "amortized_us_per_token": 41.78871875,
+            "expert_tokens_per_second": 23929.90333066864
+          },
+          "up": {
+            "count": 300,
+            "median_us": 667.7345,
+            "mean_us": 652.71232,
+            "p95_us": 738.177,
+            "amortized_us_per_token": 41.73340625,
+            "expert_tokens_per_second": 23961.61947600431
+          },
+          "down": {
+            "count": 300,
+            "median_us": 651.719,
+            "mean_us": 626.24724,
+            "p95_us": 690.937,
+            "amortized_us_per_token": 40.7324375,
+            "expert_tokens_per_second": 24550.458096204038
+          }
+        },
+        "run_medians_us": {
+          "full": [
+            1271.4845,
+            1269.87,
+            1268.2815
+          ],
+          "gate": [
+            669.1410000000001,
+            665.235,
+            669.3230000000001
+          ],
+          "up": [
+            668.9839999999999,
+            668.203,
+            663.49
+          ],
+          "down": [
+            651.927,
+            651.9275,
+            651.0415
+          ]
+        },
+        "validation_worst_token_nrmse": 0.014792590841197826
+      },
+      "32": {
+        "status": "ok",
+        "timings": {
+          "full": {
+            "count": 300,
+            "median_us": 2140.3905,
+            "mean_us": 2217.979656666667,
+            "p95_us": 2491.562,
+            "amortized_us_per_token": 66.887203125,
+            "expert_tokens_per_second": 14950.542903269286
+          },
+          "gate": {
+            "count": 300,
+            "median_us": 965.755,
+            "mean_us": 1012.5242966666667,
+            "p95_us": 1272.5,
+            "amortized_us_per_token": 30.17984375,
+            "expert_tokens_per_second": 33134.69772354272
+          },
+          "up": {
+            "count": 300,
+            "median_us": 966.25,
+            "mean_us": 1033.1199366666667,
+            "p95_us": 1310.052,
+            "amortized_us_per_token": 30.1953125,
+            "expert_tokens_per_second": 33117.723156532986
+          },
+          "down": {
+            "count": 300,
+            "median_us": 933.2815,
+            "mean_us": 981.0010233333334,
+            "p95_us": 1257.813,
+            "amortized_us_per_token": 29.165046875,
+            "expert_tokens_per_second": 34287.61847309734
+          }
+        },
+        "run_medians_us": {
+          "full": [
+            2153.36,
+            2142.3435,
+            2134.7655
+          ],
+          "gate": [
+            965.9895,
+            965.5725,
+            966.015
+          ],
+          "up": [
+            967.1355000000001,
+            965.807,
+            965.1044999999999
+          ],
+          "down": [
+            934.4275,
+            933.3855,
+            931.745
+          ]
+        },
+        "validation_worst_token_nrmse": 0.014792590841197826
+      },
+      "64": {
+        "status": "ok",
+        "timings": {
+          "full": {
+            "count": 300,
+            "median_us": 3886.4845,
+            "mean_us": 3921.788196666667,
+            "p95_us": 4102.187,
+            "amortized_us_per_token": 60.7263203125,
+            "expert_tokens_per_second": 16467.324133159414
+          },
+          "gate": {
+            "count": 300,
+            "median_us": 1552.734,
+            "mean_us": 1599.8083266666667,
+            "p95_us": 1708.438,
+            "amortized_us_per_token": 24.26146875,
+            "expert_tokens_per_second": 41217.62001733716
+          },
+          "up": {
+            "count": 300,
+            "median_us": 1552.188,
+            "mean_us": 1581.6265066666667,
+            "p95_us": 1753.438,
+            "amortized_us_per_token": 24.2529375,
+            "expert_tokens_per_second": 41232.11878973423
+          },
+          "down": {
+            "count": 300,
+            "median_us": 1489.844,
+            "mean_us": 1536.6562233333334,
+            "p95_us": 1728.073,
+            "amortized_us_per_token": 23.2788125,
+            "expert_tokens_per_second": 42957.517699839715
+          }
+        },
+        "run_medians_us": {
+          "full": [
+            3891.7445,
+            3870.7290000000003,
+            3905.3385
+          ],
+          "gate": [
+            1552.2915,
+            1550.364,
+            1554.036
+          ],
+          "up": [
+            1550.963,
+            1551.484,
+            1554.1665
+          ],
+          "down": [
+            1487.5265,
+            1489.844,
+            1492.318
+          ]
+        },
+        "validation_worst_token_nrmse": 0.015030026352301376
+      },
+      "128": {
+        "status": "unsupported",
+        "reason": "gate MUL_MAT_ID VTCM 9977856 > 8388608 bytes"
+      }
+    }
+  },
+  "binary_hashes": "ce16e78f3283a3f01c36b254ce51cb305f11a1e5dea02340939ffefe37ebaa3b  /data/local/tmp/llama-expert-compute/expert-compute-probe\n7765ad7546a694574446d810052f3112c784d4e9cfa986166e84a9ae96f67990  /data/local/tmp/llama-expert-compute/libggml-base.so\n06a3fe6b0a27c116bfbcec6ba13353fbcac83c12422d8ec8c284d22e3fb9ed32  /data/local/tmp/llama-expert-compute/libggml-cpu.so\n4244710e61cadb51743d486c8b1b57fb2cb1f607e7c6e13d737e8bd412187398  /data/local/tmp/llama-expert-compute/libggml-hexagon.so\n48b3aeb4fa140d8ec0469c60f46ac381811d1a25d8bf6ec4619bba9fcf19900f  /data/local/tmp/llama-expert-compute/libggml-htp-v79.so\n8f879926bc854e8f63ca65eb0ed1704faef9ecc91c7e0338edd5e8dbef0d209b  /data/local/tmp/llama-expert-compute/libggml-opencl.so\n7c7c7918a1a1d319b44a0ea5824a7c17ba2a7be9f3c66068cf3627c94d91fbdc  /data/local/tmp/llama-expert-compute/libggml.so\n",
+  "model_sha256": "8b704c763230935a096c9c810765c8a5483f1724c83e34e253704138ca040473"
+}

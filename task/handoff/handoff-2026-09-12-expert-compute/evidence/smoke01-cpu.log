@@ -1,0 +1,22 @@
+ggml_opencl: selected platform: 'QUALCOMM Snapdragon(TM)'
+
+ggml_opencl: device: 'QUALCOMM Adreno(TM) 830 (OpenCL 3.0 Adreno(TM) 830)'
+ggml_opencl: default device: 'QUALCOMM Adreno(TM) 830 (OpenCL 3.0 Adreno(TM) 830)'
+ggml-hex: Loading driver libcdsprpc.so
+ggml-hex: Profiling mode 0 : pmu-evt [ 0x3,0x111,0x100,0x105,0x240,0x256,0x7d,0x8c ]
+ggml-hex: Hexagon backend (experimental) : allocating new registry : ndev 1
+ggml-hex: Hexagon Arch version v79
+CASE_BEGIN backend=CPU tokens=1
+VALIDATE expert_full T=1 nrmse=0.00897208831 worst_token=0.00897208831 max_abs=0.00266070291
+VALIDATE expert_gate T=1 nrmse=0.00364095928 worst_token=0.00364095928 max_abs=0.00582172954
+VALIDATE expert_up T=1 nrmse=0.00357738064 worst_token=0.00357738064 max_abs=0.00537067652
+VALIDATE expert_down_isolated T=1 nrmse=0.00791014377 worst_token=0.00791014377 max_abs=0.00212203898
+VALIDATE expert_full T=1 nrmse=0.00897208831 worst_token=0.00897208831 max_abs=0.00266070291
+CASE_DONE backend=CPU tokens=1 full_median_us=848.646
+CASE_BEGIN backend=CPU tokens=8
+VALIDATE expert_full T=8 nrmse=0.00971901066 worst_token=0.0102889658 max_abs=0.0027025342
+VALIDATE expert_gate T=8 nrmse=0.00377780159 worst_token=0.00391099053 max_abs=0.00636561215
+VALIDATE expert_up T=8 nrmse=0.00374336072 worst_token=0.00397795283 max_abs=0.006728929
+VALIDATE expert_down_isolated T=8 nrmse=0.00802554417 worst_token=0.00859291822 max_abs=0.00212203898
+VALIDATE expert_full T=8 nrmse=0.00971901066 worst_token=0.0102889658 max_abs=0.0027025342
+CASE_DONE backend=CPU tokens=8 full_median_us=1757.031

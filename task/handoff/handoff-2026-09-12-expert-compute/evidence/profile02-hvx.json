@@ -1,0 +1,651 @@
+{
+  "model": "/data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf",
+  "device": "HTP0",
+  "mode": "hvx",
+  "expert_id": 7,
+  "weight_buffer_type": "HTP0",
+  "threads": 4,
+  "reps": 1,
+  "warmup": 0,
+  "diagnostic": true,
+  "p95_method": "nearest rank",
+  "scope": "host elapsed graph_compute + synchronization; no load/repack/readback/reference; resident repeated same expert",
+  "graph": "MUL_MAT_ID up + gate, SWIGLU split, MUL_MAT_ID down; fixed padded expert IDs",
+  "hmx_policy": "preferred mode can fall back; current threshold T > 4; confirm using separate profile log",
+  "matrices": [
+    {
+      "name": "blk.0.ffn_gate_exps.weight",
+      "ne": [
+        2048,
+        1408,
+        60
+      ],
+      "expert_bytes": 1622016,
+      "expert_file_offset": 560878912
+    },
+    {
+      "name": "blk.0.ffn_up_exps.weight",
+      "ne": [
+        2048,
+        1408,
+        60
+      ],
+      "expert_bytes": 1622016,
+      "expert_file_offset": 665191744
+    },
+    {
+      "name": "blk.0.ffn_down_exps.weight",
+      "ne": [
+        1408,
+        2048,
+        60
+      ],
+      "expert_bytes": 1622016,
+      "expert_file_offset": 457069888
+    }
+  ],
+  "cases": [
+    {
+      "tokens": 1,
+      "status": "ok",
+      "weight_buffer_bytes": 291962880,
+      "compute_buffer_bytes": 47360,
+      "validation": {
+        "full": {
+          "nrmse": 0.012256332763966744,
+          "worst_token_nrmse": 0.012256332763966744,
+          "max_abs": 0.0029490068554878235,
+          "reference_rms": 0.0749589318974584,
+          "threshold_token_nrmse": 0.04
+        },
+        "gate": {
+          "nrmse": 0.003623106699598704,
+          "worst_token_nrmse": 0.003623106699598704,
+          "max_abs": 0.005727410316467285,
+          "reference_rms": 0.46606829359650126,
+          "threshold_token_nrmse": 0.04
+        },
+        "up": {
+          "nrmse": 0.0036650956500621323,
+          "worst_token_nrmse": 0.0036650956500621323,
+          "max_abs": 0.005901619791984558,
+          "reference_rms": 0.45162993809174923,
+          "threshold_token_nrmse": 0.04
+        },
+        "down": {
+          "nrmse": 0.01135555217194809,
+          "worst_token_nrmse": 0.01135555217194809,
+          "max_abs": 0.002737864851951599,
+          "reference_rms": 0.0749589318974584,
+          "threshold_token_nrmse": 0.04
+        }
+      },
+      "post_validation": {
+        "nrmse": 0.012256332763966744,
+        "worst_token_nrmse": 0.012256332763966744,
+        "max_abs": 0.0029490068554878235,
+        "reference_rms": 0.0749589318974584,
+        "threshold_token_nrmse": 0.04
+      },
+      "timings": {
+        "full": {
+          "samples_us": [
+            1770.573
+          ],
+          "median_us": 1770.573,
+          "mean_us": 1770.573,
+          "p95_us": 1770.573,
+          "amortized_us_per_token": 1770.573,
+          "expert_tokens_per_second": 564.7889129677228
+        },
+        "gate": {
+          "samples_us": [
+            779.115
+          ],
+          "median_us": 779.115,
+          "mean_us": 779.115,
+          "p95_us": 779.115,
+          "amortized_us_per_token": 779.115,
+          "expert_tokens_per_second": 1283.507569485891
+        },
+        "up": {
+          "samples_us": [
+            460.312
+          ],
+          "median_us": 460.312,
+          "mean_us": 460.312,
+          "p95_us": 460.312,
+          "amortized_us_per_token": 460.312,
+          "expert_tokens_per_second": 2172.4395627313647
+        },
+        "down": {
+          "samples_us": [
+            558.75
+          ],
+          "median_us": 558.75,
+          "mean_us": 558.75,
+          "p95_us": 558.75,
+          "amortized_us_per_token": 558.75,
+          "expert_tokens_per_second": 1789.7091722595078
+        }
+      }
+    },
+    {
+      "tokens": 2,
+      "status": "ok",
+      "weight_buffer_bytes": 291962880,
+      "compute_buffer_bytes": 94720,
+      "validation": {
+        "full": {
+          "nrmse": 0.01238184103545818,
+          "worst_token_nrmse": 0.012556895009648034,
+          "max_abs": 0.0029490068554878235,
+          "reference_rms": 0.06927779073210494,
+          "threshold_token_nrmse": 0.04
+        },
+        "gate": {
+          "nrmse": 0.003757981170356774,
+          "worst_token_nrmse": 0.003907406006038573,
+          "max_abs": 0.005727410316467285,
+          "reference_rms": 0.45056379674837704,
+          "threshold_token_nrmse": 0.04
+        },
+        "up": {
+          "nrmse": 0.003912644338659429,
+          "worst_token_nrmse": 0.0041737045275067304,
+          "max_abs": 0.005901619791984558,
+          "reference_rms": 0.4388720562256386,
+          "threshold_token_nrmse": 0.04
+        },
+        "down": {
+          "nrmse": 0.011374832032963977,
+          "worst_token_nrmse": 0.011401995362054142,
+          "max_abs": 0.002737864851951599,
+          "reference_rms": 0.06927779073210494,
+          "threshold_token_nrmse": 0.04
+        }
+      },
+      "post_validation": {
+        "nrmse": 0.01238184103545818,
+        "worst_token_nrmse": 0.012556895009648034,
+        "max_abs": 0.0029490068554878235,
+        "reference_rms": 0.06927779073210494,
+        "threshold_token_nrmse": 0.04
+      },
+      "timings": {
+        "full": {
+          "samples_us": [
+            1805.625
+          ],
+          "median_us": 1805.625,
+          "mean_us": 1805.625,
+          "p95_us": 1805.625,
+          "amortized_us_per_token": 902.8125,
+          "expert_tokens_per_second": 1107.6497057805468
+        },
+        "gate": {
+          "samples_us": [
+            563.593
+          ],
+          "median_us": 563.593,
+          "mean_us": 563.593,
+          "p95_us": 563.593,
+          "amortized_us_per_token": 281.7965,
+          "expert_tokens_per_second": 3548.6601146572084
+        },
+        "up": {
+          "samples_us": [
+            464.844
+          ],
+          "median_us": 464.844,
+          "mean_us": 464.844,
+          "p95_us": 464.844,
+          "amortized_us_per_token": 232.422,
+          "expert_tokens_per_second": 4302.518694443727
+        },
+        "down": {
+          "samples_us": [
+            510.0
+          ],
+          "median_us": 510.0,
+          "mean_us": 510.0,
+          "p95_us": 510.0,
+          "amortized_us_per_token": 255.0,
+          "expert_tokens_per_second": 3921.5686274509803
+        }
+      }
+    },
+    {
+      "tokens": 4,
+      "status": "ok",
+      "weight_buffer_bytes": 291962880,
+      "compute_buffer_bytes": 189440,
+      "validation": {
+        "full": {
+          "nrmse": 0.012644639045454195,
+          "worst_token_nrmse": 0.013195598781221674,
+          "max_abs": 0.003740806132555008,
+          "reference_rms": 0.06694571206035728,
+          "threshold_token_nrmse": 0.04
+        },
+        "gate": {
+          "nrmse": 0.0038392001219032805,
+          "worst_token_nrmse": 0.004023437132107306,
+          "max_abs": 0.0059009939432144165,
+          "reference_rms": 0.44246495910402617,
+          "threshold_token_nrmse": 0.04
+        },
+        "up": {
+          "nrmse": 0.0038913413176306757,
+          "worst_token_nrmse": 0.0041737045275067304,
+          "max_abs": 0.006061092019081116,
+          "reference_rms": 0.4391035756664072,
+          "threshold_token_nrmse": 0.04
+        },
+        "down": {
+          "nrmse": 0.011420970039295483,
+          "worst_token_nrmse": 0.011651404998844081,
+          "max_abs": 0.002737864851951599,
+          "reference_rms": 0.06694571206035728,
+          "threshold_token_nrmse": 0.04
+        }
+      },
+      "post_validation": {
+        "nrmse": 0.012644639045454195,
+        "worst_token_nrmse": 0.013195598781221674,
+        "max_abs": 0.003740806132555008,
+        "reference_rms": 0.06694571206035728,
+        "threshold_token_nrmse": 0.04
+      },
+      "timings": {
+        "full": {
+          "samples_us": [
+            2231.354
+          ],
+          "median_us": 2231.354,
+          "mean_us": 2231.354,
+          "p95_us": 2231.354,
+          "amortized_us_per_token": 557.8385,
+          "expert_tokens_per_second": 1792.6335310309348
+        },
+        "gate": {
+          "samples_us": [
+            593.906
+          ],
+          "median_us": 593.906,
+          "mean_us": 593.906,
+          "p95_us": 593.906,
+          "amortized_us_per_token": 148.4765,
+          "expert_tokens_per_second": 6735.0725535690835
+        },
+        "up": {
+          "samples_us": [
+            486.667
+          ],
+          "median_us": 486.667,
+          "mean_us": 486.667,
+          "p95_us": 486.667,
+          "amortized_us_per_token": 121.66675,
+          "expert_tokens_per_second": 8219.172452621608
+        },
+        "down": {
+          "samples_us": [
+            591.094
+          ],
+          "median_us": 591.094,
+          "mean_us": 591.094,
+          "p95_us": 591.094,
+          "amortized_us_per_token": 147.7735,
+          "expert_tokens_per_second": 6767.113183351547
+        }
+      }
+    },
+    {
+      "tokens": 8,
+      "status": "ok",
+      "weight_buffer_bytes": 291962880,
+      "compute_buffer_bytes": 378752,
+      "validation": {
+        "full": {
+          "nrmse": 0.012689042313014195,
+          "worst_token_nrmse": 0.013195598781221674,
+          "max_abs": 0.003740806132555008,
+          "reference_rms": 0.06803718118192659,
+          "threshold_token_nrmse": 0.04
+        },
+        "gate": {
+          "nrmse": 0.003858754453303349,
+          "worst_token_nrmse": 0.004023437132107306,
+          "max_abs": 0.007668018341064453,
+          "reference_rms": 0.4467256753630095,
+          "threshold_token_nrmse": 0.04
+        },
+        "up": {
+          "nrmse": 0.0038348912824426084,
+          "worst_token_nrmse": 0.0041737045275067304,
+          "max_abs": 0.006666854023933411,
+          "reference_rms": 0.44540815731922506,
+          "threshold_token_nrmse": 0.04
+        },
+        "down": {
+          "nrmse": 0.011629237016591309,
+          "worst_token_nrmse": 0.012399820190095806,
+          "max_abs": 0.0030785799026489258,
+          "reference_rms": 0.06803718118192659,
+          "threshold_token_nrmse": 0.04
+        }
+      },
+      "post_validation": {
+        "nrmse": 0.012689042313014195,
+        "worst_token_nrmse": 0.013195598781221674,
+        "max_abs": 0.003740806132555008,
+        "reference_rms": 0.06803718118192659,
+        "threshold_token_nrmse": 0.04
+      },
+      "timings": {
+        "full": {
+          "samples_us": [
+            2251.51
+          ],
+          "median_us": 2251.51,
+          "mean_us": 2251.51,
+          "p95_us": 2251.51,
+          "amortized_us_per_token": 281.43875,
+          "expert_tokens_per_second": 3553.1709830291666
+        },
+        "gate": {
+          "samples_us": [
+            702.969
+          ],
+          "median_us": 702.969,
+          "mean_us": 702.969,
+          "p95_us": 702.969,
+          "amortized_us_per_token": 87.871125,
+          "expert_tokens_per_second": 11380.302687600733
+        },
+        "up": {
+          "samples_us": [
+            540.677
+          ],
+          "median_us": 540.677,
+          "mean_us": 540.677,
+          "p95_us": 540.677,
+          "amortized_us_per_token": 67.584625,
+          "expert_tokens_per_second": 14796.264682980782
+        },
+        "down": {
+          "samples_us": [
+            560.417
+          ],
+          "median_us": 560.417,
+          "mean_us": 560.417,
+          "p95_us": 560.417,
+          "amortized_us_per_token": 70.052125,
+          "expert_tokens_per_second": 14275.084446046425
+        }
+      }
+    },
+    {
+      "tokens": 16,
+      "status": "ok",
+      "weight_buffer_bytes": 291962880,
+      "compute_buffer_bytes": 757504,
+      "validation": {
+        "full": {
+          "nrmse": 0.012930490983912295,
+          "worst_token_nrmse": 0.014792590841197826,
+          "max_abs": 0.003740806132555008,
+          "reference_rms": 0.066288034605199,
+          "threshold_token_nrmse": 0.04
+        },
+        "gate": {
+          "nrmse": 0.003922302047208261,
+          "worst_token_nrmse": 0.004225374933196936,
+          "max_abs": 0.007668018341064453,
+          "reference_rms": 0.4432510414066924,
+          "threshold_token_nrmse": 0.04
+        },
+        "up": {
+          "nrmse": 0.003882684961816488,
+          "worst_token_nrmse": 0.0041737045275067304,
+          "max_abs": 0.006855279207229614,
+          "reference_rms": 0.4405630260873333,
+          "threshold_token_nrmse": 0.04
+        },
+        "down": {
+          "nrmse": 0.011784754194843094,
+          "worst_token_nrmse": 0.013877073254219786,
+          "max_abs": 0.0034523755311965942,
+          "reference_rms": 0.066288034605199,
+          "threshold_token_nrmse": 0.04
+        }
+      },
+      "post_validation": {
+        "nrmse": 0.012930490983912295,
+        "worst_token_nrmse": 0.014792590841197826,
+        "max_abs": 0.003740806132555008,
+        "reference_rms": 0.066288034605199,
+        "threshold_token_nrmse": 0.04
+      },
+      "timings": {
+        "full": {
+          "samples_us": [
+            2863.438
+          ],
+          "median_us": 2863.438,
+          "mean_us": 2863.438,
+          "p95_us": 2863.438,
+          "amortized_us_per_token": 178.964875,
+          "expert_tokens_per_second": 5587.688645607133
+        },
+        "gate": {
+          "samples_us": [
+            648.646
+          ],
+          "median_us": 648.646,
+          "mean_us": 648.646,
+          "p95_us": 648.646,
+          "amortized_us_per_token": 40.540375,
+          "expert_tokens_per_second": 24666.767389300174
+        },
+        "up": {
+          "samples_us": [
+            663.229
+          ],
+          "median_us": 663.229,
+          "mean_us": 663.229,
+          "p95_us": 663.229,
+          "amortized_us_per_token": 41.4518125,
+          "expert_tokens_per_second": 24124.39745547918
+        },
+        "down": {
+          "samples_us": [
+            719.479
+          ],
+          "median_us": 719.479,
+          "mean_us": 719.479,
+          "p95_us": 719.479,
+          "amortized_us_per_token": 44.9674375,
+          "expert_tokens_per_second": 22238.31411340706
+        }
+      }
+    },
+    {
+      "tokens": 32,
+      "status": "ok",
+      "weight_buffer_bytes": 291962880,
+      "compute_buffer_bytes": 1515008,
+      "validation": {
+        "full": {
+          "nrmse": 0.012965546972750928,
+          "worst_token_nrmse": 0.014792590841197826,
+          "max_abs": 0.003976583480834961,
+          "reference_rms": 0.06682156757317533,
+          "threshold_token_nrmse": 0.04
+        },
+        "gate": {
+          "nrmse": 0.003910180004468497,
+          "worst_token_nrmse": 0.004225374933196936,
+          "max_abs": 0.007970541715621948,
+          "reference_rms": 0.44709638480330105,
+          "threshold_token_nrmse": 0.04
+        },
+        "up": {
+          "nrmse": 0.0038838694157765042,
+          "worst_token_nrmse": 0.0041737045275067304,
+          "max_abs": 0.008368611335754395,
+          "reference_rms": 0.4412924256377886,
+          "threshold_token_nrmse": 0.04
+        },
+        "down": {
+          "nrmse": 0.011797876367268928,
+          "worst_token_nrmse": 0.013877073254219786,
+          "max_abs": 0.003463208908215165,
+          "reference_rms": 0.06682156757317533,
+          "threshold_token_nrmse": 0.04
+        }
+      },
+      "post_validation": {
+        "nrmse": 0.012965546972750928,
+        "worst_token_nrmse": 0.014792590841197826,
+        "max_abs": 0.003976583480834961,
+        "reference_rms": 0.06682156757317533,
+        "threshold_token_nrmse": 0.04
+      },
+      "timings": {
+        "full": {
+          "samples_us": [
+            3737.136
+          ],
+          "median_us": 3737.136,
+          "mean_us": 3737.136,
+          "p95_us": 3737.136,
+          "amortized_us_per_token": 116.7855,
+          "expert_tokens_per_second": 8562.706842887173
+        },
+        "gate": {
+          "samples_us": [
+            1206.094
+          ],
+          "median_us": 1206.094,
+          "mean_us": 1206.094,
+          "p95_us": 1206.094,
+          "amortized_us_per_token": 37.6904375,
+          "expert_tokens_per_second": 26531.928688808664
+        },
+        "up": {
+          "samples_us": [
+            980.312
+          ],
+          "median_us": 980.312,
+          "mean_us": 980.312,
+          "p95_us": 980.312,
+          "amortized_us_per_token": 30.63475,
+          "expert_tokens_per_second": 32642.66886460637
+        },
+        "down": {
+          "samples_us": [
+            975.052
+          ],
+          "median_us": 975.052,
+          "mean_us": 975.052,
+          "p95_us": 975.052,
+          "amortized_us_per_token": 30.470375,
+          "expert_tokens_per_second": 32818.76248651354
+        }
+      }
+    },
+    {
+      "tokens": 64,
+      "status": "ok",
+      "weight_buffer_bytes": 291962880,
+      "compute_buffer_bytes": 3030016,
+      "validation": {
+        "full": {
+          "nrmse": 0.012982611673345388,
+          "worst_token_nrmse": 0.015030026352301376,
+          "max_abs": 0.00441986508667469,
+          "reference_rms": 0.06622525635348485,
+          "threshold_token_nrmse": 0.04
+        },
+        "gate": {
+          "nrmse": 0.003916478748561998,
+          "worst_token_nrmse": 0.004273459379578663,
+          "max_abs": 0.007970541715621948,
+          "reference_rms": 0.4460540089096982,
+          "threshold_token_nrmse": 0.04
+        },
+        "up": {
+          "nrmse": 0.003904324852032929,
+          "worst_token_nrmse": 0.0041737045275067304,
+          "max_abs": 0.008368611335754395,
+          "reference_rms": 0.43916769470127076,
+          "threshold_token_nrmse": 0.04
+        },
+        "down": {
+          "nrmse": 0.011747539865818241,
+          "worst_token_nrmse": 0.014234726160940934,
+          "max_abs": 0.004024967551231384,
+          "reference_rms": 0.06622525635348485,
+          "threshold_token_nrmse": 0.04
+        }
+      },
+      "post_validation": {
+        "nrmse": 0.012982611673345388,
+        "worst_token_nrmse": 0.015030026352301376,
+        "max_abs": 0.00441986508667469,
+        "reference_rms": 0.06622525635348485,
+        "threshold_token_nrmse": 0.04
+      },
+      "timings": {
+        "full": {
+          "samples_us": [
+            5846.771
+          ],
+          "median_us": 5846.771,
+          "mean_us": 5846.771,
+          "p95_us": 5846.771,
+          "amortized_us_per_token": 91.355796875,
+          "expert_tokens_per_second": 10946.212875448688
+        },
+        "gate": {
+          "samples_us": [
+            1891.406
+          ],
+          "median_us": 1891.406,
+          "mean_us": 1891.406,
+          "p95_us": 1891.406,
+          "amortized_us_per_token": 29.55321875,
+          "expert_tokens_per_second": 33837.26180418165
+        },
+        "up": {
+          "samples_us": [
+            1706.094
+          ],
+          "median_us": 1706.094,
+          "mean_us": 1706.094,
+          "p95_us": 1706.094,
+          "amortized_us_per_token": 26.65771875,
+          "expert_tokens_per_second": 37512.58723141866
+        },
+        "down": {
+          "samples_us": [
+            1600.729
+          ],
+          "median_us": 1600.729,
+          "mean_us": 1600.729,
+          "p95_us": 1600.729,
+          "amortized_us_per_token": 25.011390625,
+          "expert_tokens_per_second": 39981.783299983945
+        }
+      }
+    },
+    {
+      "tokens": 128,
+      "status": "unsupported",
+      "node": "expert_gate",
+      "op": "MUL_MAT_ID",
+      "reason": "backend supports_op rejected; see diagnostic log"
+    }
+  ]
+}
