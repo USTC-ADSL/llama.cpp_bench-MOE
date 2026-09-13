@@ -1,0 +1,42 @@
+ggml_opencl: selected platform: 'QUALCOMM Snapdragon(TM)'
+
+ggml_opencl: device: 'QUALCOMM Adreno(TM) 830 (OpenCL 3.0 Adreno(TM) 830)'
+ggml_opencl: default device: 'QUALCOMM Adreno(TM) 830 (OpenCL 3.0 Adreno(TM) 830)'
+ggml-hex: Loading driver libcdsprpc.so
+ggml-hex: Profiling mode 0 : pmu-evt [ 0x3,0x111,0x100,0x105,0x240,0x256,0x7d,0x8c ]
+ggml-hex: Hexagon backend (experimental) : allocating new registry : ndev 1
+ggml-hex: Hexagon Arch version v79
+ggml_opencl: OpenCL driver: OpenCL 3.0 QUALCOMM build: 0800.71 Compiler E031.47.18.49
+ggml_opencl: vector subgroup broadcast support: true
+ggml_opencl: subgroup shuffle support: true
+ggml_opencl: device FP16 support: true
+ggml_opencl: khr dot product support: true
+ggml_opencl: mem base addr align: 128
+ggml_opencl: global mem size: 7556 MB
+ggml_opencl: max mem alloc size: 1024 MB
+ggml_opencl: device max image buffer size (pixels): 134217728
+ggml_opencl: device max image2d size: 16384 x 16384
+ggml_opencl: device max workgroup size: 1024
+ggml_opencl: SVM coarse grain buffer support: true
+ggml_opencl: SVM fine grain buffer support: true
+ggml_opencl: SVM fine grain system support: false
+ggml_opencl: SVM atomics support: true
+ggml_opencl: cl_qcom_subgroup_shuffle support: true
+ggml_opencl: flattening quantized weights representation as struct of arrays (GGML_OPENCL_SOA_Q)
+ggml_opencl: using kernels optimized for Adreno (GGML_OPENCL_USE_ADRENO_KERNELS)
+ggml_opencl: Adreno xmem F16xF32 GEMM enabled (temporary weight prepack)
+CASE_BEGIN backend=GPUOpenCL tokens=1
+ggml_opencl: loading OpenCL kernels.............................................................................................................................................................................
+VALIDATE expert_full T=1 nrmse=2.09882619e-07 worst_token=2.09882619e-07 max_abs=6.33299351e-08
+VALIDATE expert_gate T=1 nrmse=1.11080579e-07 worst_token=1.11080579e-07 max_abs=1.78813934e-07
+VALIDATE expert_up T=1 nrmse=1.15229692e-07 worst_token=1.15229692e-07 max_abs=2.38418579e-07
+VALIDATE expert_down_isolated T=1 nrmse=1.03216283e-07 worst_token=1.03216283e-07 max_abs=3.16649675e-08
+VALIDATE expert_full T=1 nrmse=2.09882619e-07 worst_token=2.09882619e-07 max_abs=6.33299351e-08
+CASE_DONE backend=GPUOpenCL tokens=1 full_median_us=377.032
+CASE_BEGIN backend=GPUOpenCL tokens=32
+VALIDATE expert_full T=32 nrmse=0.000828868063 worst_token=0.000895623388 max_abs=0.00027455762
+VALIDATE expert_gate T=32 nrmse=0.00047844748 worst_token=0.000498042162 max_abs=0.00097066164
+VALIDATE expert_up T=32 nrmse=0.000476120292 worst_token=0.00050365034 max_abs=0.00098028779
+VALIDATE expert_down_isolated T=32 nrmse=0.000473402806 worst_token=0.000501757791 max_abs=0.000169999897
+VALIDATE expert_full T=32 nrmse=0.000828868063 worst_token=0.000895623388 max_abs=0.00027455762
+CASE_DONE backend=GPUOpenCL tokens=32 full_median_us=3035.052

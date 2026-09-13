@@ -1,0 +1,30 @@
+{
+  "serial": "fd8657d6",
+  "probe_sha256": "e82a7961b8bd83dce69ad85272fc7eff80b70ef8187d838b11053e164540a371",
+  "runs": [
+    {
+      "mode": "cpu",
+      "command": "adb -s fd8657d6 shell 'cd /data/local/tmp/llama-expert-scheduling && exec env LD_LIBRARY_PATH=/data/local/tmp/llama-expert-scheduling ADSP_LIBRARY_PATH=/data/local/tmp/llama-expert-scheduling GGML_HEXAGON_DEVICES=1 GGML_OPENCL_KERNEL_CACHE_DIR=off GGML_HEXAGON_NHMX=1 GGML_HEXAGON_MM_SELECT=3 GGML_HEXAGON_PROFILE=0 GGML_HEXAGON_VERBOSE=0 ./expert-compute-probe /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf /data/local/tmp/llama-expert-scheduling/regression-cpu.json CPU cpu 3 2 1,32'",
+      "exit": 0,
+      "log": "regression-cpu.log"
+    },
+    {
+      "mode": "opencl",
+      "command": "adb -s fd8657d6 shell 'cd /data/local/tmp/llama-expert-scheduling && exec env LD_LIBRARY_PATH=/data/local/tmp/llama-expert-scheduling ADSP_LIBRARY_PATH=/data/local/tmp/llama-expert-scheduling GGML_HEXAGON_DEVICES=1 GGML_OPENCL_KERNEL_CACHE_DIR=off GGML_HEXAGON_NHMX=1 GGML_HEXAGON_MM_SELECT=3 GGML_HEXAGON_PROFILE=0 GGML_HEXAGON_VERBOSE=0 ./expert-compute-probe /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf /data/local/tmp/llama-expert-scheduling/regression-opencl.json GPUOpenCL opencl 3 2 1,32'",
+      "exit": 0,
+      "log": "regression-opencl.log"
+    },
+    {
+      "mode": "hmx",
+      "command": "adb -s fd8657d6 shell 'cd /data/local/tmp/llama-expert-scheduling && exec env LD_LIBRARY_PATH=/data/local/tmp/llama-expert-scheduling ADSP_LIBRARY_PATH=/data/local/tmp/llama-expert-scheduling GGML_HEXAGON_DEVICES=1 GGML_OPENCL_KERNEL_CACHE_DIR=off GGML_HEXAGON_NHMX=1 GGML_HEXAGON_MM_SELECT=3 GGML_HEXAGON_PROFILE=0 GGML_HEXAGON_VERBOSE=0 ./expert-compute-probe /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf /data/local/tmp/llama-expert-scheduling/regression-hmx.json HTP0 hmx 3 2 1,32'",
+      "exit": 0,
+      "log": "regression-hmx.log"
+    },
+    {
+      "mode": "hvx",
+      "command": "adb -s fd8657d6 shell 'cd /data/local/tmp/llama-expert-scheduling && exec env LD_LIBRARY_PATH=/data/local/tmp/llama-expert-scheduling ADSP_LIBRARY_PATH=/data/local/tmp/llama-expert-scheduling GGML_HEXAGON_DEVICES=1 GGML_OPENCL_KERNEL_CACHE_DIR=off GGML_HEXAGON_NHMX=0 GGML_HEXAGON_MM_SELECT=2 GGML_HEXAGON_PROFILE=0 GGML_HEXAGON_VERBOSE=0 ./expert-compute-probe /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf /data/local/tmp/llama-expert-scheduling/regression-hvx.json HTP0 hvx 3 2 1,32'",
+      "exit": 0,
+      "log": "regression-hvx.log"
+    }
+  ]
+}

@@ -1,0 +1,236 @@
+{
+  "model": "/data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf",
+  "device": "CPU",
+  "mode": "cpu",
+  "expert_id": 7,
+  "weight_buffer_type": "CPU_REPACK",
+  "threads": 4,
+  "reps": 3,
+  "cpu_persistent_threadpool": true,
+  "warmup": 2,
+  "diagnostic": false,
+  "p95_method": "nearest rank",
+  "scope": "host elapsed graph_compute + synchronization; no load/repack/readback/reference; resident repeated same expert",
+  "graph": "MUL_MAT_ID up + gate, SWIGLU split, MUL_MAT_ID down; fixed padded expert IDs",
+  "hmx_policy": "preferred mode can fall back; current threshold T > 4; confirm using separate profile log",
+  "matrices": [
+    {
+      "name": "blk.0.ffn_gate_exps.weight",
+      "ne": [
+        2048,
+        1408,
+        60
+      ],
+      "expert_bytes": 1622016,
+      "expert_file_offset": 560878912
+    },
+    {
+      "name": "blk.0.ffn_up_exps.weight",
+      "ne": [
+        2048,
+        1408,
+        60
+      ],
+      "expert_bytes": 1622016,
+      "expert_file_offset": 665191744
+    },
+    {
+      "name": "blk.0.ffn_down_exps.weight",
+      "ne": [
+        1408,
+        2048,
+        60
+      ],
+      "expert_bytes": 1622016,
+      "expert_file_offset": 457069888
+    }
+  ],
+  "cases": [
+    {
+      "tokens": 1,
+      "status": "ok",
+      "weight_buffer_bytes": 291962880,
+      "compute_buffer_bytes": 47360,
+      "validation": {
+        "full": {
+          "nrmse": 0.008972088314377673,
+          "worst_token_nrmse": 0.008972088314377673,
+          "max_abs": 0.0026607029139995575,
+          "reference_rms": 0.0749589318974584,
+          "threshold_token_nrmse": 0.04
+        },
+        "gate": {
+          "nrmse": 0.003640959279638524,
+          "worst_token_nrmse": 0.003640959279638524,
+          "max_abs": 0.0058217295445501804,
+          "reference_rms": 0.46606829359650126,
+          "threshold_token_nrmse": 0.04
+        },
+        "up": {
+          "nrmse": 0.003577380637294979,
+          "worst_token_nrmse": 0.003577380637294979,
+          "max_abs": 0.005370676517486572,
+          "reference_rms": 0.45162993809174923,
+          "threshold_token_nrmse": 0.04
+        },
+        "down": {
+          "nrmse": 0.007910143774249551,
+          "worst_token_nrmse": 0.007910143774249551,
+          "max_abs": 0.0021220389753580093,
+          "reference_rms": 0.0749589318974584,
+          "threshold_token_nrmse": 0.04
+        }
+      },
+      "post_validation": {
+        "nrmse": 0.008972088314377673,
+        "worst_token_nrmse": 0.008972088314377673,
+        "max_abs": 0.0026607029139995575,
+        "reference_rms": 0.0749589318974584,
+        "threshold_token_nrmse": 0.04
+      },
+      "timings": {
+        "full": {
+          "samples_us": [
+            192.344,
+            192.084,
+            192.552
+          ],
+          "median_us": 192.344,
+          "mean_us": 192.32666666666668,
+          "p95_us": 192.552,
+          "amortized_us_per_token": 192.344,
+          "expert_tokens_per_second": 5199.018425321299
+        },
+        "gate": {
+          "samples_us": [
+            63.646,
+            63.593,
+            63.854
+          ],
+          "median_us": 63.646,
+          "mean_us": 63.69766666666667,
+          "p95_us": 63.854,
+          "amortized_us_per_token": 63.646,
+          "expert_tokens_per_second": 15711.906482732615
+        },
+        "up": {
+          "samples_us": [
+            64.01,
+            64.011,
+            64.063
+          ],
+          "median_us": 64.011,
+          "mean_us": 64.028,
+          "p95_us": 64.063,
+          "amortized_us_per_token": 64.011,
+          "expert_tokens_per_second": 15622.31491462405
+        },
+        "down": {
+          "samples_us": [
+            64.063,
+            64.01,
+            64.062
+          ],
+          "median_us": 64.062,
+          "mean_us": 64.045,
+          "p95_us": 64.063,
+          "amortized_us_per_token": 64.062,
+          "expert_tokens_per_second": 15609.877930754583
+        }
+      }
+    },
+    {
+      "tokens": 32,
+      "status": "ok",
+      "weight_buffer_bytes": 291962880,
+      "compute_buffer_bytes": 1515008,
+      "validation": {
+        "full": {
+          "nrmse": 0.009798979664789603,
+          "worst_token_nrmse": 0.010635277169563718,
+          "max_abs": 0.002772510051727295,
+          "reference_rms": 0.06682156757317533,
+          "threshold_token_nrmse": 0.04
+        },
+        "gate": {
+          "nrmse": 0.003807882217630236,
+          "worst_token_nrmse": 0.004029575598853741,
+          "max_abs": 0.007157519459724426,
+          "reference_rms": 0.44709638480330105,
+          "threshold_token_nrmse": 0.04
+        },
+        "up": {
+          "nrmse": 0.00377143775863933,
+          "worst_token_nrmse": 0.0040811643201630575,
+          "max_abs": 0.0076364874839782715,
+          "reference_rms": 0.4412924256377886,
+          "threshold_token_nrmse": 0.04
+        },
+        "down": {
+          "nrmse": 0.008126107060600093,
+          "worst_token_nrmse": 0.008760697697330958,
+          "max_abs": 0.002414308488368988,
+          "reference_rms": 0.06682156757317533,
+          "threshold_token_nrmse": 0.04
+        }
+      },
+      "post_validation": {
+        "nrmse": 0.009798979664789603,
+        "worst_token_nrmse": 0.010635277169563718,
+        "max_abs": 0.002772510051727295,
+        "reference_rms": 0.06682156757317533,
+        "threshold_token_nrmse": 0.04
+      },
+      "timings": {
+        "full": {
+          "samples_us": [
+            2307.604,
+            2306.563,
+            2328.021
+          ],
+          "median_us": 2307.604,
+          "mean_us": 2314.0626666666667,
+          "p95_us": 2328.021,
+          "amortized_us_per_token": 72.112625,
+          "expert_tokens_per_second": 13867.19731808404
+        },
+        "gate": {
+          "samples_us": [
+            765.677,
+            765.677,
+            762.552
+          ],
+          "median_us": 765.677,
+          "mean_us": 764.6353333333333,
+          "p95_us": 765.677,
+          "amortized_us_per_token": 23.92740625,
+          "expert_tokens_per_second": 41793.079849597154
+        },
+        "up": {
+          "samples_us": [
+            762.5,
+            764.688,
+            784.375
+          ],
+          "median_us": 764.688,
+          "mean_us": 770.5210000000001,
+          "p95_us": 784.375,
+          "amortized_us_per_token": 23.8965,
+          "expert_tokens_per_second": 41847.13242525056
+        },
+        "down": {
+          "samples_us": [
+            801.875,
+            789.583,
+            772.76
+          ],
+          "median_us": 789.583,
+          "mean_us": 788.0726666666666,
+          "p95_us": 801.875,
+          "amortized_us_per_token": 24.67446875,
+          "expert_tokens_per_second": 40527.7215948165
+        }
+      }
+    }
+  ]
+}

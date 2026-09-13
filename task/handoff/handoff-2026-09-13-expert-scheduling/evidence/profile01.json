@@ -1,0 +1,4413 @@
+{
+  "model": "/data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf",
+  "reps": 1,
+  "warmup_pairs": 0,
+  "slots": 8,
+  "expert_id": 7,
+  "cache_slot": 0,
+  "cpu_threads": 4,
+  "cpu_persistent_threadpool": true,
+  "diagnostic": true,
+  "reuse_policy": "R=1,8,32 for T<=8; R=1,8 for larger T",
+  "scope": "direct paired host-ready input to host-visible output; migration paid once then R invocations",
+  "allocation": "preallocated source/target/staging; no eviction, overlap, backlog or clock controls",
+  "source_state": "retained_raw, packed_only (devices), gguf_reread (CPU; observed warm cache)",
+  "unsupported": "CPU_REPACK inverse unavailable; raw/GGUF routes are not CPU packed-layout inversion",
+  "conversion_granularity": "CPU repacks full bank; OpenCL inverse restores full bank; HTP inverse restores requested slot0",
+  "matrices": [
+    {
+      "name": "blk.0.ffn_gate_exps.weight",
+      "ne": [
+        2048,
+        1408,
+        60
+      ],
+      "expert_bytes": 1622016,
+      "offset": 560878912
+    },
+    {
+      "name": "blk.0.ffn_up_exps.weight",
+      "ne": [
+        2048,
+        1408,
+        60
+      ],
+      "expert_bytes": 1622016,
+      "offset": 665191744
+    },
+    {
+      "name": "blk.0.ffn_down_exps.weight",
+      "ne": [
+        1408,
+        2048,
+        60
+      ],
+      "expert_bytes": 1622016,
+      "offset": 457069888
+    }
+  ],
+  "cases": [
+    {
+      "tokens": 1,
+      "slots": 8,
+      "initial_validation": {
+        "CPU": {
+          "nrmse": 0.008972088314377673,
+          "worst_token_nrmse": 0.008972088314377673,
+          "max_abs": 0.0026607029139995575,
+          "reference_rms": 0.0749589318974584,
+          "threshold_token_nrmse": 0.04
+        },
+        "GPUOpenCL": {
+          "nrmse": 2.0988261891224736e-07,
+          "worst_token_nrmse": 2.0988261891224736e-07,
+          "max_abs": 6.332993507385254e-08,
+          "reference_rms": 0.0749589318974584,
+          "threshold_token_nrmse": 0.04
+        },
+        "HTP0": {
+          "nrmse": 0.012256332763966744,
+          "worst_token_nrmse": 0.012256332763966744,
+          "max_abs": 0.0029490068554878235,
+          "reference_rms": 0.0749589318974584,
+          "threshold_token_nrmse": 0.04
+        }
+      },
+      "buffers": {
+        "CPU": {
+          "weights": 38928384,
+          "runtime": 33312
+        },
+        "GPUOpenCL": {
+          "weights": 38929920,
+          "runtime": 33408
+        },
+        "HTP0": {
+          "weights": 38928384,
+          "runtime": 33408
+        }
+      },
+      "reuse_cases": [
+        {
+          "reuse": 1,
+          "comparisons": [
+            {
+              "source": "CPU",
+              "target": "GPUOpenCL",
+              "kind": "retained_raw",
+              "stay": {
+                "samples_us": [
+                  200.625
+                ],
+                "median_us": 200.625,
+                "mean_us": 200.625,
+                "p95_us": 200.625,
+                "amortized_us_per_token": 200.625,
+                "expert_tokens_per_second": 4984.423676012461
+              },
+              "move": {
+                "samples_us": [
+                  3488.75
+                ],
+                "median_us": 3488.75,
+                "mean_us": 3488.75,
+                "p95_us": 3488.75,
+                "amortized_us_per_token": 3488.75,
+                "expert_tokens_per_second": 286.6356144750985
+              },
+              "savings_us": [
+                -3288.125
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 2.0988261891224736e-07,
+                "worst_token_nrmse": 2.0988261891224736e-07,
+                "max_abs": 6.332993507385254e-08,
+                "reference_rms": 0.0749589318974584,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                0.0
+              ],
+              "prepare_us": [
+                2941.459
+              ],
+              "target_input_us": [
+                0.99
+              ],
+              "target_compute_us": [
+                543.906
+              ],
+              "target_output_us": [
+                2.031
+              ]
+            },
+            {
+              "source": "CPU",
+              "target": "GPUOpenCL",
+              "kind": "gguf_reread",
+              "stay": {
+                "samples_us": [
+                  96.719
+                ],
+                "median_us": 96.719,
+                "mean_us": 96.719,
+                "p95_us": 96.719,
+                "amortized_us_per_token": 96.719,
+                "expert_tokens_per_second": 10339.230140923708
+              },
+              "move": {
+                "samples_us": [
+                  3925.781
+                ],
+                "median_us": 3925.781,
+                "mean_us": 3925.781,
+                "p95_us": 3925.781,
+                "amortized_us_per_token": 3925.781,
+                "expert_tokens_per_second": 254.72638438058567
+              },
+              "savings_us": [
+                -3829.062
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 2.0988261891224736e-07,
+                "worst_token_nrmse": 2.0988261891224736e-07,
+                "max_abs": 6.332993507385254e-08,
+                "reference_rms": 0.0749589318974584,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                589.479
+              ],
+              "prepare_us": [
+                2853.282
+              ],
+              "target_input_us": [
+                0.781
+              ],
+              "target_compute_us": [
+                480.26
+              ],
+              "target_output_us": [
+                1.666
+              ]
+            },
+            {
+              "source": "CPU",
+              "target": "HTP0",
+              "kind": "retained_raw",
+              "stay": {
+                "samples_us": [
+                  221.615
+                ],
+                "median_us": 221.615,
+                "mean_us": 221.615,
+                "p95_us": 221.615,
+                "amortized_us_per_token": 221.615,
+                "expert_tokens_per_second": 4512.329941565327
+              },
+              "move": {
+                "samples_us": [
+                  2538.698
+                ],
+                "median_us": 2538.698,
+                "mean_us": 2538.698,
+                "p95_us": 2538.698,
+                "amortized_us_per_token": 2538.698,
+                "expert_tokens_per_second": 393.902701305945
+              },
+              "savings_us": [
+                -2317.0829999999996
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.012256332763966744,
+                "worst_token_nrmse": 0.012256332763966744,
+                "max_abs": 0.0029490068554878235,
+                "reference_rms": 0.0749589318974584,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                0.0
+              ],
+              "prepare_us": [
+                1257.657
+              ],
+              "target_input_us": [
+                4.375
+              ],
+              "target_compute_us": [
+                1272.291
+              ],
+              "target_output_us": [
+                4.011
+              ]
+            },
+            {
+              "source": "CPU",
+              "target": "HTP0",
+              "kind": "gguf_reread",
+              "stay": {
+                "samples_us": [
+                  205.156
+                ],
+                "median_us": 205.156,
+                "mean_us": 205.156,
+                "p95_us": 205.156,
+                "amortized_us_per_token": 205.156,
+                "expert_tokens_per_second": 4874.339526994092
+              },
+              "move": {
+                "samples_us": [
+                  4032.813
+                ],
+                "median_us": 4032.813,
+                "mean_us": 4032.813,
+                "p95_us": 4032.813,
+                "amortized_us_per_token": 4032.813,
+                "expert_tokens_per_second": 247.96587394456424
+              },
+              "savings_us": [
+                -3827.657
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.012256332763966744,
+                "worst_token_nrmse": 0.012256332763966744,
+                "max_abs": 0.0029490068554878235,
+                "reference_rms": 0.0749589318974584,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                550.782
+              ],
+              "prepare_us": [
+                1333.281
+              ],
+              "target_input_us": [
+                2.187
+              ],
+              "target_compute_us": [
+                2127.553
+              ],
+              "target_output_us": [
+                18.646
+              ]
+            },
+            {
+              "source": "GPUOpenCL",
+              "target": "CPU",
+              "kind": "retained_raw",
+              "stay": {
+                "samples_us": [
+                  538.75
+                ],
+                "median_us": 538.75,
+                "mean_us": 538.75,
+                "p95_us": 538.75,
+                "amortized_us_per_token": 538.75,
+                "expert_tokens_per_second": 1856.1484918793503
+              },
+              "move": {
+                "samples_us": [
+                  8756.875
+                ],
+                "median_us": 8756.875,
+                "mean_us": 8756.875,
+                "p95_us": 8756.875,
+                "amortized_us_per_token": 8756.875,
+                "expert_tokens_per_second": 114.19598886589108
+              },
+              "savings_us": [
+                -8218.125
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.008972088314377673,
+                "worst_token_nrmse": 0.008972088314377673,
+                "max_abs": 0.0026607029139995575,
+                "reference_rms": 0.0749589318974584,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                0.0
+              ],
+              "prepare_us": [
+                8628.906
+              ],
+              "target_input_us": [
+                0.782
+              ],
+              "target_compute_us": [
+                126.197
+              ],
+              "target_output_us": [
+                0.625
+              ]
+            },
+            {
+              "source": "GPUOpenCL",
+              "target": "CPU",
+              "kind": "packed_only",
+              "stay": {
+                "samples_us": [
+                  500.313
+                ],
+                "median_us": 500.313,
+                "mean_us": 500.313,
+                "p95_us": 500.313,
+                "amortized_us_per_token": 500.313,
+                "expert_tokens_per_second": 1998.7487832616782
+              },
+              "move": {
+                "samples_us": [
+                  17476.146
+                ],
+                "median_us": 17476.146,
+                "mean_us": 17476.146,
+                "p95_us": 17476.146,
+                "amortized_us_per_token": 17476.146,
+                "expert_tokens_per_second": 57.220854071601366
+              },
+              "savings_us": [
+                -16975.833000000002
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.008972088314377673,
+                "worst_token_nrmse": 0.008972088314377673,
+                "max_abs": 0.0026607029139995575,
+                "reference_rms": 0.0749589318974584,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                9303.907
+              ],
+              "prepare_us": [
+                7952.239
+              ],
+              "target_input_us": [
+                1.406
+              ],
+              "target_compute_us": [
+                217.76
+              ],
+              "target_output_us": [
+                0.521
+              ]
+            },
+            {
+              "source": "GPUOpenCL",
+              "target": "HTP0",
+              "kind": "retained_raw",
+              "stay": {
+                "samples_us": [
+                  493.489
+                ],
+                "median_us": 493.489,
+                "mean_us": 493.489,
+                "p95_us": 493.489,
+                "amortized_us_per_token": 493.489,
+                "expert_tokens_per_second": 2026.3876195821995
+              },
+              "move": {
+                "samples_us": [
+                  6250.782
+                ],
+                "median_us": 6250.782,
+                "mean_us": 6250.782,
+                "p95_us": 6250.782,
+                "amortized_us_per_token": 6250.782,
+                "expert_tokens_per_second": 159.97998330448894
+              },
+              "savings_us": [
+                -5757.293000000001
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.012256332763966744,
+                "worst_token_nrmse": 0.012256332763966744,
+                "max_abs": 0.0029490068554878235,
+                "reference_rms": 0.0749589318974584,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                0.0
+              ],
+              "prepare_us": [
+                1389.947
+              ],
+              "target_input_us": [
+                17.5
+              ],
+              "target_compute_us": [
+                4841.25
+              ],
+              "target_output_us": [
+                1.719
+              ]
+            },
+            {
+              "source": "GPUOpenCL",
+              "target": "HTP0",
+              "kind": "packed_only",
+              "stay": {
+                "samples_us": [
+                  735.416
+                ],
+                "median_us": 735.416,
+                "mean_us": 735.416,
+                "p95_us": 735.416,
+                "amortized_us_per_token": 735.416,
+                "expert_tokens_per_second": 1359.7746037616803
+              },
+              "move": {
+                "samples_us": [
+                  12908.438
+                ],
+                "median_us": 12908.438,
+                "mean_us": 12908.438,
+                "p95_us": 12908.438,
+                "amortized_us_per_token": 12908.438,
+                "expert_tokens_per_second": 77.46870690319
+              },
+              "savings_us": [
+                -12173.022
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.012256332763966744,
+                "worst_token_nrmse": 0.012256332763966744,
+                "max_abs": 0.0029490068554878235,
+                "reference_rms": 0.0749589318974584,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                9706.146
+              ],
+              "prepare_us": [
+                1308.073
+              ],
+              "target_input_us": [
+                1.823
+              ],
+              "target_compute_us": [
+                1890.052
+              ],
+              "target_output_us": [
+                2.188
+              ]
+            },
+            {
+              "source": "HTP0",
+              "target": "CPU",
+              "kind": "retained_raw",
+              "stay": {
+                "samples_us": [
+                  6060.052
+                ],
+                "median_us": 6060.052,
+                "mean_us": 6060.052,
+                "p95_us": 6060.052,
+                "amortized_us_per_token": 6060.052,
+                "expert_tokens_per_second": 165.0150856791328
+              },
+              "move": {
+                "samples_us": [
+                  8726.562
+                ],
+                "median_us": 8726.562,
+                "mean_us": 8726.562,
+                "p95_us": 8726.562,
+                "amortized_us_per_token": 8726.562,
+                "expert_tokens_per_second": 114.59266547352783
+              },
+              "savings_us": [
+                -2666.51
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.008972088314377673,
+                "worst_token_nrmse": 0.008972088314377673,
+                "max_abs": 0.0026607029139995575,
+                "reference_rms": 0.0749589318974584,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                0.0
+              ],
+              "prepare_us": [
+                8566.406
+              ],
+              "target_input_us": [
+                0.729
+              ],
+              "target_compute_us": [
+                158.75
+              ],
+              "target_output_us": [
+                0.625
+              ]
+            },
+            {
+              "source": "HTP0",
+              "target": "CPU",
+              "kind": "packed_only",
+              "stay": {
+                "samples_us": [
+                  1467.135
+                ],
+                "median_us": 1467.135,
+                "mean_us": 1467.135,
+                "p95_us": 1467.135,
+                "amortized_us_per_token": 1467.135,
+                "expert_tokens_per_second": 681.600534374819
+              },
+              "move": {
+                "samples_us": [
+                  10811.458
+                ],
+                "median_us": 10811.458,
+                "mean_us": 10811.458,
+                "p95_us": 10811.458,
+                "amortized_us_per_token": 10811.458,
+                "expert_tokens_per_second": 92.49446281898334
+              },
+              "savings_us": [
+                -9344.323
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.008972088314377673,
+                "worst_token_nrmse": 0.008972088314377673,
+                "max_abs": 0.0026607029139995575,
+                "reference_rms": 0.0749589318974584,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                1848.021
+              ],
+              "prepare_us": [
+                8797.708
+              ],
+              "target_input_us": [
+                0.573
+              ],
+              "target_compute_us": [
+                164.219
+              ],
+              "target_output_us": [
+                0.521
+              ]
+            },
+            {
+              "source": "HTP0",
+              "target": "GPUOpenCL",
+              "kind": "retained_raw",
+              "stay": {
+                "samples_us": [
+                  1888.437
+                ],
+                "median_us": 1888.437,
+                "mean_us": 1888.437,
+                "p95_us": 1888.437,
+                "amortized_us_per_token": 1888.437,
+                "expert_tokens_per_second": 529.5384489924737
+              },
+              "move": {
+                "samples_us": [
+                  3859.115
+                ],
+                "median_us": 3859.115,
+                "mean_us": 3859.115,
+                "p95_us": 3859.115,
+                "amortized_us_per_token": 3859.115,
+                "expert_tokens_per_second": 259.1267687021506
+              },
+              "savings_us": [
+                -1970.6779999999999
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 2.0988261891224736e-07,
+                "worst_token_nrmse": 2.0988261891224736e-07,
+                "max_abs": 6.332993507385254e-08,
+                "reference_rms": 0.0749589318974584,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                0.0
+              ],
+              "prepare_us": [
+                3355.885
+              ],
+              "target_input_us": [
+                1.042
+              ],
+              "target_compute_us": [
+                500.469
+              ],
+              "target_output_us": [
+                1.354
+              ]
+            },
+            {
+              "source": "HTP0",
+              "target": "GPUOpenCL",
+              "kind": "packed_only",
+              "stay": {
+                "samples_us": [
+                  6661.875
+                ],
+                "median_us": 6661.875,
+                "mean_us": 6661.875,
+                "p95_us": 6661.875,
+                "amortized_us_per_token": 6661.875,
+                "expert_tokens_per_second": 150.10789004597055
+              },
+              "move": {
+                "samples_us": [
+                  5447.917
+                ],
+                "median_us": 5447.917,
+                "mean_us": 5447.917,
+                "p95_us": 5447.917,
+                "amortized_us_per_token": 5447.917,
+                "expert_tokens_per_second": 183.5563941227445
+              },
+              "savings_us": [
+                1213.9579999999996
+              ],
+              "move_win_fraction": 1.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 2.0988261891224736e-07,
+                "worst_token_nrmse": 2.0988261891224736e-07,
+                "max_abs": 6.332993507385254e-08,
+                "reference_rms": 0.0749589318974584,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                1683.333
+              ],
+              "prepare_us": [
+                3160.833
+              ],
+              "target_input_us": [
+                0.937
+              ],
+              "target_compute_us": [
+                601.563
+              ],
+              "target_output_us": [
+                0.833
+              ]
+            }
+          ],
+          "target_ready": {
+            "CPU": {
+              "samples_us": [
+                186.823
+              ],
+              "median_us": 186.823,
+              "mean_us": 186.823,
+              "p95_us": 186.823,
+              "amortized_us_per_token": 186.823,
+              "expert_tokens_per_second": 5352.660004389181
+            },
+            "GPUOpenCL": {
+              "samples_us": [
+                462.552
+              ],
+              "median_us": 462.552,
+              "mean_us": 462.552,
+              "p95_us": 462.552,
+              "amortized_us_per_token": 462.552,
+              "expert_tokens_per_second": 2161.9190923398883
+            },
+            "HTP0": {
+              "samples_us": [
+                2712.343
+              ],
+              "median_us": 2712.343,
+              "mean_us": 2712.343,
+              "p95_us": 2712.343,
+              "amortized_us_per_token": 2712.343,
+              "expert_tokens_per_second": 368.68493402198766
+            }
+          }
+        }
+      ],
+      "final_validation": {
+        "CPU": {
+          "nrmse": 0.008972088314377673,
+          "worst_token_nrmse": 0.008972088314377673,
+          "max_abs": 0.0026607029139995575,
+          "reference_rms": 0.0749589318974584,
+          "threshold_token_nrmse": 0.04
+        },
+        "GPUOpenCL": {
+          "nrmse": 2.0988261891224736e-07,
+          "worst_token_nrmse": 2.0988261891224736e-07,
+          "max_abs": 6.332993507385254e-08,
+          "reference_rms": 0.0749589318974584,
+          "threshold_token_nrmse": 0.04
+        },
+        "HTP0": {
+          "nrmse": 0.012256332763966744,
+          "worst_token_nrmse": 0.012256332763966744,
+          "max_abs": 0.0029490068554878235,
+          "reference_rms": 0.0749589318974584,
+          "threshold_token_nrmse": 0.04
+        }
+      }
+    },
+    {
+      "tokens": 8,
+      "slots": 8,
+      "initial_validation": {
+        "CPU": {
+          "nrmse": 0.009719010663632411,
+          "worst_token_nrmse": 0.010288965775537418,
+          "max_abs": 0.0027025341987609863,
+          "reference_rms": 0.06803718118192659,
+          "threshold_token_nrmse": 0.04
+        },
+        "GPUOpenCL": {
+          "nrmse": 0.0008259854482361843,
+          "worst_token_nrmse": 0.00086805860984141,
+          "max_abs": 0.00023451074957847595,
+          "reference_rms": 0.06803718118192659,
+          "threshold_token_nrmse": 0.04
+        },
+        "HTP0": {
+          "nrmse": 0.0005140675163256353,
+          "worst_token_nrmse": 0.0005576656500535382,
+          "max_abs": 0.00015519559383392334,
+          "reference_rms": 0.06803718118192659,
+          "threshold_token_nrmse": 0.04
+        }
+      },
+      "buffers": {
+        "CPU": {
+          "weights": 38928384,
+          "runtime": 266496
+        },
+        "GPUOpenCL": {
+          "weights": 38929920,
+          "runtime": 266496
+        },
+        "HTP0": {
+          "weights": 38928384,
+          "runtime": 266496
+        }
+      },
+      "reuse_cases": [
+        {
+          "reuse": 1,
+          "comparisons": [
+            {
+              "source": "CPU",
+              "target": "GPUOpenCL",
+              "kind": "retained_raw",
+              "stay": {
+                "samples_us": [
+                  2359.531
+                ],
+                "median_us": 2359.531,
+                "mean_us": 2359.531,
+                "p95_us": 2359.531,
+                "amortized_us_per_token": 294.941375,
+                "expert_tokens_per_second": 3390.5042993713582
+              },
+              "move": {
+                "samples_us": [
+                  4572.344
+                ],
+                "median_us": 4572.344,
+                "mean_us": 4572.344,
+                "p95_us": 4572.344,
+                "amortized_us_per_token": 571.543,
+                "expert_tokens_per_second": 1749.6496326610595
+              },
+              "savings_us": [
+                -2212.813
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0008259854482361843,
+                "worst_token_nrmse": 0.00086805860984141,
+                "max_abs": 0.00023451074957847595,
+                "reference_rms": 0.06803718118192659,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                0.0
+              ],
+              "prepare_us": [
+                2958.021
+              ],
+              "target_input_us": [
+                2.709
+              ],
+              "target_compute_us": [
+                1608.75
+              ],
+              "target_output_us": [
+                2.656
+              ]
+            },
+            {
+              "source": "CPU",
+              "target": "GPUOpenCL",
+              "kind": "gguf_reread",
+              "stay": {
+                "samples_us": [
+                  1306.042
+                ],
+                "median_us": 1306.042,
+                "mean_us": 1306.042,
+                "p95_us": 1306.042,
+                "amortized_us_per_token": 163.25525,
+                "expert_tokens_per_second": 6125.377284957146
+              },
+              "move": {
+                "samples_us": [
+                  4874.375
+                ],
+                "median_us": 4874.375,
+                "mean_us": 4874.375,
+                "p95_us": 4874.375,
+                "amortized_us_per_token": 609.296875,
+                "expert_tokens_per_second": 1641.236055904603
+              },
+              "savings_us": [
+                -3568.333
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0008259854482361843,
+                "worst_token_nrmse": 0.00086805860984141,
+                "max_abs": 0.00023451074957847595,
+                "reference_rms": 0.06803718118192659,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                550.052
+              ],
+              "prepare_us": [
+                2968.75
+              ],
+              "target_input_us": [
+                2.344
+              ],
+              "target_compute_us": [
+                1350.573
+              ],
+              "target_output_us": [
+                2.396
+              ]
+            },
+            {
+              "source": "CPU",
+              "target": "HTP0",
+              "kind": "retained_raw",
+              "stay": {
+                "samples_us": [
+                  652.708
+                ],
+                "median_us": 652.708,
+                "mean_us": 652.708,
+                "p95_us": 652.708,
+                "amortized_us_per_token": 81.5885,
+                "expert_tokens_per_second": 12256.629304375005
+              },
+              "move": {
+                "samples_us": [
+                  3917.709
+                ],
+                "median_us": 3917.709,
+                "mean_us": 3917.709,
+                "p95_us": 3917.709,
+                "amortized_us_per_token": 489.713625,
+                "expert_tokens_per_second": 2042.0097562121127
+              },
+              "savings_us": [
+                -3265.0009999999997
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0005140675163256353,
+                "worst_token_nrmse": 0.0005576656500535382,
+                "max_abs": 0.00015519559383392334,
+                "reference_rms": 0.06803718118192659,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                0.0
+              ],
+              "prepare_us": [
+                1360.052
+              ],
+              "target_input_us": [
+                20.677
+              ],
+              "target_compute_us": [
+                2510.885
+              ],
+              "target_output_us": [
+                25.938
+              ]
+            },
+            {
+              "source": "CPU",
+              "target": "HTP0",
+              "kind": "gguf_reread",
+              "stay": {
+                "samples_us": [
+                  639.427
+                ],
+                "median_us": 639.427,
+                "mean_us": 639.427,
+                "p95_us": 639.427,
+                "amortized_us_per_token": 79.928375,
+                "expert_tokens_per_second": 12511.201435034804
+              },
+              "move": {
+                "samples_us": [
+                  4417.24
+                ],
+                "median_us": 4417.24,
+                "mean_us": 4417.24,
+                "p95_us": 4417.24,
+                "amortized_us_per_token": 552.155,
+                "expert_tokens_per_second": 1811.0856552960672
+              },
+              "savings_us": [
+                -3777.8129999999996
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0005140675163256353,
+                "worst_token_nrmse": 0.0005576656500535382,
+                "max_abs": 0.00015519559383392334,
+                "reference_rms": 0.06803718118192659,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                498.438
+              ],
+              "prepare_us": [
+                1334.375
+              ],
+              "target_input_us": [
+                19.792
+              ],
+              "target_compute_us": [
+                2546.718
+              ],
+              "target_output_us": [
+                17.813
+              ]
+            },
+            {
+              "source": "GPUOpenCL",
+              "target": "CPU",
+              "kind": "retained_raw",
+              "stay": {
+                "samples_us": [
+                  1243.593
+                ],
+                "median_us": 1243.593,
+                "mean_us": 1243.593,
+                "p95_us": 1243.593,
+                "amortized_us_per_token": 155.449125,
+                "expert_tokens_per_second": 6432.972845617496
+              },
+              "move": {
+                "samples_us": [
+                  9408.438
+                ],
+                "median_us": 9408.438,
+                "mean_us": 9408.438,
+                "p95_us": 9408.438,
+                "amortized_us_per_token": 1176.05475,
+                "expert_tokens_per_second": 850.3005493579274
+              },
+              "savings_us": [
+                -8164.845
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.009719010663632411,
+                "worst_token_nrmse": 0.010288965775537418,
+                "max_abs": 0.0027025341987609863,
+                "reference_rms": 0.06803718118192659,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                0.0
+              ],
+              "prepare_us": [
+                8785.312
+              ],
+              "target_input_us": [
+                2.239
+              ],
+              "target_compute_us": [
+                617.709
+              ],
+              "target_output_us": [
+                2.5
+              ]
+            },
+            {
+              "source": "GPUOpenCL",
+              "target": "CPU",
+              "kind": "packed_only",
+              "stay": {
+                "samples_us": [
+                  1237.344
+                ],
+                "median_us": 1237.344,
+                "mean_us": 1237.344,
+                "p95_us": 1237.344,
+                "amortized_us_per_token": 154.668,
+                "expert_tokens_per_second": 6465.461504642201
+              },
+              "move": {
+                "samples_us": [
+                  18510.886
+                ],
+                "median_us": 18510.886,
+                "mean_us": 18510.886,
+                "p95_us": 18510.886,
+                "amortized_us_per_token": 2313.86075,
+                "expert_tokens_per_second": 432.17812480720806
+              },
+              "savings_us": [
+                -17273.541999999998
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.009719010663632411,
+                "worst_token_nrmse": 0.010288965775537418,
+                "max_abs": 0.0027025341987609863,
+                "reference_rms": 0.06803718118192659,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                9590.0
+              ],
+              "prepare_us": [
+                8168.907
+              ],
+              "target_input_us": [
+                2.031
+              ],
+              "target_compute_us": [
+                747.448
+              ],
+              "target_output_us": [
+                2.396
+              ]
+            },
+            {
+              "source": "GPUOpenCL",
+              "target": "HTP0",
+              "kind": "retained_raw",
+              "stay": {
+                "samples_us": [
+                  1277.5
+                ],
+                "median_us": 1277.5,
+                "mean_us": 1277.5,
+                "p95_us": 1277.5,
+                "amortized_us_per_token": 159.6875,
+                "expert_tokens_per_second": 6262.230919765167
+              },
+              "move": {
+                "samples_us": [
+                  1883.125
+                ],
+                "median_us": 1883.125,
+                "mean_us": 1883.125,
+                "p95_us": 1883.125,
+                "amortized_us_per_token": 235.390625,
+                "expert_tokens_per_second": 4248.257550614006
+              },
+              "savings_us": [
+                -605.625
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0005140675163256353,
+                "worst_token_nrmse": 0.0005576656500535382,
+                "max_abs": 0.00015519559383392334,
+                "reference_rms": 0.06803718118192659,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                0.0
+              ],
+              "prepare_us": [
+                1166.927
+              ],
+              "target_input_us": [
+                3.333
+              ],
+              "target_compute_us": [
+                707.865
+              ],
+              "target_output_us": [
+                4.531
+              ]
+            },
+            {
+              "source": "GPUOpenCL",
+              "target": "HTP0",
+              "kind": "packed_only",
+              "stay": {
+                "samples_us": [
+                  1731.719
+                ],
+                "median_us": 1731.719,
+                "mean_us": 1731.719,
+                "p95_us": 1731.719,
+                "amortized_us_per_token": 216.464875,
+                "expert_tokens_per_second": 4619.687143237442
+              },
+              "move": {
+                "samples_us": [
+                  10991.927
+                ],
+                "median_us": 10991.927,
+                "mean_us": 10991.927,
+                "p95_us": 10991.927,
+                "amortized_us_per_token": 1373.990875,
+                "expert_tokens_per_second": 727.8068713520387
+              },
+              "savings_us": [
+                -9260.207999999999
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0005140675163256353,
+                "worst_token_nrmse": 0.0005576656500535382,
+                "max_abs": 0.00015519559383392334,
+                "reference_rms": 0.06803718118192659,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                9048.594
+              ],
+              "prepare_us": [
+                1183.75
+              ],
+              "target_input_us": [
+                5.0
+              ],
+              "target_compute_us": [
+                750.312
+              ],
+              "target_output_us": [
+                3.698
+              ]
+            },
+            {
+              "source": "HTP0",
+              "target": "CPU",
+              "kind": "retained_raw",
+              "stay": {
+                "samples_us": [
+                  2673.125
+                ],
+                "median_us": 2673.125,
+                "mean_us": 2673.125,
+                "p95_us": 2673.125,
+                "amortized_us_per_token": 334.140625,
+                "expert_tokens_per_second": 2992.751928922142
+              },
+              "move": {
+                "samples_us": [
+                  9778.281
+                ],
+                "median_us": 9778.281,
+                "mean_us": 9778.281,
+                "p95_us": 9778.281,
+                "amortized_us_per_token": 1222.285125,
+                "expert_tokens_per_second": 818.1397118777829
+              },
+              "savings_us": [
+                -7105.156000000001
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.009719010663632411,
+                "worst_token_nrmse": 0.010288965775537418,
+                "max_abs": 0.0027025341987609863,
+                "reference_rms": 0.06803718118192659,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                0.0
+              ],
+              "prepare_us": [
+                8991.771
+              ],
+              "target_input_us": [
+                2.084
+              ],
+              "target_compute_us": [
+                781.927
+              ],
+              "target_output_us": [
+                2.187
+              ]
+            },
+            {
+              "source": "HTP0",
+              "target": "CPU",
+              "kind": "packed_only",
+              "stay": {
+                "samples_us": [
+                  2607.5
+                ],
+                "median_us": 2607.5,
+                "mean_us": 2607.5,
+                "p95_us": 2607.5,
+                "amortized_us_per_token": 325.9375,
+                "expert_tokens_per_second": 3068.072866730585
+              },
+              "move": {
+                "samples_us": [
+                  11599.062
+                ],
+                "median_us": 11599.062,
+                "mean_us": 11599.062,
+                "p95_us": 11599.062,
+                "amortized_us_per_token": 1449.88275,
+                "expert_tokens_per_second": 689.7109438677024
+              },
+              "savings_us": [
+                -8991.562
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.009719010663632411,
+                "worst_token_nrmse": 0.010288965775537418,
+                "max_abs": 0.0027025341987609863,
+                "reference_rms": 0.06803718118192659,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                1948.333
+              ],
+              "prepare_us": [
+                8977.344
+              ],
+              "target_input_us": [
+                2.24
+              ],
+              "target_compute_us": [
+                668.333
+              ],
+              "target_output_us": [
+                2.344
+              ]
+            },
+            {
+              "source": "HTP0",
+              "target": "GPUOpenCL",
+              "kind": "retained_raw",
+              "stay": {
+                "samples_us": [
+                  2331.146
+                ],
+                "median_us": 2331.146,
+                "mean_us": 2331.146,
+                "p95_us": 2331.146,
+                "amortized_us_per_token": 291.39325,
+                "expert_tokens_per_second": 3431.788485148506
+              },
+              "move": {
+                "samples_us": [
+                  4410.156
+                ],
+                "median_us": 4410.156,
+                "mean_us": 4410.156,
+                "p95_us": 4410.156,
+                "amortized_us_per_token": 551.2695,
+                "expert_tokens_per_second": 1813.994788392973
+              },
+              "savings_us": [
+                -2079.0099999999998
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0008259854482361843,
+                "worst_token_nrmse": 0.00086805860984141,
+                "max_abs": 0.00023451074957847595,
+                "reference_rms": 0.06803718118192659,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                0.0
+              ],
+              "prepare_us": [
+                3185.937
+              ],
+              "target_input_us": [
+                3.02
+              ],
+              "target_compute_us": [
+                1218.125
+              ],
+              "target_output_us": [
+                2.761
+              ]
+            },
+            {
+              "source": "HTP0",
+              "target": "GPUOpenCL",
+              "kind": "packed_only",
+              "stay": {
+                "samples_us": [
+                  2553.125
+                ],
+                "median_us": 2553.125,
+                "mean_us": 2553.125,
+                "p95_us": 2553.125,
+                "amortized_us_per_token": 319.140625,
+                "expert_tokens_per_second": 3133.4149326805386
+              },
+              "move": {
+                "samples_us": [
+                  6494.48
+                ],
+                "median_us": 6494.48,
+                "mean_us": 6494.48,
+                "p95_us": 6494.48,
+                "amortized_us_per_token": 811.81,
+                "expert_tokens_per_second": 1231.8153262462893
+              },
+              "savings_us": [
+                -3941.3549999999996
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0008259854482361843,
+                "worst_token_nrmse": 0.00086805860984141,
+                "max_abs": 0.00023451074957847595,
+                "reference_rms": 0.06803718118192659,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                1597.552
+              ],
+              "prepare_us": [
+                3486.041
+              ],
+              "target_input_us": [
+                2.605
+              ],
+              "target_compute_us": [
+                1405.468
+              ],
+              "target_output_us": [
+                2.5
+              ]
+            }
+          ],
+          "target_ready": {
+            "CPU": {
+              "samples_us": [
+                670.782
+              ],
+              "median_us": 670.782,
+              "mean_us": 670.782,
+              "p95_us": 670.782,
+              "amortized_us_per_token": 83.84775,
+              "expert_tokens_per_second": 11926.37846573104
+            },
+            "GPUOpenCL": {
+              "samples_us": [
+                1205.677
+              ],
+              "median_us": 1205.677,
+              "mean_us": 1205.677,
+              "p95_us": 1205.677,
+              "amortized_us_per_token": 150.709625,
+              "expert_tokens_per_second": 6635.276280463176
+            },
+            "HTP0": {
+              "samples_us": [
+                2655.157
+              ],
+              "median_us": 2655.157,
+              "mean_us": 2655.157,
+              "p95_us": 2655.157,
+              "amortized_us_per_token": 331.894625,
+              "expert_tokens_per_second": 3013.004504065108
+            }
+          }
+        }
+      ],
+      "final_validation": {
+        "CPU": {
+          "nrmse": 0.009719010663632411,
+          "worst_token_nrmse": 0.010288965775537418,
+          "max_abs": 0.0027025341987609863,
+          "reference_rms": 0.06803718118192659,
+          "threshold_token_nrmse": 0.04
+        },
+        "GPUOpenCL": {
+          "nrmse": 0.0008259854482361843,
+          "worst_token_nrmse": 0.00086805860984141,
+          "max_abs": 0.00023451074957847595,
+          "reference_rms": 0.06803718118192659,
+          "threshold_token_nrmse": 0.04
+        },
+        "HTP0": {
+          "nrmse": 0.0005140675163256353,
+          "worst_token_nrmse": 0.0005576656500535382,
+          "max_abs": 0.00015519559383392334,
+          "reference_rms": 0.06803718118192659,
+          "threshold_token_nrmse": 0.04
+        }
+      }
+    },
+    {
+      "tokens": 16,
+      "slots": 8,
+      "initial_validation": {
+        "CPU": {
+          "nrmse": 0.00973793063427484,
+          "worst_token_nrmse": 0.010635277169563718,
+          "max_abs": 0.0027025341987609863,
+          "reference_rms": 0.066288034605199,
+          "threshold_token_nrmse": 0.04
+        },
+        "GPUOpenCL": {
+          "nrmse": 0.0008318110783693066,
+          "worst_token_nrmse": 0.0008793716963167707,
+          "max_abs": 0.00023451074957847595,
+          "reference_rms": 0.066288034605199,
+          "threshold_token_nrmse": 0.04
+        },
+        "HTP0": {
+          "nrmse": 0.0005127808676451933,
+          "worst_token_nrmse": 0.0005576656500535382,
+          "max_abs": 0.00015519559383392334,
+          "reference_rms": 0.066288034605199,
+          "threshold_token_nrmse": 0.04
+        }
+      },
+      "buffers": {
+        "CPU": {
+          "weights": 38928384,
+          "runtime": 532992
+        },
+        "GPUOpenCL": {
+          "weights": 38929920,
+          "runtime": 532992
+        },
+        "HTP0": {
+          "weights": 38928384,
+          "runtime": 532992
+        }
+      },
+      "reuse_cases": [
+        {
+          "reuse": 1,
+          "comparisons": [
+            {
+              "source": "CPU",
+              "target": "GPUOpenCL",
+              "kind": "retained_raw",
+              "stay": {
+                "samples_us": [
+                  3003.281
+                ],
+                "median_us": 3003.281,
+                "mean_us": 3003.281,
+                "p95_us": 3003.281,
+                "amortized_us_per_token": 187.7050625,
+                "expert_tokens_per_second": 5327.506816711457
+              },
+              "move": {
+                "samples_us": [
+                  5363.803
+                ],
+                "median_us": 5363.803,
+                "mean_us": 5363.803,
+                "p95_us": 5363.803,
+                "amortized_us_per_token": 335.2376875,
+                "expert_tokens_per_second": 2982.9581735197958
+              },
+              "savings_us": [
+                -2360.522
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0008318110783693066,
+                "worst_token_nrmse": 0.0008793716963167707,
+                "max_abs": 0.00023451074957847595,
+                "reference_rms": 0.066288034605199,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                0.0
+              ],
+              "prepare_us": [
+                3683.854
+              ],
+              "target_input_us": [
+                4.531
+              ],
+              "target_compute_us": [
+                1670.469
+              ],
+              "target_output_us": [
+                4.688
+              ]
+            },
+            {
+              "source": "CPU",
+              "target": "GPUOpenCL",
+              "kind": "gguf_reread",
+              "stay": {
+                "samples_us": [
+                  1286.667
+                ],
+                "median_us": 1286.667,
+                "mean_us": 1286.667,
+                "p95_us": 1286.667,
+                "amortized_us_per_token": 80.4166875,
+                "expert_tokens_per_second": 12435.229939059602
+              },
+              "move": {
+                "samples_us": [
+                  5141.875
+                ],
+                "median_us": 5141.875,
+                "mean_us": 5141.875,
+                "p95_us": 5141.875,
+                "amortized_us_per_token": 321.3671875,
+                "expert_tokens_per_second": 3111.7053603986874
+              },
+              "savings_us": [
+                -3855.208
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0008318110783693066,
+                "worst_token_nrmse": 0.0008793716963167707,
+                "max_abs": 0.00023451074957847595,
+                "reference_rms": 0.066288034605199,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                553.125
+              ],
+              "prepare_us": [
+                2991.667
+              ],
+              "target_input_us": [
+                3.906
+              ],
+              "target_compute_us": [
+                1589.167
+              ],
+              "target_output_us": [
+                3.802
+              ]
+            },
+            {
+              "source": "CPU",
+              "target": "HTP0",
+              "kind": "retained_raw",
+              "stay": {
+                "samples_us": [
+                  1258.906
+                ],
+                "median_us": 1258.906,
+                "mean_us": 1258.906,
+                "p95_us": 1258.906,
+                "amortized_us_per_token": 78.681625,
+                "expert_tokens_per_second": 12709.44772683584
+              },
+              "move": {
+                "samples_us": [
+                  1945.781
+                ],
+                "median_us": 1945.781,
+                "mean_us": 1945.781,
+                "p95_us": 1945.781,
+                "amortized_us_per_token": 121.6113125,
+                "expert_tokens_per_second": 8222.919228834078
+              },
+              "savings_us": [
+                -686.875
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0005127808676451933,
+                "worst_token_nrmse": 0.0005576656500535382,
+                "max_abs": 0.00015519559383392334,
+                "reference_rms": 0.066288034605199,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                0.0
+              ],
+              "prepare_us": [
+                1174.167
+              ],
+              "target_input_us": [
+                5.313
+              ],
+              "target_compute_us": [
+                759.896
+              ],
+              "target_output_us": [
+                6.041
+              ]
+            },
+            {
+              "source": "CPU",
+              "target": "HTP0",
+              "kind": "gguf_reread",
+              "stay": {
+                "samples_us": [
+                  1223.073
+                ],
+                "median_us": 1223.073,
+                "mean_us": 1223.073,
+                "p95_us": 1223.073,
+                "amortized_us_per_token": 76.4420625,
+                "expert_tokens_per_second": 13081.80296678939
+              },
+              "move": {
+                "samples_us": [
+                  2428.125
+                ],
+                "median_us": 2428.125,
+                "mean_us": 2428.125,
+                "p95_us": 2428.125,
+                "amortized_us_per_token": 151.7578125,
+                "expert_tokens_per_second": 6589.446589446589
+              },
+              "savings_us": [
+                -1205.052
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0005127808676451933,
+                "worst_token_nrmse": 0.0005576656500535382,
+                "max_abs": 0.00015519559383392334,
+                "reference_rms": 0.066288034605199,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                460.678
+              ],
+              "prepare_us": [
+                1231.197
+              ],
+              "target_input_us": [
+                5.312
+              ],
+              "target_compute_us": [
+                725.365
+              ],
+              "target_output_us": [
+                5.26
+              ]
+            },
+            {
+              "source": "GPUOpenCL",
+              "target": "CPU",
+              "kind": "retained_raw",
+              "stay": {
+                "samples_us": [
+                  1654.167
+                ],
+                "median_us": 1654.167,
+                "mean_us": 1654.167,
+                "p95_us": 1654.167,
+                "amortized_us_per_token": 103.3854375,
+                "expert_tokens_per_second": 9672.542131477656
+              },
+              "move": {
+                "samples_us": [
+                  9297.865
+                ],
+                "median_us": 9297.865,
+                "mean_us": 9297.865,
+                "p95_us": 9297.865,
+                "amortized_us_per_token": 581.1165625,
+                "expert_tokens_per_second": 1720.8251571731792
+              },
+              "savings_us": [
+                -7643.698
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.00973793063427484,
+                "worst_token_nrmse": 0.010635277169563718,
+                "max_abs": 0.0027025341987609863,
+                "reference_rms": 0.066288034605199,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                0.0
+              ],
+              "prepare_us": [
+                8004.218
+              ],
+              "target_input_us": [
+                6.406
+              ],
+              "target_compute_us": [
+                1283.75
+              ],
+              "target_output_us": [
+                2.969
+              ]
+            },
+            {
+              "source": "GPUOpenCL",
+              "target": "CPU",
+              "kind": "packed_only",
+              "stay": {
+                "samples_us": [
+                  1759.218
+                ],
+                "median_us": 1759.218,
+                "mean_us": 1759.218,
+                "p95_us": 1759.218,
+                "amortized_us_per_token": 109.951125,
+                "expert_tokens_per_second": 9094.950142620186
+              },
+              "move": {
+                "samples_us": [
+                  19343.281
+                ],
+                "median_us": 19343.281,
+                "mean_us": 19343.281,
+                "p95_us": 19343.281,
+                "amortized_us_per_token": 1208.9550625,
+                "expert_tokens_per_second": 827.1606042428893
+              },
+              "savings_us": [
+                -17584.063
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.00973793063427484,
+                "worst_token_nrmse": 0.010635277169563718,
+                "max_abs": 0.0027025341987609863,
+                "reference_rms": 0.066288034605199,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                9636.406
+              ],
+              "prepare_us": [
+                8389.063
+              ],
+              "target_input_us": [
+                3.854
+              ],
+              "target_compute_us": [
+                1309.791
+              ],
+              "target_output_us": [
+                3.75
+              ]
+            },
+            {
+              "source": "GPUOpenCL",
+              "target": "HTP0",
+              "kind": "retained_raw",
+              "stay": {
+                "samples_us": [
+                  1607.187
+                ],
+                "median_us": 1607.187,
+                "mean_us": 1607.187,
+                "p95_us": 1607.187,
+                "amortized_us_per_token": 100.4491875,
+                "expert_tokens_per_second": 9955.282117140072
+              },
+              "move": {
+                "samples_us": [
+                  2550.625
+                ],
+                "median_us": 2550.625,
+                "mean_us": 2550.625,
+                "p95_us": 2550.625,
+                "amortized_us_per_token": 159.4140625,
+                "expert_tokens_per_second": 6272.97231070816
+              },
+              "savings_us": [
+                -943.4380000000001
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0005127808676451933,
+                "worst_token_nrmse": 0.0005576656500535382,
+                "max_abs": 0.00015519559383392334,
+                "reference_rms": 0.066288034605199,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                0.0
+              ],
+              "prepare_us": [
+                1390.937
+              ],
+              "target_input_us": [
+                23.438
+              ],
+              "target_compute_us": [
+                1130.156
+              ],
+              "target_output_us": [
+                5.885
+              ]
+            },
+            {
+              "source": "GPUOpenCL",
+              "target": "HTP0",
+              "kind": "packed_only",
+              "stay": {
+                "samples_us": [
+                  2013.438
+                ],
+                "median_us": 2013.438,
+                "mean_us": 2013.438,
+                "p95_us": 2013.438,
+                "amortized_us_per_token": 125.839875,
+                "expert_tokens_per_second": 7946.606749251777
+              },
+              "move": {
+                "samples_us": [
+                  11840.052
+                ],
+                "median_us": 11840.052,
+                "mean_us": 11840.052,
+                "p95_us": 11840.052,
+                "amortized_us_per_token": 740.00325,
+                "expert_tokens_per_second": 1351.345416388374
+              },
+              "savings_us": [
+                -9826.614
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0005127808676451933,
+                "worst_token_nrmse": 0.0005576656500535382,
+                "max_abs": 0.00015519559383392334,
+                "reference_rms": 0.066288034605199,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                9921.406
+              ],
+              "prepare_us": [
+                1134.427
+              ],
+              "target_input_us": [
+                5.312
+              ],
+              "target_compute_us": [
+                773.802
+              ],
+              "target_output_us": [
+                4.948
+              ]
+            },
+            {
+              "source": "HTP0",
+              "target": "CPU",
+              "kind": "retained_raw",
+              "stay": {
+                "samples_us": [
+                  3088.021
+                ],
+                "median_us": 3088.021,
+                "mean_us": 3088.021,
+                "p95_us": 3088.021,
+                "amortized_us_per_token": 193.0013125,
+                "expert_tokens_per_second": 5181.31191465343
+              },
+              "move": {
+                "samples_us": [
+                  10808.542
+                ],
+                "median_us": 10808.542,
+                "mean_us": 10808.542,
+                "p95_us": 10808.542,
+                "amortized_us_per_token": 675.533875,
+                "expert_tokens_per_second": 1480.3106653977939
+              },
+              "savings_us": [
+                -7720.520999999999
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.00973793063427484,
+                "worst_token_nrmse": 0.010635277169563718,
+                "max_abs": 0.0027025341987609863,
+                "reference_rms": 0.066288034605199,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                0.0
+              ],
+              "prepare_us": [
+                9095.677
+              ],
+              "target_input_us": [
+                3.906
+              ],
+              "target_compute_us": [
+                1704.635
+              ],
+              "target_output_us": [
+                3.907
+              ]
+            },
+            {
+              "source": "HTP0",
+              "target": "CPU",
+              "kind": "packed_only",
+              "stay": {
+                "samples_us": [
+                  1029.635
+                ],
+                "median_us": 1029.635,
+                "mean_us": 1029.635,
+                "p95_us": 1029.635,
+                "amortized_us_per_token": 64.3521875,
+                "expert_tokens_per_second": 15539.487294041093
+              },
+              "move": {
+                "samples_us": [
+                  12519.844
+                ],
+                "median_us": 12519.844,
+                "mean_us": 12519.844,
+                "p95_us": 12519.844,
+                "amortized_us_per_token": 782.49025,
+                "expert_tokens_per_second": 1277.9711951682466
+              },
+              "savings_us": [
+                -11490.208999999999
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.00973793063427484,
+                "worst_token_nrmse": 0.010635277169563718,
+                "max_abs": 0.0027025341987609863,
+                "reference_rms": 0.066288034605199,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                1943.281
+              ],
+              "prepare_us": [
+                9317.865
+              ],
+              "target_input_us": [
+                3.75
+              ],
+              "target_compute_us": [
+                1250.625
+              ],
+              "target_output_us": [
+                3.75
+              ]
+            },
+            {
+              "source": "HTP0",
+              "target": "GPUOpenCL",
+              "kind": "retained_raw",
+              "stay": {
+                "samples_us": [
+                  862.291
+                ],
+                "median_us": 862.291,
+                "mean_us": 862.291,
+                "p95_us": 862.291,
+                "amortized_us_per_token": 53.8931875,
+                "expert_tokens_per_second": 18555.22091730054
+              },
+              "move": {
+                "samples_us": [
+                  4914.688
+                ],
+                "median_us": 4914.688,
+                "mean_us": 4914.688,
+                "p95_us": 4914.688,
+                "amortized_us_per_token": 307.168,
+                "expert_tokens_per_second": 3255.547452859673
+              },
+              "savings_us": [
+                -4052.397
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0008318110783693066,
+                "worst_token_nrmse": 0.0008793716963167707,
+                "max_abs": 0.00023451074957847595,
+                "reference_rms": 0.066288034605199,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                0.0
+              ],
+              "prepare_us": [
+                3264.011
+              ],
+              "target_input_us": [
+                5.312
+              ],
+              "target_compute_us": [
+                1640.677
+              ],
+              "target_output_us": [
+                4.427
+              ]
+            },
+            {
+              "source": "HTP0",
+              "target": "GPUOpenCL",
+              "kind": "packed_only",
+              "stay": {
+                "samples_us": [
+                  2755.573
+                ],
+                "median_us": 2755.573,
+                "mean_us": 2755.573,
+                "p95_us": 2755.573,
+                "amortized_us_per_token": 172.2233125,
+                "expert_tokens_per_second": 5806.4148545511225
+              },
+              "move": {
+                "samples_us": [
+                  6912.812
+                ],
+                "median_us": 6912.812,
+                "mean_us": 6912.812,
+                "p95_us": 6912.812,
+                "amortized_us_per_token": 432.05075,
+                "expert_tokens_per_second": 2314.542909600319
+              },
+              "savings_us": [
+                -4157.239
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0008318110783693066,
+                "worst_token_nrmse": 0.0008793716963167707,
+                "max_abs": 0.00023451074957847595,
+                "reference_rms": 0.066288034605199,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                1761.406
+              ],
+              "prepare_us": [
+                3366.041
+              ],
+              "target_input_us": [
+                4.532
+              ],
+              "target_compute_us": [
+                1776.198
+              ],
+              "target_output_us": [
+                4.218
+              ]
+            }
+          ],
+          "target_ready": {
+            "CPU": {
+              "samples_us": [
+                1464.687
+              ],
+              "median_us": 1464.687,
+              "mean_us": 1464.687,
+              "p95_us": 1464.687,
+              "amortized_us_per_token": 91.5429375,
+              "expert_tokens_per_second": 10923.83560446703
+            },
+            "GPUOpenCL": {
+              "samples_us": [
+                1607.083
+              ],
+              "median_us": 1607.083,
+              "mean_us": 1607.083,
+              "p95_us": 1607.083,
+              "amortized_us_per_token": 100.4426875,
+              "expert_tokens_per_second": 9955.926358501707
+            },
+            "HTP0": {
+              "samples_us": [
+                781.094
+              ],
+              "median_us": 781.094,
+              "mean_us": 781.094,
+              "p95_us": 781.094,
+              "amortized_us_per_token": 48.818375,
+              "expert_tokens_per_second": 20484.090263143742
+            }
+          }
+        }
+      ],
+      "final_validation": {
+        "CPU": {
+          "nrmse": 0.00973793063427484,
+          "worst_token_nrmse": 0.010635277169563718,
+          "max_abs": 0.0027025341987609863,
+          "reference_rms": 0.066288034605199,
+          "threshold_token_nrmse": 0.04
+        },
+        "GPUOpenCL": {
+          "nrmse": 0.0008318110783693066,
+          "worst_token_nrmse": 0.0008793716963167707,
+          "max_abs": 0.00023451074957847595,
+          "reference_rms": 0.066288034605199,
+          "threshold_token_nrmse": 0.04
+        },
+        "HTP0": {
+          "nrmse": 0.0005127808676451933,
+          "worst_token_nrmse": 0.0005576656500535382,
+          "max_abs": 0.00015519559383392334,
+          "reference_rms": 0.066288034605199,
+          "threshold_token_nrmse": 0.04
+        }
+      }
+    },
+    {
+      "tokens": 32,
+      "slots": 8,
+      "initial_validation": {
+        "CPU": {
+          "nrmse": 0.009798979664789603,
+          "worst_token_nrmse": 0.010635277169563718,
+          "max_abs": 0.002772510051727295,
+          "reference_rms": 0.06682156757317533,
+          "threshold_token_nrmse": 0.04
+        },
+        "GPUOpenCL": {
+          "nrmse": 0.0008288680632453413,
+          "worst_token_nrmse": 0.0008956233880112758,
+          "max_abs": 0.00027455762028694153,
+          "reference_rms": 0.06682156757317533,
+          "threshold_token_nrmse": 0.04
+        },
+        "HTP0": {
+          "nrmse": 0.0005076456230221711,
+          "worst_token_nrmse": 0.000582734927779202,
+          "max_abs": 0.0001618117094039917,
+          "reference_rms": 0.06682156757317533,
+          "threshold_token_nrmse": 0.04
+        }
+      },
+      "buffers": {
+        "CPU": {
+          "weights": 38928384,
+          "runtime": 1065984
+        },
+        "GPUOpenCL": {
+          "weights": 38929920,
+          "runtime": 1065984
+        },
+        "HTP0": {
+          "weights": 38928384,
+          "runtime": 1065984
+        }
+      },
+      "reuse_cases": [
+        {
+          "reuse": 1,
+          "comparisons": [
+            {
+              "source": "CPU",
+              "target": "GPUOpenCL",
+              "kind": "retained_raw",
+              "stay": {
+                "samples_us": [
+                  3684.792
+                ],
+                "median_us": 3684.792,
+                "mean_us": 3684.792,
+                "p95_us": 3684.792,
+                "amortized_us_per_token": 115.14975,
+                "expert_tokens_per_second": 8684.343648162501
+              },
+              "move": {
+                "samples_us": [
+                  6073.854
+                ],
+                "median_us": 6073.854,
+                "mean_us": 6073.854,
+                "p95_us": 6073.854,
+                "amortized_us_per_token": 189.8079375,
+                "expert_tokens_per_second": 5268.483569081509
+              },
+              "savings_us": [
+                -2389.0620000000004
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0008288680632453413,
+                "worst_token_nrmse": 0.0008956233880112758,
+                "max_abs": 0.00027455762028694153,
+                "reference_rms": 0.06682156757317533,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                0.0
+              ],
+              "prepare_us": [
+                3653.073
+              ],
+              "target_input_us": [
+                10.104
+              ],
+              "target_compute_us": [
+                2401.198
+              ],
+              "target_output_us": [
+                8.959
+              ]
+            },
+            {
+              "source": "CPU",
+              "target": "GPUOpenCL",
+              "kind": "gguf_reread",
+              "stay": {
+                "samples_us": [
+                  2484.01
+                ],
+                "median_us": 2484.01,
+                "mean_us": 2484.01,
+                "p95_us": 2484.01,
+                "amortized_us_per_token": 77.6253125,
+                "expert_tokens_per_second": 12882.395803559566
+              },
+              "move": {
+                "samples_us": [
+                  6008.125
+                ],
+                "median_us": 6008.125,
+                "mean_us": 6008.125,
+                "p95_us": 6008.125,
+                "amortized_us_per_token": 187.75390625,
+                "expert_tokens_per_second": 5326.120877977739
+              },
+              "savings_us": [
+                -3524.115
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0008288680632453413,
+                "worst_token_nrmse": 0.0008956233880112758,
+                "max_abs": 0.00027455762028694153,
+                "reference_rms": 0.06682156757317533,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                560.313
+              ],
+              "prepare_us": [
+                3071.25
+              ],
+              "target_input_us": [
+                8.906
+              ],
+              "target_compute_us": [
+                2359.375
+              ],
+              "target_output_us": [
+                7.709
+              ]
+            },
+            {
+              "source": "CPU",
+              "target": "HTP0",
+              "kind": "retained_raw",
+              "stay": {
+                "samples_us": [
+                  2838.073
+                ],
+                "median_us": 2838.073,
+                "mean_us": 2838.073,
+                "p95_us": 2838.073,
+                "amortized_us_per_token": 88.68978125,
+                "expert_tokens_per_second": 11275.256133298897
+              },
+              "move": {
+                "samples_us": [
+                  1951.875
+                ],
+                "median_us": 1951.875,
+                "mean_us": 1951.875,
+                "p95_us": 1951.875,
+                "amortized_us_per_token": 60.99609375,
+                "expert_tokens_per_second": 16394.492475184117
+              },
+              "savings_us": [
+                886.1979999999999
+              ],
+              "move_win_fraction": 1.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0005076456230221711,
+                "worst_token_nrmse": 0.000582734927779202,
+                "max_abs": 0.0001618117094039917,
+                "reference_rms": 0.06682156757317533,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                0.0
+              ],
+              "prepare_us": [
+                1208.854
+              ],
+              "target_input_us": [
+                9.479
+              ],
+              "target_compute_us": [
+                725.0
+              ],
+              "target_output_us": [
+                8.437
+              ]
+            },
+            {
+              "source": "CPU",
+              "target": "HTP0",
+              "kind": "gguf_reread",
+              "stay": {
+                "samples_us": [
+                  2335.572
+                ],
+                "median_us": 2335.572,
+                "mean_us": 2335.572,
+                "p95_us": 2335.572,
+                "amortized_us_per_token": 72.986625,
+                "expert_tokens_per_second": 13701.140448678096
+              },
+              "move": {
+                "samples_us": [
+                  2523.75
+                ],
+                "median_us": 2523.75,
+                "mean_us": 2523.75,
+                "p95_us": 2523.75,
+                "amortized_us_per_token": 78.8671875,
+                "expert_tokens_per_second": 12679.544328875681
+              },
+              "savings_us": [
+                -188.17799999999988
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0005076456230221711,
+                "worst_token_nrmse": 0.000582734927779202,
+                "max_abs": 0.0001618117094039917,
+                "reference_rms": 0.06682156757317533,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                473.49
+              ],
+              "prepare_us": [
+                1276.667
+              ],
+              "target_input_us": [
+                9.844
+              ],
+              "target_compute_us": [
+                754.843
+              ],
+              "target_output_us": [
+                8.593
+              ]
+            },
+            {
+              "source": "GPUOpenCL",
+              "target": "CPU",
+              "kind": "retained_raw",
+              "stay": {
+                "samples_us": [
+                  2446.458
+                ],
+                "median_us": 2446.458,
+                "mean_us": 2446.458,
+                "p95_us": 2446.458,
+                "amortized_us_per_token": 76.4518125,
+                "expert_tokens_per_second": 13080.134627285652
+              },
+              "move": {
+                "samples_us": [
+                  11991.875
+                ],
+                "median_us": 11991.875,
+                "mean_us": 11991.875,
+                "p95_us": 11991.875,
+                "amortized_us_per_token": 374.74609375,
+                "expert_tokens_per_second": 2668.473445562099
+              },
+              "savings_us": [
+                -9545.417
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.009798979664789603,
+                "worst_token_nrmse": 0.010635277169563718,
+                "max_abs": 0.002772510051727295,
+                "reference_rms": 0.06682156757317533,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                0.0
+              ],
+              "prepare_us": [
+                9501.198
+              ],
+              "target_input_us": [
+                7.813
+              ],
+              "target_compute_us": [
+                2475.104
+              ],
+              "target_output_us": [
+                7.5
+              ]
+            },
+            {
+              "source": "GPUOpenCL",
+              "target": "CPU",
+              "kind": "packed_only",
+              "stay": {
+                "samples_us": [
+                  2425.208
+                ],
+                "median_us": 2425.208,
+                "mean_us": 2425.208,
+                "p95_us": 2425.208,
+                "amortized_us_per_token": 75.78775,
+                "expert_tokens_per_second": 13194.744533252406
+              },
+              "move": {
+                "samples_us": [
+                  19481.459
+                ],
+                "median_us": 19481.459,
+                "mean_us": 19481.459,
+                "p95_us": 19481.459,
+                "amortized_us_per_token": 608.79559375,
+                "expert_tokens_per_second": 1642.5874468642212
+              },
+              "savings_us": [
+                -17056.251
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.009798979664789603,
+                "worst_token_nrmse": 0.010635277169563718,
+                "max_abs": 0.002772510051727295,
+                "reference_rms": 0.06682156757317533,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                8597.031
+              ],
+              "prepare_us": [
+                8495.416
+              ],
+              "target_input_us": [
+                8.333
+              ],
+              "target_compute_us": [
+                2372.76
+              ],
+              "target_output_us": [
+                7.656
+              ]
+            },
+            {
+              "source": "GPUOpenCL",
+              "target": "HTP0",
+              "kind": "retained_raw",
+              "stay": {
+                "samples_us": [
+                  2348.802
+                ],
+                "median_us": 2348.802,
+                "mean_us": 2348.802,
+                "p95_us": 2348.802,
+                "amortized_us_per_token": 73.4000625,
+                "expert_tokens_per_second": 13623.966600845877
+              },
+              "move": {
+                "samples_us": [
+                  4205.313
+                ],
+                "median_us": 4205.313,
+                "mean_us": 4205.313,
+                "p95_us": 4205.313,
+                "amortized_us_per_token": 131.41603125,
+                "expert_tokens_per_second": 7609.421700596365
+              },
+              "savings_us": [
+                -1856.511
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0005076456230221711,
+                "worst_token_nrmse": 0.000582734927779202,
+                "max_abs": 0.0001618117094039917,
+                "reference_rms": 0.06682156757317533,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                0.0
+              ],
+              "prepare_us": [
+                1339.219
+              ],
+              "target_input_us": [
+                27.5
+              ],
+              "target_compute_us": [
+                2811.146
+              ],
+              "target_output_us": [
+                27.084
+              ]
+            },
+            {
+              "source": "GPUOpenCL",
+              "target": "HTP0",
+              "kind": "packed_only",
+              "stay": {
+                "samples_us": [
+                  2934.01
+                ],
+                "median_us": 2934.01,
+                "mean_us": 2934.01,
+                "p95_us": 2934.01,
+                "amortized_us_per_token": 91.6878125,
+                "expert_tokens_per_second": 10906.574960548873
+              },
+              "move": {
+                "samples_us": [
+                  10079.375
+                ],
+                "median_us": 10079.375,
+                "mean_us": 10079.375,
+                "p95_us": 10079.375,
+                "amortized_us_per_token": 314.98046875,
+                "expert_tokens_per_second": 3174.8000248031253
+              },
+              "savings_us": [
+                -7145.365
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0005076456230221711,
+                "worst_token_nrmse": 0.000582734927779202,
+                "max_abs": 0.0001618117094039917,
+                "reference_rms": 0.06682156757317533,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                7960.156
+              ],
+              "prepare_us": [
+                1229.636
+              ],
+              "target_input_us": [
+                9.843
+              ],
+              "target_compute_us": [
+                870.312
+              ],
+              "target_output_us": [
+                9.167
+              ]
+            },
+            {
+              "source": "HTP0",
+              "target": "CPU",
+              "kind": "retained_raw",
+              "stay": {
+                "samples_us": [
+                  2840.156
+                ],
+                "median_us": 2840.156,
+                "mean_us": 2840.156,
+                "p95_us": 2840.156,
+                "amortized_us_per_token": 88.754875,
+                "expert_tokens_per_second": 11266.986742981724
+              },
+              "move": {
+                "samples_us": [
+                  11623.854
+                ],
+                "median_us": 11623.854,
+                "mean_us": 11623.854,
+                "p95_us": 11623.854,
+                "amortized_us_per_token": 363.2454375,
+                "expert_tokens_per_second": 2752.959560572595
+              },
+              "savings_us": [
+                -8783.698
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.009798979664789603,
+                "worst_token_nrmse": 0.010635277169563718,
+                "max_abs": 0.002772510051727295,
+                "reference_rms": 0.06682156757317533,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                0.0
+              ],
+              "prepare_us": [
+                9140.521
+              ],
+              "target_input_us": [
+                7.969
+              ],
+              "target_compute_us": [
+                2467.656
+              ],
+              "target_output_us": [
+                7.344
+              ]
+            },
+            {
+              "source": "HTP0",
+              "target": "CPU",
+              "kind": "packed_only",
+              "stay": {
+                "samples_us": [
+                  943.958
+                ],
+                "median_us": 943.958,
+                "mean_us": 943.958,
+                "p95_us": 943.958,
+                "amortized_us_per_token": 29.4986875,
+                "expert_tokens_per_second": 33899.8133391528
+              },
+              "move": {
+                "samples_us": [
+                  13827.604
+                ],
+                "median_us": 13827.604,
+                "mean_us": 13827.604,
+                "p95_us": 13827.604,
+                "amortized_us_per_token": 432.112625,
+                "expert_tokens_per_second": 2314.2114859523026
+              },
+              "savings_us": [
+                -12883.645999999999
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.009798979664789603,
+                "worst_token_nrmse": 0.010635277169563718,
+                "max_abs": 0.002772510051727295,
+                "reference_rms": 0.06682156757317533,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                1985.625
+              ],
+              "prepare_us": [
+                9428.125
+              ],
+              "target_input_us": [
+                8.281
+              ],
+              "target_compute_us": [
+                2397.969
+              ],
+              "target_output_us": [
+                7.188
+              ]
+            },
+            {
+              "source": "HTP0",
+              "target": "GPUOpenCL",
+              "kind": "retained_raw",
+              "stay": {
+                "samples_us": [
+                  787.5
+                ],
+                "median_us": 787.5,
+                "mean_us": 787.5,
+                "p95_us": 787.5,
+                "amortized_us_per_token": 24.609375,
+                "expert_tokens_per_second": 40634.920634920636
+              },
+              "move": {
+                "samples_us": [
+                  6112.344
+                ],
+                "median_us": 6112.344,
+                "mean_us": 6112.344,
+                "p95_us": 6112.344,
+                "amortized_us_per_token": 191.01075,
+                "expert_tokens_per_second": 5235.307436885097
+              },
+              "savings_us": [
+                -5324.844
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0008288680632453413,
+                "worst_token_nrmse": 0.0008956233880112758,
+                "max_abs": 0.00027455762028694153,
+                "reference_rms": 0.06682156757317533,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                0.0
+              ],
+              "prepare_us": [
+                3428.594
+              ],
+              "target_input_us": [
+                9.375
+              ],
+              "target_compute_us": [
+                2665.209
+              ],
+              "target_output_us": [
+                8.802
+              ]
+            },
+            {
+              "source": "HTP0",
+              "target": "GPUOpenCL",
+              "kind": "packed_only",
+              "stay": {
+                "samples_us": [
+                  2758.282
+                ],
+                "median_us": 2758.282,
+                "mean_us": 2758.282,
+                "p95_us": 2758.282,
+                "amortized_us_per_token": 86.1963125,
+                "expert_tokens_per_second": 11601.424364876397
+              },
+              "move": {
+                "samples_us": [
+                  7512.187
+                ],
+                "median_us": 7512.187,
+                "mean_us": 7512.187,
+                "p95_us": 7512.187,
+                "amortized_us_per_token": 234.75584375,
+                "expert_tokens_per_second": 4259.744865243637
+              },
+              "savings_us": [
+                -4753.905
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0008288680632453413,
+                "worst_token_nrmse": 0.0008956233880112758,
+                "max_abs": 0.00027455762028694153,
+                "reference_rms": 0.06682156757317533,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                1803.802
+              ],
+              "prepare_us": [
+                3171.927
+              ],
+              "target_input_us": [
+                11.979
+              ],
+              "target_compute_us": [
+                2516.771
+              ],
+              "target_output_us": [
+                7.5
+              ]
+            }
+          ],
+          "target_ready": {
+            "CPU": {
+              "samples_us": [
+                2444.063
+              ],
+              "median_us": 2444.063,
+              "mean_us": 2444.063,
+              "p95_us": 2444.063,
+              "amortized_us_per_token": 76.37696875,
+              "expert_tokens_per_second": 13092.952186584387
+            },
+            "GPUOpenCL": {
+              "samples_us": [
+                2328.698
+              ],
+              "median_us": 2328.698,
+              "mean_us": 2328.698,
+              "p95_us": 2328.698,
+              "amortized_us_per_token": 72.7718125,
+              "expert_tokens_per_second": 13741.584353144977
+            },
+            "HTP0": {
+              "samples_us": [
+                1008.906
+              ],
+              "median_us": 1008.906,
+              "mean_us": 1008.906,
+              "p95_us": 1008.906,
+              "amortized_us_per_token": 31.5283125,
+              "expert_tokens_per_second": 31717.523733628306
+            }
+          }
+        }
+      ],
+      "final_validation": {
+        "CPU": {
+          "nrmse": 0.009798979664789603,
+          "worst_token_nrmse": 0.010635277169563718,
+          "max_abs": 0.002772510051727295,
+          "reference_rms": 0.06682156757317533,
+          "threshold_token_nrmse": 0.04
+        },
+        "GPUOpenCL": {
+          "nrmse": 0.0008288680632453413,
+          "worst_token_nrmse": 0.0008956233880112758,
+          "max_abs": 0.00027455762028694153,
+          "reference_rms": 0.06682156757317533,
+          "threshold_token_nrmse": 0.04
+        },
+        "HTP0": {
+          "nrmse": 0.0005076456230221711,
+          "worst_token_nrmse": 0.000582734927779202,
+          "max_abs": 0.0001618117094039917,
+          "reference_rms": 0.06682156757317533,
+          "threshold_token_nrmse": 0.04
+        }
+      }
+    },
+    {
+      "tokens": 64,
+      "slots": 8,
+      "initial_validation": {
+        "CPU": {
+          "nrmse": 0.009770563819353846,
+          "worst_token_nrmse": 0.010646629619776127,
+          "max_abs": 0.0028175711631774902,
+          "reference_rms": 0.06622525635348485,
+          "threshold_token_nrmse": 0.04
+        },
+        "GPUOpenCL": {
+          "nrmse": 0.0008330520213926202,
+          "worst_token_nrmse": 0.0009288118137529309,
+          "max_abs": 0.00027455762028694153,
+          "reference_rms": 0.06622525635348485,
+          "threshold_token_nrmse": 0.04
+        },
+        "HTP0": {
+          "nrmse": 0.0005064108866467709,
+          "worst_token_nrmse": 0.000582734927779202,
+          "max_abs": 0.00018195807933807373,
+          "reference_rms": 0.06622525635348485,
+          "threshold_token_nrmse": 0.04
+        }
+      },
+      "buffers": {
+        "CPU": {
+          "weights": 38928384,
+          "runtime": 2131968
+        },
+        "GPUOpenCL": {
+          "weights": 38929920,
+          "runtime": 2131968
+        },
+        "HTP0": {
+          "weights": 38928384,
+          "runtime": 2131968
+        }
+      },
+      "reuse_cases": [
+        {
+          "reuse": 1,
+          "comparisons": [
+            {
+              "source": "CPU",
+              "target": "GPUOpenCL",
+              "kind": "retained_raw",
+              "stay": {
+                "samples_us": [
+                  4817.864
+                ],
+                "median_us": 4817.864,
+                "mean_us": 4817.864,
+                "p95_us": 4817.864,
+                "amortized_us_per_token": 75.279125,
+                "expert_tokens_per_second": 13283.895103722314
+              },
+              "move": {
+                "samples_us": [
+                  5754.635
+                ],
+                "median_us": 5754.635,
+                "mean_us": 5754.635,
+                "p95_us": 5754.635,
+                "amortized_us_per_token": 89.916171875,
+                "expert_tokens_per_second": 11121.46991077627
+              },
+              "savings_us": [
+                -936.7710000000006
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0008330520213926202,
+                "worst_token_nrmse": 0.0009288118137529309,
+                "max_abs": 0.00027455762028694153,
+                "reference_rms": 0.06622525635348485,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                0.0
+              ],
+              "prepare_us": [
+                2962.812
+              ],
+              "target_input_us": [
+                16.042
+              ],
+              "target_compute_us": [
+                2760.938
+              ],
+              "target_output_us": [
+                14.531
+              ]
+            },
+            {
+              "source": "CPU",
+              "target": "GPUOpenCL",
+              "kind": "gguf_reread",
+              "stay": {
+                "samples_us": [
+                  4774.531
+                ],
+                "median_us": 4774.531,
+                "mean_us": 4774.531,
+                "p95_us": 4774.531,
+                "amortized_us_per_token": 74.602046875,
+                "expert_tokens_per_second": 13404.457945712364
+              },
+              "move": {
+                "samples_us": [
+                  7178.334
+                ],
+                "median_us": 7178.334,
+                "mean_us": 7178.334,
+                "p95_us": 7178.334,
+                "amortized_us_per_token": 112.16146875,
+                "expert_tokens_per_second": 8915.717769610608
+              },
+              "savings_us": [
+                -2403.803
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0008330520213926202,
+                "worst_token_nrmse": 0.0009288118137529309,
+                "max_abs": 0.00027455762028694153,
+                "reference_rms": 0.06622525635348485,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                581.303
+              ],
+              "prepare_us": [
+                3445.468
+              ],
+              "target_input_us": [
+                17.656
+              ],
+              "target_compute_us": [
+                3118.333
+              ],
+              "target_output_us": [
+                15.157
+              ]
+            },
+            {
+              "source": "CPU",
+              "target": "HTP0",
+              "kind": "retained_raw",
+              "stay": {
+                "samples_us": [
+                  4684.687
+                ],
+                "median_us": 4684.687,
+                "mean_us": 4684.687,
+                "p95_us": 4684.687,
+                "amortized_us_per_token": 73.198234375,
+                "expert_tokens_per_second": 13661.531709589137
+              },
+              "move": {
+                "samples_us": [
+                  3289.271
+                ],
+                "median_us": 3289.271,
+                "mean_us": 3289.271,
+                "p95_us": 3289.271,
+                "amortized_us_per_token": 51.394859375,
+                "expert_tokens_per_second": 19457.198874765865
+              },
+              "savings_us": [
+                1395.4159999999997
+              ],
+              "move_win_fraction": 1.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0005064108866467709,
+                "worst_token_nrmse": 0.000582734927779202,
+                "max_abs": 0.00018195807933807373,
+                "reference_rms": 0.06622525635348485,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                0.0
+              ],
+              "prepare_us": [
+                1550.678
+              ],
+              "target_input_us": [
+                36.979
+              ],
+              "target_compute_us": [
+                1669.01
+              ],
+              "target_output_us": [
+                32.188
+              ]
+            },
+            {
+              "source": "CPU",
+              "target": "HTP0",
+              "kind": "gguf_reread",
+              "stay": {
+                "samples_us": [
+                  4859.948
+                ],
+                "median_us": 4859.948,
+                "mean_us": 4859.948,
+                "p95_us": 4859.948,
+                "amortized_us_per_token": 75.9366875,
+                "expert_tokens_per_second": 13168.865181273544
+              },
+              "move": {
+                "samples_us": [
+                  3075.938
+                ],
+                "median_us": 3075.938,
+                "mean_us": 3075.938,
+                "p95_us": 3075.938,
+                "amortized_us_per_token": 48.06153125,
+                "expert_tokens_per_second": 20806.66125260002
+              },
+              "savings_us": [
+                1784.0100000000002
+              ],
+              "move_win_fraction": 1.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0005064108866467709,
+                "worst_token_nrmse": 0.000582734927779202,
+                "max_abs": 0.00018195807933807373,
+                "reference_rms": 0.06622525635348485,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                567.813
+              ],
+              "prepare_us": [
+                1462.135
+              ],
+              "target_input_us": [
+                25.26
+              ],
+              "target_compute_us": [
+                996.198
+              ],
+              "target_output_us": [
+                24.167
+              ]
+            },
+            {
+              "source": "GPUOpenCL",
+              "target": "CPU",
+              "kind": "retained_raw",
+              "stay": {
+                "samples_us": [
+                  2843.021
+                ],
+                "median_us": 2843.021,
+                "mean_us": 2843.021,
+                "p95_us": 2843.021,
+                "amortized_us_per_token": 44.422203125,
+                "expert_tokens_per_second": 22511.265305462042
+              },
+              "move": {
+                "samples_us": [
+                  13600.417
+                ],
+                "median_us": 13600.417,
+                "mean_us": 13600.417,
+                "p95_us": 13600.417,
+                "amortized_us_per_token": 212.506515625,
+                "expert_tokens_per_second": 4705.738066707808
+              },
+              "savings_us": [
+                -10757.395999999999
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.009770563819353846,
+                "worst_token_nrmse": 0.010646629619776127,
+                "max_abs": 0.0028175711631774902,
+                "reference_rms": 0.06622525635348485,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                0.0
+              ],
+              "prepare_us": [
+                8869.063
+              ],
+              "target_input_us": [
+                16.927
+              ],
+              "target_compute_us": [
+                4698.854
+              ],
+              "target_output_us": [
+                15.365
+              ]
+            },
+            {
+              "source": "GPUOpenCL",
+              "target": "CPU",
+              "kind": "packed_only",
+              "stay": {
+                "samples_us": [
+                  2831.823
+                ],
+                "median_us": 2831.823,
+                "mean_us": 2831.823,
+                "p95_us": 2831.823,
+                "amortized_us_per_token": 44.247234375,
+                "expert_tokens_per_second": 22600.28257415806
+              },
+              "move": {
+                "samples_us": [
+                  24244.323
+                ],
+                "median_us": 24244.323,
+                "mean_us": 24244.323,
+                "p95_us": 24244.323,
+                "amortized_us_per_token": 378.817546875,
+                "expert_tokens_per_second": 2639.7932414941015
+              },
+              "savings_us": [
+                -21412.5
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.009770563819353846,
+                "worst_token_nrmse": 0.010646629619776127,
+                "max_abs": 0.0028175711631774902,
+                "reference_rms": 0.06622525635348485,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                10279.583
+              ],
+              "prepare_us": [
+                8777.188
+              ],
+              "target_input_us": [
+                17.657
+              ],
+              "target_compute_us": [
+                5151.718
+              ],
+              "target_output_us": [
+                17.657
+              ]
+            },
+            {
+              "source": "GPUOpenCL",
+              "target": "HTP0",
+              "kind": "retained_raw",
+              "stay": {
+                "samples_us": [
+                  2841.407
+                ],
+                "median_us": 2841.407,
+                "mean_us": 2841.407,
+                "p95_us": 2841.407,
+                "amortized_us_per_token": 44.396984375,
+                "expert_tokens_per_second": 22524.052344489894
+              },
+              "move": {
+                "samples_us": [
+                  2262.135
+                ],
+                "median_us": 2262.135,
+                "mean_us": 2262.135,
+                "p95_us": 2262.135,
+                "amortized_us_per_token": 35.345859375,
+                "expert_tokens_per_second": 28291.857028868744
+              },
+              "savings_us": [
+                579.2719999999999
+              ],
+              "move_win_fraction": 1.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0005064108866467709,
+                "worst_token_nrmse": 0.000582734927779202,
+                "max_abs": 0.00018195807933807373,
+                "reference_rms": 0.06622525635348485,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                0.0
+              ],
+              "prepare_us": [
+                1312.5
+              ],
+              "target_input_us": [
+                19.375
+              ],
+              "target_compute_us": [
+                913.906
+              ],
+              "target_output_us": [
+                15.99
+              ]
+            },
+            {
+              "source": "GPUOpenCL",
+              "target": "HTP0",
+              "kind": "packed_only",
+              "stay": {
+                "samples_us": [
+                  3135.052
+                ],
+                "median_us": 3135.052,
+                "mean_us": 3135.052,
+                "p95_us": 3135.052,
+                "amortized_us_per_token": 48.9851875,
+                "expert_tokens_per_second": 20414.334435282093
+              },
+              "move": {
+                "samples_us": [
+                  12660.625
+                ],
+                "median_us": 12660.625,
+                "mean_us": 12660.625,
+                "p95_us": 12660.625,
+                "amortized_us_per_token": 197.822265625,
+                "expert_tokens_per_second": 5055.042701288444
+              },
+              "savings_us": [
+                -9525.573
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0005064108866467709,
+                "worst_token_nrmse": 0.000582734927779202,
+                "max_abs": 0.00018195807933807373,
+                "reference_rms": 0.06622525635348485,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                10509.062
+              ],
+              "prepare_us": [
+                1190.625
+              ],
+              "target_input_us": [
+                17.969
+              ],
+              "target_compute_us": [
+                924.583
+              ],
+              "target_output_us": [
+                18.282
+              ]
+            },
+            {
+              "source": "HTP0",
+              "target": "CPU",
+              "kind": "retained_raw",
+              "stay": {
+                "samples_us": [
+                  2921.875
+                ],
+                "median_us": 2921.875,
+                "mean_us": 2921.875,
+                "p95_us": 2921.875,
+                "amortized_us_per_token": 45.654296875,
+                "expert_tokens_per_second": 21903.74331550802
+              },
+              "move": {
+                "samples_us": [
+                  13809.115
+                ],
+                "median_us": 13809.115,
+                "mean_us": 13809.115,
+                "p95_us": 13809.115,
+                "amortized_us_per_token": 215.767421875,
+                "expert_tokens_per_second": 4634.6199593529345
+              },
+              "savings_us": [
+                -10887.24
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.009770563819353846,
+                "worst_token_nrmse": 0.010646629619776127,
+                "max_abs": 0.0028175711631774902,
+                "reference_rms": 0.06622525635348485,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                0.0
+              ],
+              "prepare_us": [
+                9015.782
+              ],
+              "target_input_us": [
+                17.812
+              ],
+              "target_compute_us": [
+                4759.844
+              ],
+              "target_output_us": [
+                15.469
+              ]
+            },
+            {
+              "source": "HTP0",
+              "target": "CPU",
+              "kind": "packed_only",
+              "stay": {
+                "samples_us": [
+                  3050.416
+                ],
+                "median_us": 3050.416,
+                "mean_us": 3050.416,
+                "p95_us": 3050.416,
+                "amortized_us_per_token": 47.66275,
+                "expert_tokens_per_second": 20980.744921348432
+              },
+              "move": {
+                "samples_us": [
+                  16224.688
+                ],
+                "median_us": 16224.688,
+                "mean_us": 16224.688,
+                "p95_us": 16224.688,
+                "amortized_us_per_token": 253.51075,
+                "expert_tokens_per_second": 3944.605899355353
+              },
+              "savings_us": [
+                -13174.272
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.009770563819353846,
+                "worst_token_nrmse": 0.010646629619776127,
+                "max_abs": 0.0028175711631774902,
+                "reference_rms": 0.06622525635348485,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                1947.031
+              ],
+              "prepare_us": [
+                9549.323
+              ],
+              "target_input_us": [
+                17.761
+              ],
+              "target_compute_us": [
+                4695.312
+              ],
+              "target_output_us": [
+                15.0
+              ]
+            },
+            {
+              "source": "HTP0",
+              "target": "GPUOpenCL",
+              "kind": "retained_raw",
+              "stay": {
+                "samples_us": [
+                  2008.542
+                ],
+                "median_us": 2008.542,
+                "mean_us": 2008.542,
+                "p95_us": 2008.542,
+                "amortized_us_per_token": 31.38346875,
+                "expert_tokens_per_second": 31863.9092436205
+              },
+              "move": {
+                "samples_us": [
+                  6141.25
+                ],
+                "median_us": 6141.25,
+                "mean_us": 6141.25,
+                "p95_us": 6141.25,
+                "amortized_us_per_token": 95.95703125,
+                "expert_tokens_per_second": 10421.331162222674
+              },
+              "savings_us": [
+                -4132.7080000000005
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0008330520213926202,
+                "worst_token_nrmse": 0.0009288118137529309,
+                "max_abs": 0.00027455762028694153,
+                "reference_rms": 0.06622525635348485,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                0.0
+              ],
+              "prepare_us": [
+                2971.875
+              ],
+              "target_input_us": [
+                19.479
+              ],
+              "target_compute_us": [
+                3134.739
+              ],
+              "target_output_us": [
+                15.157
+              ]
+            },
+            {
+              "source": "HTP0",
+              "target": "GPUOpenCL",
+              "kind": "packed_only",
+              "stay": {
+                "samples_us": [
+                  942.968
+                ],
+                "median_us": 942.968,
+                "mean_us": 942.968,
+                "p95_us": 942.968,
+                "amortized_us_per_token": 14.733875,
+                "expert_tokens_per_second": 67870.80791712974
+              },
+              "move": {
+                "samples_us": [
+                  7957.813
+                ],
+                "median_us": 7957.813,
+                "mean_us": 7957.813,
+                "p95_us": 7957.813,
+                "amortized_us_per_token": 124.340828125,
+                "expert_tokens_per_second": 8042.410647246926
+              },
+              "savings_us": [
+                -7014.845
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0008330520213926202,
+                "worst_token_nrmse": 0.0009288118137529309,
+                "max_abs": 0.00027455762028694153,
+                "reference_rms": 0.06622525635348485,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                1524.636
+              ],
+              "prepare_us": [
+                2955.416
+              ],
+              "target_input_us": [
+                18.542
+              ],
+              "target_compute_us": [
+                3444.427
+              ],
+              "target_output_us": [
+                14.636
+              ]
+            }
+          ],
+          "target_ready": {
+            "CPU": {
+              "samples_us": [
+                6037.812
+              ],
+              "median_us": 6037.812,
+              "mean_us": 6037.812,
+              "p95_us": 6037.812,
+              "amortized_us_per_token": 94.3408125,
+              "expert_tokens_per_second": 10599.866309186176
+            },
+            "GPUOpenCL": {
+              "samples_us": [
+                2810.469
+              ],
+              "median_us": 2810.469,
+              "mean_us": 2810.469,
+              "p95_us": 2810.469,
+              "amortized_us_per_token": 43.913578125,
+              "expert_tokens_per_second": 22771.99997580475
+            },
+            "HTP0": {
+              "samples_us": [
+                2770.729
+              ],
+              "median_us": 2770.729,
+              "mean_us": 2770.729,
+              "p95_us": 2770.729,
+              "amortized_us_per_token": 43.292640625,
+              "expert_tokens_per_second": 23098.61411924443
+            }
+          }
+        }
+      ],
+      "final_validation": {
+        "CPU": {
+          "nrmse": 0.009770563819353846,
+          "worst_token_nrmse": 0.010646629619776127,
+          "max_abs": 0.0028175711631774902,
+          "reference_rms": 0.06622525635348485,
+          "threshold_token_nrmse": 0.04
+        },
+        "GPUOpenCL": {
+          "nrmse": 0.0008330520213926202,
+          "worst_token_nrmse": 0.0009288118137529309,
+          "max_abs": 0.00027455762028694153,
+          "reference_rms": 0.06622525635348485,
+          "threshold_token_nrmse": 0.04
+        },
+        "HTP0": {
+          "nrmse": 0.0005064108866467709,
+          "worst_token_nrmse": 0.000582734927779202,
+          "max_abs": 0.00018195807933807373,
+          "reference_rms": 0.06622525635348485,
+          "threshold_token_nrmse": 0.04
+        }
+      }
+    },
+    {
+      "tokens": 128,
+      "slots": 8,
+      "initial_validation": {
+        "CPU": {
+          "nrmse": 0.009803064217682544,
+          "worst_token_nrmse": 0.010780101151940285,
+          "max_abs": 0.0030800700187683105,
+          "reference_rms": 0.06657013836211861,
+          "threshold_token_nrmse": 0.04
+        },
+        "GPUOpenCL": {
+          "nrmse": 0.0008293889184665449,
+          "worst_token_nrmse": 0.0009288118137529309,
+          "max_abs": 0.00027455762028694153,
+          "reference_rms": 0.06657013836211861,
+          "threshold_token_nrmse": 0.04
+        },
+        "HTP0": {
+          "nrmse": 0.0005036503614780151,
+          "worst_token_nrmse": 0.000582734927779202,
+          "max_abs": 0.00018195807933807373,
+          "reference_rms": 0.06657013836211861,
+          "threshold_token_nrmse": 0.04
+        }
+      },
+      "buffers": {
+        "CPU": {
+          "weights": 38928384,
+          "runtime": 4263936
+        },
+        "GPUOpenCL": {
+          "weights": 38929920,
+          "runtime": 4263936
+        },
+        "HTP0": {
+          "weights": 38928384,
+          "runtime": 4263936
+        }
+      },
+      "reuse_cases": [
+        {
+          "reuse": 1,
+          "comparisons": [
+            {
+              "source": "CPU",
+              "target": "GPUOpenCL",
+              "kind": "retained_raw",
+              "stay": {
+                "samples_us": [
+                  9935.625
+                ],
+                "median_us": 9935.625,
+                "mean_us": 9935.625,
+                "p95_us": 9935.625,
+                "amortized_us_per_token": 77.6220703125,
+                "expert_tokens_per_second": 12882.933886896899
+              },
+              "move": {
+                "samples_us": [
+                  8082.031
+                ],
+                "median_us": 8082.031,
+                "mean_us": 8082.031,
+                "p95_us": 8082.031,
+                "amortized_us_per_token": 63.1408671875,
+                "expert_tokens_per_second": 15837.60319652325
+              },
+              "savings_us": [
+                1853.594
+              ],
+              "move_win_fraction": 1.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0008293889184665449,
+                "worst_token_nrmse": 0.0009288118137529309,
+                "max_abs": 0.00027455762028694153,
+                "reference_rms": 0.06657013836211861,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                0.0
+              ],
+              "prepare_us": [
+                3198.385
+              ],
+              "target_input_us": [
+                35.469
+              ],
+              "target_compute_us": [
+                4810.781
+              ],
+              "target_output_us": [
+                36.979
+              ]
+            },
+            {
+              "source": "CPU",
+              "target": "GPUOpenCL",
+              "kind": "gguf_reread",
+              "stay": {
+                "samples_us": [
+                  9527.813
+                ],
+                "median_us": 9527.813,
+                "mean_us": 9527.813,
+                "p95_us": 9527.813,
+                "amortized_us_per_token": 74.4360390625,
+                "expert_tokens_per_second": 13434.352668340573
+              },
+              "move": {
+                "samples_us": [
+                  8886.979
+                ],
+                "median_us": 8886.979,
+                "mean_us": 8886.979,
+                "p95_us": 8886.979,
+                "amortized_us_per_token": 69.4295234375,
+                "expert_tokens_per_second": 14403.094684931742
+              },
+              "savings_us": [
+                640.8340000000007
+              ],
+              "move_win_fraction": 1.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0008293889184665449,
+                "worst_token_nrmse": 0.0009288118137529309,
+                "max_abs": 0.00027455762028694153,
+                "reference_rms": 0.06657013836211861,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                555.156
+              ],
+              "prepare_us": [
+                2964.219
+              ],
+              "target_input_us": [
+                32.292
+              ],
+              "target_compute_us": [
+                5301.666
+              ],
+              "target_output_us": [
+                33.437
+              ]
+            },
+            {
+              "source": "CPU",
+              "target": "HTP0",
+              "kind": "retained_raw",
+              "stay": {
+                "samples_us": [
+                  9760.625
+                ],
+                "median_us": 9760.625,
+                "mean_us": 9760.625,
+                "p95_us": 9760.625,
+                "amortized_us_per_token": 76.2548828125,
+                "expert_tokens_per_second": 13113.914324133957
+              },
+              "move": {
+                "samples_us": [
+                  2855.156
+                ],
+                "median_us": 2855.156,
+                "mean_us": 2855.156,
+                "p95_us": 2855.156,
+                "amortized_us_per_token": 22.30590625,
+                "expert_tokens_per_second": 44831.1755995119
+              },
+              "savings_us": [
+                6905.469
+              ],
+              "move_win_fraction": 1.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0005036503614780151,
+                "worst_token_nrmse": 0.000582734927779202,
+                "max_abs": 0.00018195807933807373,
+                "reference_rms": 0.06657013836211861,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                0.0
+              ],
+              "prepare_us": [
+                1455.052
+              ],
+              "target_input_us": [
+                46.25
+              ],
+              "target_compute_us": [
+                1277.813
+              ],
+              "target_output_us": [
+                75.937
+              ]
+            },
+            {
+              "source": "CPU",
+              "target": "HTP0",
+              "kind": "gguf_reread",
+              "stay": {
+                "samples_us": [
+                  9451.25
+                ],
+                "median_us": 9451.25,
+                "mean_us": 9451.25,
+                "p95_us": 9451.25,
+                "amortized_us_per_token": 73.837890625,
+                "expert_tokens_per_second": 13543.18211876736
+              },
+              "move": {
+                "samples_us": [
+                  3351.25
+                ],
+                "median_us": 3351.25,
+                "mean_us": 3351.25,
+                "p95_us": 3351.25,
+                "amortized_us_per_token": 26.181640625,
+                "expert_tokens_per_second": 38194.7034688549
+              },
+              "savings_us": [
+                6100.0
+              ],
+              "move_win_fraction": 1.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0005036503614780151,
+                "worst_token_nrmse": 0.000582734927779202,
+                "max_abs": 0.00018195807933807373,
+                "reference_rms": 0.06657013836211861,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                549.218
+              ],
+              "prepare_us": [
+                1446.563
+              ],
+              "target_input_us": [
+                44.844
+              ],
+              "target_compute_us": [
+                1275.833
+              ],
+              "target_output_us": [
+                34.531
+              ]
+            },
+            {
+              "source": "GPUOpenCL",
+              "target": "CPU",
+              "kind": "retained_raw",
+              "stay": {
+                "samples_us": [
+                  4995.365
+                ],
+                "median_us": 4995.365,
+                "mean_us": 4995.365,
+                "p95_us": 4995.365,
+                "amortized_us_per_token": 39.0262890625,
+                "expert_tokens_per_second": 25623.75321923423
+              },
+              "move": {
+                "samples_us": [
+                  19709.531
+                ],
+                "median_us": 19709.531,
+                "mean_us": 19709.531,
+                "p95_us": 19709.531,
+                "amortized_us_per_token": 153.9807109375,
+                "expert_tokens_per_second": 6494.319930798963
+              },
+              "savings_us": [
+                -14714.166
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.009803064217682544,
+                "worst_token_nrmse": 0.010780101151940285,
+                "max_abs": 0.0030800700187683105,
+                "reference_rms": 0.06657013836211861,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                0.0
+              ],
+              "prepare_us": [
+                8359.427
+              ],
+              "target_input_us": [
+                40.104
+              ],
+              "target_compute_us": [
+                11275.313
+              ],
+              "target_output_us": [
+                34.427
+              ]
+            },
+            {
+              "source": "GPUOpenCL",
+              "target": "CPU",
+              "kind": "packed_only",
+              "stay": {
+                "samples_us": [
+                  4966.719
+                ],
+                "median_us": 4966.719,
+                "mean_us": 4966.719,
+                "p95_us": 4966.719,
+                "amortized_us_per_token": 38.8024921875,
+                "expert_tokens_per_second": 25771.54052806289
+              },
+              "move": {
+                "samples_us": [
+                  30947.969
+                ],
+                "median_us": 30947.969,
+                "mean_us": 30947.969,
+                "p95_us": 30947.969,
+                "amortized_us_per_token": 241.7810078125,
+                "expert_tokens_per_second": 4135.974157140974
+              },
+              "savings_us": [
+                -25981.25
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.009803064217682544,
+                "worst_token_nrmse": 0.010780101151940285,
+                "max_abs": 0.0030800700187683105,
+                "reference_rms": 0.06657013836211861,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                9830.105
+              ],
+              "prepare_us": [
+                8959.531
+              ],
+              "target_input_us": [
+                40.0
+              ],
+              "target_compute_us": [
+                12075.99
+              ],
+              "target_output_us": [
+                42.135
+              ]
+            },
+            {
+              "source": "GPUOpenCL",
+              "target": "HTP0",
+              "kind": "retained_raw",
+              "stay": {
+                "samples_us": [
+                  5155.104
+                ],
+                "median_us": 5155.104,
+                "mean_us": 5155.104,
+                "p95_us": 5155.104,
+                "amortized_us_per_token": 40.27425,
+                "expert_tokens_per_second": 24829.760951476437
+              },
+              "move": {
+                "samples_us": [
+                  3829.532
+                ],
+                "median_us": 3829.532,
+                "mean_us": 3829.532,
+                "p95_us": 3829.532,
+                "amortized_us_per_token": 29.91821875,
+                "expert_tokens_per_second": 33424.44977610841
+              },
+              "savings_us": [
+                1325.5720000000001
+              ],
+              "move_win_fraction": 1.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0005036503614780151,
+                "worst_token_nrmse": 0.000582734927779202,
+                "max_abs": 0.00018195807933807373,
+                "reference_rms": 0.06657013836211861,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                0.0
+              ],
+              "prepare_us": [
+                1252.813
+              ],
+              "target_input_us": [
+                56.146
+              ],
+              "target_compute_us": [
+                2490.781
+              ],
+              "target_output_us": [
+                29.532
+              ]
+            },
+            {
+              "source": "GPUOpenCL",
+              "target": "HTP0",
+              "kind": "packed_only",
+              "stay": {
+                "samples_us": [
+                  5348.021
+                ],
+                "median_us": 5348.021,
+                "mean_us": 5348.021,
+                "p95_us": 5348.021,
+                "amortized_us_per_token": 41.7814140625,
+                "expert_tokens_per_second": 23934.087020226736
+              },
+              "move": {
+                "samples_us": [
+                  12976.615
+                ],
+                "median_us": 12976.615,
+                "mean_us": 12976.615,
+                "p95_us": 12976.615,
+                "amortized_us_per_token": 101.3798046875,
+                "expert_tokens_per_second": 9863.897480198033
+              },
+              "savings_us": [
+                -7628.594
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0005036503614780151,
+                "worst_token_nrmse": 0.000582734927779202,
+                "max_abs": 0.00018195807933807373,
+                "reference_rms": 0.06657013836211861,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                10156.146
+              ],
+              "prepare_us": [
+                1303.49
+              ],
+              "target_input_us": [
+                57.708
+              ],
+              "target_compute_us": [
+                1430.157
+              ],
+              "target_output_us": [
+                28.906
+              ]
+            },
+            {
+              "source": "HTP0",
+              "target": "CPU",
+              "kind": "retained_raw",
+              "stay": {
+                "samples_us": [
+                  4067.5
+                ],
+                "median_us": 4067.5,
+                "mean_us": 4067.5,
+                "p95_us": 4067.5,
+                "amortized_us_per_token": 31.77734375,
+                "expert_tokens_per_second": 31468.961278426552
+              },
+              "move": {
+                "samples_us": [
+                  18820.468
+                ],
+                "median_us": 18820.468,
+                "mean_us": 18820.468,
+                "p95_us": 18820.468,
+                "amortized_us_per_token": 147.03490625,
+                "expert_tokens_per_second": 6801.1061148957615
+              },
+              "savings_us": [
+                -14752.968
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.009803064217682544,
+                "worst_token_nrmse": 0.010780101151940285,
+                "max_abs": 0.0030800700187683105,
+                "reference_rms": 0.06657013836211861,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                0.0
+              ],
+              "prepare_us": [
+                9401.927
+              ],
+              "target_input_us": [
+                41.302
+              ],
+              "target_compute_us": [
+                9336.042
+              ],
+              "target_output_us": [
+                40.885
+              ]
+            },
+            {
+              "source": "HTP0",
+              "target": "CPU",
+              "kind": "packed_only",
+              "stay": {
+                "samples_us": [
+                  1440.469
+                ],
+                "median_us": 1440.469,
+                "mean_us": 1440.469,
+                "p95_us": 1440.469,
+                "amortized_us_per_token": 11.2536640625,
+                "expert_tokens_per_second": 88859.94769759016
+              },
+              "move": {
+                "samples_us": [
+                  20971.406
+                ],
+                "median_us": 20971.406,
+                "mean_us": 20971.406,
+                "p95_us": 20971.406,
+                "amortized_us_per_token": 163.839109375,
+                "expert_tokens_per_second": 6103.548803547078
+              },
+              "savings_us": [
+                -19530.936999999998
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.009803064217682544,
+                "worst_token_nrmse": 0.010780101151940285,
+                "max_abs": 0.0030800700187683105,
+                "reference_rms": 0.06657013836211861,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                1749.635
+              ],
+              "prepare_us": [
+                9797.031
+              ],
+              "target_input_us": [
+                40.677
+              ],
+              "target_compute_us": [
+                9344.063
+              ],
+              "target_output_us": [
+                39.375
+              ]
+            },
+            {
+              "source": "HTP0",
+              "target": "GPUOpenCL",
+              "kind": "retained_raw",
+              "stay": {
+                "samples_us": [
+                  1964.948
+                ],
+                "median_us": 1964.948,
+                "mean_us": 1964.948,
+                "p95_us": 1964.948,
+                "amortized_us_per_token": 15.35115625,
+                "expert_tokens_per_second": 65141.672960302254
+              },
+              "move": {
+                "samples_us": [
+                  8554.271
+                ],
+                "median_us": 8554.271,
+                "mean_us": 8554.271,
+                "p95_us": 8554.271,
+                "amortized_us_per_token": 66.8302421875,
+                "expert_tokens_per_second": 14963.28559148991
+              },
+              "savings_us": [
+                -6589.323
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0008293889184665449,
+                "worst_token_nrmse": 0.0009288118137529309,
+                "max_abs": 0.00027455762028694153,
+                "reference_rms": 0.06657013836211861,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                0.0
+              ],
+              "prepare_us": [
+                3185.0
+              ],
+              "target_input_us": [
+                39.375
+              ],
+              "target_compute_us": [
+                5289.219
+              ],
+              "target_output_us": [
+                40.365
+              ]
+            },
+            {
+              "source": "HTP0",
+              "target": "GPUOpenCL",
+              "kind": "packed_only",
+              "stay": {
+                "samples_us": [
+                  1686.562
+                ],
+                "median_us": 1686.562,
+                "mean_us": 1686.562,
+                "p95_us": 1686.562,
+                "amortized_us_per_token": 13.176265625,
+                "expert_tokens_per_second": 75894.03769324816
+              },
+              "move": {
+                "samples_us": [
+                  9960.469
+                ],
+                "median_us": 9960.469,
+                "mean_us": 9960.469,
+                "p95_us": 9960.469,
+                "amortized_us_per_token": 77.8161640625,
+                "expert_tokens_per_second": 12850.800499454394
+              },
+              "savings_us": [
+                -8273.907
+              ],
+              "move_win_fraction": 0.0,
+              "zero_target_restore_validated": true,
+              "validation": {
+                "nrmse": 0.0008293889184665449,
+                "worst_token_nrmse": 0.0009288118137529309,
+                "max_abs": 0.00027455762028694153,
+                "reference_rms": 0.06657013836211861,
+                "threshold_token_nrmse": 0.04
+              },
+              "restore_or_read_us": [
+                1642.188
+              ],
+              "prepare_us": [
+                2976.927
+              ],
+              "target_input_us": [
+                35.938
+              ],
+              "target_compute_us": [
+                5276.302
+              ],
+              "target_output_us": [
+                28.646
+              ]
+            }
+          ],
+          "target_ready": {
+            "CPU": {
+              "samples_us": [
+                9399.635
+              ],
+              "median_us": 9399.635,
+              "mean_us": 9399.635,
+              "p95_us": 9399.635,
+              "amortized_us_per_token": 73.4346484375,
+              "expert_tokens_per_second": 13617.55004316657
+            },
+            "GPUOpenCL": {
+              "samples_us": [
+                4968.073
+              ],
+              "median_us": 4968.073,
+              "mean_us": 4968.073,
+              "p95_us": 4968.073,
+              "amortized_us_per_token": 38.8130703125,
+              "expert_tokens_per_second": 25764.51674522496
+            },
+            "HTP0": {
+              "samples_us": [
+                1892.864
+              ],
+              "median_us": 1892.864,
+              "mean_us": 1892.864,
+              "p95_us": 1892.864,
+              "amortized_us_per_token": 14.788,
+              "expert_tokens_per_second": 67622.3965377333
+            }
+          }
+        }
+      ],
+      "final_validation": {
+        "CPU": {
+          "nrmse": 0.009803064217682544,
+          "worst_token_nrmse": 0.010780101151940285,
+          "max_abs": 0.0030800700187683105,
+          "reference_rms": 0.06657013836211861,
+          "threshold_token_nrmse": 0.04
+        },
+        "GPUOpenCL": {
+          "nrmse": 0.0008293889184665449,
+          "worst_token_nrmse": 0.0009288118137529309,
+          "max_abs": 0.00027455762028694153,
+          "reference_rms": 0.06657013836211861,
+          "threshold_token_nrmse": 0.04
+        },
+        "HTP0": {
+          "nrmse": 0.0005036503614780151,
+          "worst_token_nrmse": 0.000582734927779202,
+          "max_abs": 0.00018195807933807373,
+          "reference_rms": 0.06657013836211861,
+          "threshold_token_nrmse": 0.04
+        }
+      }
+    }
+  ]
+}
