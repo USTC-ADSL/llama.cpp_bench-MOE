@@ -54,6 +54,8 @@ Mean tokens/s over three repetitions:
 
 | Weight GiB | Workload | CPU4 | CPU8 | HTP4 | OpenCL4 mean +/- sample SD |
 | --- | --- | ---: | ---: | ---: | ---: |
+| Full | PP128 | 74.429 | 113.905 | 289.544 | 161.660 +/- 0.450 |
+| Full | PP512 | 85.155 | 112.059 | 287.732 | 159.390 +/- 0.395 |
 | 6 | PP128 | 65.882 | 86.540 | 116.099 | 94.017 +/- 11.836 |
 | 6 | PP512 | 67.397 | 84.019 | 120.026 | 158.981 +/- 0.688 |
 | 5 | PP128 | 65.022 | 76.005 | 87.589 | 44.023 +/- 1.138 |
@@ -68,6 +70,11 @@ CPU4 PP128 has greater sample dispersion at 6/4 GiB; raw samples remain availabl
 The OpenCL supplement reuses all CPU/HTP points and adds 18 GPU samples. Its
 combined data is evidence/sweep-opencl-summary.json. OpenCL standard deviations
 are shown explicitly because 4 GiB PP128 has large within-run variation.
+
+Full CPU/HTP rows reuse ../handoff-2026-09-14-k80-prefill/evidence/*-ub128.json.
+Full OpenCL rows are the subsequent matched baseline below, stored separately
+in evidence/full-opencl-summary.json. The capacity summary files retain their
+original scope. Full rows use default loading without the weight manager.
 
 All six CPU/HTP invocations have normal 3.5328/4.32 GHz CPU caps in both their
 before and after snapshots. This does not establish constant instantaneous clocks
@@ -164,3 +171,77 @@ OpenCL logs are losslessly compressed as *gpu-ub128.log.gz. Python compilation,
 both analyzer modes and git diff --check passed. The scoped OpenCL checkpoint
 contains harness changes, table updates and GPU evidence; CPU/HTP evidence is
 unchanged. No active device tests or required measurements remain.
+
+## Matched OpenCL Full-Weight Rerun
+
+User requested a same-protocol full-weight baseline after comparing the capacity
+results to the older E1 real-prompt server result (158.18 tokens/s). E1 is not a
+matched baseline and is not used in the table or retention ratios here.
+
+Started from clean c90625749 on fd8657d6. The host hash manifest and all ten
+deployed files match the capacity runs. Rechecked the original model SHA256:
+8b704c763230935a096c9c810765c8a5483f1724c83e34e253704138ca040473.
+run.py now supports --full-weight and --gen. The PP128/PP512 invocation is
+identical to the 6 GiB command except removal of --weight-config. It therefore
+uses default full loading, matching CPU/HTP full baselines. It is not a
+manager-all-fixed experiment; any manager/placement/fusion overhead remains
+included in full-versus-capacity comparisons. No new inference build or APK.
+
+Full PP128/PP512 uses GPUOpenCL/ngl99/t4, b512/ub128, FA on, mmap, lazy off,
+default warmup, three repetitions, no reports/profiling, and the same enabled
+task-owned kernel-cache path. That directory was initially absent, as for the
+6 GiB invocation. Timed samples exclude model load and compilation at loading.
+The requested TG128 is a separate invocation (p0/n128), preserving the prefill
+case list; it is llama-bench decode, not decode after a real 512-token prompt.
+
+| Full-weight workload | Mean tokens/s | Sample SD | Three samples tokens/s |
+| --- | ---: | ---: | --- |
+| PP128 | 161.659856 | 0.450197 | 161.141144, 161.948880, 161.889544 |
+| PP512 | 159.390478 | 0.395401 | 159.488777, 158.955201, 159.727457 |
+| TG128 | 28.401025 | 0.209267 | 28.194260, 28.612708, 28.396107 |
+
+At 6 GiB PP128 retains 58.16% of full throughput (41.84% lower); PP512 retains
+99.74% (0.26% lower). Thus the near-equal PP512 observation persists with matched
+commands/builds. Three samples per point, collected in separate runs, do not
+establish performance equivalence or absence of swapping costs. The PP128 loss
+also prevents generalizing the PP512 observation to all prefill lengths.
+5/4 GiB PP512 retain 28.45%/30.66%; keep the previously documented 4 GiB
+variability and do not infer a stable advantage over 5 GiB.
+
+Full logs confirm 25/25 layers offloaded, CPU_Mapped model buffer 166.92 MiB and
+OpenCL model buffer 7599.83 MiB (full-gpu-ub128.log lines1062..1069), with no
+weight-manager activation. Both invocations exited0; no whole-model CPU fallback
+was observed. The 6 GiB log explicitly activates the manager and has a different
+buffer layout. These logs lack stage timing and runtime swap counters, so they
+cannot attribute the close PP512 speeds to a specific mechanism. No new profiling
+or numerical-quality runs were performed. GPU frequency was not recorded.
+
+Battery temperature was 23.1 -> 24.1 C for prefill and 24.1 -> 25.0 C for decode.
+Before/after CPU frequency caps were 3.5328/4.32 GHz. Caps do not establish fixed
+instantaneous clocks. No affinity, clock, swap or security settings were changed.
+
+```sh
+sha256sum -c task/handoff/handoff-2026-09-14-k80-prefill/evidence/host.sha256
+adb -s fd8657d6 shell sha256sum /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf
+python3 task/handoff/handoff-2026-09-14-weight-ub128/run.py prepare --backend gpu --full-weight
+python3 task/handoff/handoff-2026-09-14-weight-ub128/run.py run --backend gpu --full-weight --tag full-gpu-ub128
+python3 task/handoff/handoff-2026-09-14-weight-ub128/run.py run --backend gpu --full-weight --tag full-gpu-tg128 --prompt 0 --gen 128
+python3 task/handoff/handoff-2026-09-14-weight-ub128/analyze_full_opencl.py
+```
+
+analyze_full_opencl.py validates all nine new samples against native nanosecond
+times and stdout, the exact command match except weight-config, build/backend
+metadata, deployment hashes and CPU caps. It writes full-opencl-summary.json;
+original capacity evidence is preserved. Per-invocation JSON retains commands,
+snapshots and memory samples. Both full runs completed on the first attempt;
+all samples are retained. Native logs are losslessly compressed as
+full-gpu-ub128.log.gz and full-gpu-tg128.log.gz. Python compilation and the
+existing analyze_sweep.py --opencl validation also passed.
+
+Confirmed no llama-bench process remained, recorded the task directory listing,
+checked it contained only deployed binaries and cl-cache, then removed only
+/data/local/tmp/llama-weight-ub128. Verified the directory is absent and original
+model remains 8149865792 bytes. Evidence: full-gpu-cleanup-before.txt and
+full-gpu-cleanup-after.txt. The scoped checkpoint contains only this task's
+runner, analyzer, report, checklist and new evidence. No tests remain running;
+no required work remains. No production-source changes were made.

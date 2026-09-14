@@ -107,3 +107,35 @@ normal; GPU frequency was not recorded. Capacity-dependent drop remains unattrib
 Device directory and its compiled-program cache were removed after confirming no
 benchmark process remained. Original GGUF retained. Logs compressed, combined
 results saved in sweep-opencl-summary.json and handoff-02-capacity-sweep.md.
+
+## Matched OpenCL Full-Weight Baseline
+
+User requests a full-weight OpenCL rerun matching the capacity protocol. Measure
+PP128/PP512 together at b512/ub128, t4, FA on, mmap, lazy off, default warmup and
+three repetitions. Use default full loading without a weight manager, matching
+the existing CPU/HTP full baseline. Measure the previously requested TG128 in a
+separate invocation to preserve the prefill case list. No APK or source rebuild.
+
+- [x] Verify same binaries/model and deploy to fd8657d6.
+- [x] Measure full-weight OpenCL PP128/PP512 and separate TG128.
+- [x] Validate raw samples/options and compare with existing capacity results.
+- [x] Update report, clean the device directory and commit the checkpoint.
+
+Deployment hashes match gpu-deploy-hashes.json. Original model SHA256 verified:
+8b704c763230935a096c9c810765c8a5483f1724c83e34e253704138ca040473.
+Starting battery temperature 23.1 C, CPU caps 3.5328/4.32 GHz. Full loading uses
+no --weight-config; prefill otherwise uses the identical capacity-run command.
+
+Full prefill completed on the first attempt: PP128 161.660 +/- 0.450 tokens/s;
+PP512 159.390 +/- 0.395 tokens/s. Separate TG128 completed at 28.401 +/- 0.209
+tokens/s. All samples retained. analyze_full_opencl.py checks 9 samples, native
+stdout, exact prefill command equality except weight-config, backend metadata,
+same deployment hashes, and before/after CPU caps. All checks passed. Battery
+23.1 -> 24.1 C for prefill, 24.1 -> 25.0 C for decode. Log confirms 25/25 layers
+offloaded and OpenCL model buffer 7599.83 MiB, without the weight manager.
+
+Updated handoff-02-capacity-sweep.md with full rows, TG128 and interpretation.
+Capacity validation and Python compilation passed. Compressed full logs; removed
+only the task-owned device directory and verified original model size unchanged.
+Cleanup evidence is full-gpu-cleanup-before.txt / full-gpu-cleanup-after.txt.
+All changes are confined to this task directory; save the scoped checkpoint.

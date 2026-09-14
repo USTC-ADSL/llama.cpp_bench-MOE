@@ -1,0 +1,160 @@
+{
+  "command": "cd /data/local/tmp/llama-weight-ub128 && exec env LD_LIBRARY_PATH=/data/local/tmp/llama-weight-ub128:/vendor/lib64 ADSP_LIBRARY_PATH=/data/local/tmp/llama-weight-ub128 GGML_HEXAGON_NHMX=1 GGML_HEXAGON_MM_SELECT=3 GGML_OPENCL_KERNEL_CACHE_DIR=/data/local/tmp/llama-weight-ub128/cl-cache /data/local/tmp/llama-weight-ub128/llama-bench -m /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf -dev GPUOpenCL -ngl 99 -t 4 -p 0 -n 128 -b 512 -ub 128 -r 3 -fa on -lm mmap -lzm off -o json -v",
+  "weight_gib": null,
+  "full_weight": true,
+  "diagnostic": false,
+  "profile": false,
+  "before": {
+    "memory": "MemTotal:       15476712 kB\nMemFree:          305488 kB\nMemAvailable:   11300212 kB\nBuffers:            1088 kB\nCached:          2667652 kB\nSwapCached:        12404 kB\nActive:           288964 kB\nInactive:        2500432 kB\nActive(anon):      38140 kB\nInactive(anon):   224492 kB\nActive(file):     250824 kB\nInactive(file):  2275940 kB\nUnevictable:      138528 kB\nMlocked:          137156 kB\nSwapTotal:      16777212 kB\nSwapFree:       13708952 kB\nDirty:               496 kB\nWriteback:             0 kB\nAnonPages:        259308 kB\nMapped:           464756 kB\nShmem:              8832 kB\nKReclaimable:    8936824 kB\nSlab:             848580 kB\nSReclaimable:     167308 kB\nSUnreclaim:       681272 kB\nKernelStack:      104096 kB\nShadowCallStack:       0 kB\nPageTables:       171872 kB\nSecPageTables:         0 kB\nNFS_Unstable:          0 kB\nBounce:                0 kB\nWritebackTmp:          0 kB\nCommitLimit:    24515568 kB\nCommitted_AS:   102382688 kB\nVmallocTotal:   257687552 kB\nVmallocUsed:      364084 kB\nVmallocChunk:          0 kB\nPercpu:            16960 kB\nAnonHugePages:         0 kB\nShmemHugePages:        0 kB\nShmemPmdMapped:        0 kB\nFileHugePages:         0 kB\nFilePmdMapped:         0 kB\nCmaTotal:         712704 kB\nCmaFree:             160 kB\n",
+    "battery": "Current Battery Service state:\n  AC powered: false\n  USB powered: true\n  Wireless powered: false\n  Dock powered: false\n  Max charging current: 0\n Time when the latest updated value of the Max charging current was sent via battery changed broadcast: +8s373ms\n  Max charging voltage: 0\n  Charge counter: 5402000\n  status: 2\n  health: 2\n  present: true\n  level: 100\n  scale: 100\n  voltage: 4246\n Time when the latest updated value of the voltage was sent via battery changed broadcast: +55d2h14m3s571ms\n The last voltage value sent via the battery changed broadcast: 4240\n  temperature: 241\n  technology: Li-poly\n  Charging state: 0\n  Charging policy: 0\n  Capacity level: 5\nMiuiBatteryService first usage time:\n  mSetBatteryUsageTimeCount=0\n  mNtpTime=-1\n  mParseNtpTime=\n",
+    "thermal": "IsStatusOverride: false\nThermalEventListeners:\n\tcallbacks: 4\n\tkilled: false\n\tbroadcasts count: -1\nThermalStatusListeners:\n\tcallbacks: 5\n\tkilled: false\n\tbroadcasts count: -1\nThermal Status: 0\nCached temperatures:\n\tTemperature{mValue=30.0, mType=2, mName=battery, mStatus=0}\n\tTemperature{mValue=76.4, mType=0, mName=CPU0, mStatus=0}\n\tTemperature{mValue=73.7, mType=0, mName=CPU1, mStatus=0}\n\tTemperature{mValue=74.9, mType=0, mName=CPU2, mStatus=0}\n\tTemperature{mValue=71.8, mType=0, mName=CPU3, mStatus=0}\n\tTemperature{mValue=75.3, mType=0, mName=CPU4, mStatus=0}\n\tTemperature{mValue=73.3, mType=0, mName=CPU5, mStatus=0}\n\tTemperature{mValue=81.4, mType=0, mName=CPU6, mStatus=0}\n\tTemperature{mValue=83.4, mType=0, mName=CPU7, mStatus=0}\n\tTemperature{mValue=56.0, mType=1, mName=GPU0, mStatus=0}\n\tTemperature{mValue=57.1, mType=1, mName=GPU1, mStatus=0}\n\tTemperature{mValue=56.0, mType=1, mName=GPU2, mStatus=0}\n\tTemperature{mValue=55.6, mType=1, mName=GPU3, mStatus=0}\n\tTemperature{mValue=61.7, mType=1, mName=GPU4, mStatus=0}\n\tTemperature{mValue=63.3, mType=1, mName=GPU5, mStatus=0}\n\tTemperature{mValue=60.2, mType=1, mName=GPU6, mStatus=0}\n\tTemperature{mValue=59.8, mType=1, mName=GPU7, mStatus=0}\n\tTemperature{mValue=0.326, mType=7, mName=ibat, mStatus=0}\n\tTemperature{mValue=52.9, mType=9, mName=nsp0, mStatus=0}\n\tTemperature{mValue=51.7, mType=9, mName=nsp1, mStatus=0}\n\tTemperature{mValue=51.7, mType=9, mName=nsp2, mStatus=0}\n\tTemperature{mValue=57.1, mType=9, mName=nsp3, mStatus=0}\n\tTemperature{mValue=55.2, mType=9, mName=nsp4, mStatus=0}\n\tTemperature{mValue=52.9, mType=9, mName=nsp5, mStatus=0}\n\tTemperature{mValue=54.0, mType=9, mName=nsp6, mStatus=0}\n\tTemperature{mValue=45.987, mType=3, mName=skin, mStatus=0}\n\tTemperature{mValue=0.0, mType=8, mName=socd, mStatus=0}\n\tTemperature{mValue=4.263, mType=6, mName=vbat, mStatus=0}\nHAL Ready: true\nHAL connection:\n\tThermalHAL AIDL 3  connected: yes\nCurrent temperatures from HAL:\n\tTemperature{mValue=0.0, mType=8, mName=socd, mStatus=0}\n\tTemperature{mValue=29.3, mType=9, mName=nsp6, mStatus=0}\n\tTemperature{mValue=29.7, mType=9, mName=nsp5, mStatus=0}\n\tTemperature{mValue=29.3, mType=9, mName=nsp4, mStatus=0}\n\tTemperature{mValue=29.3, mType=9, mName=nsp3, mStatus=0}\n\tTemperature{mValue=28.9, mType=9, mName=nsp1, mStatus=0}\n\tTemperature{mValue=30.1, mType=1, mName=GPU6, mStatus=0}\n\tTemperature{mValue=29.7, mType=1, mName=GPU4, mStatus=0}\n\tTemperature{mValue=29.7, mType=1, mName=GPU2, mStatus=0}\n\tTemperature{mValue=30.1, mType=0, mName=CPU5, mStatus=0}\n\tTemperature{mValue=24.6, mType=2, mName=battery, mStatus=0}\n\tTemperature{mValue=30.1, mType=0, mName=CPU4, mStatus=0}\n\tTemperature{mValue=29.3, mType=9, mName=nsp0, mStatus=0}\n\tTemperature{mValue=29.7, mType=0, mName=CPU6, mStatus=0}\n\tTemperature{mValue=30.1, mType=1, mName=GPU5, mStatus=0}\n\tTemperature{mValue=-0.009, mType=7, mName=ibat, mStatus=0}\n\tTemperature{mValue=30.8, mType=0, mName=CPU2, mStatus=0}\n\tTemperature{mValue=30.1, mType=1, mName=GPU3, mStatus=0}\n\tTemperature{mValue=4.43, mType=6, mName=vbat, mStatus=0}\n\tTemperature{mValue=30.5, mType=0, mName=CPU1, mStatus=0}\n\tTemperature{mValue=28.378, mType=3, mName=skin, mStatus=0}\n\tTemperature{mValue=30.1, mType=1, mName=GPU0, mStatus=0}\n\tTemperature{mValue=30.1, mType=1, mName=GPU1, mStatus=0}\n\tTemperature{mValue=30.8, mType=0, mName=CPU0, mStatus=0}\n\tTemperature{mValue=29.7, mType=9, mName=nsp2, mStatus=0}\n\tTemperature{mValue=30.1, mType=0, mName=CPU7, mStatus=0}\n\tTemperature{mValue=29.7, mType=1, mName=GPU7, mStatus=0}\n\tTemperature{mValue=30.1, mType=0, mName=CPU3, mStatus=0}\nCurrent cooling devices from HAL:\n\tCoolingDevice{mValue=0, mType=2, mName=thermal-pause-2}\n\tCoolingDevice{mValue=0, mType=2, mName=thermal-pause-1}\n\tCoolingDevice{mValue=0, mType=5, mName=cdsp_hw}\n\tCoolingDevice{mValue=0, mType=2, mName=cpufreq-cpu0}\n\tCoolingDevice{mValue=0, mType=2, mName=thermal-pause-4}\n\tCoolingDevice{mValue=0, mType=1, mName=battery}\n\tCoolingDevice{mValue=0, mType=2, mName=thermal-pause-20}\n\tCoolingDevice{mValue=0, mType=2, mName=thermal-pause-10}\n\tCoolingDevice{mValue=1, mType=5, mName=cdsp}\n\tCoolingDevice{mValue=0, mType=2, mName=cpufreq-cpu6}\n\tCoolingDevice{mValue=0, mType=9, mName=display-fps}\n\tCoolingDevice{mValue=0, mType=2, mName=thermal-pause-8}\n\tCoolingDevice{mValue=2, mType=3, mName=gpu}\n\tCoolingDevice{mValue=0, mType=2, mName=thermal-pause-80}\n\tCoolingDevice{mValue=0, mType=2, mName=thermal-pause-40}\nTemperature static thresholds from HAL:\n\tTemperatureThreshold{mType=8, mName=socd, mHotThrottlingThresholds=[NaN, NaN, NaN, 90.0, NaN, NaN, 99.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=9, mName=nsp6, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=9, mName=nsp5, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=9, mName=nsp4, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=9, mName=nsp3, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=9, mName=nsp1, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=1, mName=GPU6, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=1, mName=GPU4, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=1, mName=GPU2, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=0, mName=CPU5, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=2, mName=battery, mHotThrottlingThresholds=[NaN, NaN, NaN, 80.0, NaN, NaN, 90.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=0, mName=CPU4, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=9, mName=nsp0, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=0, mName=CPU6, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=1, mName=GPU5, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=7, mName=ibat, mHotThrottlingThresholds=[NaN, NaN, NaN, 13.5, NaN, NaN, 15.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=0, mName=CPU2, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=1, mName=GPU3, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=6, mName=vbat, mHotThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN], mColdThrottlingThresholds=[NaN, NaN, NaN, 3.2, NaN, NaN, 3.0]}\n\tTemperatureThreshold{mType=0, mName=CPU1, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=3, mName=skin, mHotThrottlingThresholds=[NaN, 48.0, 49.0, 50.0, 60.0, 61.0, 90.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=1, mName=GPU0, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=1, mName=GPU1, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=0, mName=CPU0, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=9, mName=nsp2, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=0, mName=CPU7, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=1, mName=GPU7, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=0, mName=CPU3, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\nTemperature headroom thresholds:\n[NaN, 0.93333334, 0.96666664, 1.0, 1.3333334, 1.3666667, 2.3333333]\n",
+    "cpu_frequency_caps": "/sys/devices/system/cpu/cpufreq/policy0\n3532800\n/sys/devices/system/cpu/cpufreq/policy6\n4320000\n"
+  },
+  "process_samples": [
+    {
+      "seconds": 2.336,
+      "VmLck": "0 kB",
+      "VmHWM": "5289564 kB",
+      "VmRSS": "5289564 kB",
+      "VmSwap": "0 kB"
+    },
+    {
+      "seconds": 4.705,
+      "VmLck": "0 kB",
+      "VmHWM": "7284076 kB",
+      "VmRSS": "2022252 kB",
+      "VmSwap": "0 kB"
+    },
+    {
+      "seconds": 7.171,
+      "VmLck": "0 kB",
+      "VmHWM": "7284076 kB",
+      "VmRSS": "2150980 kB",
+      "VmSwap": "66944 kB"
+    },
+    {
+      "seconds": 9.523,
+      "VmLck": "0 kB",
+      "VmHWM": "7284076 kB",
+      "VmRSS": "2136104 kB",
+      "VmSwap": "70784 kB"
+    },
+    {
+      "seconds": 11.974,
+      "VmLck": "0 kB",
+      "VmHWM": "7284076 kB",
+      "VmRSS": "35520 kB",
+      "VmSwap": "62720 kB"
+    },
+    {
+      "seconds": 14.389,
+      "VmLck": "0 kB",
+      "VmHWM": "7284076 kB",
+      "VmRSS": "114360 kB",
+      "VmSwap": "60160 kB"
+    },
+    {
+      "seconds": 16.773,
+      "VmLck": "0 kB",
+      "VmHWM": "7284076 kB",
+      "VmRSS": "118028 kB",
+      "VmSwap": "60160 kB"
+    },
+    {
+      "seconds": 19.157,
+      "VmLck": "0 kB",
+      "VmHWM": "7284076 kB",
+      "VmRSS": "122532 kB",
+      "VmSwap": "60160 kB"
+    },
+    {
+      "seconds": 21.479,
+      "VmLck": "0 kB",
+      "VmHWM": "7284076 kB",
+      "VmRSS": "126448 kB",
+      "VmSwap": "60160 kB"
+    },
+    {
+      "seconds": 23.858,
+      "VmLck": "0 kB",
+      "VmHWM": "7284076 kB",
+      "VmRSS": "130548 kB",
+      "VmSwap": "60160 kB"
+    },
+    {
+      "seconds": 26.227,
+      "VmLck": "0 kB",
+      "VmHWM": "7284076 kB",
+      "VmRSS": "134412 kB",
+      "VmSwap": "60160 kB"
+    },
+    {
+      "seconds": 28.613
+    }
+  ],
+  "exit": 0,
+  "seconds": 28.613,
+  "after": {
+    "memory": "MemTotal:       15476712 kB\nMemFree:          183824 kB\nMemAvailable:   11314180 kB\nBuffers:            1104 kB\nCached:          2623776 kB\nSwapCached:        11576 kB\nActive:           315860 kB\nInactive:        2376152 kB\nActive(anon):      40824 kB\nInactive(anon):   167756 kB\nActive(file):     275036 kB\nInactive(file):  2208396 kB\nUnevictable:      138528 kB\nMlocked:          137156 kB\nSwapTotal:      16777212 kB\nSwapFree:       13637168 kB\nDirty:               780 kB\nWriteback:             0 kB\nAnonPages:        205804 kB\nMapped:           442640 kB\nShmem:              8084 kB\nKReclaimable:    9115788 kB\nSlab:             841412 kB\nSReclaimable:     168552 kB\nSUnreclaim:       672860 kB\nKernelStack:      104240 kB\nShadowCallStack:       0 kB\nPageTables:       171636 kB\nSecPageTables:         0 kB\nNFS_Unstable:          0 kB\nBounce:                0 kB\nWritebackTmp:          0 kB\nCommitLimit:    24515568 kB\nCommitted_AS:   102402476 kB\nVmallocTotal:   257687552 kB\nVmallocUsed:      364276 kB\nVmallocChunk:          0 kB\nPercpu:            16960 kB\nAnonHugePages:         0 kB\nShmemHugePages:        0 kB\nShmemPmdMapped:        0 kB\nFileHugePages:         0 kB\nFilePmdMapped:         0 kB\nCmaTotal:         712704 kB\nCmaFree:           16252 kB\n",
+    "battery": "Current Battery Service state:\n  AC powered: false\n  USB powered: true\n  Wireless powered: false\n  Dock powered: false\n  Max charging current: 0\n Time when the latest updated value of the Max charging current was sent via battery changed broadcast: +8s373ms\n  Max charging voltage: 0\n  Charge counter: 5391000\n  status: 2\n  health: 2\n  present: true\n  level: 99\n  scale: 100\n  voltage: 4188\n Time when the latest updated value of the voltage was sent via battery changed broadcast: +55d2h15m5s819ms\n The last voltage value sent via the battery changed broadcast: 4188\n  temperature: 250\n  technology: Li-poly\n  Charging state: 0\n  Charging policy: 0\n  Capacity level: 4\nMiuiBatteryService first usage time:\n  mSetBatteryUsageTimeCount=0\n  mNtpTime=-1\n  mParseNtpTime=\n",
+    "thermal": "IsStatusOverride: false\nThermalEventListeners:\n\tcallbacks: 4\n\tkilled: false\n\tbroadcasts count: -1\nThermalStatusListeners:\n\tcallbacks: 5\n\tkilled: false\n\tbroadcasts count: -1\nThermal Status: 0\nCached temperatures:\n\tTemperature{mValue=30.0, mType=2, mName=battery, mStatus=0}\n\tTemperature{mValue=76.4, mType=0, mName=CPU0, mStatus=0}\n\tTemperature{mValue=73.7, mType=0, mName=CPU1, mStatus=0}\n\tTemperature{mValue=74.9, mType=0, mName=CPU2, mStatus=0}\n\tTemperature{mValue=71.8, mType=0, mName=CPU3, mStatus=0}\n\tTemperature{mValue=75.3, mType=0, mName=CPU4, mStatus=0}\n\tTemperature{mValue=73.3, mType=0, mName=CPU5, mStatus=0}\n\tTemperature{mValue=81.4, mType=0, mName=CPU6, mStatus=0}\n\tTemperature{mValue=83.4, mType=0, mName=CPU7, mStatus=0}\n\tTemperature{mValue=56.0, mType=1, mName=GPU0, mStatus=0}\n\tTemperature{mValue=57.1, mType=1, mName=GPU1, mStatus=0}\n\tTemperature{mValue=56.0, mType=1, mName=GPU2, mStatus=0}\n\tTemperature{mValue=55.6, mType=1, mName=GPU3, mStatus=0}\n\tTemperature{mValue=61.7, mType=1, mName=GPU4, mStatus=0}\n\tTemperature{mValue=63.3, mType=1, mName=GPU5, mStatus=0}\n\tTemperature{mValue=60.2, mType=1, mName=GPU6, mStatus=0}\n\tTemperature{mValue=59.8, mType=1, mName=GPU7, mStatus=0}\n\tTemperature{mValue=0.326, mType=7, mName=ibat, mStatus=0}\n\tTemperature{mValue=52.9, mType=9, mName=nsp0, mStatus=0}\n\tTemperature{mValue=51.7, mType=9, mName=nsp1, mStatus=0}\n\tTemperature{mValue=51.7, mType=9, mName=nsp2, mStatus=0}\n\tTemperature{mValue=57.1, mType=9, mName=nsp3, mStatus=0}\n\tTemperature{mValue=55.2, mType=9, mName=nsp4, mStatus=0}\n\tTemperature{mValue=52.9, mType=9, mName=nsp5, mStatus=0}\n\tTemperature{mValue=54.0, mType=9, mName=nsp6, mStatus=0}\n\tTemperature{mValue=45.987, mType=3, mName=skin, mStatus=0}\n\tTemperature{mValue=0.0, mType=8, mName=socd, mStatus=0}\n\tTemperature{mValue=4.263, mType=6, mName=vbat, mStatus=0}\nHAL Ready: true\nHAL connection:\n\tThermalHAL AIDL 3  connected: yes\nCurrent temperatures from HAL:\n\tTemperature{mValue=1.0, mType=8, mName=socd, mStatus=0}\n\tTemperature{mValue=43.2, mType=9, mName=nsp6, mStatus=0}\n\tTemperature{mValue=43.6, mType=9, mName=nsp5, mStatus=0}\n\tTemperature{mValue=44.0, mType=9, mName=nsp4, mStatus=0}\n\tTemperature{mValue=44.0, mType=9, mName=nsp3, mStatus=0}\n\tTemperature{mValue=43.2, mType=9, mName=nsp1, mStatus=0}\n\tTemperature{mValue=45.5, mType=1, mName=GPU6, mStatus=0}\n\tTemperature{mValue=45.5, mType=1, mName=GPU4, mStatus=0}\n\tTemperature{mValue=45.1, mType=1, mName=GPU2, mStatus=0}\n\tTemperature{mValue=45.5, mType=0, mName=CPU5, mStatus=0}\n\tTemperature{mValue=25.0, mType=2, mName=battery, mStatus=0}\n\tTemperature{mValue=44.4, mType=0, mName=CPU4, mStatus=0}\n\tTemperature{mValue=44.0, mType=9, mName=nsp0, mStatus=0}\n\tTemperature{mValue=44.4, mType=0, mName=CPU6, mStatus=0}\n\tTemperature{mValue=45.5, mType=1, mName=GPU5, mStatus=0}\n\tTemperature{mValue=-0.001, mType=7, mName=ibat, mStatus=0}\n\tTemperature{mValue=45.5, mType=0, mName=CPU2, mStatus=0}\n\tTemperature{mValue=45.1, mType=1, mName=GPU3, mStatus=0}\n\tTemperature{mValue=4.405, mType=6, mName=vbat, mStatus=0}\n\tTemperature{mValue=45.9, mType=0, mName=CPU1, mStatus=0}\n\tTemperature{mValue=31.279, mType=3, mName=skin, mStatus=0}\n\tTemperature{mValue=45.1, mType=1, mName=GPU0, mStatus=0}\n\tTemperature{mValue=45.5, mType=1, mName=GPU1, mStatus=0}\n\tTemperature{mValue=45.1, mType=0, mName=CPU0, mStatus=0}\n\tTemperature{mValue=43.6, mType=9, mName=nsp2, mStatus=0}\n\tTemperature{mValue=45.1, mType=0, mName=CPU7, mStatus=0}\n\tTemperature{mValue=45.9, mType=1, mName=GPU7, mStatus=0}\n\tTemperature{mValue=45.5, mType=0, mName=CPU3, mStatus=0}\nCurrent cooling devices from HAL:\n\tCoolingDevice{mValue=0, mType=2, mName=thermal-pause-2}\n\tCoolingDevice{mValue=0, mType=2, mName=thermal-pause-1}\n\tCoolingDevice{mValue=0, mType=5, mName=cdsp_hw}\n\tCoolingDevice{mValue=0, mType=2, mName=cpufreq-cpu0}\n\tCoolingDevice{mValue=0, mType=2, mName=thermal-pause-4}\n\tCoolingDevice{mValue=0, mType=1, mName=battery}\n\tCoolingDevice{mValue=0, mType=2, mName=thermal-pause-20}\n\tCoolingDevice{mValue=0, mType=2, mName=thermal-pause-10}\n\tCoolingDevice{mValue=1, mType=5, mName=cdsp}\n\tCoolingDevice{mValue=0, mType=2, mName=cpufreq-cpu6}\n\tCoolingDevice{mValue=0, mType=9, mName=display-fps}\n\tCoolingDevice{mValue=0, mType=2, mName=thermal-pause-8}\n\tCoolingDevice{mValue=2, mType=3, mName=gpu}\n\tCoolingDevice{mValue=0, mType=2, mName=thermal-pause-80}\n\tCoolingDevice{mValue=0, mType=2, mName=thermal-pause-40}\nTemperature static thresholds from HAL:\n\tTemperatureThreshold{mType=8, mName=socd, mHotThrottlingThresholds=[NaN, NaN, NaN, 90.0, NaN, NaN, 99.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=9, mName=nsp6, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=9, mName=nsp5, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=9, mName=nsp4, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=9, mName=nsp3, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=9, mName=nsp1, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=1, mName=GPU6, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=1, mName=GPU4, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=1, mName=GPU2, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=0, mName=CPU5, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=2, mName=battery, mHotThrottlingThresholds=[NaN, NaN, NaN, 80.0, NaN, NaN, 90.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=0, mName=CPU4, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=9, mName=nsp0, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=0, mName=CPU6, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=1, mName=GPU5, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=7, mName=ibat, mHotThrottlingThresholds=[NaN, NaN, NaN, 13.5, NaN, NaN, 15.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=0, mName=CPU2, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=1, mName=GPU3, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=6, mName=vbat, mHotThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN], mColdThrottlingThresholds=[NaN, NaN, NaN, 3.2, NaN, NaN, 3.0]}\n\tTemperatureThreshold{mType=0, mName=CPU1, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=3, mName=skin, mHotThrottlingThresholds=[NaN, 48.0, 49.0, 50.0, 60.0, 61.0, 90.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=1, mName=GPU0, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=1, mName=GPU1, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=0, mName=CPU0, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=9, mName=nsp2, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=0, mName=CPU7, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=1, mName=GPU7, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\n\tTemperatureThreshold{mType=0, mName=CPU3, mHotThrottlingThresholds=[NaN, NaN, NaN, 105.0, NaN, NaN, 125.0], mColdThrottlingThresholds=[NaN, NaN, NaN, NaN, NaN, NaN, NaN]}\nTemperature headroom thresholds:\n[NaN, 0.93333334, 0.96666664, 1.0, 1.3333334, 1.3666667, 2.3333333]\n",
+    "cpu_frequency_caps": "/sys/devices/system/cpu/cpufreq/policy0\n3532800\n/sys/devices/system/cpu/cpufreq/policy6\n4320000\n"
+  },
+  "bench": [
+    {
+      "build_commit": "832338aa9",
+      "build_number": 10877,
+      "cpu_info": "CPU",
+      "gpu_info": "QUALCOMM Adreno(TM) 830, Hexagon",
+      "backends": "OpenCL,HTP",
+      "model_filename": "/data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf",
+      "model_type": "qwen2moe A2.7B Q4_0",
+      "model_size": 8143910912,
+      "model_n_params": 14315784192,
+      "n_batch": 512,
+      "n_ubatch": 128,
+      "n_threads": 4,
+      "cpu_mask": "0x0",
+      "cpu_strict": false,
+      "poll": 50,
+      "type_k": "f16",
+      "type_v": "f16",
+      "n_gpu_layers": 99,
+      "n_cpu_moe": 0,
+      "split_mode": "layer",
+      "main_gpu": 0,
+      "no_kv_offload": false,
+      "flash_attn": 1,
+      "devices": "GPUOpenCL",
+      "tensor_split": "0.00",
+      "tensor_buft_overrides": "none",
+      "load_mode": "mmap",
+      "lazy_mode": "off",
+      "embeddings": false,
+      "no_op_offload": 0,
+      "no_host": false,
+      "fit_target": 0,
+      "fit_min_ctx": 0,
+      "n_prompt": 0,
+      "n_gen": 128,
+      "n_depth": 0,
+      "test_time": "2026-09-14T12:50:26Z",
+      "avg_ns": 4507042706,
+      "stddev_ns": 33201562,
+      "avg_ts": 28.401025,
+      "stddev_ts": 0.209267,
+      "weight_config": "",
+      "no_repack": false,
+      "samples_ns": [
+        4539931144,
+        4473536769,
+        4507660206
+      ],
+      "samples_ts": [
+        28.1943,
+        28.6127,
+        28.3961
+      ]
+    }
+  ]
+}

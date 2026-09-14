@@ -1,0 +1,110 @@
+{
+  "device": "fd8657d6",
+  "backend": "GPUOpenCL",
+  "batch": 512,
+  "ubatch": 128,
+  "threads": 4,
+  "repetitions": 3,
+  "new_samples": 9,
+  "weight_manager": false,
+  "rows": [
+    {
+      "prompt": 128,
+      "gen": 0,
+      "mean_ts": 161.65985581028383,
+      "sample_sd_ts": 0.450196600403141,
+      "samples_ts": [
+        161.14114356793644,
+        161.94887986437752,
+        161.88954399853756
+      ],
+      "source": "full-gpu-ub128.json",
+      "capacity_comparison": [
+        {
+          "weight_gib": 6,
+          "mean_ts": 94.016571,
+          "sample_sd_ts": 11.835645,
+          "retained_fraction": 0.5815703009801845
+        },
+        {
+          "weight_gib": 5,
+          "mean_ts": 44.022518,
+          "sample_sd_ts": 1.138351,
+          "retained_fraction": 0.2723157074423145
+        },
+        {
+          "weight_gib": 4,
+          "mean_ts": 53.63045,
+          "sample_sd_ts": 34.783219,
+          "retained_fraction": 0.33174871851264115
+        }
+      ]
+    },
+    {
+      "prompt": 512,
+      "gen": 0,
+      "mean_ts": 159.39047827840818,
+      "sample_sd_ts": 0.39540103019982603,
+      "samples_ts": [
+        159.4887767682373,
+        158.95520077778568,
+        159.7274572892016
+      ],
+      "source": "full-gpu-ub128.json",
+      "capacity_comparison": [
+        {
+          "weight_gib": 6,
+          "mean_ts": 158.980528,
+          "sample_sd_ts": 0.687661,
+          "retained_fraction": 0.9974280127468335
+        },
+        {
+          "weight_gib": 5,
+          "mean_ts": 45.342361,
+          "sample_sd_ts": 0.155413,
+          "retained_fraction": 0.2844734609604487
+        },
+        {
+          "weight_gib": 4,
+          "mean_ts": 48.866942,
+          "sample_sd_ts": 4.926758,
+          "retained_fraction": 0.30658633142842984
+        }
+      ]
+    },
+    {
+      "prompt": 0,
+      "gen": 128,
+      "mean_ts": 28.401024859459397,
+      "sample_sd_ts": 0.20926710072204485,
+      "samples_ts": [
+        28.194260207925304,
+        28.612707709701624,
+        28.39610666075126
+      ],
+      "source": "full-gpu-tg128.json"
+    }
+  ],
+  "conditions": {
+    "full-gpu-ub128": {
+      "before": {
+        "battery_c": 23.1,
+        "cpu_frequency_caps": "/sys/devices/system/cpu/cpufreq/policy0\n3532800\n/sys/devices/system/cpu/cpufreq/policy6\n4320000\n"
+      },
+      "after": {
+        "battery_c": 24.1,
+        "cpu_frequency_caps": "/sys/devices/system/cpu/cpufreq/policy0\n3532800\n/sys/devices/system/cpu/cpufreq/policy6\n4320000\n"
+      }
+    },
+    "full-gpu-tg128": {
+      "before": {
+        "battery_c": 24.1,
+        "cpu_frequency_caps": "/sys/devices/system/cpu/cpufreq/policy0\n3532800\n/sys/devices/system/cpu/cpufreq/policy6\n4320000\n"
+      },
+      "after": {
+        "battery_c": 25.0,
+        "cpu_frequency_caps": "/sys/devices/system/cpu/cpufreq/policy0\n3532800\n/sys/devices/system/cpu/cpufreq/policy6\n4320000\n"
+      }
+    }
+  }
+}

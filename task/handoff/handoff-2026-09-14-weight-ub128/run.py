@@ -88,12 +88,13 @@ def run(args):
     tag = args.tag
     local = OUT / tag
     assert not local.with_suffix(".json").exists(), "Use a fresh tag"
-    prefix = capacity_prefix(args.weight_gib)
-    config = json.loads((OUT / f"{prefix}{args.backend}.config.json").read_text())
-    if args.diagnostic or args.profile:
-        config["report"] = f"{REMOTE}/{tag}.weights.json"
-    save(local.with_suffix(".config.json"), config)
-    base.adb("push", str(local.with_suffix(".config.json")), f"{REMOTE}/{tag}.config.json")
+    if not args.full_weight:
+        prefix = capacity_prefix(args.weight_gib)
+        config = json.loads((OUT / f"{prefix}{args.backend}.config.json").read_text())
+        if args.diagnostic or args.profile:
+            config["report"] = f"{REMOTE}/{tag}.weights.json"
+        save(local.with_suffix(".config.json"), config)
+        base.adb("push", str(local.with_suffix(".config.json")), f"{REMOTE}/{tag}.config.json")
     env = ["env", f"LD_LIBRARY_PATH={REMOTE}:/vendor/lib64", f"ADSP_LIBRARY_PATH={REMOTE}",
            "GGML_HEXAGON_NHMX=1", "GGML_HEXAGON_MM_SELECT=3"]
     if args.backend == "gpu":
@@ -103,16 +104,18 @@ def run(args):
     argv = [f"{REMOTE}/llama-bench", "-m", base.MODEL,
             "-dev", {"cpu": "none", "htp": "HTP0", "gpu": "GPUOpenCL"}[args.backend],
             "-ngl", "0" if args.backend == "cpu" else "99",
-            "-t", args.threads, "-p", args.prompt, "-n", "0", "-b", "512",
+            "-t", args.threads, "-p", args.prompt, "-n", str(args.gen), "-b", "512",
             "-ub", str(args.ubatch), "-r", str(args.reps), "-fa", "on",
-            "-lm", "mmap", "-lzm", "off", "-o", "json", "-v",
-            "--weight-config", f"{REMOTE}/{tag}.config.json"]
+            "-lm", "mmap", "-lzm", "off", "-o", "json", "-v"]
+    if not args.full_weight:
+        argv += ["--weight-config", f"{REMOTE}/{tag}.config.json"]
     if args.backend == "cpu":
         argv += ["-nopo", "1"]
     if args.diagnostic or args.profile:
         argv += ["--no-warmup"]
     command = f"cd {shlex.quote(REMOTE)} && exec " + shlex.join(env + argv)
-    record = {"command": command, "weight_gib": args.weight_gib,
+    record = {"command": command, "weight_gib": None if args.full_weight else args.weight_gib,
+              "full_weight": args.full_weight,
               "diagnostic": args.diagnostic, "profile": args.profile,
               "before": snapshot(), "process_samples": []}
     print("START", tag, flush=True)
@@ -151,7 +154,7 @@ def run(args):
         print("CAPACITY", record["weight_bytes"], record["weight_bytes"] / 2**30, flush=True)
     for entry in record["bench"]:
         assert len(entry["samples_ns"]) == args.reps
-        print(f"DONE {tag} t{entry['n_threads']} pp{entry['n_prompt']}: "
+        print(f"DONE {tag} t{entry['n_threads']} pp{entry['n_prompt']} tg{entry['n_gen']}: "
               f"{entry['avg_ts']:.3f} +/- {entry['stddev_ts']:.3f} tokens/s", flush=True)
 
 
@@ -184,20 +187,24 @@ def main():
     parser.add_argument("--tag")
     parser.add_argument("--threads", default="4")
     parser.add_argument("--prompt", default="128,512")
+    parser.add_argument("--gen", type=int, default=0)
     parser.add_argument("--ubatch", type=int, default=128)
     parser.add_argument("--reps", type=int, default=3)
     parser.add_argument("--weight-gib", type=int, choices=(4, 5, 6), default=6)
+    parser.add_argument("--full-weight", action="store_true", help="default full loading without the weight manager")
     parser.add_argument("--diagnostic", action="store_true")
     parser.add_argument("--profile", action="store_true")
     parser.add_argument("--timeout", type=int, default=1200)
     args = parser.parse_args()
+    assert not args.full_weight or not (args.diagnostic or args.profile), "full loading has no weight report"
     OUT.mkdir(parents=True, exist_ok=True)
     assert base.adb("get-state").stdout.strip() == "device"
     assert not base.shell("pidof llama-bench", check=False).stdout.strip()
     if args.action in ("prepare", "configure"):
-        configs(args.weight_gib, args.backend)
+        if not args.full_weight:
+            configs(args.weight_gib, args.backend)
         if args.action == "prepare":
-            prefix = capacity_prefix(args.weight_gib) + ("gpu-" if args.backend == "gpu" else "")
+            prefix = ("full-" if args.full_weight else capacity_prefix(args.weight_gib)) + ("gpu-" if args.backend == "gpu" else "")
             base.deploy(f"{prefix}deploy")
             save(OUT / f"{prefix}device-before.json", snapshot())
             save(OUT / f"{prefix}model-stat.json", {"stat": base.shell(f"stat -c '%s %n' {base.MODEL}").stdout})
