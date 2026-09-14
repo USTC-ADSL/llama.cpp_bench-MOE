@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Validate and summarize the requested 6/5/4 GiB ubatch128 speed sweep."""
+import argparse
 import json
 import pathlib
 import re
@@ -13,7 +14,12 @@ def read(name):
     return json.loads((OUT / name).read_text())
 
 
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("--opencl", action="store_true", help="include the OpenCL supplement")
+args = parser.parse_args()
 assert read("g5-deploy-hashes.json") == read("deploy-hashes.json")
+if args.opencl:
+    assert read("gpu-deploy-hashes.json") == read("deploy-hashes.json")
 rows = []
 allocations = {}
 conditions = {}
@@ -30,11 +36,19 @@ for gib in (6, 5, 4):
                         "planned_weight_bytes": planned_bytes,
                         "planned_weight_gib": planned_bytes / 2**30,
                         "capacity_evidence": "device report" if gib == 6 else "same-layout allocation calculation"}
-    for backend in ("cpu", "htp"):
+    if args.opencl:
+        gpu_plan = read(f"{prefix}gpu-allocation-plan.json")["gpu"]
+        assert gpu_plan["pinned"] == plans["cpu"]["pinned"]
+        assert gpu_plan["slots"] == plans["cpu"]["slots"]
+        assert 0 <= gib * 2**30 - gpu_plan["predicted_weight_bytes"] < 3244064
+        allocations[gib]["opencl_planned_weight_bytes"] = gpu_plan["predicted_weight_bytes"]
+        allocations[gib]["opencl_planned_weight_gib"] = gpu_plan["predicted_weight_bytes"] / 2**30
+    for backend in (("cpu", "htp", "gpu") if args.opencl else ("cpu", "htp")):
         name = f"{prefix}{backend}-ub128"
         data = read(f"{name}.json")
         config = read(f"{name}.config.json")
         assert config == read(f"{prefix}{backend}.config.json")
+        assert config["weights"] == read(f"{prefix}cpu.config.json")["weights"]
         assert "report" not in config
         assert data["exit"] == 0 and not data["diagnostic"] and not data["profile"]
         assert data.get("weight_gib", 6) == gib
@@ -56,6 +70,8 @@ for gib in (6, 5, 4):
             assert item["flash_attn"] == 1 and item["load_mode"] == "mmap" and item["lazy_mode"] == "off"
             assert not item["no_repack"]
             assert item["n_gpu_layers"] == (0 if backend == "cpu" else 99)
+            if backend == "gpu":
+                assert item["devices"] == "GPUOpenCL"
             samples = [item["n_prompt"] * 1e9 / ns for ns in item["samples_ns"]]
             assert len(samples) == 3 and all(value > 0 for value in samples)
             assert abs(statistics.mean(samples) - item["avg_ts"]) < 0.001
@@ -63,15 +79,17 @@ for gib in (6, 5, 4):
             rows.append({"weight_gib": gib, "backend": backend, "threads": item["n_threads"],
                          "prompt": item["n_prompt"], "mean_ts": item["avg_ts"],
                          "sample_sd_ts": item["stddev_ts"], "samples_ts": samples,
-                         "source": f"{name}.json", "reused": gib == 6})
-assert len(rows) == 18
-result = {"batch": 512, "ubatch": 128, "repetitions": 3, "configurations": 18,
-          "new_samples": 36, "reused_samples": 18, "rows": rows,
+                         "source": f"{name}.json", "reused": backend != "gpu" if args.opencl else gib == 6})
+assert len(rows) == (24 if args.opencl else 18)
+result = {"batch": 512, "ubatch": 128, "repetitions": 3, "configurations": len(rows),
+          "new_samples": 18 if args.opencl else 36, "reused_samples": 54 if args.opencl else 18, "rows": rows,
           "allocations": allocations, "conditions": conditions}
-(OUT / "sweep-summary.json").write_text(json.dumps(result, indent=2) + "\n")
-print("GiB  Prompt  CPU4     CPU8     HTP4  (tokens/s)")
+output = "sweep-opencl-summary.json" if args.opencl else "sweep-summary.json"
+(OUT / output).write_text(json.dumps(result, indent=2) + "\n")
+print("GiB  Prompt  CPU4     CPU8     HTP4" + ("  OpenCL4" if args.opencl else "") + "  (tokens/s)")
 for gib in (6, 5, 4):
     for prompt in (128, 512):
         group = {(row["backend"], row["threads"]): row["mean_ts"] for row in rows
                  if row["weight_gib"] == gib and row["prompt"] == prompt}
-        print(f"{gib:3d}  {prompt:6d}  {group['cpu', 4]:7.3f}  {group['cpu', 8]:7.3f}  {group['htp', 4]:7.3f}")
+        gpu_column = f"  {group['gpu', 4]:7.3f}" if args.opencl else ""
+        print(f"{gib:3d}  {prompt:6d}  {group['cpu', 4]:7.3f}  {group['cpu', 8]:7.3f}  {group['htp', 4]:7.3f}" + gpu_column)

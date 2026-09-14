@@ -74,3 +74,36 @@ CPU8 65.151 / 63.773; HTP4 69.833 / 70.978. analyze_sweep.py validates all
 before/after CPU caps. New-run battery snapshots span 24.7..30.2 C. All runs
 completed without retries or extra controls. Device test directory removed,
 original model retained; logs compressed. Combined results: handoff-02-capacity-sweep.md.
+
+## OpenCL Supplement
+
+User requests the corresponding OpenCL results. Reuse all CPU/HTP measurements;
+add only GPUOpenCL, host threads4, b512/ub128, PP128/PP512, three repetitions at
+each of 6/5/4 GiB. No extra controls or profiling. Same binaries and model.
+
+- [x] Add OpenCL selection and allocation generation to the existing runner.
+- [x] Measure OpenCL at 6 GiB.
+- [x] Measure OpenCL at 5 GiB.
+- [x] Measure OpenCL at 4 GiB.
+- [x] Validate and add OpenCL to the results table; clean device artifacts.
+- [x] Save the OpenCL results checkpoint.
+
+GPU allocation uses cap01-gpu-swap calibration. Check identical fixed expert
+sets and slot counts against each CPU/HTP capacity; account for OpenCL's small
+buffer-layout overhead rather than treating its byte count as identical.
+
+Initial OpenCL stage battery temperature 25.9 C, normal CPU caps. 6 GiB OpenCL
+completed at PP128 94.017 / PP512 158.981 tokens/s. Matched 50 fixed banks and
+135 slots; planned weight allocation 5.998541564 GiB. Compiled OpenCL program
+cache is confined to the task-owned remote cl-cache directory.
+
+5 GiB OpenCL means: PP128 44.023 / PP512 45.342 tokens/s.
+4 GiB OpenCL means: PP128 53.630 / PP512 48.867 tokens/s. PP128 is unstable:
+31.8148, 93.7432, 35.3333 tokens/s (sample SD34.783). Keep all samples and do
+not interpret its mean as proof that 4 GiB is faster than 5 GiB. No extra runs.
+analyze_sweep.py --opencl validates 72 samples: 54 CPU/HTP reused plus 18 new GPU.
+Logs confirm GPUOpenCL/Adreno830 and matching options. Before/after CPU caps are
+normal; GPU frequency was not recorded. Capacity-dependent drop remains unattributed.
+Device directory and its compiled-program cache were removed after confirming no
+benchmark process remained. Original GGUF retained. Logs compressed, combined
+results saved in sweep-opencl-summary.json and handoff-02-capacity-sweep.md.

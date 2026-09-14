@@ -31,11 +31,12 @@ def capacity_prefix(weight_gib):
     return "" if weight_gib == 6 else f"g{weight_gib}-"
 
 
-def configs(weight_gib=6):
+def configs(weight_gib=6, backend=None):
     plans = {}
     target = weight_gib * 2**30
     prefix = capacity_prefix(weight_gib)
-    for backend in ("cpu", "htp"):
+    backends = ("gpu",) if backend == "gpu" else ("cpu", "htp")
+    for backend in backends:
         registry = json.loads((OLD / f"cap01-{backend}-swap.weights.json").read_text())
         prior = json.loads((OLD / f"cap01-{backend}-swap.config.json").read_text())
         fixed = {dev: row["fixed_bytes"] for dev, row in registry["devices"].items()}
@@ -61,9 +62,15 @@ def configs(weight_gib=6):
         plans[backend] = {"pinned": pinned, "slots": slots, "fixed_bytes": fixed,
                           "cache_bytes": {dev: per_slot[dev] * slots for dev in fixed},
                           "predicted_weight_bytes": sum(fixed.values()) + sum(per_slot.values()) * slots}
-    assert plans["cpu"]["pinned"] == plans["htp"]["pinned"]
-    assert plans["cpu"]["slots"] == plans["htp"]["slots"]
-    save(OUT / f"{prefix}allocation-plan.json", plans)
+    if backends == ("gpu",):
+        reference = json.loads((OUT / f"{prefix}allocation-plan.json").read_text())["cpu"]
+        assert plans["gpu"]["pinned"] == reference["pinned"]
+        assert plans["gpu"]["slots"] == reference["slots"]
+        save(OUT / f"{prefix}gpu-allocation-plan.json", plans)
+    else:
+        assert plans["cpu"]["pinned"] == plans["htp"]["pinned"]
+        assert plans["cpu"]["slots"] == plans["htp"]["slots"]
+        save(OUT / f"{prefix}allocation-plan.json", plans)
     print(json.dumps({b: {"fixed_banks": len(p["pinned"]), "slots": p["slots"],
                           "predicted_weight_gib": p["predicted_weight_bytes"] / 2**30}
                       for b, p in plans.items()}, indent=2), flush=True)
@@ -89,10 +96,12 @@ def run(args):
     base.adb("push", str(local.with_suffix(".config.json")), f"{REMOTE}/{tag}.config.json")
     env = ["env", f"LD_LIBRARY_PATH={REMOTE}:/vendor/lib64", f"ADSP_LIBRARY_PATH={REMOTE}",
            "GGML_HEXAGON_NHMX=1", "GGML_HEXAGON_MM_SELECT=3"]
+    if args.backend == "gpu":
+        env += [f"GGML_OPENCL_KERNEL_CACHE_DIR={REMOTE}/cl-cache"]
     if args.profile:
         env += ["GGML_HEXAGON_PROFILE=1", "GGML_HEXAGON_VERBOSE=1"]
     argv = [f"{REMOTE}/llama-bench", "-m", base.MODEL,
-            "-dev", "none" if args.backend == "cpu" else "HTP0",
+            "-dev", {"cpu": "none", "htp": "HTP0", "gpu": "GPUOpenCL"}[args.backend],
             "-ngl", "0" if args.backend == "cpu" else "99",
             "-t", args.threads, "-p", args.prompt, "-n", "0", "-b", "512",
             "-ub", str(args.ubatch), "-r", str(args.reps), "-fa", "on",
@@ -171,7 +180,7 @@ def probe():
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("prepare", "configure", "run", "probe"))
-    parser.add_argument("--backend", choices=("cpu", "htp"))
+    parser.add_argument("--backend", choices=("cpu", "htp", "gpu"))
     parser.add_argument("--tag")
     parser.add_argument("--threads", default="4")
     parser.add_argument("--prompt", default="128,512")
@@ -186,9 +195,9 @@ def main():
     assert base.adb("get-state").stdout.strip() == "device"
     assert not base.shell("pidof llama-bench", check=False).stdout.strip()
     if args.action in ("prepare", "configure"):
-        configs(args.weight_gib)
+        configs(args.weight_gib, args.backend)
         if args.action == "prepare":
-            prefix = capacity_prefix(args.weight_gib)
+            prefix = capacity_prefix(args.weight_gib) + ("gpu-" if args.backend == "gpu" else "")
             base.deploy(f"{prefix}deploy")
             save(OUT / f"{prefix}device-before.json", snapshot())
             save(OUT / f"{prefix}model-stat.json", {"stat": base.shell(f"stat -c '%s %n' {base.MODEL}").stdout})
