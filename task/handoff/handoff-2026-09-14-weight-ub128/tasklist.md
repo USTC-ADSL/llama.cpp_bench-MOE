@@ -139,3 +139,61 @@ Capacity validation and Python compilation passed. Compressed full logs; removed
 only the task-owned device directory and verified original model size unchanged.
 Cleanup evidence is full-gpu-cleanup-before.txt / full-gpu-cleanup-after.txt.
 All changes are confined to this task directory; save the scoped checkpoint.
+
+## OpenCL PP128 / PP512 Gap Investigation
+
+User now authorizes continuing diagnosis of the full-versus-6-GiB discrepancy:
+PP128 161.66 -> 94.02, PP512 159.39 -> 158.98 tokens/s. Preserve all earlier
+evidence; use fresh gap-* tags. Device fd8657d6, no APK. Start from 50ef4836f.
+
+- [x] Reproduce separate-process PP128 and PP512 with the existing binaries.
+- [x] Audit graph reuse, weight preparation and OpenCL cache/update paths.
+- [x] Collect targeted counters/timings and verify the cause on the device.
+- [x] Apply and regress a root-cause fix if a correctness defect is confirmed.
+- [x] Record conclusions/limits and clean the device.
+- [x] Commit the diagnosis and corrected-results checkpoint.
+
+Important correction to the earlier scout: test_prompt batches by n_batch (512),
+not n_ubatch. PP512 enters one llama_decode call, which splits internally into
+128-token microbatches. Do not assume four separate llama_decode calls or four
+last-layer output selections. Both prompt workloads get a full-prompt warmup;
+their model and manager survive context replacement, but contexts are distinct.
+
+Independent processes reproduce the gap: PP128 92.018 +/- 16.867; PP512
+159.225 +/- 0.591 tokens/s. This rules out prior PP128 execution being necessary
+for fast PP512. Same original deployment hashes, default full-prompt warmup.
+GPU sysfs /sys/class/kgsl/kgsl-3d0 is denied to adb shell; no privilege changes.
+Single-workload no-warmup/report-on counters are next; diagnostic throughput is
+not mixed into the formal speed table.
+
+Confirmed correctness failure: gap-route-512 and gap-nocb-512 both yield 151936
+nonfinite logits in warmup and measured passes; gap-route-full-512 is finite with
+the same inputs. Without callbacks, invalid PP512 still runs at156.835 tokens/s.
+Warmup has2129 misses/73 hits; measured adds only4 misses/515 hits as routing
+collapses to four experts in late layers. Marked historical OpenCL6GiB PP512
+throughput invalid; 6GiB PP128 and5/4GiB still require numerical validation.
+No inference libraries changed. gap-probe.cpp is a standalone NDK diagnostic
+using the same libraries; gap_run_probe.py retains full inputs/logits and routing.
+
+Root cause confirmed and fixed in ggml-opencl.cpp: the reordered MoE router table
+was cached without the source IDs tensor identity. At6GiB50fixed banks are layers
+0..15 plus layer16 DOWN and GATE (alphabetical order), so UP is swapped. Its
+remapped slot IDs contaminate the following fixed DOWN projection's routing.
+First microbatch can select wrong in-range experts; later slots exceed60 and
+produce nonfinite values. Temporary cache readback verified UP weights match
+GGUF byte-for-byte in all8checks; temporary manager instrumentation removed.
+
+tests/test-opencl-moe-routing-cache.cpp reproduces original -> remapped -> original
+IDs switching: old library47544nonfinite outputs; fixed library exact agreement
+and0nonfinite. Only device libggml-opencl.so changed from original hash manifest.
+Fixed6GiB PP512 logits match full reference exactly for both warmup and measured
+inputs (all151936 finite, max_abs0). All6/5/4GiB PP128/PP512 warmup/measured
+comparisons now match full references exactly:12comparisons of151936logits each.
+All24corrected speed samples pass validation. Means PP128/PP512: full
+161.489/159.874;6GiB60.775/61.819;5GiB43.672/45.002;4GiB35.007/35.747.
+Strengthened minimal regression (three alternating transitions) also passed.
+Cleanup completed: no test processes remained; final device hashes matched the
+fixed deployment. Removed the task-owned directory, retaining the original model
+at 8149865792 bytes. Logs and large logit JSONs are losslessly compressed. The
+analyzer passed again after compression. Final conclusions and limits are in
+handoff-03-opencl-gap.md and docs/bugs/2026-09-14-opencl-moe-router-cache.md.

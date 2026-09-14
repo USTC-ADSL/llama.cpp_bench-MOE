@@ -714,6 +714,7 @@ struct ggml_backend_opencl_context {
 
     // prealloc buffers for MoE router table preprocess
     bool toggle_reorder = false;
+    const ggml_tensor * reordered_ids = nullptr;
     ggml_cl_buffer prealloc_post_router;
     ggml_cl_buffer prealloc_emap;
     ggml_cl_buffer prealloc_hist;
@@ -23709,6 +23710,10 @@ static void moe_router_reoerder(ggml_backend_t backend, const ggml_tensor * src,
     cl_mem total_tiles_buf = clCreateSubBuffer(backend_ctx->prealloc_total_tiles.buffer, 0, CL_BUFFER_CREATE_TYPE_REGION, &region, &err);
     CL_CHECK(err);
 
+    // Cache-slot IDs use a different expert namespace and may be temporary views.
+    backend_ctx->reordered_ids = src->op == GGML_OP_NONE ||
+        (src->view_src && src->view_src->op == GGML_OP_NONE) ? nullptr : src;
+
     // Histogram
     cl_kernel kernel = backend_ctx->kernel_moe_histogram;
     CL_CHECK(clSetKernelArg(kernel, 0, sizeof(cl_mem), &original_router_buf));
@@ -23907,7 +23912,9 @@ static void ggml_cl_mul_mat_id(ggml_backend_t backend, const ggml_tensor * src0,
 
     // Externally supplied IDs can change without running the router's argsort.
     // Their remapping may also differ between consecutive expert matmuls.
-    if (src2->op == GGML_OP_NONE || (src2->view_src && src2->view_src->op == GGML_OP_NONE)) {
+    // A fixed down projection must not reuse a cached up projection's slot IDs.
+    if (backend_ctx->reordered_ids != src2 || src2->op == GGML_OP_NONE ||
+        (src2->view_src && src2->view_src->op == GGML_OP_NONE)) {
         backend_ctx->toggle_reorder = true;
     }
 

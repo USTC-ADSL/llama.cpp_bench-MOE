@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "budgets": {
+    "CPU": {
+      "total_mib": 1191,
+      "reserve_mib": 128,
+      "expert_slots": 135
+    },
+    "GPUOpenCL": {
+      "total_mib": 7000,
+      "reserve_mib": 128,
+      "expert_slots": 135
+    }
+  },
+  "layers": [],
+  "weights": [
+    {
+      "pattern": "ffn_(gate|up|down)_exps\\.weight$",
+      "residency": "swap"
+    },
+    {
+      "pattern": "^(?:blk\\.0\\.ffn_down_exps\\.weight|blk\\.0\\.ffn_gate_exps\\.weight|blk\\.0\\.ffn_up_exps\\.weight|blk\\.1\\.ffn_down_exps\\.weight|blk\\.1\\.ffn_gate_exps\\.weight|blk\\.1\\.ffn_up_exps\\.weight|blk\\.2\\.ffn_down_exps\\.weight|blk\\.2\\.ffn_gate_exps\\.weight|blk\\.2\\.ffn_up_exps\\.weight|blk\\.3\\.ffn_down_exps\\.weight|blk\\.3\\.ffn_gate_exps\\.weight|blk\\.3\\.ffn_up_exps\\.weight|blk\\.4\\.ffn_down_exps\\.weight|blk\\.4\\.ffn_gate_exps\\.weight|blk\\.4\\.ffn_up_exps\\.weight|blk\\.5\\.ffn_down_exps\\.weight|blk\\.5\\.ffn_gate_exps\\.weight|blk\\.5\\.ffn_up_exps\\.weight|blk\\.6\\.ffn_down_exps\\.weight|blk\\.6\\.ffn_gate_exps\\.weight|blk\\.6\\.ffn_up_exps\\.weight|blk\\.7\\.ffn_down_exps\\.weight|blk\\.7\\.ffn_gate_exps\\.weight|blk\\.7\\.ffn_up_exps\\.weight|blk\\.8\\.ffn_down_exps\\.weight|blk\\.8\\.ffn_gate_exps\\.weight|blk\\.8\\.ffn_up_exps\\.weight|blk\\.9\\.ffn_down_exps\\.weight|blk\\.9\\.ffn_gate_exps\\.weight|blk\\.9\\.ffn_up_exps\\.weight|blk\\.10\\.ffn_down_exps\\.weight|blk\\.10\\.ffn_gate_exps\\.weight|blk\\.10\\.ffn_up_exps\\.weight|blk\\.11\\.ffn_down_exps\\.weight|blk\\.11\\.ffn_gate_exps\\.weight|blk\\.11\\.ffn_up_exps\\.weight|blk\\.12\\.ffn_down_exps\\.weight|blk\\.12\\.ffn_gate_exps\\.weight|blk\\.12\\.ffn_up_exps\\.weight|blk\\.13\\.ffn_down_exps\\.weight|blk\\.13\\.ffn_gate_exps\\.weight|blk\\.13\\.ffn_up_exps\\.weight|blk\\.14\\.ffn_down_exps\\.weight|blk\\.14\\.ffn_gate_exps\\.weight|blk\\.14\\.ffn_up_exps\\.weight|blk\\.15\\.ffn_down_exps\\.weight|blk\\.15\\.ffn_gate_exps\\.weight|blk\\.15\\.ffn_up_exps\\.weight|blk\\.16\\.ffn_down_exps\\.weight|blk\\.16\\.ffn_gate_exps\\.weight)$",
+      "residency": "fixed"
+    }
+  ],
+  "report": "/data/local/tmp/llama-weight-ub128/gap-fixed-512.weights.json"
+}

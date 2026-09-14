@@ -1,7 +1,17 @@
 # Ubatch 128 Speed At 6 / 5 / 4 GiB
 
 Date: 2026-09-14. Device: fd8657d6, Redmi K80 Pro, SM8750 / HTP v79.
-Status: CPU/HTP/OpenCL speed points complete, samples validated, device cleaned.
+Status: OpenCL routing-cache defect fixed; corrected capacity results validated.
+
+IMPORTANT CORRECTION: Subsequent independent same-library validation found all
+151936 logits nonfinite for 6 GiB OpenCL PP512, both with and without tracing;
+full-weight OpenCL with identical input tokens is finite. The historical 6 GiB
+PP512 speed must NOT be treated as valid inference throughput or a no-loss
+capacity result. Earlier sample validation checked timing/parameters, not full
+model numerical correctness. The table below now uses corrected OpenCL reruns,
+with numerical revalidation at all three capacities. See handoff-03-opencl-gap.md
+and evidence/gap-summary.json. Original samples and historical summaries remain
+unchanged; do not use old 6/4 GiB OpenCL figures as valid inference throughput.
 
 ## Scope
 
@@ -54,16 +64,24 @@ Mean tokens/s over three repetitions:
 
 | Weight GiB | Workload | CPU4 | CPU8 | HTP4 | OpenCL4 mean +/- sample SD |
 | --- | --- | ---: | ---: | ---: | ---: |
-| Full | PP128 | 74.429 | 113.905 | 289.544 | 161.660 +/- 0.450 |
-| Full | PP512 | 85.155 | 112.059 | 287.732 | 159.390 +/- 0.395 |
-| 6 | PP128 | 65.882 | 86.540 | 116.099 | 94.017 +/- 11.836 |
-| 6 | PP512 | 67.397 | 84.019 | 120.026 | 158.981 +/- 0.688 |
-| 5 | PP128 | 65.022 | 76.005 | 87.589 | 44.023 +/- 1.138 |
-| 5 | PP512 | 60.969 | 73.761 | 90.501 | 45.342 +/- 0.155 |
-| 4 | PP128 | 53.241 | 65.151 | 69.833 | 53.630 +/- 34.783 |
-| 4 | PP512 | 54.089 | 63.773 | 70.978 | 48.867 +/- 4.927 |
+| Full | PP128 | 74.429 | 113.905 | 289.544 | 161.489 +/- 0.190 |
+| Full | PP512 | 85.155 | 112.059 | 287.732 | 159.874 +/- 0.137 |
+| 6 | PP128 | 65.882 | 86.540 | 116.099 | 60.775 +/- 0.992 |
+| 6 | PP512 | 67.397 | 84.019 | 120.026 | 61.819 +/- 0.223 |
+| 5 | PP128 | 65.022 | 76.005 | 87.589 | 43.672 +/- 0.709 |
+| 5 | PP512 | 60.969 | 73.761 | 90.501 | 45.002 +/- 0.249 |
+| 4 | PP128 | 53.241 | 65.151 | 69.833 | 35.007 +/- 0.597 |
+| 4 | PP512 | 54.089 | 63.773 | 70.978 | 35.747 +/- 0.110 |
 
-The 6 GiB samples are reused, not remeasured. All 5/4 GiB runs completed on their
+CPU/HTP cells retain their original measurements. Every OpenCL cell above is now
+from gap-fixed-speed*.json, after the routing-cache fix. Same model/arguments,
+only libggml-opencl.so changed. All 24 new speed samples passed timing/parameter
+validation; separate warmup/measured outputs at 6/5/4 GiB and PP128/PP512 match
+same-input full-weight references exactly (12 comparisons, 151936 logits each).
+The chronological sections below retain the earlier measurements and their
+original interpretation; the correction above supersedes the affected claims.
+
+For CPU/HTP, the 6 GiB samples are reused, not remeasured. All 5/4 GiB runs completed on their
 first attempt. No samples were discarded. Means and sample standard deviations
 are validated from native nanosecond samples in evidence/sweep-summary.json.
 CPU4 PP128 has greater sample dispersion at 6/4 GiB; raw samples remain available.

@@ -1,0 +1,31 @@
+diff --git a/src/llama-weight-manager.cpp b/src/llama-weight-manager.cpp
+index 254a80c45..e61faa507 100644
+--- a/src/llama-weight-manager.cpp
++++ b/src/llama-weight-manager.cpp
+@@ -472,6 +472,26 @@ struct llama_weight_manager::impl {
+                 }
+             }
+             auto result = acquire(*w, ids, experts);
++            const char * check_name = getenv("LLAMA_WEIGHT_CACHE_CHECK");
++            if (experts && check_name && strstr(w->tensor->name, check_name)) {
++                auto * cached_tensor = result.first->tensor;
++                std::vector<uint8_t> cached(ggml_nbytes(cached_tensor));
++                ggml_backend_tensor_get(cached_tensor, cached.data(), 0, cached.size());
++                std::set<int32_t> checked;
++                size_t different = 0;
++                for (size_t j = 0; j < ids.size(); ++j) {
++                    if (!checked.insert(ids[j]).second) { continue; }
++                    std::vector<uint8_t> source(w->tensor->nb[2]);
++                    files[w->file]->seek(w->offset + ids[j] * source.size(), SEEK_SET);
++                    files[w->file]->read_raw(source.data(), source.size());
++                    const auto * actual = cached.data() + result.second[j] * source.size();
++                    for (size_t k = 0; k < source.size(); ++k) {
++                        different += source[k] != actual[k];
++                    }
++                }
++                fprintf(stderr, "WEIGHT_CACHE_CHECK tensor=%s experts=%zu differing_bytes=%zu\n",
++                        w->tensor->name, checked.size(), different);
++            }
+             local.src[i] = result.first->tensor;
+             if (node->src[i] != w->tensor) {
+                 const auto * source = node->src[i];
