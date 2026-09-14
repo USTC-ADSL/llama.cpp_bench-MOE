@@ -27,9 +27,14 @@ def save(path, data):
     path.write_text(json.dumps(data, indent=2) + "\n")
 
 
-def configs():
+def capacity_prefix(weight_gib):
+    return "" if weight_gib == 6 else f"g{weight_gib}-"
+
+
+def configs(weight_gib=6):
     plans = {}
-    target = 6 * 2**30
+    target = weight_gib * 2**30
+    prefix = capacity_prefix(weight_gib)
     for backend in ("cpu", "htp"):
         registry = json.loads((OLD / f"cap01-{backend}-swap.weights.json").read_text())
         prior = json.loads((OLD / f"cap01-{backend}-swap.config.json").read_text())
@@ -52,13 +57,13 @@ def configs():
         budgets = {dev: {"total_mib": math.ceil((fixed[dev] + per_slot[dev] * slots) / 2**20) + 1024,
                          "reserve_mib": 128, "expert_slots": slots} for dev in fixed}
         config = {"version": 1, "budgets": budgets, "layers": [], "weights": weights}
-        save(OUT / f"{backend}.config.json", config)
+        save(OUT / f"{prefix}{backend}.config.json", config)
         plans[backend] = {"pinned": pinned, "slots": slots, "fixed_bytes": fixed,
                           "cache_bytes": {dev: per_slot[dev] * slots for dev in fixed},
                           "predicted_weight_bytes": sum(fixed.values()) + sum(per_slot.values()) * slots}
     assert plans["cpu"]["pinned"] == plans["htp"]["pinned"]
     assert plans["cpu"]["slots"] == plans["htp"]["slots"]
-    save(OUT / "allocation-plan.json", plans)
+    save(OUT / f"{prefix}allocation-plan.json", plans)
     print(json.dumps({b: {"fixed_banks": len(p["pinned"]), "slots": p["slots"],
                           "predicted_weight_gib": p["predicted_weight_bytes"] / 2**30}
                       for b, p in plans.items()}, indent=2), flush=True)
@@ -76,7 +81,8 @@ def run(args):
     tag = args.tag
     local = OUT / tag
     assert not local.with_suffix(".json").exists(), "Use a fresh tag"
-    config = json.loads((OUT / f"{args.backend}.config.json").read_text())
+    prefix = capacity_prefix(args.weight_gib)
+    config = json.loads((OUT / f"{prefix}{args.backend}.config.json").read_text())
     if args.diagnostic or args.profile:
         config["report"] = f"{REMOTE}/{tag}.weights.json"
     save(local.with_suffix(".config.json"), config)
@@ -97,7 +103,8 @@ def run(args):
     if args.diagnostic or args.profile:
         argv += ["--no-warmup"]
     command = f"cd {shlex.quote(REMOTE)} && exec " + shlex.join(env + argv)
-    record = {"command": command, "diagnostic": args.diagnostic, "profile": args.profile,
+    record = {"command": command, "weight_gib": args.weight_gib,
+              "diagnostic": args.diagnostic, "profile": args.profile,
               "before": snapshot(), "process_samples": []}
     print("START", tag, flush=True)
     started = time.monotonic()
@@ -131,7 +138,7 @@ def run(args):
     save(local.with_suffix(".json"), record)
     assert proc.returncode == 0, f"{tag} exited {proc.returncode}; see log"
     if "weight_bytes" in record:
-        assert abs(record["weight_bytes"] / 2**30 - 6) < 0.01
+        assert abs(record["weight_bytes"] / 2**30 - args.weight_gib) < 0.01
         print("CAPACITY", record["weight_bytes"], record["weight_bytes"] / 2**30, flush=True)
     for entry in record["bench"]:
         assert len(entry["samples_ns"]) == args.reps
@@ -163,13 +170,14 @@ def probe():
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("prepare", "run", "probe"))
+    parser.add_argument("action", choices=("prepare", "configure", "run", "probe"))
     parser.add_argument("--backend", choices=("cpu", "htp"))
     parser.add_argument("--tag")
     parser.add_argument("--threads", default="4")
     parser.add_argument("--prompt", default="128,512")
     parser.add_argument("--ubatch", type=int, default=128)
     parser.add_argument("--reps", type=int, default=3)
+    parser.add_argument("--weight-gib", type=int, choices=(4, 5, 6), default=6)
     parser.add_argument("--diagnostic", action="store_true")
     parser.add_argument("--profile", action="store_true")
     parser.add_argument("--timeout", type=int, default=1200)
@@ -177,11 +185,13 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     assert base.adb("get-state").stdout.strip() == "device"
     assert not base.shell("pidof llama-bench", check=False).stdout.strip()
-    if args.action == "prepare":
-        configs()
-        base.deploy("deploy")
-        save(OUT / "device-before.json", snapshot())
-        save(OUT / "model-stat.json", {"stat": base.shell(f"stat -c '%s %n' {base.MODEL}").stdout})
+    if args.action in ("prepare", "configure"):
+        configs(args.weight_gib)
+        if args.action == "prepare":
+            prefix = capacity_prefix(args.weight_gib)
+            base.deploy(f"{prefix}deploy")
+            save(OUT / f"{prefix}device-before.json", snapshot())
+            save(OUT / f"{prefix}model-stat.json", {"stat": base.shell(f"stat -c '%s %n' {base.MODEL}").stdout})
     elif args.action == "probe":
         probe()
     else:

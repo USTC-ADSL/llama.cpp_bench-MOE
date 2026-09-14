@@ -46,3 +46,31 @@ High-slot CPU/HTP probe passed tokens128, slots135, selected IDs127..134, max_ab
 analyze.py validates all 36 samples, with 30 used for comparison and six from
 the original thermally capped CPU control excluded. All device test processes
 finished and task directory was removed; original model retained. Logs compressed.
+
+## 6 / 5 / 4 GiB Speed Sweep
+
+User requests only ubatch128 speed measurements at 6/5/4 GiB, without additional
+controls. Reuse completed 6 GiB CPU4/CPU8/HTP4 PP128/PP512 results. Same binaries,
+batch512, ubatch128, three repetitions; no new profiling or numerical probes.
+Initial sweep battery temperature 25.7 C, CPU frequency caps 3.5328/4.32 GHz.
+
+- [x] Confirm device and existing binary hashes; parameterize the existing runner.
+- [x] Measure 5 GiB CPU4/CPU8/HTP4 at PP128/PP512.
+- [x] Measure 4 GiB CPU4/CPU8/HTP4 at PP128/PP512.
+- [x] Validate samples, publish the combined capacity table and clean device files.
+- [x] Commit the capacity sweep checkpoint.
+
+The allocation policy still reserves at least 128 slots per shape pool, fixes
+expert banks in layer/name order, then fills residual capacity with slots. CPU
+and HTP use identical fixed expert sets and slot counts at each capacity.
+
+5 GiB completed means (PP128 / PP512 tokens/s): CPU4 65.022 / 60.969;
+CPU8 76.005 / 73.761; HTP4 87.589 / 90.501. Starting 4 GiB at 27.9 C
+with normal 3.5328/4.32 GHz CPU caps.
+
+4 GiB completed means (PP128 / PP512 tokens/s): CPU4 53.241 / 54.089;
+CPU8 65.151 / 63.773; HTP4 69.833 / 70.978. analyze_sweep.py validates all
+54 samples (18 reused at 6 GiB, 36 new at 5/4 GiB), configs, hashes and normal
+before/after CPU caps. New-run battery snapshots span 24.7..30.2 C. All runs
+completed without retries or extra controls. Device test directory removed,
+original model retained; logs compressed. Combined results: handoff-02-capacity-sweep.md.
