@@ -1,0 +1,17 @@
+{
+  "probe_sha256": "2bb9d29b41ee402f1e0f865e767039b438f01a2731cfd28a6a0556a317b92836",
+  "cases": [
+    {
+      "device": "CPU",
+      "command": "cd /data/local/tmp/llama-weight-ub128 && exec env LD_LIBRARY_PATH=.:/vendor/lib64 ADSP_LIBRARY_PATH=. GGML_HEXAGON_NHMX=1 GGML_HEXAGON_MM_SELECT=3 GGML_HEXAGON_PROFILE=1 ./weight-slice-probe CPU 128 127",
+      "exit": 0,
+      "stdout": "device=CPU tokens=128 high_slot=127 max_abs=0\n"
+    },
+    {
+      "device": "HTP0",
+      "command": "cd /data/local/tmp/llama-weight-ub128 && exec env LD_LIBRARY_PATH=.:/vendor/lib64 ADSP_LIBRARY_PATH=. GGML_HEXAGON_NHMX=1 GGML_HEXAGON_MM_SELECT=3 GGML_HEXAGON_PROFILE=1 ./weight-slice-probe HTP0 128 127",
+      "exit": 0,
+      "stdout": "device=HTP0 tokens=128 high_slot=127 max_abs=0\n"
+    }
+  ]
+}
