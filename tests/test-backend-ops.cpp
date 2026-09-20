@@ -4932,24 +4932,27 @@ struct test_rope : public test_case {
     int v; // view (1 : non-contiguous a)
     bool forward;
     bool inplace;
+    int n_offs; // offset of the rotated dims window, set via ggml_rope_set_offset()
 
     std::string vars() override {
         // forward can be inferred from the op, does not need to be printed
-        return VARS_TO_STR11(type, ne_a, n_dims, mode, n_ctx, fs, ef, af, ff, v, inplace);
+        return VARS_TO_STR12(type, ne_a, n_dims, mode, n_ctx, fs, ef, af, ff, v, inplace, n_offs);
     }
 
     test_rope(ggml_type type = GGML_TYPE_F32,
             std::array<int64_t, 4> ne_a = {10, 5, 3, 1},
             int n_dims = 10, int mode = GGML_ROPE_TYPE_NORMAL, int n_ctx = 512, float fs = 1.0f,
-            float ef = 0.0f, float af = 0.0f, bool ff = false, int v = 0, bool forward = true, bool inplace = false)
-        : type(type), ne_a(ne_a), n_dims(n_dims), mode(mode), n_ctx(n_ctx), fs(fs), ef(ef), af(af), ff(ff), v(v), forward(forward), inplace(inplace) {}
+            float ef = 0.0f, float af = 0.0f, bool ff = false, int v = 0, bool forward = true, bool inplace = false,
+            int n_offs = 0)
+        : type(type), ne_a(ne_a), n_dims(n_dims), mode(mode), n_ctx(n_ctx), fs(fs), ef(ef), af(af), ff(ff), v(v), forward(forward), inplace(inplace), n_offs(n_offs) {}
 
     ggml_tensor * build_graph(ggml_context * ctx) override {
         ggml_tensor * a;
         if (v & 1) {
             auto ne = ne_a; ne[0] *= 2; ne[1] *= 4; ne[2] *= 3;
             a = ggml_new_tensor(ctx, type, 4, ne.data());
-            if (forward) {
+            if (forward && n_offs == 0) {
+                // FIXME: support gradients with n_offs > 0
                 ggml_set_param(a);
             }
             ggml_set_name(a, "a");
@@ -4962,7 +4965,8 @@ struct test_rope : public test_case {
             // non-aligned buffer offset, which exercises backends' alignment paths.
             auto ne = ne_a; ne[0] *= 2;
             a = ggml_new_tensor(ctx, type, 4, ne.data());
-            if (forward) {
+            if (forward && n_offs == 0) {
+                // FIXME: support gradients with n_offs > 0
                 ggml_set_param(a);
             }
             ggml_set_name(a, "a");
@@ -4973,7 +4977,8 @@ struct test_rope : public test_case {
             ggml_set_name(a, "view_of_a");
         } else {
             a = ggml_new_tensor(ctx, type, 4, ne_a.data());
-            if (forward) {
+            if (forward && n_offs == 0) {
+                // FIXME: support gradients with n_offs > 0
                 ggml_set_param(a);
             }
             ggml_set_name(a, "a");
@@ -5033,6 +5038,9 @@ struct test_rope : public test_case {
             } else {
                 out = ggml_rope_ext_back(ctx, a, pos, freq, n_dims, mode, 0, 10000.0f, fs, ef, af, 1.0f, 1.0f);
             }
+        }
+        if (n_offs != 0) {
+            out = ggml_rope_set_offset(out, n_offs);
         }
         ggml_set_name(out, "out");
 
@@ -7993,6 +8001,7 @@ static std::vector<std::unique_ptr<test_case>> make_test_cases_eval() {
 
     // im2col 2D
     test_cases.emplace_back(new test_im2col(GGML_TYPE_F32, GGML_TYPE_F32, GGML_TYPE_F32));
+    test_cases.emplace_back(new test_im2col(GGML_TYPE_F32, GGML_TYPE_F32, GGML_TYPE_F16));
     test_cases.emplace_back(new test_im2col(GGML_TYPE_F32, GGML_TYPE_F16, GGML_TYPE_F32));
     test_cases.emplace_back(new test_im2col(GGML_TYPE_F32, GGML_TYPE_F16, GGML_TYPE_F16));
     for (int s0 : {1, 3}) {
@@ -8746,6 +8755,16 @@ static std::vector<std::unique_ptr<test_case>> make_test_cases_eval() {
     test_cases.emplace_back(new test_mul_mat_id(GGML_TYPE_MXFP4, GGML_TYPE_F32, 32, 2, false, 2880, 32, 2880));
     test_cases.emplace_back(new test_mul_mat_id(GGML_TYPE_Q4_0, GGML_TYPE_F32, 32, 2, false, 2880, 32, 2880));
 
+    // Phi-mini-MoE expert shapes used by the Q4_0 model in decode and prefill.
+    for (int n : {1, 32}) {
+        test_cases.emplace_back(new test_named_mul_mat_id(
+            "MUL_MAT_ID_PHI_GATE", GGML_TYPE_Q4_0, GGML_TYPE_F32, 16, 2, true, 960, n, 4096));
+        test_cases.emplace_back(new test_named_mul_mat_id(
+            "MUL_MAT_ID_PHI_DOWN", GGML_TYPE_Q4_0, GGML_TYPE_F32, 16, 2, false, 4096, n, 960));
+        test_cases.emplace_back(new test_named_mul_mat_id(
+            "MUL_MAT_ID_PHI_DOWN", GGML_TYPE_Q4_1, GGML_TYPE_F32, 16, 2, false, 4096, n, 960));
+    }
+
     for (ggml_type type_a : base_types) {
         for (ggml_type type_b : {GGML_TYPE_F32 /*, GGML_TYPE_F16 */}) {
             for (int n_mats : {4, 8}) {
@@ -8848,6 +8867,11 @@ static std::vector<std::unique_ptr<test_case>> make_test_cases_eval() {
         test_cases.emplace_back(new test_sin       (type, {1024, 1024, 1, 1}));
         test_cases.emplace_back(new test_cos       (type, {7, 1, 5, 3}));
         test_cases.emplace_back(new test_cos       (type, {1024, 1024, 1, 1}));
+        test_cases.emplace_back(new test_clamp     (type, {1, 1, 1, 1}));
+        test_cases.emplace_back(new test_clamp     (type, {31, 1, 1, 1}));
+        test_cases.emplace_back(new test_clamp     (type, {33, 3, 1, 1}));
+        test_cases.emplace_back(new test_clamp     (type, {1025, 2, 1, 1}));
+        test_cases.emplace_back(new test_clamp     (type, {33, 2, 1, 1}, 0.125f, 0.125f));
         test_cases.emplace_back(new test_clamp     (type, {7, 1, 5, 3}));
         test_cases.emplace_back(new test_clamp     (type, {1024, 1024, 1, 1}));
         test_cases.emplace_back(new test_leaky_relu(type, {7, 1, 5, 3}));
@@ -9012,6 +9036,20 @@ static std::vector<std::unique_ptr<test_case>> make_test_cases_eval() {
                 test_cases.emplace_back(new test_rope(type, {128,  32, 2, 3}, 128, mode, 512, 1.4245f, 0.7465f, 1.4245f, ff, 1, true, true));
             }
         }
+    }
+
+    // rotated dims window at an offset (ggml_rope_set_offset), not supported for vision mode
+    for (ggml_type type : {GGML_TYPE_F32, GGML_TYPE_F16}) {
+        for (bool fw : {true, false}) { // fw == forward
+            for (bool ff : {false, true}) {
+                test_cases.emplace_back(new test_rope(type, {128, 32, 2, 1}, 32, GGML_ROPE_TYPE_NORMAL, 512, 1.4245f, 0.7465f, 1.4245f, ff, 0, fw, false, 32));
+                test_cases.emplace_back(new test_rope(type, {128, 32, 2, 1}, 32, GGML_ROPE_TYPE_NEOX,   512, 1.4245f, 0.7465f, 1.4245f, ff, 0, fw, false, 32));
+                test_cases.emplace_back(new test_rope(type, {128, 12, 2, 1}, 24, GGML_ROPE_TYPE_MROPE,  512, 1.4245f, 0.7465f, 1.4245f, ff, 0, fw, false, 32));
+                test_cases.emplace_back(new test_rope(type, {128, 12, 2, 1}, 24, GGML_ROPE_TYPE_IMROPE, 512, 1.4245f, 0.7465f, 1.4245f, ff, 0, fw, false, 32));
+            }
+        }
+        // inplace with an offset
+        test_cases.emplace_back(new test_rope(type, {128, 32, 2, 1}, 32, GGML_ROPE_TYPE_NEOX, 512, 1.4245f, 0.7465f, 1.4245f, false, 0, true, true, 32));
     }
 
     for (int v : { 0, 1, 2, 3 }) {

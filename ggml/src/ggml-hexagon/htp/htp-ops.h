@@ -98,6 +98,7 @@ enum htp_op_code {
     HTP_OP_NORM,
     HTP_OP_CONCAT,
     HTP_OP_CLAMP,
+    HTP_OP_IM2COL,
 
     HTP_OP_INVALID
 };
@@ -109,8 +110,7 @@ enum htp_op_code {
 #define HTP_OP_MAX_KERN_PARAMS 32
 
 #define HTP_OP_MAX_BUFS    16
-#define HTP_OP_MAX_REQS    256
-#define HTP_OP_MAX_TENSORS (HTP_OP_MAX_REQS * HTP_OP_MAX_INPUTS + HTP_OP_MAX_REQS)
+#define HTP_OP_MAX_TENSORS 8192 // must stay under 64K (uint16)
 
 #define HTP_OP_MAX_VMEM_DEFAULT (3355443200u)
 
@@ -118,16 +118,18 @@ enum htp_op_code {
 
 enum htp_tensor_flags {
     HTP_TENSOR_COMPUTE = (1U << 0), // Tensor buffer temporal compute data (not weights)
-    HTP_TENSOR_FLUSHED = (1U << 1)  // Tensor buffer has been flushed (set by the NPU)
+    HTP_TENSOR_DIRTY   = (1U << 1)  // Tensor buffer is dirty and needs to be flushed
 };
 
 // Tensor descriptor
 struct htp_tensor {
     uint32_t data;                 // Buffer offset in the messages, and data pointer on the NPU
+    uint32_t reserved;             // Reserved for alignment padding (must be multiple of 8)
     uint32_t size;                 // Data size in bytes
     uint32_t flags;                // Buffer / tensor flags
-    uint16_t type;                 // Data type
+    uint32_t type;                 // Data type
     uint16_t bi;                   // Buffer index
+    uint16_t ti;                   // Tensor index
     uint32_t ne[HTP_OP_MAX_DIMS];  // Number of elements
     uint32_t nb[HTP_OP_MAX_DIMS];  // Stride in bytes (see ggml.h ggml_tensor)
 };
@@ -170,6 +172,9 @@ enum htp_profiler_mode {
 
 enum htp_trace_event_id {
     HTP_TRACE_EVT_DMA                 = 0,
+    HTP_TRACE_EVT_L2FLUSH             = 1,
+    HTP_TRACE_EVT_INIT                = 2,
+    HTP_TRACE_EVT_BUFF                = 3,
 
     HTP_TRACE_EVT_HVX_COMP            = 20,
     HTP_TRACE_EVT_HVX_A_QUANT         = 21,
@@ -203,6 +208,27 @@ struct htp_prof_desc {
     uint32_t pmu[HTP_PROF_PMU_NCNT]; // PMU counters
 };
 
+// Dedicated DSPQueue control message used to measure the cache/range
+// ownership transition without running an HTP operator batch.  Keep this
+// separate from htp_opbatch_req/rsp so the normal wire layout is unchanged.
+enum htp_queue_message_type {
+    HTP_REQUEST_RANGE_SYNC_ONLY  = 0x52534f51, // "RSOQ"
+    HTP_RESPONSE_RANGE_SYNC_ONLY = 0x52534f52, // "RSOR"
+};
+
+struct htp_range_sync_req {
+    uint32_t type;
+    uint32_t id;
+    uint32_t pad[2];
+};
+
+struct htp_range_sync_rsp {
+    uint32_t type;
+    uint32_t id;
+    uint32_t status;
+    uint32_t pad;
+};
+
 struct htp_opbatch_req {
     uint32_t id;          // Batch id
     uint32_t n_bufs;      // Number of buffers
@@ -221,8 +247,13 @@ struct htp_opbatch_rsp {
     uint32_t n_bufs;     // Number of buffers
     uint32_t n_tensors;  // Number of tensors
     uint32_t n_ops;      // Number of op profile descriptors
+    uint32_t failed_idx;     // Failed op index, or UINT32_MAX on success
+    uint32_t failed_opcode;  // Failed HTP opcode, or 0 on success
     uint32_t n_traces[HTP_MAX_NTHREADS + 1];
-    uint8_t  pad[8];     // align to 8 bytes
+    uint32_t usecs;          // Number of usec
+    uint32_t pad;            // align to 8 bytes
+    uint64_t cycles_start;   // Start cycle counter
+    uint64_t cycles_stop;    // Stop cycle counter
     // struct htp_prof_desc profs[];  -- dspqueue buf 0
 };
 

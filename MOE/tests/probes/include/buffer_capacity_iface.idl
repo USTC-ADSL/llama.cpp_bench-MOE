@@ -1,0 +1,51 @@
+#ifndef BUFFER_CAPACITY_IFACE_IDL
+#define BUFFER_CAPACITY_IFACE_IDL
+
+#include "AEEStdDef.idl"
+#include "remote.idl"
+
+interface buffer_capacity_iface : remote_handle64 {
+    AEEResult touch(
+        in long fd,
+        in uint64 offset,
+        in uint64 length,
+        in uint32 stride,
+        in uint32 seed,
+        in uint32 map_windowed,
+        rout uint64 checksum,
+        rout uint64 touched);
+
+    AEEResult map_latency(
+        in long fd,
+        in uint64 length,
+        in uint32 warmup,
+        in uint32 iterations,
+        rout uint64 map_first_ticks,
+        rout uint64 map_total_ticks,
+        rout uint64 map_min_ticks,
+        rout uint64 map_max_ticks,
+        rout uint64 unmap_first_ticks,
+        rout uint64 unmap_total_ticks,
+        rout uint64 unmap_min_ticks,
+        rout uint64 unmap_max_ticks,
+        rout uint64 first_va,
+        rout uint64 last_va,
+        rout uint32 address_changes);
+
+    AEEResult verify_replace(
+        in long fd,
+        in uint64 length,
+        in uint32 expected_seed,
+        in uint32 output_seed,
+        rout uint64 input_mismatches,
+        rout uint64 input_checksum,
+        rout uint64 output_checksum,
+        rout uint64 dsp_va);
+
+    AEEResult shared_expert_start(
+        in uint64 dsp_queue_id);
+
+    AEEResult shared_expert_stop();
+};
+
+#endif

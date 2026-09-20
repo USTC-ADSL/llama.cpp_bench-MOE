@@ -107,6 +107,7 @@ option(LLAMA_BUILD_COMMON "llama: build common utils library" ${LLAMA_STANDALONE
 option(LLAMA_BUILD_TESTS    "llama: build tests"          ${LLAMA_STANDALONE})
 option(LLAMA_BUILD_TOOLS    "llama: build tools"          ${LLAMA_STANDALONE})
 option(LLAMA_BUILD_EXAMPLES "llama: build examples"       ${LLAMA_STANDALONE})
+option(LLAMA_BUILD_MOE_SHARED_EXPERT_DEMO "llama: build the Android SharedExpert dma-buf Phase B demo" OFF)
 
 option(LLAMA_TOOLS_INSTALL "llama: install tools" ${LLAMA_TOOLS_INSTALL_DEFAULT})
 option(LLAMA_TESTS_INSTALL "llama: install tests" ON)
@@ -211,6 +212,18 @@ endif()
 
 if (LLAMA_BUILD_COMMON AND LLAMA_BUILD_TOOLS)
     add_subdirectory(tools)
+endif()
+
+if (LLAMA_BUILD_MOE_SHARED_EXPERT_DEMO)
+    if (NOT ANDROID)
+        message(FATAL_ERROR "LLAMA_BUILD_MOE_SHARED_EXPERT_DEMO requires an Android build")
+    endif()
+    if (NOT GGML_OPENCL OR NOT GGML_HEXAGON)
+        message(FATAL_ERROR "LLAMA_BUILD_MOE_SHARED_EXPERT_DEMO requires GGML_OPENCL=ON and GGML_HEXAGON=ON")
+    endif()
+
+    add_subdirectory(MOE)
+
 endif()
 
 # Automatically add all files from the 'licenses' directory

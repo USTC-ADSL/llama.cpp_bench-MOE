@@ -57,72 +57,15 @@ static inline void quantize_block_f32_q8_1_flat(
     __fp16 * restrict y_scales,
     uint32_t block_idx
 ) {
-    HVX_Vector * vx = (HVX_Vector *) x;
-    HVX_Vector zero = Q6_V_vzero();
-
-    HVX_Vector vmax0_sf = hvx_vec_reduce_max_f32(hvx_vec_abs_f32(vx[0]));
-    HVX_Vector vmax1_sf = hvx_vec_reduce_max_f32(hvx_vec_abs_f32(vx[1]));
-    HVX_Vector vmax2_sf = hvx_vec_reduce_max_f32(hvx_vec_abs_f32(vx[2]));
-    HVX_Vector vmax3_sf = hvx_vec_reduce_max_f32(hvx_vec_abs_f32(vx[3]));
-
-    HVX_Vector vx0_qf = Q6_Vqf32_vsub_VsfVsf(vx[0], zero);
-    HVX_Vector vx1_qf = Q6_Vqf32_vsub_VsfVsf(vx[1], zero);
-    HVX_Vector vx2_qf = Q6_Vqf32_vsub_VsfVsf(vx[2], zero);
-    HVX_Vector vx3_qf = Q6_Vqf32_vsub_VsfVsf(vx[3], zero);
-
-    HVX_Vector vmax0_qf = Q6_Vqf32_vsub_VsfVsf(vmax0_sf, zero);
-    HVX_Vector vmax1_qf = Q6_Vqf32_vsub_VsfVsf(vmax1_sf, zero);
-    HVX_Vector vmax2_qf = Q6_Vqf32_vsub_VsfVsf(vmax2_sf, zero);
-    HVX_Vector vmax3_qf = Q6_Vqf32_vsub_VsfVsf(vmax3_sf, zero);
-
-    HVX_Vector vmax01_hf = Q6_Vh_vdeal_Vh(Q6_Vhf_equals_Wqf32(Q6_W_vcombine_VV(vmax1_qf, vmax0_qf)));
-    HVX_Vector vmax23_hf = Q6_Vh_vdeal_Vh(Q6_Vhf_equals_Wqf32(Q6_W_vcombine_VV(vmax3_qf, vmax2_qf)));
-
-    HVX_Vector vx01_hf = Q6_Vh_vdeal_Vh(Q6_Vhf_equals_Wqf32(Q6_W_vcombine_VV(vx1_qf, vx0_qf)));
-    HVX_Vector vx23_hf = Q6_Vh_vdeal_Vh(Q6_Vhf_equals_Wqf32(Q6_W_vcombine_VV(vx3_qf, vx2_qf)));
-
-    HVX_Vector vd01_qf16 = Q6_Vqf16_vmpy_VhfVhf(vmax01_hf, Q6_Vh_vsplat_R(0x2008));  // 1.0 / 127.0
-    HVX_Vector vd23_qf16 = Q6_Vqf16_vmpy_VhfVhf(vmax23_hf, Q6_Vh_vsplat_R(0x2008));  // 1.0 / 127.0
-    HVX_Vector vd01_hf   = Q6_Vhf_equals_Vqf16(vd01_qf16);
-    HVX_Vector vd23_hf   = Q6_Vhf_equals_Vqf16(vd23_qf16);
-
-    HVX_Vector vd01_inv_hf = hvx_vec_inverse_f16(vd01_hf);
-    HVX_Vector vd23_inv_hf = hvx_vec_inverse_f16(vd23_hf);
-    vx01_hf              = Q6_Vhf_equals_Vqf16(Q6_Vqf16_vmpy_VhfVhf(vx01_hf, vd01_inv_hf));
-    vx23_hf              = Q6_Vhf_equals_Vqf16(Q6_Vqf16_vmpy_VhfVhf(vx23_hf, vd23_inv_hf));
-
-    HVX_Vector vx01_i16 = hvx_vec_i16_from_hf_rnd_sat(vx01_hf);
-    HVX_Vector vx23_i16 = hvx_vec_i16_from_hf_rnd_sat(vx23_hf);
-    HVX_Vector vx_i8    = Q6_Vb_vpack_VhVh_sat(vx23_i16, vx01_i16);
-
-    const HVX_Vector ones = Q6_Vb_vsplat_R(1);
-    HVX_Vector v_sums = Q6_Vw_vrmpy_VbVb(vx_i8, ones);
-    v_sums = Q6_Vw_vadd_VwVw(v_sums, Q6_V_vror_VR(v_sums, 4));
-    v_sums = Q6_Vw_vadd_VwVw(v_sums, Q6_V_vror_VR(v_sums, 8));
-    v_sums = Q6_Vw_vadd_VwVw(v_sums, Q6_V_vror_VR(v_sums, 16));
-
-    * (HVX_Vector *) (y_quants + block_idx * 128) = vx_i8;
-
-    HVX_VectorPair vp1 = Q6_W_vshuff_VVR(vd23_hf, vd01_hf, -2);
-    HVX_VectorPair vp2 = Q6_W_vshuff_VVR(Q6_V_hi_W(vp1), Q6_V_lo_W(vp1), -2);
-    HVX_Vector v_scales = Q6_V_lo_W(vp2);
-
-    HVX_VectorPair v_deal1 = Q6_W_vdeal_VVR(v_sums, v_sums, -4);
-    HVX_Vector v_even1 = Q6_V_lo_W(v_deal1);
-    HVX_VectorPair v_deal2 = Q6_W_vdeal_VVR(v_even1, v_even1, -4);
-    HVX_Vector v_even2 = Q6_V_lo_W(v_deal2);
-    HVX_VectorPair v_deal3 = Q6_W_vdeal_VVR(v_even2, v_even2, -4);
-    HVX_Vector v_sums_shuffled = Q6_V_lo_W(v_deal3);
-
-    HVX_Vector v_sums_sf = Q6_Vsf_equals_Vw(v_sums_shuffled);
-    HVX_Vector v_sums_hf = hvx_vec_f32_to_f16(v_sums_sf, Q6_V_vzero());
-
-    HVX_Vector v_prod = hvx_vec_mul_f16_f16(v_scales, v_sums_hf);
-
-    HVX_VectorPair vp_scales = Q6_W_vshuff_VVR(v_prod, v_scales, -2);
-    HVX_Vector v_final = Q6_V_lo_W(vp_scales);
-
-    hvx_vec_store_u(y_scales + block_idx * 8, 16, v_final);
+    int8_t * restrict dst_quants = (int8_t *) y_quants + block_idx * 128;
+    __fp16 * restrict dst_scales = y_scales + block_idx * 8;
+    for (uint32_t b = 0; b < 4; ++b) {
+        htp_quantize_block_f32_q8_1_reference(
+            x + b * 32,
+            dst_quants + b * 32,
+            dst_scales + b * 2,
+            dst_scales + b * 2 + 1);
+    }
 }
 
 static inline void quantize_row_f32_q8_0_flat(float * restrict x, uint8_t * restrict y, uint32_t k) {

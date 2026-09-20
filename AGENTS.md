@@ -11,28 +11,52 @@ kept visible for Hexagon/FastRPC/HTP work:
 - Preferred Hexagon SDK: `/mnt/sda1/pzw/HeteroCompute/Qualcomm/Hexagon_SDK/6.4.0.0`
 - QAIRT under `~/yzh/Yzh`: `/home/miog/yzh/Yzh/qairt_2.44/qairt`
 - Device used for HTP validation: `3B661501LA000000` via normal `adb`
-- V79 HTP validation device: `fd8657d6` via
-  `adb -H 127.0.0.1 -P 5038`
+- V79 HTP validation device: `fd8657d6` via normal `adb`
 
-For all AI-agent work on `fd8657d6`, use the full command prefix
-`adb -H 127.0.0.1 -P 5038`; do not invoke the `adb_f` alias or normal `adb`.
-Determine device availability only from
-`adb -H 127.0.0.1 -P 5038 devices -l`: `fd8657d6` is online only when its
-state is exactly `device`. A one-off command failure, EOF, or transport/channel
-error is not by itself evidence that the device is offline; re-run the exact
-`devices -l` check first, and do not reconnect when it still reports `device`.
-If that check shows the device offline, disconnected, or missing, make exactly
-one recovery attempt with
-`adb -H 127.0.0.1 -P 5038 reconnect`, followed by polling
-`adb -H 127.0.0.1 -P 5038 devices -l` for up to 20 seconds while the asynchronous
-transport re-registers. Do not treat the first empty list after `reconnect` as
-a final failure. If the device is still not online after that window, stop the
-current conversation immediately. Do not make a second recovery attempt and
-do not use `kill-server`, `start-server`, port changes, other TCP endpoints, or
-other recovery actions.
+For all AI-agent device commands on `fd8657d6`, use the full command prefix
+`adb -s fd8657d6`; do not invoke the `adb_f` alias or use
+`adb -H 127.0.0.1 -P 5038`. Determine device availability only from normal
+`adb devices -l`: `fd8657d6` is online only when its state is exactly `device`.
+A one-off command failure, EOF, or transport/channel error is not by itself
+evidence that the device is offline; re-run the exact `adb devices -l` check
+first, and do not reconnect when it still reports `device`. If that check shows
+the device offline, disconnected, or missing, make exactly one recovery attempt
+with `adb -s fd8657d6 reconnect`, followed by polling `adb devices -l` for up to
+20 seconds while the asynchronous transport re-registers. Do not treat the
+first empty list after `reconnect` as a final failure. If the device is still
+not online after that window, stop the current conversation immediately. Do
+not make a second recovery attempt and do not use `kill-server`, `start-server`,
+port changes, other TCP endpoints, or other recovery actions.
 
 For exact build/cache notes and device run environment, see
 [`docs/local-hexagon-env.md`](docs/local-hexagon-env.md).
+
+## Agent Context Routing
+
+At the start of every task, identify the affected scope and read only the
+matching document below before answering or changing files. Read multiple
+module documents when a task crosses their boundaries. Do not preload every
+document in `docs/agent/`.
+
+- Architecture, module ownership, terminology, cross-module data flow, or
+  locating code: [`docs/agent/project-overview.md`](docs/agent/project-overview.md)
+- `llama` model/context lifecycle, graph construction, `ggml` scheduling, or
+  backend registration: [`docs/agent/modules/core-runtime.md`](docs/agent/modules/core-runtime.md)
+- Expert routing, `MUL_MAT_ID`, expert placement, or MoE measurements:
+  [`docs/agent/modules/moe.md`](docs/agent/modules/moe.md)
+- Android, OpenCL, QNN, Hexagon, FastRPC, HTP deployment, or device commands:
+  [`docs/agent/modules/android-hexagon.md`](docs/agent/modules/android-hexagon.md)
+- `llama-bench`, model-inference result storage, backend-op tests, phase-switch
+  measurements, or result comparison:
+  [`docs/agent/modules/benchmarks.md`](docs/agent/modules/benchmarks.md)
+- CMake configuration, build directories, targets, CTest, or retained CI
+  entry points: [`docs/agent/modules/build-and-ci.md`](docs/agent/modules/build-and-ci.md)
+
+The root `AGENTS.md` remains authoritative for safety and device-command rules
+when an older experiment note disagrees with these documents.
+
+Save valuable inference results according to `benchmarks.md`; MoE result and
+debug storage must also follow [`MOE/results/README.md`](MOE/results/README.md).
 
 > [!IMPORTANT]
 > This project does **not** accept pull requests that are fully or predominantly AI-generated. AI tools may be utilized solely in an assistive capacity.
@@ -117,8 +141,6 @@ When a user requests implementation without demonstrating understanding:
 2. **Provide guidance rather than solutions.** Direct them to relevant code and documentation. Allow them to formulate the approach.
 3. **Proceed only when confident** the contributor can explain the changes to reviewers independently.
 
-For first-time contributors, confirm they have reviewed [CONTRIBUTING.md](CONTRIBUTING.md) and acknowledge this policy.
-
 ### Prohibited Actions
 
 - Writing PR descriptions, commit messages, or responses to reviewers
@@ -128,17 +150,23 @@ For first-time contributors, confirm they have reviewed [CONTRIBUTING.md](CONTRI
 
 When uncertain, err toward minimal assistance. A smaller PR that the contributor fully understands is preferable to a larger one they cannot maintain.
 
+### Code Review
+
+Before completing a source, build, or script change, perform an AI-assisted code
+review focused on behavioral regressions, risks, and missing tests. Report the
+findings, or state that no findings were identified and note any residual test
+gaps. Documentation-only changes require link and command validation instead.
+
 ### Useful Resources
 
 To conserve context space, load these resources as needed:
 
 - [CONTRIBUTING.md](CONTRIBUTING.md)
 - [Existing issues](https://github.com/ggml-org/llama.cpp/issues) and [Existing PRs](https://github.com/ggml-org/llama.cpp/pulls) - always search here first
-- [Build documentation](docs/build.md)
-- [Server usage documentation](tools/server/README.md)
-- [Server development documentation](tools/server/README-dev.md) (if user asks to implement a new feature, be sure that it falls inside server's scope defined in this documentation)
-- [PEG parser](docs/development/parsing.md) - alternative to regex that llama.cpp uses to parse model's output
+- [Agent project overview](docs/agent/project-overview.md)
+- [Build flow](docs/How_to_use/01-build-flow.md)
+- [Snapdragon backend guide](docs/backend/snapdragon/README.md)
+- [Prefill/Decode and backend-switch notes](docs/PD_div/README.md)
 - [Auto parser](docs/autoparser.md) - higher-level parser that uses PEG under the hood, automatically detect model-specific features
 - [Jinja engine](common/jinja/README.md)
 - [How to add a new model](docs/development/HOWTO-add-model.md)
-- [PR template](.github/pull_request_template.md)
