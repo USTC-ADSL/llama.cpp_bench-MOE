@@ -1,4 +1,5 @@
 #include "expert-probe-common.h"
+#include "../ggml/src/ggml-impl.h"
 
 #include <future>
 #include <map>
@@ -112,6 +113,7 @@ struct layer {
     ggml_tensor * shared;
     ggml_cgraph * graph;
     std::vector<float> activation, probabilities, residual_values, shared_values;
+    ggml_cgraph prefix_graph{}, shared_graph{};
     std::map<std::pair<int, int>, std::unique_ptr<job>> jobs[2];
     size_t misses = 0;
     layer(device & c, device & n, source & s, int il, int k, float eps, int tokens) :
@@ -172,7 +174,11 @@ struct layer {
         shared = ggml_mul(ctx.get(), shared_out, ggml_div(ctx.get(), ggml_silu(ctx.get(), shared_router), shared_router));
         graph = ggml_new_graph_custom(ctx.get(), 128, false);
         ggml_build_forward_expand(graph, probs);
+        const int prefix_nodes = ggml_graph_n_nodes(graph);
         ggml_build_forward_expand(graph, shared);
+        // Views retain use counts and fusion behavior; the shared branch skips the prefix.
+        prefix_graph = ggml_graph_view(graph, 0, prefix_nodes);
+        shared_graph = ggml_graph_view(graph, prefix_nodes, ggml_graph_n_nodes(graph));
         buf.reset(ggml_backend_alloc_ctx_tensors_from_buft(ctx.get(), ggml_backend_dev_buffer_type(cpu.dev)));
         require(buf != nullptr, "router allocation failed");
         for (auto entry : weights) {
@@ -198,19 +204,21 @@ struct layer {
         std::vector<float> output, moe;
         std::vector<int32_t> ids, counts;
         double router = 0, partition = 0, experts_time = 0, combine = 0;
+        double shared_cpu = 0;
         std::array<double, 3> cpu_phase{}, npu_phase{};
         int cpu_pairs = 0, npu_pairs = 0;
     };
     result run(const std::vector<float> & input, const std::string & policy, int threshold,
                const std::vector<int32_t> * fixed_ids = nullptr) {
         result r;
+        const bool overlap = policy == "shared_overlap";
         auto t = timer::now();
         ggml_backend_tensor_set(x, input.data(), 0, input.size()*sizeof(float));
-        cpu.compute(graph);
+        cpu.compute(overlap ? &prefix_graph : graph);
         ggml_backend_tensor_get(normalized, activation.data(), 0, activation.size()*sizeof(float));
         ggml_backend_tensor_get(probs, probabilities.data(), 0, probabilities.size()*sizeof(float));
         ggml_backend_tensor_get(residual, residual_values.data(), 0, residual_values.size()*sizeof(float));
-        ggml_backend_tensor_get(shared, shared_values.data(), 0, shared_values.size()*sizeof(float));
+        if (!overlap) { ggml_backend_tensor_get(shared, shared_values.data(), 0, shared_values.size()*sizeof(float)); }
         cpu.sync();
         r.ids.resize(nt*topk); r.counts.assign(experts, 0);
         std::vector<int> order(experts);
@@ -228,10 +236,10 @@ struct layer {
             for (auto id : r.ids) { require(id >= 0 && id < experts, "invalid fixed expert ID"); ++r.counts[id]; }
         }
         r.router = elapsed(t); t = timer::now();
-        const bool native = policy == "cpu_native" || policy == "npu_native";
+        const bool native = policy == "cpu_native" || policy == "npu_native" || overlap;
         std::vector<int> pairs[2];
         for (int p = 0; p < nt*topk; ++p) {
-            int backend = policy == "npu_native" || policy == "npu_grouped" ? 1 :
+            int backend = policy == "npu_native" || policy == "npu_grouped" || overlap ? 1 :
                 (policy == "cpu_native" || policy == "cpu_grouped" ? 0 : r.counts[r.ids[p]] >= threshold);
             pairs[backend].push_back(p);
         }
@@ -251,7 +259,19 @@ struct layer {
             }
         }
         r.partition = elapsed(t); t = timer::now();
-        if (policy == "mixed_parallel" && work[0] && work[1]) {
+        if (overlap) {
+            require(!work[0] && work[1], "shared overlap requires NPU routed experts");
+            // CPU shared graph only reads prefix outputs; NPU owns separate activation storage.
+            auto shared_work = std::async(std::launch::async, [&] {
+                const auto start = timer::now();
+                cpu.compute(&shared_graph);
+                ggml_backend_tensor_get(shared, shared_values.data(), 0, shared_values.size()*sizeof(float));
+                cpu.sync();
+                return elapsed(start);
+            });
+            r.npu_phase = work[1]->run();
+            r.shared_cpu = shared_work.get();
+        } else if (policy == "mixed_parallel" && work[0] && work[1]) {
             // Each backend has one owner; join precedes aggregation and the next router.
             auto cpu_work = std::async(std::launch::async, [&] { return work[0]->run(); });
             r.npu_phase = work[1]->run(); r.cpu_phase = cpu_work.get();
@@ -280,6 +300,7 @@ struct layer {
 static json record(const layer::result & r) {
     return {{"histogram", r.counts}, {"cpu_pairs", r.cpu_pairs}, {"npu_pairs", r.npu_pairs},
         {"attention_shared_router_us", r.router}, {"partition_us", r.partition}, {"experts_wall_us", r.experts_time},
+        {"overlapped_shared_cpu_us", r.shared_cpu},
         {"combine_us", r.combine}, {"cpu_upload_compute_readback_us", r.cpu_phase},
         {"npu_upload_compute_readback_us", r.npu_phase}};
 }
@@ -306,9 +327,10 @@ static json chain_difference(const std::vector<float> & actual, const std::vecto
 
 int main(int argc, char ** argv) {
     try {
-        require(argc == 7 || argc == 8, "usage: expert-routing-probe MODEL JSON REPS WARMUP REFERENCE_JSON NPU_MIN_TOKENS [parallel-only]");
+        require(argc == 7 || argc == 8, "usage: expert-routing-probe MODEL JSON REPS WARMUP REFERENCE_JSON NPU_MIN_TOKENS [parallel-only|shared-overlap]");
         const bool parallel_only = argc == 8;
-        require(!parallel_only || std::string(argv[7]) == "parallel-only", "invalid measurement mode");
+        const bool shared_overlap = argc == 8 && std::string(argv[7]) == "shared-overlap";
+        require(!parallel_only || shared_overlap || std::string(argv[7]) == "parallel-only", "invalid measurement mode");
         const int reps = std::stoi(argv[3]), warmup = std::stoi(argv[4]), threshold = std::stoi(argv[6]);
         std::ifstream reference_file(argv[5]); json original; reference_file >> original;
         auto token_ids = original["tokens"].get<std::vector<int32_t>>();
@@ -343,7 +365,8 @@ int main(int argc, char ** argv) {
             require(fread(row.data(), 1, row.size(), file.get()) == row.size(), "embedding read failed");
             ggml_get_type_traits(embedding->type)->to_float(row.data(), input.data()+t*layers[0]->width, layers[0]->width);
         }
-        const std::vector<std::string> policies = parallel_only ?
+        const std::vector<std::string> policies = shared_overlap ?
+            std::vector<std::string>{"cpu_native", "npu_native", "shared_overlap"} : parallel_only ?
             std::vector<std::string>{"cpu_native", "npu_native", "mixed_parallel"} :
             std::vector<std::string>{"cpu_native", "npu_native", "cpu_grouped", "npu_grouped", "mixed_serial", "mixed_parallel"};
         const int first_measured = parallel_only ? 1 : 0;
@@ -352,6 +375,11 @@ int main(int argc, char ** argv) {
             {"cpu_max_tokens", threshold-1}, {"parallel_only", parallel_only},
             {"scope", "resident full first 1/2 Qwen2MoE Transformer layers; causal prefill with F32 K/V; CPU attention/shared/router, policy-controlled experts; embedding lookup/init excluded; no LM head or decode"},
             {"cases", json::array()}};
+        report["shared_overlap"] = shared_overlap;
+        if (shared_overlap) {
+            report["scope"] = "resident full first 1/2 Qwen2MoE Transformer layers; causal prefill F32 K/V; CPU attention/router/shared, NPU all routed experts; shared_overlap runs CPU shared and NPU routed branches concurrently; native expert shape unchanged; embedding/init/LM head/decode excluded";
+            report["phase_note"] = "shared_overlap: attention_shared_router_us excludes shared; experts_wall_us includes both branches and join; overlapped_shared_cpu_us is nested inside experts_wall_us";
+        }
         for (int depth : {1, 2}) {
             json item = {{"layers", depth}, {"validation", json::array()}, {"samples", json::array()}};
             std::vector<std::vector<int32_t>> expected_ids(policies.size());
@@ -369,6 +397,14 @@ int main(int argc, char ** argv) {
                     values = std::move(actual.output);
                 }
                 expected_output[p] = std::move(values);
+                if (policies[p] == "shared_overlap") {
+                    require(expected_output[p].size() == expected_output[1].size() &&
+                            std::memcmp(expected_output[p].data(), expected_output[1].data(),
+                                        expected_output[p].size()*sizeof(float)) == 0,
+                            "overlap changed NPU baseline chain output");
+                    require(expected_ids[p] == expected_ids[1], "overlap changed NPU baseline routes");
+                    item["validation"].push_back({{"policy", policies[p]}, {"bit_identical_to_npu_baseline", true}});
+                }
                 json changed = json::array();
                 for (int l = 0; l < depth; ++l) {
                     json changed_tokens = json::array();
@@ -408,7 +444,9 @@ int main(int argc, char ** argv) {
                 std::vector<int32_t> ids;
                 for (auto & r : results) { ids.insert(ids.end(), r.ids.begin(), r.ids.end()); }
                 require(ids == expected_ids[p], "non-deterministic route");
-                require(results.back().output == expected_output[p], "non-deterministic result");
+                require(results.back().output.size() == expected_output[p].size() &&
+                        std::memcmp(results.back().output.data(), expected_output[p].data(),
+                                    expected_output[p].size()*sizeof(float)) == 0, "non-deterministic result");
                 if (timed) {
                     json rows = json::array(); for (auto & r : results) { rows.push_back(record(r)); }
                     item["samples"].push_back({{"round", round}, {"policy", policies[p]}, {"total_us", total}, {"layers", rows}});

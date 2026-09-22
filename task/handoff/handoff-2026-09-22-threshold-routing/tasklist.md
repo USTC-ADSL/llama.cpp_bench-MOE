@@ -37,3 +37,13 @@ Requested configurations: (tokens=128, CPU<=8), (tokens=64, CPU<=8), (tokens=128
 - [x] Archive evidence/report, clean the owned device directory, review diff and commit.
 
 Short-input follow-up complete: all nine formal runs and 1080 timing records are preserved with three readable summaries and independent native references. handoff-04-short-inputs.md records results, phase costs, numerical limits and commands. Compressed-data summary regeneration, old-summary regression, the default-256 device regression, Python syntax checks and final diff review passed. Device directory removed after verifying no running probe; original model size remains 8149865792 bytes. The commit containing this update saves the complete stage.
+
+## Follow-up: Useful Heterogeneous Execution
+
+Goal: find reproducible full-layer latency savings with resident weights on fd8657d6. Keep dependent 1/2-layer execution, real attention and routes, and contemporaneous NPU-expert baseline. Inspect first the independent CPU shared-expert / NPU routed-expert branches; evaluate load-budgeted routed-expert placement if needed. Preserve numerical limitations and do not claim full-model speedup.
+
+- [x] Inspect graph dependencies, prior timing boundaries and available device.
+- [x] Implement shared-expert overlap with explicit ownership, join and numerical checks.
+- [x] Incrementally build and screen 64/128/256-token device runs; select design using screening only.
+- [ ] Run independent paired validation trials and analyze full-layer benefit and variability.
+- [ ] Archive report/evidence, clean device files, review changes and commit.

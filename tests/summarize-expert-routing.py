@@ -42,6 +42,9 @@ def main():
     if "cpu_max_tokens" in runs[0]:
         result["cpu_max_tokens"] = runs[0]["cpu_max_tokens"]
         result["parallel_only"] = runs[0]["parallel_only"]
+    if "shared_overlap" in runs[0]:
+        result["shared_overlap"] = runs[0]["shared_overlap"]
+        result["phase_note"] = runs[0].get("phase_note")
     for depth in (1, 2):
         cases = [r["cases"][depth-1] for r in runs]
         samples = [s for case in cases for s in case["samples"]]
@@ -50,6 +53,7 @@ def main():
             assert run["tokens"] == runs[0]["tokens"] and run["tokens"] in (64, 128, 256)
             assert run["topk"] == 4 and run["threshold"] == runs[0]["threshold"]
             assert run["token_ids"] == runs[0]["token_ids"]
+            assert run.get("shared_overlap", False) == runs[0].get("shared_overlap", False)
         assert all(list(case["summary"]) == policies for case in cases)
         for sample in samples:
             phase_sum = 0
@@ -61,6 +65,10 @@ def main():
                 phase_sum += sum(layer[k] for k in ("attention_shared_router_us", "partition_us", "experts_wall_us", "combine_us"))
                 cpu = sum(layer["cpu_upload_compute_readback_us"])
                 npu = sum(layer["npu_upload_compute_readback_us"])
+                if sample["policy"] == "shared_overlap":
+                    assert layer["cpu_pairs"] == 0
+                    assert layer["overlapped_shared_cpu_us"] > 0
+                    assert max(layer["overlapped_shared_cpu_us"], npu) <= layer["experts_wall_us"]+1
                 assert max(cpu, npu) <= layer["experts_wall_us"]+1
                 if sample["policy"] != "mixed_parallel":
                     assert cpu+npu <= layer["experts_wall_us"]+1
@@ -73,12 +81,15 @@ def main():
             summary[policy]["phase_median_ms"] = {
                 k: statistics.median(sum(l[k] for l in s["layers"]) for s in selected)/1000
                 for k in ("attention_shared_router_us", "partition_us", "experts_wall_us", "combine_us")}
+            if runs[0].get("shared_overlap"):
+                summary[policy]["phase_median_ms"]["overlapped_shared_cpu_us"] = statistics.median(
+                    sum(l["overlapped_shared_cpu_us"] for l in s["layers"]) for s in selected)/1000
             for backend in ("cpu", "npu"):
                 summary[policy][f"{backend}_upload_compute_readback_median_ms"] = [
                     statistics.median(sum(l[f"{backend}_upload_compute_readback_us"][i] for l in s["layers"]) for s in selected)/1000
                     for i in range(3)]
         paired = {}
-        for policy in ("mixed_serial", "mixed_parallel"):
+        for policy in ("mixed_serial", "mixed_parallel", "shared_overlap"):
             if policy not in policies:
                 continue
             for baseline in ("cpu_native", "npu_native", "npu_grouped"):
@@ -98,7 +109,8 @@ def main():
         print(f"Layers: {depth}")
         for name, values in summary.items():
             print(f"  {name:16} median={values['median_ms']:.3f} ms p95={values['p95_ms']:.3f} ms runs={values['per_run_median_ms']}")
-        print("  mixed_parallel vs npu_native:", paired["mixed_parallel_vs_npu_native"])
+        for comparison, values in paired.items():
+            print(f"  {comparison}:", values)
     (OUT / args.output_name).write_text(json.dumps(result, indent=2) + "\n")
 
 
