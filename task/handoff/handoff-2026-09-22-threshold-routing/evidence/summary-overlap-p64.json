@@ -1,0 +1,1180 @@
+{
+  "runs": [
+    "overlap-p64-run01",
+    "overlap-p64-run02",
+    "overlap-p64-run03"
+  ],
+  "tokens": 64,
+  "threshold": 16,
+  "scope": "resident full first 1/2 Qwen2MoE Transformer layers; causal prefill F32 K/V; CPU attention/router/shared, NPU all routed experts; shared_overlap runs CPU shared and NPU routed branches concurrently; native expert shape unchanged; embedding/init/LM head/decode excluded",
+  "cases": [
+    {
+      "layers": 1,
+      "policies": {
+        "npu_native": {
+          "n": 90,
+          "median_ms": 47.680130000000005,
+          "p95_ms": 53.311927000000004,
+          "per_run_median_ms": [
+            38.343281499999996,
+            52.0484635,
+            52.586484
+          ],
+          "phase_median_ms": {
+            "attention_shared_router_us": 31.735963499999997,
+            "partition_us": 0.028046500000000002,
+            "experts_wall_us": 15.412396000000001,
+            "combine_us": 0.1673695,
+            "overlapped_shared_cpu_us": 0.0
+          },
+          "cpu_upload_compute_readback_median_ms": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "npu_upload_compute_readback_median_ms": [
+            0.025599,
+            15.284323,
+            0.0991145
+          ]
+        },
+        "shared_overlap": {
+          "n": 90,
+          "median_ms": 36.061849,
+          "p95_ms": 38.059271,
+          "per_run_median_ms": [
+            25.034323,
+            37.42763000000001,
+            37.5910935
+          ],
+          "phase_median_ms": {
+            "attention_shared_router_us": 11.395234499999999,
+            "partition_us": 0.024766,
+            "experts_wall_us": 24.188672,
+            "combine_us": 0.175911,
+            "overlapped_shared_cpu_us": 24.0481515
+          },
+          "cpu_upload_compute_readback_median_ms": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "npu_upload_compute_readback_median_ms": [
+            0.024453000000000003,
+            15.487682499999998,
+            0.092552
+          ]
+        }
+      },
+      "paired_savings": {
+        "shared_overlap_vs_npu_native": {
+          "n": 90,
+          "median_ms": 13.7045835,
+          "p95_ms": 15.371511000000005,
+          "win_fraction": 1.0,
+          "per_run_median_savings_ms": [
+            13.346276,
+            14.559036500000001,
+            14.611692999999999
+          ]
+        }
+      },
+      "validation": [
+        {
+          "policy": "cpu_native",
+          "layer": 0,
+          "moe_vs_cpu": {
+            "nrmse": 0.0,
+            "worst_token_nrmse": 0.0,
+            "max_abs": 0.0,
+            "reference_rms": 0.01518937722607263,
+            "threshold_token_nrmse": 0.04
+          },
+          "route": {
+            "histogram": [
+              4,
+              8,
+              5,
+              4,
+              3,
+              3,
+              0,
+              1,
+              4,
+              2,
+              1,
+              0,
+              0,
+              5,
+              6,
+              3,
+              1,
+              3,
+              4,
+              6,
+              4,
+              4,
+              1,
+              4,
+              3,
+              5,
+              5,
+              6,
+              6,
+              1,
+              2,
+              6,
+              5,
+              2,
+              6,
+              3,
+              7,
+              5,
+              1,
+              6,
+              2,
+              5,
+              10,
+              5,
+              11,
+              3,
+              6,
+              7,
+              6,
+              5,
+              0,
+              3,
+              8,
+              6,
+              4,
+              6,
+              11,
+              5,
+              2,
+              6
+            ],
+            "cpu_pairs": 256,
+            "npu_pairs": 0,
+            "attention_shared_router_us": 28788.437,
+            "partition_us": 516.927,
+            "experts_wall_us": 20616.718,
+            "overlapped_shared_cpu_us": 0.0,
+            "combine_us": 340.677,
+            "cpu_upload_compute_readback_us": [
+              113.646,
+              20414.531,
+              88.281
+            ],
+            "npu_upload_compute_readback_us": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "policy": "cpu_native",
+          "chain_vs_cpu": {
+            "nrmse": 0.0,
+            "worst_token_nrmse": 0.0,
+            "passes_4percent_per_token": true,
+            "tokens_over_4percent": []
+          },
+          "changed_expert_sets_vs_cpu": [
+            {
+              "layer": 0,
+              "tokens": []
+            }
+          ],
+          "fixed_cpu_routes_chain_check": {
+            "nrmse": 0.0,
+            "worst_token_nrmse": 0.0,
+            "max_abs": 0.0,
+            "reference_rms": 0.029265164256134575,
+            "threshold_token_nrmse": 0.04
+          },
+          "vs_original_llama": {
+            "nrmse": 1.8557119180895288e-08,
+            "worst_token_nrmse": 3.34647683081114e-08,
+            "passes_4percent_per_token": true,
+            "tokens_over_4percent": []
+          }
+        },
+        {
+          "policy": "npu_native",
+          "layer": 0,
+          "moe_vs_cpu": {
+            "nrmse": 0.006760801055245246,
+            "worst_token_nrmse": 0.011231283779786425,
+            "max_abs": 0.0024383068084716797,
+            "reference_rms": 0.01518937722607263,
+            "threshold_token_nrmse": 0.04
+          },
+          "route": {
+            "histogram": [
+              4,
+              8,
+              5,
+              4,
+              3,
+              3,
+              0,
+              1,
+              4,
+              2,
+              1,
+              0,
+              0,
+              5,
+              6,
+              3,
+              1,
+              3,
+              4,
+              6,
+              4,
+              4,
+              1,
+              4,
+              3,
+              5,
+              5,
+              6,
+              6,
+              1,
+              2,
+              6,
+              5,
+              2,
+              6,
+              3,
+              7,
+              5,
+              1,
+              6,
+              2,
+              5,
+              10,
+              5,
+              11,
+              3,
+              6,
+              7,
+              6,
+              5,
+              0,
+              3,
+              8,
+              6,
+              4,
+              6,
+              11,
+              5,
+              2,
+              6
+            ],
+            "cpu_pairs": 0,
+            "npu_pairs": 256,
+            "attention_shared_router_us": 21786.094,
+            "partition_us": 1293.542,
+            "experts_wall_us": 14933.75,
+            "overlapped_shared_cpu_us": 0.0,
+            "combine_us": 123.75,
+            "cpu_upload_compute_readback_us": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "npu_upload_compute_readback_us": [
+              33.438,
+              14801.822,
+              98.177
+            ]
+          }
+        },
+        {
+          "policy": "npu_native",
+          "chain_vs_cpu": {
+            "nrmse": 0.0035090321446999734,
+            "worst_token_nrmse": 0.006914821231438332,
+            "passes_4percent_per_token": true,
+            "tokens_over_4percent": []
+          },
+          "changed_expert_sets_vs_cpu": [
+            {
+              "layer": 0,
+              "tokens": []
+            }
+          ],
+          "fixed_cpu_routes_chain_check": {
+            "nrmse": 0.0035090321446999734,
+            "worst_token_nrmse": 0.006914821231438332,
+            "max_abs": 0.0024385452270507812,
+            "reference_rms": 0.029265164256134575,
+            "threshold_token_nrmse": 0.04
+          },
+          "vs_original_llama": {
+            "nrmse": 0.0035090320886321112,
+            "worst_token_nrmse": 0.006914821901967007,
+            "passes_4percent_per_token": true,
+            "tokens_over_4percent": []
+          }
+        },
+        {
+          "policy": "shared_overlap",
+          "layer": 0,
+          "moe_vs_cpu": {
+            "nrmse": 0.006760801055245246,
+            "worst_token_nrmse": 0.011231283779786425,
+            "max_abs": 0.0024383068084716797,
+            "reference_rms": 0.01518937722607263,
+            "threshold_token_nrmse": 0.04
+          },
+          "route": {
+            "histogram": [
+              4,
+              8,
+              5,
+              4,
+              3,
+              3,
+              0,
+              1,
+              4,
+              2,
+              1,
+              0,
+              0,
+              5,
+              6,
+              3,
+              1,
+              3,
+              4,
+              6,
+              4,
+              4,
+              1,
+              4,
+              3,
+              5,
+              5,
+              6,
+              6,
+              1,
+              2,
+              6,
+              5,
+              2,
+              6,
+              3,
+              7,
+              5,
+              1,
+              6,
+              2,
+              5,
+              10,
+              5,
+              11,
+              3,
+              6,
+              7,
+              6,
+              5,
+              0,
+              3,
+              8,
+              6,
+              4,
+              6,
+              11,
+              5,
+              2,
+              6
+            ],
+            "cpu_pairs": 0,
+            "npu_pairs": 256,
+            "attention_shared_router_us": 8725.729,
+            "partition_us": 14.531,
+            "experts_wall_us": 14958.438,
+            "overlapped_shared_cpu_us": 14693.854,
+            "combine_us": 172.031,
+            "cpu_upload_compute_readback_us": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "npu_upload_compute_readback_us": [
+              15.0,
+              14212.187,
+              89.792
+            ]
+          }
+        },
+        {
+          "policy": "shared_overlap",
+          "bit_identical_to_npu_baseline": true
+        },
+        {
+          "policy": "shared_overlap",
+          "chain_vs_cpu": {
+            "nrmse": 0.0035090321446999734,
+            "worst_token_nrmse": 0.006914821231438332,
+            "passes_4percent_per_token": true,
+            "tokens_over_4percent": []
+          },
+          "changed_expert_sets_vs_cpu": [
+            {
+              "layer": 0,
+              "tokens": []
+            }
+          ],
+          "fixed_cpu_routes_chain_check": {
+            "nrmse": 0.0035090321446999734,
+            "worst_token_nrmse": 0.006914821231438332,
+            "max_abs": 0.0024385452270507812,
+            "reference_rms": 0.029265164256134575,
+            "threshold_token_nrmse": 0.04
+          },
+          "vs_original_llama": {
+            "nrmse": 0.0035090320886321112,
+            "worst_token_nrmse": 0.006914821901967007,
+            "passes_4percent_per_token": true,
+            "tokens_over_4percent": []
+          }
+        }
+      ]
+    },
+    {
+      "layers": 2,
+      "policies": {
+        "npu_native": {
+          "n": 90,
+          "median_ms": 104.342552,
+          "p95_ms": 110.475989,
+          "per_run_median_ms": [
+            81.882682,
+            108.091849,
+            104.901901
+          ],
+          "phase_median_ms": {
+            "attention_shared_router_us": 73.3946875,
+            "partition_us": 0.0578645,
+            "experts_wall_us": 30.473646000000002,
+            "combine_us": 0.351458,
+            "overlapped_shared_cpu_us": 0.0
+          },
+          "cpu_upload_compute_readback_median_ms": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "npu_upload_compute_readback_median_ms": [
+            0.051224000000000006,
+            30.182917,
+            0.18973950000000003
+          ]
+        },
+        "shared_overlap": {
+          "n": 90,
+          "median_ms": 74.4039325,
+          "p95_ms": 85.07307300000001,
+          "per_run_median_ms": [
+            55.555886,
+            81.12723999999999,
+            75.10195350000001
+          ],
+          "phase_median_ms": {
+            "attention_shared_router_us": 25.405754500000004,
+            "partition_us": 0.050599000000000005,
+            "experts_wall_us": 48.428567,
+            "combine_us": 0.37492200000000003,
+            "overlapped_shared_cpu_us": 47.981849000000004
+          },
+          "cpu_upload_compute_readback_median_ms": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "npu_upload_compute_readback_median_ms": [
+            0.0471095,
+            30.4594525,
+            0.1876825
+          ]
+        }
+      },
+      "paired_savings": {
+        "shared_overlap_vs_npu_native": {
+          "n": 90,
+          "median_ms": 26.276198500000003,
+          "p95_ms": 33.95119799999999,
+          "win_fraction": 1.0,
+          "per_run_median_savings_ms": [
+            26.212239500000003,
+            23.514713000000004,
+            29.640650500000003
+          ]
+        }
+      },
+      "validation": [
+        {
+          "policy": "cpu_native",
+          "layer": 0,
+          "moe_vs_cpu": {
+            "nrmse": 0.0,
+            "worst_token_nrmse": 0.0,
+            "max_abs": 0.0,
+            "reference_rms": 0.01518937722607263,
+            "threshold_token_nrmse": 0.04
+          },
+          "route": {
+            "histogram": [
+              4,
+              8,
+              5,
+              4,
+              3,
+              3,
+              0,
+              1,
+              4,
+              2,
+              1,
+              0,
+              0,
+              5,
+              6,
+              3,
+              1,
+              3,
+              4,
+              6,
+              4,
+              4,
+              1,
+              4,
+              3,
+              5,
+              5,
+              6,
+              6,
+              1,
+              2,
+              6,
+              5,
+              2,
+              6,
+              3,
+              7,
+              5,
+              1,
+              6,
+              2,
+              5,
+              10,
+              5,
+              11,
+              3,
+              6,
+              7,
+              6,
+              5,
+              0,
+              3,
+              8,
+              6,
+              4,
+              6,
+              11,
+              5,
+              2,
+              6
+            ],
+            "cpu_pairs": 256,
+            "npu_pairs": 0,
+            "attention_shared_router_us": 24000.938,
+            "partition_us": 25.937,
+            "experts_wall_us": 20589.219,
+            "overlapped_shared_cpu_us": 0.0,
+            "combine_us": 175.156,
+            "cpu_upload_compute_readback_us": [
+              24.74,
+              20465.312,
+              99.063
+            ],
+            "npu_upload_compute_readback_us": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "policy": "cpu_native",
+          "layer": 1,
+          "moe_vs_cpu": {
+            "nrmse": 0.0,
+            "worst_token_nrmse": 0.0,
+            "max_abs": 0.0,
+            "reference_rms": 0.272599881914704,
+            "threshold_token_nrmse": 0.04
+          },
+          "route": {
+            "histogram": [
+              8,
+              6,
+              0,
+              14,
+              2,
+              4,
+              2,
+              5,
+              2,
+              3,
+              4,
+              7,
+              5,
+              1,
+              7,
+              6,
+              5,
+              4,
+              2,
+              5,
+              6,
+              3,
+              6,
+              3,
+              1,
+              7,
+              8,
+              2,
+              3,
+              2,
+              2,
+              5,
+              2,
+              4,
+              8,
+              0,
+              0,
+              4,
+              5,
+              7,
+              7,
+              7,
+              3,
+              0,
+              3,
+              6,
+              4,
+              4,
+              2,
+              2,
+              2,
+              0,
+              10,
+              4,
+              8,
+              5,
+              9,
+              5,
+              3,
+              2
+            ],
+            "cpu_pairs": 256,
+            "npu_pairs": 0,
+            "attention_shared_router_us": 27884.844,
+            "partition_us": 569.167,
+            "experts_wall_us": 21308.593,
+            "overlapped_shared_cpu_us": 0.0,
+            "combine_us": 186.198,
+            "cpu_upload_compute_readback_us": [
+              163.125,
+              20875.156,
+              269.895
+            ],
+            "npu_upload_compute_readback_us": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "policy": "cpu_native",
+          "chain_vs_cpu": {
+            "nrmse": 0.0,
+            "worst_token_nrmse": 0.0,
+            "passes_4percent_per_token": true,
+            "tokens_over_4percent": []
+          },
+          "changed_expert_sets_vs_cpu": [
+            {
+              "layer": 0,
+              "tokens": []
+            },
+            {
+              "layer": 1,
+              "tokens": []
+            }
+          ],
+          "fixed_cpu_routes_chain_check": {
+            "nrmse": 0.0,
+            "worst_token_nrmse": 0.0,
+            "max_abs": 0.0,
+            "reference_rms": 0.3631197864788615,
+            "threshold_token_nrmse": 0.04
+          },
+          "vs_original_llama": {
+            "nrmse": 3.022615024600339e-08,
+            "worst_token_nrmse": 1.7171220690048253e-07,
+            "passes_4percent_per_token": true,
+            "tokens_over_4percent": []
+          }
+        },
+        {
+          "policy": "npu_native",
+          "layer": 0,
+          "moe_vs_cpu": {
+            "nrmse": 0.006760801055245246,
+            "worst_token_nrmse": 0.011231283779786425,
+            "max_abs": 0.0024383068084716797,
+            "reference_rms": 0.01518937722607263,
+            "threshold_token_nrmse": 0.04
+          },
+          "route": {
+            "histogram": [
+              4,
+              8,
+              5,
+              4,
+              3,
+              3,
+              0,
+              1,
+              4,
+              2,
+              1,
+              0,
+              0,
+              5,
+              6,
+              3,
+              1,
+              3,
+              4,
+              6,
+              4,
+              4,
+              1,
+              4,
+              3,
+              5,
+              5,
+              6,
+              6,
+              1,
+              2,
+              6,
+              5,
+              2,
+              6,
+              3,
+              7,
+              5,
+              1,
+              6,
+              2,
+              5,
+              10,
+              5,
+              11,
+              3,
+              6,
+              7,
+              6,
+              5,
+              0,
+              3,
+              8,
+              6,
+              4,
+              6,
+              11,
+              5,
+              2,
+              6
+            ],
+            "cpu_pairs": 0,
+            "npu_pairs": 256,
+            "attention_shared_router_us": 26049.375,
+            "partition_us": 28.178,
+            "experts_wall_us": 14395.312,
+            "overlapped_shared_cpu_us": 0.0,
+            "combine_us": 168.75,
+            "cpu_upload_compute_readback_us": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "npu_upload_compute_readback_us": [
+              25.208,
+              14182.552,
+              187.084
+            ]
+          }
+        },
+        {
+          "policy": "npu_native",
+          "layer": 1,
+          "moe_vs_cpu": {
+            "nrmse": 0.0017056477627003673,
+            "worst_token_nrmse": 0.011767289713910785,
+            "max_abs": 0.08087921142578125,
+            "reference_rms": 0.27286287599602754,
+            "threshold_token_nrmse": 0.04
+          },
+          "route": {
+            "histogram": [
+              8,
+              6,
+              0,
+              14,
+              2,
+              4,
+              2,
+              5,
+              2,
+              3,
+              4,
+              7,
+              5,
+              1,
+              7,
+              6,
+              5,
+              4,
+              2,
+              5,
+              6,
+              3,
+              6,
+              3,
+              1,
+              7,
+              8,
+              2,
+              3,
+              2,
+              2,
+              5,
+              2,
+              4,
+              8,
+              0,
+              0,
+              4,
+              5,
+              7,
+              7,
+              7,
+              3,
+              0,
+              3,
+              6,
+              4,
+              4,
+              2,
+              2,
+              2,
+              0,
+              10,
+              4,
+              8,
+              5,
+              9,
+              5,
+              3,
+              2
+            ],
+            "cpu_pairs": 0,
+            "npu_pairs": 256,
+            "attention_shared_router_us": 26867.031,
+            "partition_us": 1522.5,
+            "experts_wall_us": 14299.74,
+            "overlapped_shared_cpu_us": 0.0,
+            "combine_us": 174.635,
+            "cpu_upload_compute_readback_us": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "npu_upload_compute_readback_us": [
+              37.656,
+              14181.303,
+              80.625
+            ]
+          }
+        },
+        {
+          "policy": "npu_native",
+          "chain_vs_cpu": {
+            "nrmse": 0.0021453486387233945,
+            "worst_token_nrmse": 0.010418536989326413,
+            "passes_4percent_per_token": true,
+            "tokens_over_4percent": []
+          },
+          "changed_expert_sets_vs_cpu": [
+            {
+              "layer": 0,
+              "tokens": []
+            },
+            {
+              "layer": 1,
+              "tokens": []
+            }
+          ],
+          "fixed_cpu_routes_chain_check": {
+            "nrmse": 0.0021453486387233945,
+            "worst_token_nrmse": 0.010418536989326413,
+            "max_abs": 0.20246124267578125,
+            "reference_rms": 0.3631197864788615,
+            "threshold_token_nrmse": 0.04
+          },
+          "vs_original_llama": {
+            "nrmse": 0.0021453532067261375,
+            "worst_token_nrmse": 0.010418525187891629,
+            "passes_4percent_per_token": true,
+            "tokens_over_4percent": []
+          }
+        },
+        {
+          "policy": "shared_overlap",
+          "layer": 0,
+          "moe_vs_cpu": {
+            "nrmse": 0.006760801055245246,
+            "worst_token_nrmse": 0.011231283779786425,
+            "max_abs": 0.0024383068084716797,
+            "reference_rms": 0.01518937722607263,
+            "threshold_token_nrmse": 0.04
+          },
+          "route": {
+            "histogram": [
+              4,
+              8,
+              5,
+              4,
+              3,
+              3,
+              0,
+              1,
+              4,
+              2,
+              1,
+              0,
+              0,
+              5,
+              6,
+              3,
+              1,
+              3,
+              4,
+              6,
+              4,
+              4,
+              1,
+              4,
+              3,
+              5,
+              5,
+              6,
+              6,
+              1,
+              2,
+              6,
+              5,
+              2,
+              6,
+              3,
+              7,
+              5,
+              1,
+              6,
+              2,
+              5,
+              10,
+              5,
+              11,
+              3,
+              6,
+              7,
+              6,
+              5,
+              0,
+              3,
+              8,
+              6,
+              4,
+              6,
+              11,
+              5,
+              2,
+              6
+            ],
+            "cpu_pairs": 0,
+            "npu_pairs": 256,
+            "attention_shared_router_us": 8653.125,
+            "partition_us": 23.906,
+            "experts_wall_us": 16637.5,
+            "overlapped_shared_cpu_us": 16478.958,
+            "combine_us": 170.989,
+            "cpu_upload_compute_readback_us": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "npu_upload_compute_readback_us": [
+              22.344,
+              14445.312,
+              94.844
+            ]
+          }
+        },
+        {
+          "policy": "shared_overlap",
+          "layer": 1,
+          "moe_vs_cpu": {
+            "nrmse": 0.0017056477627003673,
+            "worst_token_nrmse": 0.011767289713910785,
+            "max_abs": 0.08087921142578125,
+            "reference_rms": 0.27286287599602754,
+            "threshold_token_nrmse": 0.04
+          },
+          "route": {
+            "histogram": [
+              8,
+              6,
+              0,
+              14,
+              2,
+              4,
+              2,
+              5,
+              2,
+              3,
+              4,
+              7,
+              5,
+              1,
+              7,
+              6,
+              5,
+              4,
+              2,
+              5,
+              6,
+              3,
+              6,
+              3,
+              1,
+              7,
+              8,
+              2,
+              3,
+              2,
+              2,
+              5,
+              2,
+              4,
+              8,
+              0,
+              0,
+              4,
+              5,
+              7,
+              7,
+              7,
+              3,
+              0,
+              3,
+              6,
+              4,
+              4,
+              2,
+              2,
+              2,
+              0,
+              10,
+              4,
+              8,
+              5,
+              9,
+              5,
+              3,
+              2
+            ],
+            "cpu_pairs": 0,
+            "npu_pairs": 256,
+            "attention_shared_router_us": 9283.02,
+            "partition_us": 24.48,
+            "experts_wall_us": 17296.666,
+            "overlapped_shared_cpu_us": 17156.927,
+            "combine_us": 169.532,
+            "cpu_upload_compute_readback_us": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "npu_upload_compute_readback_us": [
+              21.562,
+              14253.02,
+              94.375
+            ]
+          }
+        },
+        {
+          "policy": "shared_overlap",
+          "bit_identical_to_npu_baseline": true
+        },
+        {
+          "policy": "shared_overlap",
+          "chain_vs_cpu": {
+            "nrmse": 0.0021453486387233945,
+            "worst_token_nrmse": 0.010418536989326413,
+            "passes_4percent_per_token": true,
+            "tokens_over_4percent": []
+          },
+          "changed_expert_sets_vs_cpu": [
+            {
+              "layer": 0,
+              "tokens": []
+            },
+            {
+              "layer": 1,
+              "tokens": []
+            }
+          ],
+          "fixed_cpu_routes_chain_check": {
+            "nrmse": 0.0021453486387233945,
+            "worst_token_nrmse": 0.010418536989326413,
+            "max_abs": 0.20246124267578125,
+            "reference_rms": 0.3631197864788615,
+            "threshold_token_nrmse": 0.04
+          },
+          "vs_original_llama": {
+            "nrmse": 0.0021453532067261375,
+            "worst_token_nrmse": 0.010418525187891629,
+            "passes_4percent_per_token": true,
+            "tokens_over_4percent": []
+          }
+        }
+      ]
+    }
+  ],
+  "cpu_max_tokens": 15,
+  "parallel_only": true,
+  "shared_overlap": true,
+  "phase_note": "shared_overlap: attention_shared_router_us excludes shared; experts_wall_us includes both branches and join; overlapped_shared_cpu_us is nested inside experts_wall_us"
+}

@@ -45,5 +45,7 @@ Goal: find reproducible full-layer latency savings with resident weights on fd86
 - [x] Inspect graph dependencies, prior timing boundaries and available device.
 - [x] Implement shared-expert overlap with explicit ownership, join and numerical checks.
 - [x] Incrementally build and screen 64/128/256-token device runs; select design using screening only.
-- [ ] Run independent paired validation trials and analyze full-layer benefit and variability.
-- [ ] Archive report/evidence, clean device files, review changes and commit.
+- [x] Run independent paired validation trials and analyze full-layer benefit and variability.
+- [x] Archive report/evidence, clean device files, review changes and commit.
+
+Shared-overlap follow-up complete: all 9 formal processes and 1080 records are archived. Full-layer pooled median latency reductions are 24.37%/28.69% (64 tokens, 1/2 layers), 20.83%/19.02% (128), and 11.90%/11.50% (256). All 18 per-run/depth paired medians improve; 539/540 paired trials win. Overlap outputs/routes equal the existing NPU baseline bytewise, retaining its two-layer CPU-reference numerical limits. Implementation checkpoint `5580db7db`; this results commit saves final evidence and handoff-05-shared-overlap.md. Legacy device diagnostics and all five original summaries are unchanged; compressed summary regeneration passes. No probe remained; the owned device directory was removed and the original model size verified. This stage demonstrates scheduling benefit over CPU-shared/NPU-routed execution, not superiority to a whole-FFN-on-NPU design or production full-model acceleration.
