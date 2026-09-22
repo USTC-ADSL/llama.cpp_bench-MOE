@@ -15,3 +15,14 @@ Scope clarified by user: complete Transformer layers, not just MoE branches. A n
 Completed: 3 formal runs, 60 samples per policy/depth; separate HMX profile; compressed-evidence summary regeneration; Python syntax checks and final diff review. Implementation checkpoint: 9cf503276. Final evidence and results are saved in the subsequent results commit.
 
 Cleanup: confirmed no probe/reference process remained; removed only /data/local/tmp/llama-expert-routing and verified its absence. Original model remains 8149865792 bytes. Final conclusion and numerical limitations are in handoff-02-results.md.
+
+## Follow-up: Inclusive CPU Threshold 8
+
+User requests a conservative rerun with eight tokens as the CPU cutoff, parallel only. Convention: count <=8 CPU, count >=9 NPU; CLI --cpu-max-tokens 8 translates to existing exclusive threshold 9. Same input, resident weights and full one/two layers. All-NPU is the concurrent-run baseline, CPU only an untimed numerical reference; no serial mixed execution.
+
+- [x] Add parallel-only timing selection and configurable summary tags.
+- [x] Incrementally compile and validate the eight-token route on device.
+- [x] Complete three paired formal runs and summarize benefit/limitations.
+- [x] Save follow-up report/evidence, clean device artifacts, and commit.
+
+Follow-up complete: t8-run01..03 contain 90 paired samples per depth, only all-NPU and mixed parallel. See handoff-03-threshold8.md and evidence/summary-t8.json. Compressed-evidence summary regeneration and old-summary regression passed. No probe remained; the owned device directory was removed and the original 8149865792-byte model verified. The commit containing this update saves the complete follow-up.

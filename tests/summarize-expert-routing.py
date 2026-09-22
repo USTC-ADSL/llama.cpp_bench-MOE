@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Summarize paired full-Transformer-layer routing trials; exclude smoke/profile runs."""
+import argparse
 import gzip
 import json
 import math
@@ -24,7 +25,12 @@ def stats(values):
 
 
 def main():
-    tags = ["run01", "run02", "run03"]
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--tags", nargs="+", default=["run01", "run02", "run03"])
+    parser.add_argument("--output-name", default="summary.json")
+    args = parser.parse_args()
+    assert pathlib.Path(args.output_name).name == args.output_name
+    tags = args.tags
     runs = [read(OUT / f"{tag}.json") for tag in tags]
     manifests = [read(OUT / f"{tag}.run.json") for tag in tags]
     for record in manifests:
@@ -33,20 +39,24 @@ def main():
             assert record[key] == manifests[0][key], f"provenance differs: {key}"
     result = {"runs": tags, "tokens": runs[0]["tokens"], "threshold": runs[0]["threshold"],
               "scope": runs[0]["scope"], "cases": []}
+    if "cpu_max_tokens" in runs[0]:
+        result["cpu_max_tokens"] = runs[0]["cpu_max_tokens"]
+        result["parallel_only"] = runs[0]["parallel_only"]
     for depth in (1, 2):
         cases = [r["cases"][depth-1] for r in runs]
         samples = [s for case in cases for s in case["samples"]]
         policies = list(cases[0]["summary"])
         for run in runs:
-            assert run["tokens"] == 256 and run["topk"] == 4 and run["threshold"] == 16
+            assert run["tokens"] == 256 and run["topk"] == 4 and run["threshold"] == runs[0]["threshold"]
             assert run["token_ids"] == runs[0]["token_ids"]
+        assert all(list(case["summary"]) == policies for case in cases)
         for sample in samples:
             phase_sum = 0
             for layer in sample["layers"]:
                 assert sum(layer["histogram"]) == 1024
                 assert layer["cpu_pairs"]+layer["npu_pairs"] == 1024
                 if sample["policy"].startswith("mixed"):
-                    assert layer["cpu_pairs"] == sum(n for n in layer["histogram"] if n < 16)
+                    assert layer["cpu_pairs"] == sum(n for n in layer["histogram"] if n < runs[0]["threshold"])
                 phase_sum += sum(layer[k] for k in ("attention_shared_router_us", "partition_us", "experts_wall_us", "combine_us"))
                 cpu = sum(layer["cpu_upload_compute_readback_us"])
                 npu = sum(layer["npu_upload_compute_readback_us"])
@@ -68,7 +78,11 @@ def main():
                     for i in range(3)]
         paired = {}
         for policy in ("mixed_serial", "mixed_parallel"):
+            if policy not in policies:
+                continue
             for baseline in ("cpu_native", "npu_native", "npu_grouped"):
+                if baseline not in policies:
+                    continue
                 deltas, per_run = [], []
                 for case in cases:
                     by_round = {}
@@ -84,7 +98,7 @@ def main():
         for name, values in summary.items():
             print(f"  {name:16} median={values['median_ms']:.3f} ms p95={values['p95_ms']:.3f} ms runs={values['per_run_median_ms']}")
         print("  mixed_parallel vs npu_native:", paired["mixed_parallel_vs_npu_native"])
-    (OUT / "summary.json").write_text(json.dumps(result, indent=2) + "\n")
+    (OUT / args.output_name).write_text(json.dumps(result, indent=2) + "\n")
 
 
 if __name__ == "__main__":

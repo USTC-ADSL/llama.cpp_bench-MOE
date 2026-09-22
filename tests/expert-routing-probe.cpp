@@ -306,7 +306,9 @@ static json chain_difference(const std::vector<float> & actual, const std::vecto
 
 int main(int argc, char ** argv) {
     try {
-        require(argc == 7, "usage: expert-routing-probe MODEL JSON REPS WARMUP REFERENCE_JSON THRESHOLD");
+        require(argc == 7 || argc == 8, "usage: expert-routing-probe MODEL JSON REPS WARMUP REFERENCE_JSON NPU_MIN_TOKENS [parallel-only]");
+        const bool parallel_only = argc == 8;
+        require(!parallel_only || std::string(argv[7]) == "parallel-only", "invalid measurement mode");
         const int reps = std::stoi(argv[3]), warmup = std::stoi(argv[4]), threshold = std::stoi(argv[6]);
         require(reps > 0 && warmup >= 1 && threshold >= 1 && threshold <= nt, "invalid arguments");
         std::ifstream reference_file(argv[5]); json original; reference_file >> original;
@@ -340,8 +342,13 @@ int main(int argc, char ** argv) {
             require(fread(row.data(), 1, row.size(), file.get()) == row.size(), "embedding read failed");
             ggml_get_type_traits(embedding->type)->to_float(row.data(), input.data()+t*layers[0]->width, layers[0]->width);
         }
-        const std::vector<std::string> policies = {"cpu_native", "npu_native", "cpu_grouped", "npu_grouped", "mixed_serial", "mixed_parallel"};
+        const std::vector<std::string> policies = parallel_only ?
+            std::vector<std::string>{"cpu_native", "npu_native", "mixed_parallel"} :
+            std::vector<std::string>{"cpu_native", "npu_native", "cpu_grouped", "npu_grouped", "mixed_serial", "mixed_parallel"};
+        const int first_measured = parallel_only ? 1 : 0;
+        const int measured_count = int(policies.size())-first_measured;
         json report = {{"tokens", nt}, {"token_ids", token_ids}, {"topk", topk}, {"threshold", threshold},
+            {"cpu_max_tokens", threshold-1}, {"parallel_only", parallel_only},
             {"scope", "resident full first 1/2 Qwen2MoE Transformer layers; causal prefill with F32 K/V; CPU attention/shared/router, policy-controlled experts; embedding lookup/init excluded; no LM head or decode"},
             {"cases", json::array()}};
         for (int depth : {1, 2}) {
@@ -406,12 +413,13 @@ int main(int argc, char ** argv) {
                     item["samples"].push_back({{"round", round}, {"policy", policies[p]}, {"total_us", total}, {"layers", rows}});
                 }
             };
-            for (int r = 0; r < warmup; ++r) { for (int p = 0; p < int(policies.size()); ++p) { execute(p, r, false); } }
+            for (int r = 0; r < warmup; ++r) { for (int p = first_measured; p < int(policies.size()); ++p) { execute(p, r, false); } }
             for (int r = 0; r < reps; ++r) {
-                for (int i = 0; i < int(policies.size()); ++i) { execute((i+r)%policies.size(), r, true); }
+                for (int i = 0; i < measured_count; ++i) { execute(first_measured+(i+r)%measured_count, r, true); }
                 fprintf(stderr, "depth=%d round=%d complete\n", depth, r);
             }
-            for (auto & policy : policies) {
+            for (int p = first_measured; p < int(policies.size()); ++p) {
+                const auto & policy = policies[p];
                 std::vector<double> samples;
                 for (auto & s : item["samples"]) { if (s["policy"] == policy) { samples.push_back(s["total_us"]); } }
                 item["summary"][policy] = stats(samples, nt);
