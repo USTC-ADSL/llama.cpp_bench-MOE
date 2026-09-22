@@ -4,7 +4,6 @@
 #include <map>
 
 // Full Qwen2MoE prefill layers, with controlled CPU/NPU expert placement.
-static constexpr int nt = 256;
 
 struct source {
     gguf_context * gguf;
@@ -102,6 +101,7 @@ struct job {
 struct layer {
     device & cpu;
     int width, experts, topk;
+    const int nt;
     bank cb, nb;
     ggml_context_ptr ctx = context(128, 128);
     ggml_backend_buffer_ptr buf;
@@ -114,8 +114,8 @@ struct layer {
     std::vector<float> activation, probabilities, residual_values, shared_values;
     std::map<std::pair<int, int>, std::unique_ptr<job>> jobs[2];
     size_t misses = 0;
-    layer(device & c, device & n, source & s, int il, int k, float eps) :
-        cpu(c), topk(k), cb(c, s, il), nb(n, s, il) {
+    layer(device & c, device & n, source & s, int il, int k, float eps, int tokens) :
+        cpu(c), topk(k), nt(tokens), cb(c, s, il), nb(n, s, il) {
         width = cb.w[0]->ne[0]; experts = cb.w[0]->ne[2];
         std::string prefix = "blk." + std::to_string(il);
         std::vector<std::pair<ggml_tensor *, std::string>> weights;
@@ -284,7 +284,7 @@ static json record(const layer::result & r) {
         {"npu_upload_compute_readback_us", r.npu_phase}};
 }
 
-static json chain_difference(const std::vector<float> & actual, const std::vector<float> & reference) {
+static json chain_difference(const std::vector<float> & actual, const std::vector<float> & reference, int nt) {
     require(actual.size() == reference.size(), "chain size mismatch");
     const size_t width = actual.size()/nt;
     double error = 0, signal = 0, worst = 0;
@@ -310,8 +310,11 @@ int main(int argc, char ** argv) {
         const bool parallel_only = argc == 8;
         require(!parallel_only || std::string(argv[7]) == "parallel-only", "invalid measurement mode");
         const int reps = std::stoi(argv[3]), warmup = std::stoi(argv[4]), threshold = std::stoi(argv[6]);
-        require(reps > 0 && warmup >= 1 && threshold >= 1 && threshold <= nt, "invalid arguments");
         std::ifstream reference_file(argv[5]); json original; reference_file >> original;
+        auto token_ids = original["tokens"].get<std::vector<int32_t>>();
+        const int nt = int(token_ids.size());
+        require(nt == 64 || nt == 128 || nt == 256, "reference must contain 64, 128 or 256 tokens");
+        require(reps > 0 && warmup >= 1 && threshold >= 1 && threshold <= nt, "invalid arguments");
         ggml_context * raw_meta = nullptr;
         gguf_context_ptr gguf(gguf_init_from_file(argv[1], {true, &raw_meta}));
         ggml_context_ptr meta(raw_meta);
@@ -328,14 +331,12 @@ int main(int argc, char ** argv) {
         ggml_backend_load_all();
         device cpu("CPU"), npu("HTP0");
         std::vector<std::unique_ptr<layer>> layers;
-        for (int i = 0; i < 2; ++i) { layers.push_back(std::make_unique<layer>(cpu, npu, src, i, topk, eps)); }
+        for (int i = 0; i < 2; ++i) { layers.push_back(std::make_unique<layer>(cpu, npu, src, i, topk, eps, nt)); }
         std::vector<float> input(layers[0]->width*nt);
         auto * embedding = src.tensor("token_embd.weight");
         auto emb_index = gguf_find_tensor(gguf.get(), "token_embd.weight");
         auto emb_offset = gguf_get_data_offset(gguf.get())+gguf_get_tensor_offset(gguf.get(), emb_index);
         std::vector<uint8_t> row(embedding->nb[1]);
-        auto token_ids = original["tokens"].get<std::vector<int32_t>>();
-        require(token_ids.size() == nt, "reference must contain 256 tokens");
         for (int t = 0; t < nt; ++t) {
             require(token_ids[t] >= 0 && token_ids[t] < embedding->ne[1], "invalid token ID");
             require(fseeko(file.get(), off_t(emb_offset+token_ids[t]*row.size()), SEEK_SET) == 0, "embedding seek failed");
@@ -386,9 +387,9 @@ int main(int argc, char ** argv) {
                     std::vector<int32_t> fixed(first, first+nt*topk);
                     fixed_values = layers[l]->run(fixed_values, policies[p], threshold, &fixed).output;
                 }
-                item["validation"].push_back({{"policy", policies[p]}, {"chain_vs_cpu", chain_difference(expected_output[p], expected_output[0])},
+                item["validation"].push_back({{"policy", policies[p]}, {"chain_vs_cpu", chain_difference(expected_output[p], expected_output[0], nt)},
                     {"changed_expert_sets_vs_cpu", changed}, {"fixed_cpu_routes_chain_check", validate_values(fixed_values, expected_output[0], nt, "fixed_route_chain")},
-                    {"vs_original_llama", chain_difference(expected_output[p], original["layers"][std::to_string(depth-1)].get<std::vector<float>>())}});
+                    {"vs_original_llama", chain_difference(expected_output[p], original["layers"][std::to_string(depth-1)].get<std::vector<float>>(), nt)}});
                 if (p == 0) {
                     validate_values(expected_output[p], original["layers"][std::to_string(depth-1)].get<std::vector<float>>(), nt, "original_llama_cpu");
                 }

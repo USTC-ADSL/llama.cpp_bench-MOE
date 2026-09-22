@@ -47,14 +47,15 @@ def main():
         samples = [s for case in cases for s in case["samples"]]
         policies = list(cases[0]["summary"])
         for run in runs:
-            assert run["tokens"] == 256 and run["topk"] == 4 and run["threshold"] == runs[0]["threshold"]
+            assert run["tokens"] == runs[0]["tokens"] and run["tokens"] in (64, 128, 256)
+            assert run["topk"] == 4 and run["threshold"] == runs[0]["threshold"]
             assert run["token_ids"] == runs[0]["token_ids"]
         assert all(list(case["summary"]) == policies for case in cases)
         for sample in samples:
             phase_sum = 0
             for layer in sample["layers"]:
-                assert sum(layer["histogram"]) == 1024
-                assert layer["cpu_pairs"]+layer["npu_pairs"] == 1024
+                assert sum(layer["histogram"]) == runs[0]["tokens"]*runs[0]["topk"]
+                assert layer["cpu_pairs"]+layer["npu_pairs"] == runs[0]["tokens"]*runs[0]["topk"]
                 if sample["policy"].startswith("mixed"):
                     assert layer["cpu_pairs"] == sum(n for n in layer["histogram"] if n < runs[0]["threshold"])
                 phase_sum += sum(layer[k] for k in ("attention_shared_router_us", "partition_us", "experts_wall_us", "combine_us"))

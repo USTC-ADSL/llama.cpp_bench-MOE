@@ -26,3 +26,14 @@ User requests a conservative rerun with eight tokens as the CPU cutoff, parallel
 - [x] Save follow-up report/evidence, clean device artifacts, and commit.
 
 Follow-up complete: t8-run01..03 contain 90 paired samples per depth, only all-NPU and mixed parallel. See handoff-03-threshold8.md and evidence/summary-t8.json. Compressed-evidence summary regeneration and old-summary regression passed. No probe remained; the owned device directory was removed and the original 8149865792-byte model verified. The commit containing this update saves the complete follow-up.
+
+## Follow-up: Shorter Inputs and Cutoff 10
+
+Requested configurations: (tokens=128, CPU<=8), (tokens=64, CPU<=8), (tokens=128, CPU<=10). Continue full 1/2-layer, resident-weight, parallel-only versus all-NPU comparisons. Inputs are the same text prefix; shorter native llama.cpp references are generated independently. Each configuration gets three 30-pair runs per depth, with configuration order rotated across runs.
+
+- [x] Parameterize token count and generate/validate native references for 128 and 64.
+- [x] Complete device smoke checks and the nine formal configuration runs.
+- [x] Summarize all three configurations, numerical limits and original-summary regression.
+- [x] Archive evidence/report, clean the owned device directory, review diff and commit.
+
+Short-input follow-up complete: all nine formal runs and 1080 timing records are preserved with three readable summaries and independent native references. handoff-04-short-inputs.md records results, phase costs, numerical limits and commands. Compressed-data summary regeneration, old-summary regression, the default-256 device regression, Python syntax checks and final diff review passed. Device directory removed after verifying no running probe; original model size remains 8149865792 bytes. The commit containing this update saves the complete stage.

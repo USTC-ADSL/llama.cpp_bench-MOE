@@ -18,7 +18,9 @@ struct capture {
 
 int main(int argc, char ** argv) {
     try {
-        require(argc == 4, "usage: expert-routing-reference MODEL JSON PROMPT_FILE");
+        require(argc == 4 || argc == 5, "usage: expert-routing-reference MODEL JSON PROMPT_FILE [TOKENS]");
+        const int nt = argc == 5 ? std::stoi(argv[4]) : 256;
+        require(nt == 64 || nt == 128 || nt == 256, "unsupported token count");
         std::ifstream prompt_file(argv[3]);
         std::string prompt((std::istreambuf_iterator<char>(prompt_file)), std::istreambuf_iterator<char>());
         require(!prompt.empty(), "empty prompt");
@@ -29,10 +31,10 @@ int main(int argc, char ** argv) {
         auto * vocab = llama_model_get_vocab(model.get());
         std::vector<llama_token> tokens(prompt.size()+32);
         int count = llama_tokenize(vocab, prompt.data(), prompt.size(), tokens.data(), tokens.size(), true, true);
-        require(count >= 256, "prompt must tokenize to at least 256 tokens"); tokens.resize(256);
+        require(count >= nt, "prompt has too few tokens"); tokens.resize(nt);
         capture cap;
         auto cp = llama_context_default_params();
-        cp.n_ctx = 256; cp.n_batch = 256; cp.n_ubatch = 256;
+        cp.n_ctx = nt; cp.n_batch = nt; cp.n_ubatch = nt;
         cp.n_threads = 4; cp.n_threads_batch = 4;
         cp.type_k = GGML_TYPE_F32; cp.type_v = GGML_TYPE_F32;
         cp.flash_attn_type = LLAMA_FLASH_ATTN_TYPE_DISABLED;
