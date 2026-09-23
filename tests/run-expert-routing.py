@@ -29,6 +29,7 @@ def main():
     modes = parser.add_mutually_exclusive_group()
     modes.add_argument("--parallel-only", action="store_true", help="time only all-NPU and mixed parallel; CPU reference remains untimed")
     modes.add_argument("--shared-overlap", action="store_true", help="overlap CPU shared expert with NPU routed experts; compare against NPU baseline")
+    modes.add_argument("--ffn-compare", action="store_true", help="compare both expert branches on NPU against CPU shared/NPU routed overlap only")
     parser.add_argument("--deploy", action="store_true")
     parser.add_argument("--reference", action="store_true")
     parser.add_argument("--profile", action="store_true")
@@ -109,7 +110,9 @@ def main():
     record["reference_sha256"] = shell(f"sha256sum {remote_reference}").stdout
     command = [f"{REMOTE}/expert-routing-probe", MODEL, f"{REMOTE}/{args.tag}.json", str(args.reps),
                str(args.warmup), remote_reference, str(args.threshold)]
-    if args.shared_overlap:
+    if args.ffn_compare:
+        command.append("ffn-compare")
+    elif args.shared_overlap:
         command.append("shared-overlap")
     elif args.parallel_only:
         command.append("parallel-only")

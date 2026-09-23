@@ -1,5 +1,13 @@
 # CPU/NPU Threshold Routing Experiment
 
+## Follow-up 2026-09-23: Both Expert Branches on NPU
+
+Only fill the missing comparison: resident shared+routed NPU versus CPU shared/NPU routed overlap, 64/128/256 tokens, complete 1/2 layers. Reuse archived native references. CPU attention/router and host aggregation stay identical. Re-measure only the overlap comparator alongside the new baseline to avoid historical clock drift; no threshold or old serial timing sweeps.
+
+- [x] Implement one NPU graph with resident shared weights, common activation and both expert outputs; validate on device.
+- [ ] Complete missing paired trials and summarize numerical/performance results.
+- [ ] Archive evidence/report, clean device artifacts, inspect diff and commit.
+
 Goal: compare CPU-only experts, NPU-only experts and token-count threshold routing with 256 real text tokens, first one full Transformer layer then two dependent layers, including attention, shared experts, residuals and cross-backend synchronization. All weights are resident by explicit user instruction. Non-routed operations use CPU in every policy.
 
 - [x] Inspect existing execution paths and define comparable timing boundaries.

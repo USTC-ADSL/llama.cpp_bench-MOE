@@ -45,6 +45,8 @@ def main():
     if "shared_overlap" in runs[0]:
         result["shared_overlap"] = runs[0]["shared_overlap"]
         result["phase_note"] = runs[0].get("phase_note")
+    if runs[0].get("ffn_compare"):
+        result["ffn_compare"] = True
     for depth in (1, 2):
         cases = [r["cases"][depth-1] for r in runs]
         samples = [s for case in cases for s in case["samples"]]
@@ -54,6 +56,7 @@ def main():
             assert run["topk"] == 4 and run["threshold"] == runs[0]["threshold"]
             assert run["token_ids"] == runs[0]["token_ids"]
             assert run.get("shared_overlap", False) == runs[0].get("shared_overlap", False)
+            assert run.get("ffn_compare", False) == runs[0].get("ffn_compare", False)
         assert all(list(case["summary"]) == policies for case in cases)
         for sample in samples:
             phase_sum = 0
@@ -81,7 +84,7 @@ def main():
             summary[policy]["phase_median_ms"] = {
                 k: statistics.median(sum(l[k] for l in s["layers"]) for s in selected)/1000
                 for k in ("attention_shared_router_us", "partition_us", "experts_wall_us", "combine_us")}
-            if runs[0].get("shared_overlap"):
+            if runs[0].get("shared_overlap") or runs[0].get("ffn_compare"):
                 summary[policy]["phase_median_ms"]["overlapped_shared_cpu_us"] = statistics.median(
                     sum(l["overlapped_shared_cpu_us"] for l in s["layers"]) for s in selected)/1000
             for backend in ("cpu", "npu"):
@@ -92,7 +95,7 @@ def main():
         for policy in ("mixed_serial", "mixed_parallel", "shared_overlap"):
             if policy not in policies:
                 continue
-            for baseline in ("cpu_native", "npu_native", "npu_grouped"):
+            for baseline in ("cpu_native", "npu_native", "npu_grouped", "npu_ffn"):
                 if baseline not in policies:
                     continue
                 deltas, per_run = [], []
