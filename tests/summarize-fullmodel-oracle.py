@@ -8,8 +8,16 @@ import statistics
 import numpy as np
 
 def load(path):
+    if not path.exists():
+        path = pathlib.Path(str(path)+".gz")
     with (gzip.open(path, "rt") if path.suffix == ".gz" else path.open()) as f:
         return json.load(f)
+
+def logits_at(path):
+    if path.exists():
+        return np.fromfile(path, dtype=np.float32).astype(np.float64)
+    with gzip.open(str(path)+".gz", "rb") as stream:
+        return np.frombuffer(stream.read(), dtype=np.float32).astype(np.float64)
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
@@ -22,7 +30,7 @@ def main():
     plans = load(directory / f"search{nt}.json")
     modes = {"cpu": "cpu", "npu": "native-npu", "custom-npu": "custom-npu", "branch": "branch", "custom": "custom"}
     result = {"tokens": nt, "scope": "complete-model fixed-prompt prefill with last-token logits; independent frozen-plan processes", "policies": {}, "allocations": []}
-    capture = np.fromfile(directory / f"capture{nt}-v2.json.logits.bin", dtype=np.float32).astype(np.float64)
+    capture = logits_at(directory / f"capture{nt}-v2.json.logits.bin")
     all_hashes = []
     for mode, prefix in modes.items():
         pooled, runs = [], []
@@ -34,7 +42,7 @@ def main():
             assert data["token_ids"] == plans["token_ids"] and data["mode"] == mode
             values = [s["total_us"] / 1000 for s in data["samples"]]
             pooled.extend(values)
-            logits = np.fromfile(directory / f"{tag}.json.logits.bin", dtype=np.float32).astype(np.float64)
+            logits = logits_at(directory / f"{tag}.json.logits.bin")
             assert logits.shape == capture.shape and np.isfinite(logits).all()
             row = {"tag": tag, "median_ms": statistics.median(values), "samples": len(values),
                    "nrmse_vs_native_cpu": float(np.linalg.norm(logits-capture)/np.linalg.norm(capture)),
