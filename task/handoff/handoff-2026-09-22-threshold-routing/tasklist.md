@@ -5,8 +5,10 @@
 Only fill the missing comparison: resident shared+routed NPU versus CPU shared/NPU routed overlap, 64/128/256 tokens, complete 1/2 layers. Reuse archived native references. CPU attention/router and host aggregation stay identical. Re-measure only the overlap comparator alongside the new baseline to avoid historical clock drift; no threshold or old serial timing sweeps.
 
 - [x] Implement one NPU graph with resident shared weights, common activation and both expert outputs; validate on device.
-- [ ] Complete missing paired trials and summarize numerical/performance results.
-- [ ] Archive evidence/report, clean device artifacts, inspect diff and commit.
+- [x] Complete missing paired trials and summarize numerical/performance results.
+- [x] Archive evidence/report, clean device artifacts, inspect diff and commit.
+
+Complete: implementation checkpoint `df4c122d7`; final results are saved by the commit containing this update. Nine paired processes, 1080 records, only npu_ffn/shared_overlap timed. Both branches on NPU reduce pooled full-layer medians by 7.17%/10.30% (64, 1/2 layers), 32.58%/35.72% (128), 43.70%/45.08% (256), winning 537/540 pairs. All local/fixed-route checks pass; 128/256 dynamic two-layer worst-token error is 8.5279% and explicitly retained. See handoff-06-npu-shared-baseline.md. Old policy diagnostics and nine old summaries unchanged. Compressed-data regeneration passes; device directory removed after verifying no probe, original 8149865792-byte model preserved. No additional placement experiment remains in this request.
 
 Goal: compare CPU-only experts, NPU-only experts and token-count threshold routing with 256 real text tokens, first one full Transformer layer then two dependent layers, including attention, shared experts, residuals and cross-backend synchronization. All weights are resident by explicit user instruction. Non-routed operations use CPU in every policy.
 
