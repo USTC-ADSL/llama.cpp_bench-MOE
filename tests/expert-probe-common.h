@@ -49,15 +49,15 @@ struct matrix {
     size_t offset, bytes;
     std::vector<uint8_t> raw;
     std::vector<float> dequant;
-    matrix(gguf_context * gguf, ggml_context * meta, FILE * file, const char * part) {
+    matrix(gguf_context * gguf, ggml_context * meta, FILE * file, const char * part, int selected_expert = expert_id) {
         name = std::string("blk.0.ffn_") + part + "_exps.weight";
         auto w = ggml_get_tensor(meta, name.c_str());
         require(w && w->type == GGML_TYPE_Q4_0 && ggml_is_contiguous(w) && w->ne[3] == 1,
                 "missing contiguous Q4_0 expert weights");
         k = w->ne[0]; n = w->ne[1]; experts = w->ne[2]; bytes = w->nb[2];
         const auto index = gguf_find_tensor(gguf, name.c_str());
-        require(index >= 0 && experts > expert_id, "expert metadata invalid");
-        offset = gguf_get_data_offset(gguf) + gguf_get_tensor_offset(gguf, index) + expert_id*bytes;
+        require(index >= 0 && selected_expert >= 0 && experts > selected_expert, "expert metadata invalid");
+        offset = gguf_get_data_offset(gguf) + gguf_get_tensor_offset(gguf, index) + selected_expert*bytes;
         raw.resize(bytes); dequant.resize(k*n);
         require(fseeko(file, off_t(offset), SEEK_SET) == 0, "expert seek failed");
         require(fread(raw.data(), 1, bytes, file) == bytes, "expert read failed");

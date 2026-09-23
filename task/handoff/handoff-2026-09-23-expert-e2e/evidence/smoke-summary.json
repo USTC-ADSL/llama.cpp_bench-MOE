@@ -1,0 +1,213 @@
+{
+  "runs": [
+    "smoke01"
+  ],
+  "tokens_per_expert": 64,
+  "modes": {
+    "cpu": {
+      "cases": [
+        {
+          "experts": 1,
+          "status": "ok",
+          "total_ms": {
+            "n": 3,
+            "median": 4.716875,
+            "p95": 4.774635
+          },
+          "phase_median_ms": {
+            "upload_us": 0.022656,
+            "compute_us": 4.672813,
+            "readback_us": 0.023125
+          },
+          "per_run_median_ms": [
+            4.716875
+          ],
+          "worst_token_nrmse": 0.010646629619776127,
+          "token_expert_pairs_per_second": 13568.305286868956
+        },
+        {
+          "experts": 2,
+          "status": "ok",
+          "total_ms": {
+            "n": 3,
+            "median": 9.446406999999999,
+            "p95": 9.49125
+          },
+          "phase_median_ms": {
+            "upload_us": 0.023594,
+            "compute_us": 9.375416999999999,
+            "readback_us": 0.046509999999999996
+          },
+          "per_run_median_ms": [
+            9.446406999999999
+          ],
+          "worst_token_nrmse": 0.01159879197865763,
+          "token_expert_pairs_per_second": 13550.125460399919
+        }
+      ],
+      "paired_two_over_one": {
+        "n": 3,
+        "median": 1.997283794885385,
+        "p95": 2.0205343556302258
+      },
+      "per_run_paired_ratio_median": [
+        1.997283794885385
+      ]
+    },
+    "opencl": {
+      "cases": [
+        {
+          "experts": 1,
+          "status": "ok",
+          "total_ms": {
+            "n": 3,
+            "median": 3.139531,
+            "p95": 3.147656
+          },
+          "phase_median_ms": {
+            "upload_us": 0.017344000000000002,
+            "compute_us": 3.10125,
+            "readback_us": 0.016406
+          },
+          "per_run_median_ms": [
+            3.139531
+          ],
+          "worst_token_nrmse": 0.0009288118137529309,
+          "token_expert_pairs_per_second": 20385.21040244546
+        },
+        {
+          "experts": 2,
+          "status": "ok",
+          "total_ms": {
+            "n": 3,
+            "median": 5.684531,
+            "p95": 6.582187
+          },
+          "phase_median_ms": {
+            "upload_us": 0.020468,
+            "compute_us": 5.630104,
+            "readback_us": 0.03349
+          },
+          "per_run_median_ms": [
+            5.684531
+          ],
+          "worst_token_nrmse": 0.0009313835143065534,
+          "token_expert_pairs_per_second": 22517.249004359375
+        }
+      ],
+      "paired_two_over_one": {
+        "n": 3,
+        "median": 1.819990491085793,
+        "p95": 2.0911392477449886
+      },
+      "per_run_paired_ratio_median": [
+        1.819990491085793
+      ]
+    },
+    "hmx": {
+      "cases": [
+        {
+          "experts": 1,
+          "status": "ok",
+          "total_ms": {
+            "n": 3,
+            "median": 0.742031,
+            "p95": 0.770156
+          },
+          "phase_median_ms": {
+            "upload_us": 0.011093,
+            "compute_us": 0.7229679999999999,
+            "readback_us": 0.008438000000000001
+          },
+          "per_run_median_ms": [
+            0.742031
+          ],
+          "worst_token_nrmse": 0.000582734927779202,
+          "token_expert_pairs_per_second": 86249.76584536226
+        },
+        {
+          "experts": 2,
+          "status": "ok",
+          "total_ms": {
+            "n": 3,
+            "median": 1.106979,
+            "p95": 1.296094
+          },
+          "phase_median_ms": {
+            "upload_us": 0.010936999999999999,
+            "compute_us": 1.0770309999999998,
+            "readback_us": 0.023906
+          },
+          "per_run_median_ms": [
+            1.106979
+          ],
+          "worst_token_nrmse": 0.000582734927779202,
+          "token_expert_pairs_per_second": 115630.01646824376
+        }
+      ],
+      "paired_two_over_one": {
+        "n": 3,
+        "median": 1.5684454526262397,
+        "p95": 1.7466844377121713
+      },
+      "per_run_paired_ratio_median": [
+        1.5684454526262397
+      ]
+    },
+    "hvx": {
+      "cases": [
+        {
+          "experts": 1,
+          "status": "ok",
+          "total_ms": {
+            "n": 3,
+            "median": 4.216719,
+            "p95": 5.0472920000000006
+          },
+          "phase_median_ms": {
+            "upload_us": 0.0375,
+            "compute_us": 4.143281,
+            "readback_us": 0.035781
+          },
+          "per_run_median_ms": [
+            4.216719
+          ],
+          "worst_token_nrmse": 0.015030026352301376,
+          "token_expert_pairs_per_second": 15177.677241476133
+        },
+        {
+          "experts": 2,
+          "status": "ok",
+          "total_ms": {
+            "n": 3,
+            "median": 7.665,
+            "p95": 7.677448
+          },
+          "phase_median_ms": {
+            "upload_us": 0.037969,
+            "compute_us": 7.556719,
+            "readback_us": 0.07
+          },
+          "per_run_median_ms": [
+            7.665
+          ],
+          "worst_token_nrmse": 0.01596795103737435,
+          "token_expert_pairs_per_second": 16699.28245270711
+        }
+      ],
+      "paired_two_over_one": {
+        "n": 3,
+        "median": 1.817764000873665,
+        "p95": 1.8327288546266647
+      },
+      "per_run_paired_ratio_median": [
+        1.817764000873665
+      ]
+    }
+  },
+  "provenance": {
+    "hashes": "c1c023f7e2132290ce39a09a31e87b5918d61112d220c4c1b721ce901e0cb7a8  /data/local/tmp/llama-expert-e2e/expert-e2e-probe\ndc7c7d930b2987079aecdb6d9818432ab3ddec2556eb2de8fa16e6d06caf3660  /data/local/tmp/llama-expert-e2e/libggml-base.so\n06a3fe6b0a27c116bfbcec6ba13353fbcac83c12422d8ec8c284d22e3fb9ed32  /data/local/tmp/llama-expert-e2e/libggml-cpu.so\n4244710e61cadb51743d486c8b1b57fb2cb1f607e7c6e13d737e8bd412187398  /data/local/tmp/llama-expert-e2e/libggml-hexagon.so\n48b3aeb4fa140d8ec0469c60f46ac381811d1a25d8bf6ec4619bba9fcf19900f  /data/local/tmp/llama-expert-e2e/libggml-htp-v79.so\n561a1a8deb9102be1f41d2c841276d4d487b17c465adb73b4e7247c150ac768e  /data/local/tmp/llama-expert-e2e/libggml-opencl.so\n7c7c7918a1a1d319b44a0ea5824a7c17ba2a7be9f3c66068cf3627c94d91fbdc  /data/local/tmp/llama-expert-e2e/libggml.so\n",
+    "model_sha256": "8b704c763230935a096c9c810765c8a5483f1724c83e34e253704138ca040473  /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf\n",
+    "serial": "fd8657d6"
+  }
+}
