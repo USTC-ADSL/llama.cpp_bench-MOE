@@ -172,6 +172,7 @@ struct oracle_layer {
     }
 };
 
+#ifndef EXPERT_ORACLE_NO_MAIN
 int main(int argc, char ** argv) {
     try {
         require(argc == 5 || argc == 6, "usage: expert-oracle-probe MODEL REFERENCE_JSON OUTPUT_JSON REPS [FROZEN_SEARCH_JSON]");
@@ -309,3 +310,4 @@ int main(int argc, char ** argv) {
         return 0;
     } catch(const std::exception & e) { fprintf(stderr,"ERROR: %s\n",e.what()); return 1; }
 }
+#endif

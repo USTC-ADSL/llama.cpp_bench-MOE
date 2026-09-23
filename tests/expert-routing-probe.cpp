@@ -39,20 +39,32 @@ struct bank {
     ggml_context_ptr ctx = context(3);
     ggml_backend_buffer_ptr buf;
     std::array<ggml_tensor *, 3> w;
-    bank(device & dev, source & s, int layer) : d(dev) {
+    bank(device & dev, source & s, int layer, const std::vector<int> * subset = nullptr) : d(dev) {
         const char * parts[] = {"gate", "up", "down"};
         for (int i = 0; i < 3; ++i) {
             std::string name = "blk." + std::to_string(layer) + ".ffn_" + parts[i] + "_exps.weight";
             auto * src = s.tensor(name);
             require(src->type == GGML_TYPE_Q4_0 && ggml_is_contiguous(src), "expected Q4_0 experts");
-            w[i] = ggml_dup_tensor(ctx.get(), src);
+            w[i] = subset ? ggml_new_tensor_3d(ctx.get(), src->type, src->ne[0], src->ne[1],
+                                               std::max<size_t>(1, subset->size())) : ggml_dup_tensor(ctx.get(), src);
             ggml_set_name(w[i], name.c_str());
         }
+        if (subset && subset->empty()) { return; }
         buf.reset(ggml_backend_alloc_ctx_tensors_from_buft(ctx.get(), d.buft));
         require(buf != nullptr, "resident bank allocation failed");
         ggml_backend_buffer_set_usage(buf.get(), GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
         for (auto * t : w) {
-            auto raw = s.read(t->name);
+            std::vector<uint8_t> raw;
+            if (subset) {
+                auto * original = s.tensor(t->name);
+                raw.resize(ggml_nbytes(t));
+                auto offset = gguf_get_data_offset(s.gguf)+gguf_get_tensor_offset(s.gguf, gguf_find_tensor(s.gguf,t->name));
+                for (size_t i = 0; i < subset->size(); ++i) {
+                    require((*subset)[i] >= 0 && (*subset)[i] < original->ne[2], "invalid expert subset");
+                    require(fseeko(s.file, off_t(offset+(*subset)[i]*original->nb[2]), SEEK_SET)==0,"subset seek failed");
+                    require(fread(raw.data()+i*original->nb[2],1,original->nb[2],s.file)==original->nb[2],"subset read failed");
+                }
+            } else { raw = s.read(t->name); }
             ggml_backend_tensor_set(t, raw.data(), 0, raw.size());
         }
         d.sync();

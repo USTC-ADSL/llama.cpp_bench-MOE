@@ -615,6 +615,9 @@ struct llama_model {
     llama_hparams hparams = {};
     llama_vocab   vocab;
 
+    llama_moe_graph_callback moe_graph_callback = nullptr;
+    void * moe_graph_user_data = nullptr;
+
     // for classifier models
     std::vector<std::string> classifier_labels;
 

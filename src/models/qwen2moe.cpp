@@ -128,44 +128,57 @@ llama_model_qwen2moe::graph::graph(const llama_model & model, const llm_graph_pa
                 LLM_NORM_RMS, il);
         cb(cur, "ffn_norm", il);
 
-        ggml_tensor * moe_out =
-            build_moe_ffn(cur,
-                    model.layers[il].ffn_gate_inp,
-                    model.layers[il].ffn_up_exps,
-                    model.layers[il].ffn_gate_exps,
-                    model.layers[il].ffn_down_exps,
-                    nullptr,
-                    n_expert, n_expert_used,
-                    LLM_FFN_SILU, false,
-                    hparams.expert_weights_scale,
-                    LLAMA_EXPERT_GATING_FUNC_TYPE_SOFTMAX,
-                    il);
-        cb(moe_out, "ffn_moe_out", il);
+        if (model.moe_graph_callback) {
+            auto * probs = ggml_soft_max(ctx0, build_lora_mm(model.layers[il].ffn_gate_inp, cur));
+            cb(probs, "ffn_moe_probs", il);
+            auto * ids = ggml_argsort_top_k(ctx0, probs, n_expert_used);
+            cb(ids, "ffn_moe_topk", il);
+            if (hparams.expert_weights_scale != 0.0f && hparams.expert_weights_scale != 1.0f) {
+                probs = ggml_scale(ctx0, probs, hparams.expert_weights_scale);
+            }
+            cur = model.moe_graph_callback(ctx0, cur, probs, ids, il, model.moe_graph_user_data);
+            GGML_ASSERT(cur && cur->type == GGML_TYPE_F32 && ggml_are_same_shape(cur, ffn_inp));
+            cb(cur, "ffn_out", il);
+        } else {
+            ggml_tensor * moe_out =
+                build_moe_ffn(cur,
+                        model.layers[il].ffn_gate_inp,
+                        model.layers[il].ffn_up_exps,
+                        model.layers[il].ffn_gate_exps,
+                        model.layers[il].ffn_down_exps,
+                        nullptr,
+                        n_expert, n_expert_used,
+                        LLM_FFN_SILU, false,
+                        hparams.expert_weights_scale,
+                        LLAMA_EXPERT_GATING_FUNC_TYPE_SOFTMAX,
+                        il);
+            cb(moe_out, "ffn_moe_out", il);
 
-        // FFN shared expert
-        {
-            ggml_tensor * cur_gate_inp = build_lora_mm(model.layers[il].ffn_gate_inp_shexp, cur);
-            cb(cur_gate_inp, "ffn_shexp_gate_inp", il);
+            // FFN shared expert
+            {
+                ggml_tensor * cur_gate_inp = build_lora_mm(model.layers[il].ffn_gate_inp_shexp, cur);
+                cb(cur_gate_inp, "ffn_shexp_gate_inp", il);
 
-            // sigmoid
-            ggml_tensor * cur_gate = ggml_div(ctx0, ggml_silu(ctx0, cur_gate_inp), cur_gate_inp);
-            cb(cur_gate, "ffn_shexp_gate", il);
+                // sigmoid
+                ggml_tensor * cur_gate = ggml_div(ctx0, ggml_silu(ctx0, cur_gate_inp), cur_gate_inp);
+                cb(cur_gate, "ffn_shexp_gate", il);
 
-            ggml_tensor * cur_ffn = build_ffn(cur,
-                    model.layers[il].ffn_up_shexp,   NULL, NULL,
-                    model.layers[il].ffn_gate_shexp, NULL, NULL,
-                    model.layers[il].ffn_down_shexp, NULL, NULL,
-                    NULL,
-                    LLM_FFN_SILU, LLM_FFN_PAR, il);
-            cb(cur_ffn, "ffn_shexp", il);
+                ggml_tensor * cur_ffn = build_ffn(cur,
+                        model.layers[il].ffn_up_shexp,   NULL, NULL,
+                        model.layers[il].ffn_gate_shexp, NULL, NULL,
+                        model.layers[il].ffn_down_shexp, NULL, NULL,
+                        NULL,
+                        LLM_FFN_SILU, LLM_FFN_PAR, il);
+                cb(cur_ffn, "ffn_shexp", il);
 
-            ggml_tensor * ffn_shexp_out = ggml_mul(ctx0, cur_ffn, cur_gate);
-            cb(ffn_shexp_out, "ffn_shexp_out", il);
+                ggml_tensor * ffn_shexp_out = ggml_mul(ctx0, cur_ffn, cur_gate);
+                cb(ffn_shexp_out, "ffn_shexp_out", il);
 
-            moe_out = ggml_add(ctx0, moe_out, ffn_shexp_out);
-            cb(moe_out, "ffn_out", il);
+                moe_out = ggml_add(ctx0, moe_out, ffn_shexp_out);
+                cb(moe_out, "ffn_out", il);
 
-            cur = moe_out;
+                cur = moe_out;
+            }
         }
         cur = ggml_add(ctx0, cur, ffn_inp);
 

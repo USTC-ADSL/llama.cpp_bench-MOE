@@ -2834,6 +2834,15 @@ void llama_model_free(llama_model * model) {
     delete model;
 }
 
+bool llama_model_set_moe_graph_callback(llama_model * model, llama_moe_graph_callback callback, void * user_data) {
+    if (!model || model->arch != LLM_ARCH_QWEN2MOE) {
+        return false;
+    }
+    model->moe_graph_callback = callback;
+    model->moe_graph_user_data = user_data;
+    return true;
+}
+
 int32_t llama_model_n_ctx_train(const llama_model * model) {
     return model->hparams.n_ctx_train;
 }

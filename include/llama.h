@@ -541,6 +541,17 @@ extern "C" {
 
     LLAMA_API void llama_model_free(struct llama_model * model);
 
+    // Experimental Qwen2MoE FFN graph replacement. Install before creating contexts.
+    // The callback receives normalized inputs, real routing probabilities and top-k IDs.
+    // Return the complete gated shared + weighted routed FFN output, before residual addition.
+    // The caller owns user_data and must keep it alive for every associated context.
+    typedef struct ggml_tensor * (*llama_moe_graph_callback)(
+            struct ggml_context * ctx, struct ggml_tensor * input,
+            struct ggml_tensor * probabilities, struct ggml_tensor * ids,
+            int32_t layer, void * user_data);
+    LLAMA_API bool llama_model_set_moe_graph_callback(
+            struct llama_model * model, llama_moe_graph_callback callback, void * user_data);
+
     LLAMA_API struct llama_context * llama_init_from_model(
                      struct llama_model * model,
             struct llama_context_params   params);
