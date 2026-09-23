@@ -3,24 +3,30 @@
 
 struct capture {
     json layers = json::object();
+    json kv = json::object();
+    bool full = false;
     static bool callback(ggml_tensor * t, bool ask, void * opaque) {
         std::string name(t->name);
-        bool wanted = name == "l_out-0" || name == "l_out-1";
+        auto & self = *static_cast<capture *>(opaque);
+        bool is_kv = self.full && (name == "Kcur-0" || name == "Kcur-1" || name == "Vcur-0" || name == "Vcur-1");
+        bool wanted = name == "l_out-0" || name == "l_out-1" || is_kv;
         if (ask) { return wanted; }
         if (!wanted) { return true; }
         require(t->type == GGML_TYPE_F32 && ggml_is_contiguous(t), "unexpected reference layer layout");
         std::vector<float> values(ggml_nelements(t));
         ggml_backend_tensor_get(t, values.data(), 0, values.size()*sizeof(float));
-        static_cast<capture *>(opaque)->layers[name.substr(6)] = values;
-        return name != "l_out-1";
+        if (is_kv) { self.kv[name] = values; }
+        else { self.layers[name.substr(6)] = values; }
+        return self.full || name != "l_out-1";
     }
 };
 
 int main(int argc, char ** argv) {
     try {
-        require(argc == 4 || argc == 5, "usage: expert-routing-reference MODEL JSON PROMPT_FILE [TOKENS]");
-        const int nt = argc == 5 ? std::stoi(argv[4]) : 256;
-        require(nt == 64 || nt == 128 || nt == 256, "unsupported token count");
+        require(argc >= 4 && argc <= 6, "usage: expert-routing-reference MODEL JSON PROMPT_FILE [TOKENS] [decode]");
+        const int nt = argc >= 5 ? std::stoi(argv[4]) : 256;
+        const bool decode = argc == 6 && std::string(argv[5]) == "decode";
+        require(nt >= 1 && nt <= 512, "unsupported token count");
         std::ifstream prompt_file(argv[3]);
         std::string prompt((std::istreambuf_iterator<char>(prompt_file)), std::istreambuf_iterator<char>());
         require(!prompt.empty(), "empty prompt");
@@ -31,10 +37,11 @@ int main(int argc, char ** argv) {
         auto * vocab = llama_model_get_vocab(model.get());
         std::vector<llama_token> tokens(prompt.size()+32);
         int count = llama_tokenize(vocab, prompt.data(), prompt.size(), tokens.data(), tokens.size(), true, true);
-        require(count >= nt, "prompt has too few tokens"); tokens.resize(nt);
+        require(count >= nt + int(decode), "prompt has too few tokens"); tokens.resize(nt + int(decode));
         capture cap;
+        cap.full = decode;
         auto cp = llama_context_default_params();
-        cp.n_ctx = nt; cp.n_batch = nt; cp.n_ubatch = nt;
+        cp.n_ctx = nt + int(decode); cp.n_batch = nt; cp.n_ubatch = nt;
         cp.n_threads = 4; cp.n_threads_batch = 4;
         cp.type_k = GGML_TYPE_F32; cp.type_v = GGML_TYPE_F32;
         cp.flash_attn_type = LLAMA_FLASH_ATTN_TYPE_DISABLED;
@@ -42,12 +49,29 @@ int main(int argc, char ** argv) {
         cp.cb_eval = capture::callback; cp.cb_eval_user_data = &cap;
         std::unique_ptr<llama_context, decltype(&llama_free)> context(llama_init_from_model(model.get(), cp), llama_free);
         require(context != nullptr, "reference context init failed");
-        auto batch = llama_batch_get_one(tokens.data(), tokens.size());
+        auto batch = llama_batch_get_one(tokens.data(), nt);
         int code = llama_decode(context.get(), batch);
         llama_synchronize(context.get());
+        json prefix_kv;
+        if (decode) {
+            require(code == 0 && cap.kv.size() == 4, "prefix KV capture failed");
+            prefix_kv = cap.kv;
+            cap.layers = json::object(); cap.kv = json::object();
+            auto step = llama_batch_init(1, 0, 1);
+            step.n_tokens = 1; step.token[0] = tokens.back(); step.pos[0] = nt;
+            step.n_seq_id[0] = 1; step.seq_id[0][0] = 0; step.logits[0] = true;
+            code = llama_decode(context.get(), step);
+            llama_synchronize(context.get()); llama_batch_free(step);
+            require(code == 0, "decode step failed");
+            tokens = {tokens.back()};
+        }
         require(cap.layers.contains("0") && cap.layers.contains("1"), "reference callback did not capture two layers");
         json output = {{"tokens", tokens}, {"layers", cap.layers}, {"decode_return", code},
             {"scope", "native llama.cpp CPU forward, callback stops after layer 1; F32 KV, no flash attention"}};
+        if (decode) {
+            output["prefix_length"] = nt; output["prefix_kv"] = prefix_kv;
+            output["scope"] = "native CPU prefix followed by one token at prefix_length with retained F32 KV; full native decode completed";
+        }
         std::ofstream out(argv[2]); out << output.dump() << '\n'; require(out.good(), "reference write failed");
         return 0;
     } catch (const std::exception & e) { fprintf(stderr, "ERROR: %s\n", e.what()); return 1; }

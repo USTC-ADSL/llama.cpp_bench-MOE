@@ -61,17 +61,23 @@ struct bank {
 
 struct shared_bank {
     ggml_context_ptr ctx = context(4);
+    ggml_context_ptr scalar_ctx = context(1);
     ggml_backend_buffer_ptr buf;
+    ggml_backend_buffer_ptr scalar_buf;
     std::array<ggml_tensor *, 4> w;
     shared_bank(device & d, source & s, int il) {
         const char * parts[] = {"gate", "up", "down", "gate_inp"};
         for (int i = 0; i < 4; ++i) {
             const auto name = "blk." + std::to_string(il) + ".ffn_" + parts[i] + "_shexp.weight";
-            w[i] = ggml_dup_tensor(ctx.get(), s.tensor(name));
+            w[i] = ggml_dup_tensor(d.name == "CPU" && i == 3 ? scalar_ctx.get() : ctx.get(), s.tensor(name));
             ggml_set_name(w[i], name.c_str());
         }
         buf.reset(ggml_backend_alloc_ctx_tensors_from_buft(ctx.get(), d.buft));
         require(buf != nullptr, "resident shared bank allocation failed");
+        if (d.name == "CPU") {
+            scalar_buf.reset(ggml_backend_alloc_ctx_tensors_from_buft(scalar_ctx.get(), ggml_backend_dev_buffer_type(d.dev)));
+            require(scalar_buf != nullptr, "shared scalar weight allocation failed");
+        }
         ggml_backend_buffer_set_usage(buf.get(), GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
         for (auto * t : w) {
             auto raw = s.read(t->name);
@@ -157,7 +163,8 @@ struct layer {
     std::unique_ptr<shared_bank> nsb;
     std::unique_ptr<job> npu_ffn;
     size_t misses = 0;
-    layer(device & c, device & n, source & s, int il, int k, float eps, int tokens, bool whole_npu = false) :
+    layer(device & c, device & n, source & s, int il, int k, float eps, int tokens, bool whole_npu = false,
+          const json * decode_ref = nullptr) :
         cpu(c), topk(k), nt(tokens), cb(c, s, il), nb(n, s, il) {
         width = cb.w[0]->ne[0]; experts = cb.w[0]->ne[2];
         std::string prefix = "blk." + std::to_string(il);
@@ -180,7 +187,10 @@ struct layer {
         auto * router = weight("ffn_gate_inp.weight");
         x = ggml_new_tensor_2d(ctx.get(), GGML_TYPE_F32, width, nt);
         auto * positions = ggml_new_tensor_1d(ctx.get(), GGML_TYPE_I32, nt);
-        auto * mask = ggml_new_tensor_2d(ctx.get(), GGML_TYPE_F32, nt, nt);
+        const int prefix_length = decode_ref ? decode_ref->at("prefix_length").get<int>() : 0;
+        const int nk = prefix_length + nt;
+        auto * mask = ggml_new_tensor_2d(ctx.get(), GGML_TYPE_F32, nk, nt);
+        ggml_tensor * past_k = nullptr, * past_v = nullptr;
         auto * attn_norm = ggml_mul(ctx.get(), ggml_rms_norm(ctx.get(), x, eps), weight("attn_norm.weight"));
         auto projection = [&](const std::string & part, int h) {
             auto * v = ggml_mul_mat(ctx.get(), weight(part + ".weight"), attn_norm);
@@ -196,6 +206,12 @@ struct layer {
                          0, rope_base, 1.f, 0.f, 1.f, 32.f, 1.f);
         kk = ggml_rope_ext(ctx.get(), kk, positions, nullptr, head_dim, GGML_ROPE_TYPE_NEOX,
                           0, rope_base, 1.f, 0.f, 1.f, 32.f, 1.f);
+        if (prefix_length) {
+            past_k = ggml_new_tensor_3d(ctx.get(), GGML_TYPE_F32, head_dim, kv_heads, prefix_length);
+            past_v = ggml_new_tensor_3d(ctx.get(), GGML_TYPE_F32, head_dim, kv_heads, prefix_length);
+            kk = ggml_concat(ctx.get(), past_k, kk, 2);
+            v = ggml_concat(ctx.get(), past_v, v, 2);
+        }
         q = ggml_permute(ctx.get(), q, 0, 2, 1, 3);
         kk = ggml_permute(ctx.get(), kk, 0, 2, 1, 3);
         v = ggml_cont(ctx.get(), ggml_transpose(ctx.get(), ggml_permute(ctx.get(), v, 0, 2, 1, 3)));
@@ -228,9 +244,16 @@ struct layer {
         }
         activation.resize(width*nt); probabilities.resize(experts*nt);
         residual_values.resize(width*nt); shared_values.resize(width*nt);
-        std::vector<int32_t> pos(nt); std::iota(pos.begin(), pos.end(), 0);
-        std::vector<float> causal(nt*nt);
-        for (int t = 0; t < nt; ++t) { for (int k = 0; k < nt; ++k) { causal[t*nt+k] = k > t ? -INFINITY : 0.f; } }
+        std::vector<int32_t> pos(nt); std::iota(pos.begin(), pos.end(), prefix_length);
+        std::vector<float> causal(nt*nk);
+        for (int t = 0; t < nt; ++t) { for (int k = 0; k < nk; ++k) { causal[t*nk+k] = k > prefix_length+t ? -INFINITY : 0.f; } }
+        if (prefix_length) {
+            for (auto entry : {std::make_pair(past_k, "Kcur-"), std::make_pair(past_v, "Vcur-")}) {
+                auto values = decode_ref->at("prefix_kv").at(std::string(entry.second)+std::to_string(il)).get<std::vector<float>>();
+                require(values.size() == size_t(ggml_nelements(entry.first)), "prefix KV size mismatch");
+                ggml_backend_tensor_set(entry.first, values.data(), 0, values.size()*sizeof(float));
+            }
+        }
         ggml_backend_tensor_set(positions, pos.data(), 0, pos.size()*sizeof(int32_t));
         ggml_backend_tensor_set(mask, causal.data(), 0, causal.size()*sizeof(float));
         cpu.sync();
