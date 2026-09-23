@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Run the resident offline placement study on fd8657d6."""
 import argparse
+import gzip
 import hashlib
 import json
 import pathlib
 import shlex
 import subprocess
+import tempfile
 import time
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -74,9 +76,16 @@ def main():
     adb("pull", f"{REMOTE}/{name}", str(OUT / name))
     command = [f"{REMOTE}/expert-oracle-probe", MODEL, f"{REMOTE}/{name}", f"{REMOTE}/{args.tag}.json", str(args.reps)]
     if args.plans:
-        adb("push", str(args.plans), f"{REMOTE}/frozen.json")
+        if args.plans.suffix == ".gz":
+            with tempfile.TemporaryDirectory() as directory:
+                path = pathlib.Path(directory) / "frozen.json"
+                with gzip.open(args.plans, "rb") as stream:
+                    path.write_bytes(stream.read())
+                adb("push", str(path), f"{REMOTE}/frozen.json")
+        else:
+            adb("push", str(args.plans), f"{REMOTE}/frozen.json")
         command.append(f"{REMOTE}/frozen.json")
-        record["frozen_sha256"] = hashlib.sha256(args.plans.read_bytes()).hexdigest()
+        record["frozen_sha256"] = adb("shell", f"sha256sum {REMOTE}/frozen.json").stdout.split()[0]
     run("search", command)
     adb("pull", f"{REMOTE}/{args.tag}.json", str(OUT / f"{args.tag}.json"))
     adb("shell", f"rm {REMOTE}/{args.tag}.json")

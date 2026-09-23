@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Aggregate paired confirmation rounds without using search timings as evidence."""
 import argparse
+import gzip
 import json
 import pathlib
 import random
@@ -24,8 +25,30 @@ def main():
     args = parser.parse_args()
     groups = {}
     for path in args.files:
-        data = json.loads(path.read_text())
+        with (gzip.open(path, "rt") if path.suffix == ".gz" else path.open()) as stream:
+            data = json.load(stream)
+        assert len(data["search"]) == 2
+        for search in data["search"]:
+            assert len(search["histogram"]) == 60 and sum(search["histogram"]) == data["tokens"]*4
         for case in data["confirmation"]:
+            assert case["layers"] in (1, 2)
+            rounds = {}
+            for sample in case["samples"]:
+                assert len(sample["phases"]) == case["layers"]
+                policies = rounds.setdefault(sample["round"], set())
+                assert sample["policy"] not in policies
+                policies.add(sample["policy"])
+                if "check" in sample:
+                    assert sample["check"]["passes_4percent_per_token"]
+                accounted = 0
+                for layer in sample["phases"]:
+                    assert sum(layer["pairs"]) == data["tokens"]*4
+                    accounted += sum(layer[f] for f in ("attention_router_us", "partition_us", "experts_wall_us", "combine_us"))
+                    for b, (begin, end) in enumerate(layer["backend_intervals_us"]):
+                        assert 0 <= begin <= end <= layer["experts_wall_us"]
+                        assert sum(layer["phases_us"][b]) <= end-begin+1
+                assert accounted <= sample["total_us"]+1
+            assert all(policies == {"cpu", "npu", "gpu", "selected", "split", "branch"} for policies in rounds.values())
             key = (data["tokens"], data["prefix_length"], case["layers"])
             groups.setdefault(key, []).append((path.name, data, case))
     summary = []
@@ -73,6 +96,16 @@ def main():
                     "active_experts": [sum(n > 0 and plan["owner"][e] == b for e, n in enumerate(counts)) for b in range(3)],
                     "pairs": [sum(n for e, n in enumerate(counts) if plan["owner"][e] == b) for b in range(3)]})
             result["placements"].append({"run": name, "plans": plans})
+        result["split_placements"] = []
+        for name, data, _ in runs:
+            plans = []
+            for search in data["search"][:key[2]]:
+                plan = next(c for c in search["candidates"] if c["name"] == search["split_winner"])
+                counts = search["histogram"]
+                plans.append({"name": plan["name"], "shared": plan["shared"],
+                    "expert_ids": [[e for e, n in enumerate(counts) if n and plan["owner"][e] == b] for b in range(3)],
+                    "pairs": [sum(n for e, n in enumerate(counts) if plan["owner"][e] == b) for b in range(3)]})
+            result["split_placements"].append({"run": name, "plans": plans})
         summary.append(result)
         print(key, baseline, {p: round(v, 3) for p, v in medians.items()}, flush=True)
     args.output.write_text(json.dumps(summary, indent=2) + "\n")

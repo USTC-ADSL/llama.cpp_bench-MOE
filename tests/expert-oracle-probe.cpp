@@ -296,9 +296,10 @@ int main(int argc, char ** argv) {
                     std::string name=p==3 ? "selected" : p==4 ? "split" : p==5 ? "branch" : names[p];
                     auto check=chain_difference(result,ref["layers"][std::to_string(depth-1)].get<std::vector<float>>(),nt);
                     item["validation"][name]=check;
+                    require(check["passes_4percent_per_token"].get<bool>(), "confirmation numerical validation failed");
                     if(round>=0) {
                         times[p].push_back(total);
-                        item["samples"].push_back({{"round",round},{"policy",name},{"total_us",total},{"phases",phases}});
+                        item["samples"].push_back({{"round",round},{"policy",name},{"total_us",total},{"phases",phases},{"check",check}});
                     }
                 }
             }

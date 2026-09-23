@@ -1,0 +1,1656 @@
+[
+  {
+    "tokens": 16,
+    "prefix_length": 0,
+    "layers": 1,
+    "runs": [
+      "prefill16-confirm2.json.gz"
+    ],
+    "median_ms": {
+      "gpu": 16.6004945,
+      "selected": 7.92612,
+      "split": 7.0700525,
+      "branch": 7.5326305,
+      "cpu": 8.615780999999998,
+      "npu": 13.8564585
+    },
+    "strongest_baseline": "cpu",
+    "all_checks_pass": true,
+    "comparisons": {
+      "selected": {
+        "latency_reduction_percent": 8.004625465758686,
+        "paired_median_saved_ms": 0.9068230000000002,
+        "bootstrap_95percent_ms": [
+          -0.32502549999999975,
+          1.5067699999999995
+        ],
+        "wins": 8,
+        "pairs": 12,
+        "per_run": [
+          {
+            "run": "prefill16-confirm2.json.gz",
+            "median_saved_ms": 0.9068230000000002,
+            "wins": 8
+          }
+        ]
+      },
+      "split": {
+        "latency_reduction_percent": 17.940666087032607,
+        "paired_median_saved_ms": 1.5890880000000003,
+        "bootstrap_95percent_ms": [
+          0.7189590000000003,
+          1.6863534999999996
+        ],
+        "wins": 11,
+        "pairs": 12,
+        "per_run": [
+          {
+            "run": "prefill16-confirm2.json.gz",
+            "median_saved_ms": 1.5890880000000003,
+            "wins": 11
+          }
+        ]
+      },
+      "branch": {
+        "latency_reduction_percent": 12.571704178646126,
+        "paired_median_saved_ms": 1.1104685000000005,
+        "bootstrap_95percent_ms": [
+          1.0094794999999999,
+          1.227761
+        ],
+        "wins": 12,
+        "pairs": 12,
+        "per_run": [
+          {
+            "run": "prefill16-confirm2.json.gz",
+            "median_saved_ms": 1.1104685000000005,
+            "wins": 12
+          }
+        ]
+      }
+    },
+    "placements": [
+      {
+        "run": "prefill16-confirm2.json.gz",
+        "plans": [
+          {
+            "name": "npu_tail24_cpu_shared_gpu",
+            "shared": 2,
+            "active_experts": [
+              24,
+              15,
+              0
+            ],
+            "pairs": [
+              26,
+              38,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "split_vs_branch_paired_saved_ms": 0.4394275000000003,
+    "phase_median_ms": {
+      "gpu": {
+        "attention_router_us": 2.2390365,
+        "partition_us": 0.0060675,
+        "experts_wall_us": 14.3014585,
+        "combine_us": 0.043307000000000005,
+        "backend_total_ms": [
+          0.0,
+          0.0,
+          14.3010415
+        ]
+      },
+      "selected": {
+        "attention_router_us": 2.542656,
+        "partition_us": 0.033906,
+        "experts_wall_us": 5.151640499999999,
+        "combine_us": 0.035234499999999995,
+        "backend_total_ms": [
+          3.400781,
+          4.9000005,
+          3.8138805
+        ]
+      },
+      "split": {
+        "attention_router_us": 1.945625,
+        "partition_us": 0.0314055,
+        "experts_wall_us": 5.12375,
+        "combine_us": 0.034245000000000005,
+        "backend_total_ms": [
+          3.363307,
+          4.9440100000000005,
+          3.91724
+        ]
+      },
+      "branch": {
+        "attention_router_us": 1.922656,
+        "partition_us": 0.015859500000000002,
+        "experts_wall_us": 5.5439324999999995,
+        "combine_us": 0.03684900000000001,
+        "backend_total_ms": [
+          5.4316925,
+          0.0,
+          3.4335675
+        ]
+      },
+      "cpu": {
+        "attention_router_us": 1.94,
+        "partition_us": 0.0102605,
+        "experts_wall_us": 6.5747655,
+        "combine_us": 0.035390500000000005,
+        "backend_total_ms": [
+          6.5744535,
+          0.0,
+          0.0
+        ]
+      },
+      "npu": {
+        "attention_router_us": 2.0154425000000002,
+        "partition_us": 0.006641,
+        "experts_wall_us": 11.780052,
+        "combine_us": 0.024609000000000002,
+        "backend_total_ms": [
+          0.0,
+          11.779843999999999,
+          0.0
+        ]
+      }
+    },
+    "split_placements": [
+      {
+        "run": "prefill16-confirm2.json.gz",
+        "plans": [
+          {
+            "name": "npu_tail24_cpu_shared_gpu",
+            "shared": 2,
+            "expert_ids": [
+              [
+                0,
+                2,
+                3,
+                4,
+                5,
+                9,
+                13,
+                14,
+                15,
+                18,
+                19,
+                20,
+                22,
+                24,
+                25,
+                27,
+                28,
+                34,
+                37,
+                42,
+                43,
+                51,
+                53,
+                59
+              ],
+              [
+                1,
+                17,
+                21,
+                23,
+                32,
+                33,
+                36,
+                39,
+                41,
+                46,
+                47,
+                48,
+                52,
+                54,
+                55
+              ],
+              []
+            ],
+            "pairs": [
+              26,
+              38,
+              0
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "tokens": 16,
+    "prefix_length": 0,
+    "layers": 2,
+    "runs": [
+      "prefill16-confirm2.json.gz"
+    ],
+    "median_ms": {
+      "gpu": 32.421901,
+      "selected": 14.245703,
+      "split": 14.404401000000002,
+      "branch": 16.857604,
+      "cpu": 20.031198,
+      "npu": 28.625625
+    },
+    "strongest_baseline": "cpu",
+    "all_checks_pass": true,
+    "comparisons": {
+      "selected": {
+        "latency_reduction_percent": 28.882421310996975,
+        "paired_median_saved_ms": 5.374218500000002,
+        "bootstrap_95percent_ms": [
+          4.895495500000002,
+          6.166822500000001
+        ],
+        "wins": 12,
+        "pairs": 12,
+        "per_run": [
+          {
+            "run": "prefill16-confirm2.json.gz",
+            "median_saved_ms": 5.374218500000002,
+            "wins": 12
+          }
+        ]
+      },
+      "split": {
+        "latency_reduction_percent": 28.09016714826541,
+        "paired_median_saved_ms": 5.507135499999999,
+        "bootstrap_95percent_ms": [
+          4.933411000000001,
+          5.887005500000001
+        ],
+        "wins": 12,
+        "pairs": 12,
+        "per_run": [
+          {
+            "run": "prefill16-confirm2.json.gz",
+            "median_saved_ms": 5.507135499999999,
+            "wins": 12
+          }
+        ]
+      },
+      "branch": {
+        "latency_reduction_percent": 15.843256104802128,
+        "paired_median_saved_ms": 2.9674215000000004,
+        "bootstrap_95percent_ms": [
+          2.7064840000000014,
+          3.623698000000001
+        ],
+        "wins": 11,
+        "pairs": 12,
+        "per_run": [
+          {
+            "run": "prefill16-confirm2.json.gz",
+            "median_saved_ms": 2.9674215000000004,
+            "wins": 11
+          }
+        ]
+      }
+    },
+    "placements": [
+      {
+        "run": "prefill16-confirm2.json.gz",
+        "plans": [
+          {
+            "name": "npu_tail24_cpu_shared_gpu",
+            "shared": 2,
+            "active_experts": [
+              24,
+              15,
+              0
+            ],
+            "pairs": [
+              26,
+              38,
+              0
+            ]
+          },
+          {
+            "name": "npu_tail24_cpu_shared_gpu",
+            "shared": 2,
+            "active_experts": [
+              24,
+              13,
+              0
+            ],
+            "pairs": [
+              28,
+              36,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "split_vs_branch_paired_saved_ms": 2.2760680000000013,
+    "phase_median_ms": {
+      "gpu": {
+        "attention_router_us": 4.1289845000000005,
+        "partition_us": 0.01401,
+        "experts_wall_us": 27.9775785,
+        "combine_us": 0.0769265,
+        "backend_total_ms": [
+          0.0,
+          0.0,
+          27.976979500000002
+        ]
+      },
+      "selected": {
+        "attention_router_us": 4.2384635,
+        "partition_us": 0.0684375,
+        "experts_wall_us": 9.712760999999999,
+        "combine_us": 0.070104,
+        "backend_total_ms": [
+          7.1158850000000005,
+          9.3977605,
+          7.7792185
+        ]
+      },
+      "split": {
+        "attention_router_us": 4.542839,
+        "partition_us": 0.0722655,
+        "experts_wall_us": 9.6584375,
+        "combine_us": 0.0711975,
+        "backend_total_ms": [
+          6.994922000000001,
+          9.4781515,
+          7.748099
+        ]
+      },
+      "branch": {
+        "attention_router_us": 4.6358334999999995,
+        "partition_us": 0.03794200000000001,
+        "experts_wall_us": 11.971589,
+        "combine_us": 0.0780465,
+        "backend_total_ms": [
+          11.8278645,
+          0.0,
+          6.793228500000001
+        ]
+      },
+      "cpu": {
+        "attention_router_us": 4.857708,
+        "partition_us": 0.025469000000000002,
+        "experts_wall_us": 14.949427,
+        "combine_us": 0.0770835,
+        "backend_total_ms": [
+          14.948829000000002,
+          0.0,
+          0.0
+        ]
+      },
+      "npu": {
+        "attention_router_us": 4.5396090000000004,
+        "partition_us": 0.022943,
+        "experts_wall_us": 23.74177,
+        "combine_us": 0.07044299999999999,
+        "backend_total_ms": [
+          0.0,
+          23.741146,
+          0.0
+        ]
+      }
+    },
+    "split_placements": [
+      {
+        "run": "prefill16-confirm2.json.gz",
+        "plans": [
+          {
+            "name": "npu_tail24_cpu_shared_gpu",
+            "shared": 2,
+            "expert_ids": [
+              [
+                0,
+                2,
+                3,
+                4,
+                5,
+                9,
+                13,
+                14,
+                15,
+                18,
+                19,
+                20,
+                22,
+                24,
+                25,
+                27,
+                28,
+                34,
+                37,
+                42,
+                43,
+                51,
+                53,
+                59
+              ],
+              [
+                1,
+                17,
+                21,
+                23,
+                32,
+                33,
+                36,
+                39,
+                41,
+                46,
+                47,
+                48,
+                52,
+                54,
+                55
+              ],
+              []
+            ],
+            "pairs": [
+              26,
+              38,
+              0
+            ]
+          },
+          {
+            "name": "npu_tail24_cpu_shared_gpu",
+            "shared": 2,
+            "expert_ids": [
+              [
+                0,
+                1,
+                3,
+                5,
+                7,
+                9,
+                10,
+                12,
+                14,
+                17,
+                19,
+                20,
+                21,
+                23,
+                24,
+                25,
+                29,
+                30,
+                32,
+                33,
+                38,
+                39,
+                55,
+                57
+              ],
+              [
+                11,
+                22,
+                28,
+                31,
+                34,
+                41,
+                42,
+                44,
+                52,
+                53,
+                54,
+                56,
+                58
+              ],
+              []
+            ],
+            "pairs": [
+              28,
+              36,
+              0
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "tokens": 64,
+    "prefix_length": 0,
+    "layers": 1,
+    "runs": [
+      "prefill64-confirm2.json.gz"
+    ],
+    "median_ms": {
+      "gpu": 29.547344,
+      "selected": 18.5335935,
+      "split": 19.8221875,
+      "branch": 25.2966145,
+      "cpu": 37.576927,
+      "npu": 26.034297
+    },
+    "strongest_baseline": "npu",
+    "all_checks_pass": true,
+    "comparisons": {
+      "selected": {
+        "latency_reduction_percent": 28.81085477360883,
+        "paired_median_saved_ms": 7.3462245,
+        "bootstrap_95percent_ms": [
+          6.532343500000001,
+          8.041875499999998
+        ],
+        "wins": 12,
+        "pairs": 12,
+        "per_run": [
+          {
+            "run": "prefill64-confirm2.json.gz",
+            "median_saved_ms": 7.3462245,
+            "wins": 12
+          }
+        ]
+      },
+      "split": {
+        "latency_reduction_percent": 23.861253100093315,
+        "paired_median_saved_ms": 6.019947500000001,
+        "bootstrap_95percent_ms": [
+          5.4201039999999985,
+          7.635339000000002
+        ],
+        "wins": 12,
+        "pairs": 12,
+        "per_run": [
+          {
+            "run": "prefill64-confirm2.json.gz",
+            "median_saved_ms": 6.019947500000001,
+            "wins": 12
+          }
+        ]
+      },
+      "branch": {
+        "latency_reduction_percent": 2.833502667654131,
+        "paired_median_saved_ms": 0.7973175000000001,
+        "bootstrap_95percent_ms": [
+          0.3053910000000002,
+          1.048802499999999
+        ],
+        "wins": 10,
+        "pairs": 12,
+        "per_run": [
+          {
+            "run": "prefill64-confirm2.json.gz",
+            "median_saved_ms": 0.7973175000000001,
+            "wins": 10
+          }
+        ]
+      }
+    },
+    "placements": [
+      {
+        "run": "prefill64-confirm2.json.gz",
+        "plans": [
+          {
+            "name": "npu_tail32_cpu_shared_npu",
+            "shared": 1,
+            "active_experts": [
+              32,
+              24,
+              0
+            ],
+            "pairs": [
+              97,
+              159,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "split_vs_branch_paired_saved_ms": 5.481978999999999,
+    "phase_median_ms": {
+      "gpu": {
+        "attention_router_us": 7.994610000000001,
+        "partition_us": 0.029740000000000003,
+        "experts_wall_us": 21.071275999999997,
+        "combine_us": 0.0851045,
+        "backend_total_ms": [
+          0.0,
+          0.0,
+          21.070677
+        ]
+      },
+      "selected": {
+        "attention_router_us": 8.621953,
+        "partition_us": 0.0984375,
+        "experts_wall_us": 9.906353999999999,
+        "combine_us": 0.140078,
+        "backend_total_ms": [
+          9.769817999999999,
+          9.0654955,
+          0.0
+        ]
+      },
+      "split": {
+        "attention_router_us": 9.333229500000002,
+        "partition_us": 0.11242150000000001,
+        "experts_wall_us": 10.131094000000001,
+        "combine_us": 0.14,
+        "backend_total_ms": [
+          9.95,
+          9.103932,
+          0.0
+        ]
+      },
+      "branch": {
+        "attention_router_us": 8.631015500000002,
+        "partition_us": 0.06125,
+        "experts_wall_us": 16.3764065,
+        "combine_us": 0.165599,
+        "backend_total_ms": [
+          0.0,
+          16.1676565,
+          4.373255
+        ]
+      },
+      "cpu": {
+        "attention_router_us": 9.8068745,
+        "partition_us": 0.036692999999999996,
+        "experts_wall_us": 27.6932555,
+        "combine_us": 0.1271875,
+        "backend_total_ms": [
+          27.692683,
+          0.0,
+          0.0
+        ]
+      },
+      "npu": {
+        "attention_router_us": 8.4572395,
+        "partition_us": 0.0309635,
+        "experts_wall_us": 17.343411500000002,
+        "combine_us": 0.11604149999999999,
+        "backend_total_ms": [
+          0.0,
+          17.342995000000002,
+          0.0
+        ]
+      }
+    },
+    "split_placements": [
+      {
+        "run": "prefill64-confirm2.json.gz",
+        "plans": [
+          {
+            "name": "npu_tail32_cpu_shared_npu",
+            "shared": 1,
+            "expert_ids": [
+              [
+                0,
+                2,
+                3,
+                4,
+                5,
+                7,
+                8,
+                9,
+                10,
+                13,
+                15,
+                16,
+                17,
+                18,
+                20,
+                21,
+                22,
+                23,
+                24,
+                25,
+                26,
+                29,
+                30,
+                32,
+                33,
+                35,
+                38,
+                40,
+                45,
+                51,
+                54,
+                58
+              ],
+              [
+                1,
+                14,
+                19,
+                27,
+                28,
+                31,
+                34,
+                36,
+                37,
+                39,
+                41,
+                42,
+                43,
+                44,
+                46,
+                47,
+                48,
+                49,
+                52,
+                53,
+                55,
+                56,
+                57,
+                59
+              ],
+              []
+            ],
+            "pairs": [
+              97,
+              159,
+              0
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "tokens": 64,
+    "prefix_length": 0,
+    "layers": 2,
+    "runs": [
+      "prefill64-confirm2.json.gz"
+    ],
+    "median_ms": {
+      "gpu": 60.064557,
+      "selected": 43.394661500000005,
+      "split": 42.9293745,
+      "branch": 52.190781,
+      "cpu": 82.734271,
+      "npu": 54.050599000000005
+    },
+    "strongest_baseline": "npu",
+    "all_checks_pass": true,
+    "comparisons": {
+      "selected": {
+        "latency_reduction_percent": 19.714744511897088,
+        "paired_median_saved_ms": 10.378724500000004,
+        "bootstrap_95percent_ms": [
+          9.122942999999996,
+          11.8104425
+        ],
+        "wins": 12,
+        "pairs": 12,
+        "per_run": [
+          {
+            "run": "prefill64-confirm2.json.gz",
+            "median_saved_ms": 10.378724500000004,
+            "wins": 12
+          }
+        ]
+      },
+      "split": {
+        "latency_reduction_percent": 20.57558048524125,
+        "paired_median_saved_ms": 10.941640500000002,
+        "bootstrap_95percent_ms": [
+          9.851797500000004,
+          11.5435415
+        ],
+        "wins": 12,
+        "pairs": 12,
+        "per_run": [
+          {
+            "run": "prefill64-confirm2.json.gz",
+            "median_saved_ms": 10.941640500000002,
+            "wins": 12
+          }
+        ]
+      },
+      "branch": {
+        "latency_reduction_percent": 3.440883236095138,
+        "paired_median_saved_ms": 1.540182000000005,
+        "bootstrap_95percent_ms": [
+          1.2442445000000006,
+          2.1751299999999993
+        ],
+        "wins": 12,
+        "pairs": 12,
+        "per_run": [
+          {
+            "run": "prefill64-confirm2.json.gz",
+            "median_saved_ms": 1.540182000000005,
+            "wins": 12
+          }
+        ]
+      }
+    },
+    "placements": [
+      {
+        "run": "prefill64-confirm2.json.gz",
+        "plans": [
+          {
+            "name": "npu_tail32_cpu_shared_npu",
+            "shared": 1,
+            "active_experts": [
+              32,
+              24,
+              0
+            ],
+            "pairs": [
+              97,
+              159,
+              0
+            ]
+          },
+          {
+            "name": "npu_tail24_gpu_shared_npu",
+            "shared": 1,
+            "active_experts": [
+              0,
+              31,
+              24
+            ],
+            "pairs": [
+              0,
+              197,
+              59
+            ]
+          }
+        ]
+      }
+    ],
+    "split_vs_branch_paired_saved_ms": 9.480677500000002,
+    "phase_median_ms": {
+      "gpu": {
+        "attention_router_us": 17.985833,
+        "partition_us": 0.0624485,
+        "experts_wall_us": 41.710052000000005,
+        "combine_us": 0.3254685,
+        "backend_total_ms": [
+          0.0,
+          0.0,
+          41.7088545
+        ]
+      },
+      "selected": {
+        "attention_router_us": 19.463489000000003,
+        "partition_us": 0.2339585,
+        "experts_wall_us": 23.1653125,
+        "combine_us": 0.31278649999999997,
+        "backend_total_ms": [
+          11.373281500000001,
+          20.438021,
+          8.398281500000001
+        ]
+      },
+      "split": {
+        "attention_router_us": 20.321484500000004,
+        "partition_us": 0.239557,
+        "experts_wall_us": 22.035390500000002,
+        "combine_us": 0.309375,
+        "backend_total_ms": [
+          10.512030999999999,
+          20.4128905,
+          8.3945055
+        ]
+      },
+      "branch": {
+        "attention_router_us": 18.411588499999997,
+        "partition_us": 0.0952085,
+        "experts_wall_us": 33.35901,
+        "combine_us": 0.246901,
+        "backend_total_ms": [
+          0.0,
+          32.8908075,
+          8.637969
+        ]
+      },
+      "cpu": {
+        "attention_router_us": 20.617526,
+        "partition_us": 0.0996625,
+        "experts_wall_us": 61.677917,
+        "combine_us": 0.3461975,
+        "backend_total_ms": [
+          61.676874500000004,
+          0.0,
+          0.0
+        ]
+      },
+      "npu": {
+        "attention_router_us": 19.075442000000002,
+        "partition_us": 0.0639845,
+        "experts_wall_us": 34.74145849999999,
+        "combine_us": 0.19682249999999998,
+        "backend_total_ms": [
+          0.0,
+          34.739714,
+          0.0
+        ]
+      }
+    },
+    "split_placements": [
+      {
+        "run": "prefill64-confirm2.json.gz",
+        "plans": [
+          {
+            "name": "npu_tail32_cpu_shared_npu",
+            "shared": 1,
+            "expert_ids": [
+              [
+                0,
+                2,
+                3,
+                4,
+                5,
+                7,
+                8,
+                9,
+                10,
+                13,
+                15,
+                16,
+                17,
+                18,
+                20,
+                21,
+                22,
+                23,
+                24,
+                25,
+                26,
+                29,
+                30,
+                32,
+                33,
+                35,
+                38,
+                40,
+                45,
+                51,
+                54,
+                58
+              ],
+              [
+                1,
+                14,
+                19,
+                27,
+                28,
+                31,
+                34,
+                36,
+                37,
+                39,
+                41,
+                42,
+                43,
+                44,
+                46,
+                47,
+                48,
+                49,
+                52,
+                53,
+                55,
+                56,
+                57,
+                59
+              ],
+              []
+            ],
+            "pairs": [
+              97,
+              159,
+              0
+            ]
+          },
+          {
+            "name": "npu_tail24_gpu_shared_npu",
+            "shared": 1,
+            "expert_ids": [
+              [],
+              [
+                0,
+                1,
+                3,
+                7,
+                11,
+                12,
+                14,
+                15,
+                16,
+                19,
+                20,
+                22,
+                25,
+                26,
+                31,
+                33,
+                34,
+                37,
+                38,
+                39,
+                40,
+                41,
+                45,
+                46,
+                47,
+                52,
+                53,
+                54,
+                55,
+                56,
+                57
+              ],
+              [
+                4,
+                5,
+                6,
+                8,
+                9,
+                10,
+                13,
+                17,
+                18,
+                21,
+                23,
+                24,
+                27,
+                28,
+                29,
+                30,
+                32,
+                42,
+                44,
+                48,
+                49,
+                50,
+                58,
+                59
+              ]
+            ],
+            "pairs": [
+              0,
+              197,
+              59
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "tokens": 128,
+    "prefix_length": 0,
+    "layers": 1,
+    "runs": [
+      "prefill128-confirm2.json.gz"
+    ],
+    "median_ms": {
+      "gpu": 50.641771,
+      "selected": 39.222578,
+      "split": 36.148203,
+      "branch": 39.253229,
+      "cpu": 91.1754425,
+      "npu": 40.196093999999995
+    },
+    "strongest_baseline": "npu",
+    "all_checks_pass": true,
+    "comparisons": {
+      "selected": {
+        "latency_reduction_percent": 2.421916915608757,
+        "paired_median_saved_ms": 1.084114999999997,
+        "bootstrap_95percent_ms": [
+          0.6075254999999977,
+          2.029114500000002
+        ],
+        "wins": 10,
+        "pairs": 12,
+        "per_run": [
+          {
+            "run": "prefill128-confirm2.json.gz",
+            "median_saved_ms": 1.084114999999997,
+            "wins": 10
+          }
+        ]
+      },
+      "split": {
+        "latency_reduction_percent": 10.07035907518774,
+        "paired_median_saved_ms": 4.140000000000001,
+        "bootstrap_95percent_ms": [
+          3.694791999999996,
+          5.124271
+        ],
+        "wins": 12,
+        "pairs": 12,
+        "per_run": [
+          {
+            "run": "prefill128-confirm2.json.gz",
+            "median_saved_ms": 4.140000000000001,
+            "wins": 12
+          }
+        ]
+      },
+      "branch": {
+        "latency_reduction_percent": 2.3456632378260345,
+        "paired_median_saved_ms": 1.1451305000000005,
+        "bootstrap_95percent_ms": [
+          0.3900260000000024,
+          1.7047920000000047
+        ],
+        "wins": 10,
+        "pairs": 12,
+        "per_run": [
+          {
+            "run": "prefill128-confirm2.json.gz",
+            "median_saved_ms": 1.1451305000000005,
+            "wins": 10
+          }
+        ]
+      }
+    },
+    "placements": [
+      {
+        "run": "prefill128-confirm2.json.gz",
+        "plans": [
+          {
+            "name": "npu_shared_gpu",
+            "shared": 2,
+            "active_experts": [
+              0,
+              59,
+              0
+            ],
+            "pairs": [
+              0,
+              512,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "split_vs_branch_paired_saved_ms": 3.0774474999999946,
+    "phase_median_ms": {
+      "gpu": {
+        "attention_router_us": 19.735885500000002,
+        "partition_us": 0.074271,
+        "experts_wall_us": 30.202552,
+        "combine_us": 0.20208350000000003,
+        "backend_total_ms": [
+          0.0,
+          0.0,
+          30.201953499999995
+        ]
+      },
+      "selected": {
+        "attention_router_us": 20.4827345,
+        "partition_us": 0.10695349999999999,
+        "experts_wall_us": 18.180989,
+        "combine_us": 0.4723175,
+        "backend_total_ms": [
+          0.0,
+          17.9164325,
+          6.8073175
+        ]
+      },
+      "split": {
+        "attention_router_us": 21.119349000000003,
+        "partition_us": 0.24945350000000002,
+        "experts_wall_us": 14.2458855,
+        "combine_us": 0.298203,
+        "backend_total_ms": [
+          8.351458500000001,
+          14.008985000000001,
+          7.095885
+        ]
+      },
+      "branch": {
+        "attention_router_us": 20.3332035,
+        "partition_us": 0.1089325,
+        "experts_wall_us": 18.1691405,
+        "combine_us": 0.472604,
+        "backend_total_ms": [
+          0.0,
+          17.9252345,
+          6.7917705
+        ]
+      },
+      "cpu": {
+        "attention_router_us": 21.263463499999997,
+        "partition_us": 0.0754165,
+        "experts_wall_us": 69.07796900000001,
+        "combine_us": 0.2183855,
+        "backend_total_ms": [
+          69.077057,
+          0.0,
+          0.0
+        ]
+      },
+      "npu": {
+        "attention_router_us": 20.373125,
+        "partition_us": 0.0750775,
+        "experts_wall_us": 19.313385000000004,
+        "combine_us": 0.2126565,
+        "backend_total_ms": [
+          0.0,
+          19.3127085,
+          0.0
+        ]
+      }
+    },
+    "split_placements": [
+      {
+        "run": "prefill128-confirm2.json.gz",
+        "plans": [
+          {
+            "name": "npu_tail16_cpu_shared_gpu",
+            "shared": 2,
+            "expert_ids": [
+              [
+                2,
+                4,
+                5,
+                6,
+                9,
+                10,
+                12,
+                22,
+                29,
+                30,
+                33,
+                35,
+                38,
+                40,
+                50,
+                58
+              ],
+              [
+                0,
+                1,
+                3,
+                7,
+                8,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21,
+                23,
+                24,
+                25,
+                26,
+                27,
+                28,
+                31,
+                32,
+                34,
+                36,
+                37,
+                39,
+                41,
+                42,
+                43,
+                44,
+                45,
+                46,
+                47,
+                48,
+                49,
+                51,
+                52,
+                53,
+                54,
+                55,
+                56,
+                57,
+                59
+              ],
+              []
+            ],
+            "pairs": [
+              67,
+              445,
+              0
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "tokens": 128,
+    "prefix_length": 0,
+    "layers": 2,
+    "runs": [
+      "prefill128-confirm2.json.gz"
+    ],
+    "median_ms": {
+      "gpu": 122.09028599999999,
+      "selected": 82.4517185,
+      "split": 80.1148175,
+      "branch": 96.433359,
+      "cpu": 206.316511,
+      "npu": 99.1509635
+    },
+    "strongest_baseline": "npu",
+    "all_checks_pass": true,
+    "comparisons": {
+      "selected": {
+        "latency_reduction_percent": 16.842241780131573,
+        "paired_median_saved_ms": 14.660572000000002,
+        "bootstrap_95percent_ms": [
+          9.812109499999998,
+          17.499714000000004
+        ],
+        "wins": 12,
+        "pairs": 12,
+        "per_run": [
+          {
+            "run": "prefill128-confirm2.json.gz",
+            "median_saved_ms": 14.660572000000002,
+            "wins": 12
+          }
+        ]
+      },
+      "split": {
+        "latency_reduction_percent": 19.19915382365397,
+        "paired_median_saved_ms": 17.103126000000003,
+        "bootstrap_95percent_ms": [
+          13.67585900000001,
+          21.4565365
+        ],
+        "wins": 12,
+        "pairs": 12,
+        "per_run": [
+          {
+            "run": "prefill128-confirm2.json.gz",
+            "median_saved_ms": 17.103126000000003,
+            "wins": 12
+          }
+        ]
+      },
+      "branch": {
+        "latency_reduction_percent": 2.740875533700693,
+        "paired_median_saved_ms": 3.1967710000000054,
+        "bootstrap_95percent_ms": [
+          0.6928380000000018,
+          5.333750500000001
+        ],
+        "wins": 9,
+        "pairs": 12,
+        "per_run": [
+          {
+            "run": "prefill128-confirm2.json.gz",
+            "median_saved_ms": 3.1967710000000054,
+            "wins": 9
+          }
+        ]
+      }
+    },
+    "placements": [
+      {
+        "run": "prefill128-confirm2.json.gz",
+        "plans": [
+          {
+            "name": "npu_shared_gpu",
+            "shared": 2,
+            "active_experts": [
+              0,
+              59,
+              0
+            ],
+            "pairs": [
+              0,
+              512,
+              0
+            ]
+          },
+          {
+            "name": "npu_tail16_cpu_shared_gpu",
+            "shared": 2,
+            "active_experts": [
+              16,
+              44,
+              0
+            ],
+            "pairs": [
+              77,
+              435,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "split_vs_branch_paired_saved_ms": 12.937968999999995,
+    "phase_median_ms": {
+      "gpu": {
+        "attention_router_us": 58.241875,
+        "partition_us": 0.229089,
+        "experts_wall_us": 61.942709,
+        "combine_us": 1.9938274999999999,
+        "backend_total_ms": [
+          0.0,
+          0.0,
+          61.94049400000001
+        ]
+      },
+      "selected": {
+        "attention_router_us": 47.886823,
+        "partition_us": 0.39755250000000003,
+        "experts_wall_us": 32.964089,
+        "combine_us": 0.7597655,
+        "backend_total_ms": [
+          9.679375499999999,
+          32.49651050000001,
+          13.551875
+        ]
+      },
+      "split": {
+        "attention_router_us": 48.421978499999994,
+        "partition_us": 0.5504169999999999,
+        "experts_wall_us": 29.397317499999996,
+        "combine_us": 0.696094,
+        "backend_total_ms": [
+          18.757422,
+          28.919036,
+          13.8752865
+        ]
+      },
+      "branch": {
+        "attention_router_us": 58.598958499999995,
+        "partition_us": 0.33999900000000005,
+        "experts_wall_us": 36.666510499999994,
+        "combine_us": 1.0105465,
+        "backend_total_ms": [
+          0.0,
+          36.358099499999994,
+          13.345130000000001
+        ]
+      },
+      "cpu": {
+        "attention_router_us": 55.0522915,
+        "partition_us": 0.22992249999999997,
+        "experts_wall_us": 150.131302,
+        "combine_us": 0.7777605,
+        "backend_total_ms": [
+          150.1284895,
+          0.0,
+          0.0
+        ]
+      },
+      "npu": {
+        "attention_router_us": 58.9957815,
+        "partition_us": 0.2314065,
+        "experts_wall_us": 39.531718999999995,
+        "combine_us": 0.7882809999999999,
+        "backend_total_ms": [
+          0.0,
+          39.530131499999996,
+          0.0
+        ]
+      }
+    },
+    "split_placements": [
+      {
+        "run": "prefill128-confirm2.json.gz",
+        "plans": [
+          {
+            "name": "npu_tail16_cpu_shared_gpu",
+            "shared": 2,
+            "expert_ids": [
+              [
+                2,
+                4,
+                5,
+                6,
+                9,
+                10,
+                12,
+                22,
+                29,
+                30,
+                33,
+                35,
+                38,
+                40,
+                50,
+                58
+              ],
+              [
+                0,
+                1,
+                3,
+                7,
+                8,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21,
+                23,
+                24,
+                25,
+                26,
+                27,
+                28,
+                31,
+                32,
+                34,
+                36,
+                37,
+                39,
+                41,
+                42,
+                43,
+                44,
+                45,
+                46,
+                47,
+                48,
+                49,
+                51,
+                52,
+                53,
+                54,
+                55,
+                56,
+                57,
+                59
+              ],
+              []
+            ],
+            "pairs": [
+              67,
+              445,
+              0
+            ]
+          },
+          {
+            "name": "npu_tail16_cpu_shared_gpu",
+            "shared": 2,
+            "expert_ids": [
+              [
+                2,
+                4,
+                13,
+                16,
+                21,
+                23,
+                27,
+                29,
+                32,
+                35,
+                36,
+                43,
+                48,
+                49,
+                51,
+                59
+              ],
+              [
+                0,
+                1,
+                3,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                14,
+                15,
+                17,
+                18,
+                19,
+                20,
+                22,
+                24,
+                25,
+                26,
+                28,
+                30,
+                31,
+                33,
+                34,
+                37,
+                38,
+                39,
+                40,
+                41,
+                42,
+                44,
+                45,
+                46,
+                47,
+                50,
+                52,
+                53,
+                54,
+                55,
+                56,
+                57,
+                58
+              ],
+              []
+            ],
+            "pairs": [
+              77,
+              435,
+              0
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]
