@@ -1,0 +1,822 @@
+[
+  {
+    "tokens": 1,
+    "prefix_length": 128,
+    "layers": 1,
+    "runs": [
+      "decode128-confirm2.json.gz"
+    ],
+    "median_ms": {
+      "gpu": 1.77336,
+      "selected": 1.3123695,
+      "split": 1.299062,
+      "branch": 1.2147655,
+      "cpu": 1.198125,
+      "npu": 1.616354
+    },
+    "strongest_baseline": "cpu",
+    "all_checks_pass": true,
+    "comparisons": {
+      "selected": {
+        "latency_reduction_percent": -9.535273865414705,
+        "paired_median_saved_ms": -0.06588550000000004,
+        "bootstrap_95percent_ms": [
+          -0.10067700000000002,
+          -0.048593499999999956
+        ],
+        "wins": 2,
+        "pairs": 18,
+        "per_run": [
+          {
+            "run": "decode128-confirm2.json.gz",
+            "median_saved_ms": -0.06588550000000004,
+            "wins": 2
+          }
+        ]
+      },
+      "split": {
+        "latency_reduction_percent": -8.424580073030752,
+        "paired_median_saved_ms": -0.06533900000000015,
+        "bootstrap_95percent_ms": [
+          -0.0935935,
+          -0.0524214999999999
+        ],
+        "wins": 2,
+        "pairs": 18,
+        "per_run": [
+          {
+            "run": "decode128-confirm2.json.gz",
+            "median_saved_ms": -0.06533900000000015,
+            "wins": 2
+          }
+        ]
+      },
+      "branch": {
+        "latency_reduction_percent": -1.3888784559207057,
+        "paired_median_saved_ms": -0.005728999999999873,
+        "bootstrap_95percent_ms": [
+          -0.03375100000000031,
+          0.021301500000000084
+        ],
+        "wins": 8,
+        "pairs": 18,
+        "per_run": [
+          {
+            "run": "decode128-confirm2.json.gz",
+            "median_saved_ms": -0.005728999999999873,
+            "wins": 8
+          }
+        ]
+      }
+    },
+    "placements": [
+      {
+        "run": "decode128-confirm2.json.gz",
+        "plans": [
+          {
+            "name": "cpu_tail3_npu_shared_cpu",
+            "shared": 0,
+            "active_experts": [
+              1,
+              3,
+              0
+            ],
+            "pairs": [
+              1,
+              3,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "split_vs_branch_paired_saved_ms": -0.07046899999999989,
+    "phase_median_ms": {
+      "gpu": {
+        "attention_router_us": 0.5292190000000001,
+        "partition_us": 0.00046899999999999996,
+        "experts_wall_us": 1.234818,
+        "combine_us": 0.001875,
+        "backend_total_ms": [
+          0.0,
+          0.0,
+          1.234662
+        ]
+      },
+      "selected": {
+        "attention_router_us": 0.5339579999999999,
+        "partition_us": 0.0016925,
+        "experts_wall_us": 0.7496095,
+        "combine_us": 0.0020310000000000003,
+        "backend_total_ms": [
+          0.654636,
+          0.693646,
+          0.0
+        ]
+      },
+      "split": {
+        "attention_router_us": 0.5477860000000001,
+        "partition_us": 0.001719,
+        "experts_wall_us": 0.7191150000000001,
+        "combine_us": 0.0020315000000000003,
+        "backend_total_ms": [
+          0.6521355000000001,
+          0.6847395000000001,
+          0.0
+        ]
+      },
+      "branch": {
+        "attention_router_us": 0.535547,
+        "partition_us": 0.00046800000000000005,
+        "experts_wall_us": 0.666927,
+        "combine_us": 0.0020310000000000003,
+        "backend_total_ms": [
+          0.6667190000000001,
+          0.0,
+          0.0
+        ]
+      },
+      "cpu": {
+        "attention_router_us": 0.5332809999999999,
+        "partition_us": 0.0004685,
+        "experts_wall_us": 0.6574214999999999,
+        "combine_us": 0.0019270000000000001,
+        "backend_total_ms": [
+          0.6571875,
+          0.0,
+          0.0
+        ]
+      },
+      "npu": {
+        "attention_router_us": 0.5311195,
+        "partition_us": 0.000417,
+        "experts_wall_us": 1.075625,
+        "combine_us": 0.001875,
+        "backend_total_ms": [
+          0.0,
+          1.0754425,
+          0.0
+        ]
+      }
+    },
+    "split_placements": [
+      {
+        "run": "decode128-confirm2.json.gz",
+        "plans": [
+          {
+            "name": "cpu_tail3_npu_shared_cpu",
+            "shared": 0,
+            "expert_ids": [
+              [
+                40
+              ],
+              [
+                15,
+                23,
+                35
+              ],
+              []
+            ],
+            "pairs": [
+              1,
+              3,
+              0
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "tokens": 1,
+    "prefix_length": 128,
+    "layers": 2,
+    "runs": [
+      "decode128-confirm2.json.gz"
+    ],
+    "median_ms": {
+      "gpu": 3.6589585,
+      "selected": 2.8069269999999995,
+      "split": 2.762318,
+      "branch": 2.667266,
+      "cpu": 2.6554949999999997,
+      "npu": 3.32
+    },
+    "strongest_baseline": "cpu",
+    "all_checks_pass": true,
+    "comparisons": {
+      "selected": {
+        "latency_reduction_percent": -5.702590289192777,
+        "paired_median_saved_ms": -0.11768299999999998,
+        "bootstrap_95percent_ms": [
+          -0.16875050000000003,
+          -0.08604149999999988
+        ],
+        "wins": 1,
+        "pairs": 18,
+        "per_run": [
+          {
+            "run": "decode128-confirm2.json.gz",
+            "median_saved_ms": -0.11768299999999998,
+            "wins": 1
+          }
+        ]
+      },
+      "split": {
+        "latency_reduction_percent": -4.0227151623332125,
+        "paired_median_saved_ms": -0.09528700000000012,
+        "bootstrap_95percent_ms": [
+          -0.16796849999999974,
+          -0.03755199999999981
+        ],
+        "wins": 4,
+        "pairs": 18,
+        "per_run": [
+          {
+            "run": "decode128-confirm2.json.gz",
+            "median_saved_ms": -0.09528700000000012,
+            "wins": 4
+          }
+        ]
+      },
+      "branch": {
+        "latency_reduction_percent": -0.44326952225481886,
+        "paired_median_saved_ms": -0.0021094999999997643,
+        "bootstrap_95percent_ms": [
+          -0.06013050000000009,
+          0.023724500000000148
+        ],
+        "wins": 8,
+        "pairs": 18,
+        "per_run": [
+          {
+            "run": "decode128-confirm2.json.gz",
+            "median_saved_ms": -0.0021094999999997643,
+            "wins": 8
+          }
+        ]
+      }
+    },
+    "placements": [
+      {
+        "run": "decode128-confirm2.json.gz",
+        "plans": [
+          {
+            "name": "cpu_tail3_npu_shared_cpu",
+            "shared": 0,
+            "active_experts": [
+              1,
+              3,
+              0
+            ],
+            "pairs": [
+              1,
+              3,
+              0
+            ]
+          },
+          {
+            "name": "cpu_tail3_npu_shared_cpu",
+            "shared": 0,
+            "active_experts": [
+              1,
+              3,
+              0
+            ],
+            "pairs": [
+              1,
+              3,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "split_vs_branch_paired_saved_ms": -0.09093700000000027,
+    "phase_median_ms": {
+      "gpu": {
+        "attention_router_us": 1.2030990000000001,
+        "partition_us": 0.0011719999999999999,
+        "experts_wall_us": 2.4273435,
+        "combine_us": 0.004141,
+        "backend_total_ms": [
+          0.0,
+          0.0,
+          2.426901
+        ]
+      },
+      "selected": {
+        "attention_router_us": 1.190963,
+        "partition_us": 0.0043490000000000004,
+        "experts_wall_us": 1.5670309999999998,
+        "combine_us": 0.004662,
+        "backend_total_ms": [
+          1.4242185,
+          1.468828,
+          0.0
+        ]
+      },
+      "split": {
+        "attention_router_us": 1.179714,
+        "partition_us": 0.0042710000000000005,
+        "experts_wall_us": 1.5565625,
+        "combine_us": 0.004687,
+        "backend_total_ms": [
+          1.4170835,
+          1.4641925,
+          0.0
+        ]
+      },
+      "branch": {
+        "attention_router_us": 1.169323,
+        "partition_us": 0.0014065,
+        "experts_wall_us": 1.449375,
+        "combine_us": 0.0042710000000000005,
+        "backend_total_ms": [
+          1.4490104999999998,
+          0.0,
+          0.0
+        ]
+      },
+      "cpu": {
+        "attention_router_us": 1.181511,
+        "partition_us": 0.0013540000000000002,
+        "experts_wall_us": 1.4438805,
+        "combine_us": 0.004219,
+        "backend_total_ms": [
+          1.4433595000000001,
+          0.0,
+          0.0
+        ]
+      },
+      "npu": {
+        "attention_router_us": 1.1980210000000002,
+        "partition_us": 0.0011975,
+        "experts_wall_us": 2.068099,
+        "combine_us": 0.004115000000000001,
+        "backend_total_ms": [
+          0.0,
+          2.0678389999999998,
+          0.0
+        ]
+      }
+    },
+    "split_placements": [
+      {
+        "run": "decode128-confirm2.json.gz",
+        "plans": [
+          {
+            "name": "cpu_tail3_npu_shared_cpu",
+            "shared": 0,
+            "expert_ids": [
+              [
+                40
+              ],
+              [
+                15,
+                23,
+                35
+              ],
+              []
+            ],
+            "pairs": [
+              1,
+              3,
+              0
+            ]
+          },
+          {
+            "name": "cpu_tail3_npu_shared_cpu",
+            "shared": 0,
+            "expert_ids": [
+              [
+                44
+              ],
+              [
+                1,
+                6,
+                32
+              ],
+              []
+            ],
+            "pairs": [
+              1,
+              3,
+              0
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "tokens": 1,
+    "prefix_length": 256,
+    "layers": 1,
+    "runs": [
+      "decode256-confirm2.json.gz"
+    ],
+    "median_ms": {
+      "gpu": 2.1260155,
+      "selected": 1.6535935,
+      "split": 1.649896,
+      "branch": 1.761302,
+      "cpu": 1.5792190000000002,
+      "npu": 1.9199220000000001
+    },
+    "strongest_baseline": "cpu",
+    "all_checks_pass": true,
+    "comparisons": {
+      "selected": {
+        "latency_reduction_percent": -4.7095747961492185,
+        "paired_median_saved_ms": -0.06072849999999996,
+        "bootstrap_95percent_ms": [
+          -0.08708300000000002,
+          -0.03541700000000003
+        ],
+        "wins": 5,
+        "pairs": 24,
+        "per_run": [
+          {
+            "run": "decode256-confirm2.json.gz",
+            "median_saved_ms": -0.06072849999999996,
+            "wins": 5
+          }
+        ]
+      },
+      "split": {
+        "latency_reduction_percent": -4.475440075125725,
+        "paired_median_saved_ms": -0.05177049999999994,
+        "bootstrap_95percent_ms": [
+          -0.07989599999999997,
+          -0.037030999999999814
+        ],
+        "wins": 2,
+        "pairs": 24,
+        "per_run": [
+          {
+            "run": "decode256-confirm2.json.gz",
+            "median_saved_ms": -0.05177049999999994,
+            "wins": 2
+          }
+        ]
+      },
+      "branch": {
+        "latency_reduction_percent": -11.529939799356503,
+        "paired_median_saved_ms": -0.17513100000000004,
+        "bootstrap_95percent_ms": [
+          -0.18734299999999982,
+          -0.12635400000000008
+        ],
+        "wins": 0,
+        "pairs": 24,
+        "per_run": [
+          {
+            "run": "decode256-confirm2.json.gz",
+            "median_saved_ms": -0.17513100000000004,
+            "wins": 0
+          }
+        ]
+      }
+    },
+    "placements": [
+      {
+        "run": "decode256-confirm2.json.gz",
+        "plans": [
+          {
+            "name": "cpu_tail3_npu_shared_cpu",
+            "shared": 0,
+            "active_experts": [
+              1,
+              3,
+              0
+            ],
+            "pairs": [
+              1,
+              3,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "split_vs_branch_paired_saved_ms": 0.10304750000000007,
+    "phase_median_ms": {
+      "gpu": {
+        "attention_router_us": 0.8827864999999999,
+        "partition_us": 0.000495,
+        "experts_wall_us": 1.232396,
+        "combine_us": 0.0019010000000000001,
+        "backend_total_ms": [
+          0.0,
+          0.0,
+          1.23224
+        ]
+      },
+      "selected": {
+        "attention_router_us": 0.877344,
+        "partition_us": 0.001875,
+        "experts_wall_us": 0.7556510000000001,
+        "combine_us": 0.0021355,
+        "backend_total_ms": [
+          0.6936720000000001,
+          0.7092445,
+          0.0
+        ]
+      },
+      "split": {
+        "attention_router_us": 0.8850779999999999,
+        "partition_us": 0.0019010000000000001,
+        "experts_wall_us": 0.7539065,
+        "combine_us": 0.0021875,
+        "backend_total_ms": [
+          0.6877085,
+          0.690625,
+          0.0
+        ]
+      },
+      "branch": {
+        "attention_router_us": 0.8790625,
+        "partition_us": 0.000886,
+        "experts_wall_us": 0.8621875,
+        "combine_us": 0.0022140000000000003,
+        "backend_total_ms": [
+          0.5951044999999999,
+          0.8349469999999999,
+          0.0
+        ]
+      },
+      "cpu": {
+        "attention_router_us": 0.8776825,
+        "partition_us": 0.0006770000000000001,
+        "experts_wall_us": 0.6852345000000001,
+        "combine_us": 0.0020310000000000003,
+        "backend_total_ms": [
+          0.684896,
+          0.0,
+          0.0
+        ]
+      },
+      "npu": {
+        "attention_router_us": 0.8706775,
+        "partition_us": 0.0005729999999999999,
+        "experts_wall_us": 1.044636,
+        "combine_us": 0.0019270000000000001,
+        "backend_total_ms": [
+          0.0,
+          1.0444795,
+          0.0
+        ]
+      }
+    },
+    "split_placements": [
+      {
+        "run": "decode256-confirm2.json.gz",
+        "plans": [
+          {
+            "name": "cpu_tail3_npu_shared_cpu",
+            "shared": 0,
+            "expert_ids": [
+              [
+                59
+              ],
+              [
+                23,
+                49,
+                50
+              ],
+              []
+            ],
+            "pairs": [
+              1,
+              3,
+              0
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "tokens": 1,
+    "prefix_length": 256,
+    "layers": 2,
+    "runs": [
+      "decode256-confirm2.json.gz"
+    ],
+    "median_ms": {
+      "gpu": 4.5084375,
+      "selected": 3.5843225000000003,
+      "split": 3.5499485,
+      "branch": 3.6975519999999995,
+      "cpu": 3.565703,
+      "npu": 4.1817185
+    },
+    "strongest_baseline": "cpu",
+    "all_checks_pass": true,
+    "comparisons": {
+      "selected": {
+        "latency_reduction_percent": -0.5221831431277524,
+        "paired_median_saved_ms": -0.04057299999999997,
+        "bootstrap_95percent_ms": [
+          -0.09781199999999979,
+          0.059374999999999734
+        ],
+        "wins": 10,
+        "pairs": 24,
+        "per_run": [
+          {
+            "run": "decode256-confirm2.json.gz",
+            "median_saved_ms": -0.04057299999999997,
+            "wins": 10
+          }
+        ]
+      },
+      "split": {
+        "latency_reduction_percent": 0.44183433112628956,
+        "paired_median_saved_ms": -0.014869999999999717,
+        "bootstrap_95percent_ms": [
+          -0.06020800000000026,
+          0.053853999999999846
+        ],
+        "wins": 11,
+        "pairs": 24,
+        "per_run": [
+          {
+            "run": "decode256-confirm2.json.gz",
+            "median_saved_ms": -0.014869999999999717,
+            "wins": 11
+          }
+        ]
+      },
+      "branch": {
+        "latency_reduction_percent": -3.6977000047395903,
+        "paired_median_saved_ms": -0.12906250000000008,
+        "bootstrap_95percent_ms": [
+          -0.16822900000000018,
+          -0.08252549999999981
+        ],
+        "wins": 2,
+        "pairs": 24,
+        "per_run": [
+          {
+            "run": "decode256-confirm2.json.gz",
+            "median_saved_ms": -0.12906250000000008,
+            "wins": 2
+          }
+        ]
+      }
+    },
+    "placements": [
+      {
+        "run": "decode256-confirm2.json.gz",
+        "plans": [
+          {
+            "name": "cpu_tail3_npu_shared_cpu",
+            "shared": 0,
+            "active_experts": [
+              1,
+              3,
+              0
+            ],
+            "pairs": [
+              1,
+              3,
+              0
+            ]
+          },
+          {
+            "name": "cpu_tail3_npu_shared_cpu",
+            "shared": 0,
+            "active_experts": [
+              1,
+              3,
+              0
+            ],
+            "pairs": [
+              1,
+              3,
+              0
+            ]
+          }
+        ]
+      }
+    ],
+    "split_vs_branch_paired_saved_ms": 0.11690049999999985,
+    "phase_median_ms": {
+      "gpu": {
+        "attention_router_us": 2.0203385,
+        "partition_us": 0.0015365,
+        "experts_wall_us": 2.470886,
+        "combine_us": 0.004166,
+        "backend_total_ms": [
+          0.0,
+          0.0,
+          2.4704175
+        ]
+      },
+      "selected": {
+        "attention_router_us": 1.9653125,
+        "partition_us": 0.004634999999999999,
+        "experts_wall_us": 1.568828,
+        "combine_us": 0.0048175,
+        "backend_total_ms": [
+          1.46961,
+          1.427057,
+          0.0
+        ]
+      },
+      "split": {
+        "attention_router_us": 1.9592975000000001,
+        "partition_us": 0.004843,
+        "experts_wall_us": 1.5737755000000002,
+        "combine_us": 0.004817999999999999,
+        "backend_total_ms": [
+          1.4633335000000003,
+          1.41375,
+          0.0
+        ]
+      },
+      "branch": {
+        "attention_router_us": 1.9458855000000002,
+        "partition_us": 0.00237,
+        "experts_wall_us": 1.7165884999999999,
+        "combine_us": 0.0044525,
+        "backend_total_ms": [
+          1.297396,
+          1.654869,
+          0.0
+        ]
+      },
+      "cpu": {
+        "attention_router_us": 2.028463,
+        "partition_us": 0.0017965,
+        "experts_wall_us": 1.500417,
+        "combine_us": 0.0045565,
+        "backend_total_ms": [
+          1.499973,
+          0.0,
+          0.0
+        ]
+      },
+      "npu": {
+        "attention_router_us": 2.0586715,
+        "partition_us": 0.0015625,
+        "experts_wall_us": 2.091094,
+        "combine_us": 0.0041415,
+        "backend_total_ms": [
+          0.0,
+          2.090651,
+          0.0
+        ]
+      }
+    },
+    "split_placements": [
+      {
+        "run": "decode256-confirm2.json.gz",
+        "plans": [
+          {
+            "name": "cpu_tail3_npu_shared_cpu",
+            "shared": 0,
+            "expert_ids": [
+              [
+                59
+              ],
+              [
+                23,
+                49,
+                50
+              ],
+              []
+            ],
+            "pairs": [
+              1,
+              3,
+              0
+            ]
+          },
+          {
+            "name": "cpu_tail3_npu_shared_cpu",
+            "shared": 0,
+            "expert_ids": [
+              [
+                54
+              ],
+              [
+                34,
+                35,
+                52
+              ],
+              []
+            ],
+            "pairs": [
+              1,
+              3,
+              0
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -1,5 +1,7 @@
 # Offline Placement Results and Interrupted Additional Replication
 
+Historical checkpoint: connection was restored and all outstanding work subsequently completed. See `handoff-03-final-results.md` for the final replicated results and cleanup status. Tables below preserve the pre-resume evidence rather than replacing it.
+
 ## Conclusion and Scope
 
 Measured evidence supports fine-grained routed Expert splitting for these real-route small/medium Prefill workloads on fd8657d6. It does not support splitting the tested genuine single-token Decode workload. This is an offline fixed-CPU-route replay using resident real Qwen1.5-MoE Q4_0 weights and top-4, complete first 1/2 Transformer layers including attention, dependent second-layer input, CPU router, transfers, synchronization and weighted aggregation. CPU attention/router and host aggregation are common to every policy. A single-backend baseline means both Expert branches on that backend, NOT a wholly offloaded model. No full-model throughput or online-policy claim follows from these results.
