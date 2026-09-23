@@ -1,0 +1,239 @@
+{
+  "runs": [
+    "run01",
+    "run02",
+    "run03"
+  ],
+  "tokens_per_expert": 64,
+  "modes": {
+    "cpu": {
+      "cases": [
+        {
+          "experts": 1,
+          "status": "ok",
+          "total_ms": {
+            "n": 300,
+            "median": 4.7077860000000005,
+            "p95": 5.042187
+          },
+          "phase_median_ms": {
+            "upload_us": 0.017603999999999998,
+            "compute_us": 4.671770500000001,
+            "readback_us": 0.018463999999999998
+          },
+          "per_run_median_ms": [
+            4.698828,
+            4.7093485,
+            4.787422500000001
+          ],
+          "worst_token_nrmse": 0.010646629619776127,
+          "token_expert_pairs_per_second": 13594.500684610557
+        },
+        {
+          "experts": 2,
+          "status": "ok",
+          "total_ms": {
+            "n": 300,
+            "median": 9.359818,
+            "p95": 10.126406000000001
+          },
+          "phase_median_ms": {
+            "upload_us": 0.01625,
+            "compute_us": 9.305599,
+            "readback_us": 0.03724
+          },
+          "per_run_median_ms": [
+            9.337552500000001,
+            9.365155999999999,
+            9.375781
+          ],
+          "worst_token_nrmse": 0.01159879197865763,
+          "token_expert_pairs_per_second": 13675.47958731676
+        }
+      ],
+      "paired_two_over_one": {
+        "n": 300,
+        "median": 1.9912867611962835,
+        "p95": 2.076351457852585
+      },
+      "per_run_paired_ratio_median": [
+        1.9875685780371324,
+        1.9957550409412521,
+        1.9902487065964478
+      ]
+    },
+    "opencl": {
+      "cases": [
+        {
+          "experts": 1,
+          "status": "ok",
+          "total_ms": {
+            "n": 300,
+            "median": 3.7822655,
+            "p95": 4.264532
+          },
+          "phase_median_ms": {
+            "upload_us": 0.118125,
+            "compute_us": 3.5405990000000003,
+            "readback_us": 0.11583299999999999
+          },
+          "per_run_median_ms": [
+            3.776927,
+            3.809687,
+            3.7584895
+          ],
+          "worst_token_nrmse": 0.0009288118137529309,
+          "token_expert_pairs_per_second": 16921.075477118145
+        },
+        {
+          "experts": 2,
+          "status": "ok",
+          "total_ms": {
+            "n": 300,
+            "median": 5.9975785,
+            "p95": 6.645157
+          },
+          "phase_median_ms": {
+            "upload_us": 0.1179685,
+            "compute_us": 5.632578499999999,
+            "readback_us": 0.22151049999999997
+          },
+          "per_run_median_ms": [
+            5.974609,
+            6.0339325,
+            5.964739499999999
+          ],
+          "worst_token_nrmse": 0.0009313835143065534,
+          "token_expert_pairs_per_second": 21341.94658727685
+        }
+      ],
+      "paired_two_over_one": {
+        "n": 300,
+        "median": 1.587241850158883,
+        "p95": 1.7384470068157478
+      },
+      "per_run_paired_ratio_median": [
+        1.5839108623125362,
+        1.5934864447305048,
+        1.584079804397651
+      ]
+    },
+    "hmx": {
+      "cases": [
+        {
+          "experts": 1,
+          "status": "ok",
+          "total_ms": {
+            "n": 300,
+            "median": 0.85013,
+            "p95": 1.234583
+          },
+          "phase_median_ms": {
+            "upload_us": 0.040495,
+            "compute_us": 0.7528905,
+            "readback_us": 0.038801999999999996
+          },
+          "per_run_median_ms": [
+            0.9204684999999999,
+            0.9607555,
+            0.7440889999999999
+          ],
+          "worst_token_nrmse": 0.000582734927779202,
+          "token_expert_pairs_per_second": 75282.6038370602
+        },
+        {
+          "experts": 2,
+          "status": "ok",
+          "total_ms": {
+            "n": 300,
+            "median": 1.249323,
+            "p95": 1.600782
+          },
+          "phase_median_ms": {
+            "upload_us": 0.040781,
+            "compute_us": 1.1133600000000001,
+            "readback_us": 0.080937
+          },
+          "per_run_median_ms": [
+            1.3130725,
+            1.414297,
+            1.1811975
+          ],
+          "worst_token_nrmse": 0.000582734927779202,
+          "token_expert_pairs_per_second": 102455.48989332623
+        }
+      ],
+      "paired_two_over_one": {
+        "n": 300,
+        "median": 1.5025565225423736,
+        "p95": 1.7790003122888127
+      },
+      "per_run_paired_ratio_median": [
+        1.4701594964302616,
+        1.4765820444342523,
+        1.5581470877812063
+      ]
+    },
+    "hvx": {
+      "cases": [
+        {
+          "experts": 1,
+          "status": "ok",
+          "total_ms": {
+            "n": 300,
+            "median": 4.2171615,
+            "p95": 4.653957999999999
+          },
+          "phase_median_ms": {
+            "upload_us": 0.11007800000000001,
+            "compute_us": 3.9858329999999995,
+            "readback_us": 0.107292
+          },
+          "per_run_median_ms": [
+            4.2656515,
+            4.240963,
+            4.1540625
+          ],
+          "worst_token_nrmse": 0.015030026352301376,
+          "token_expert_pairs_per_second": 15176.084672118914
+        },
+        {
+          "experts": 2,
+          "status": "ok",
+          "total_ms": {
+            "n": 300,
+            "median": 7.8192710000000005,
+            "p95": 8.367812
+          },
+          "phase_median_ms": {
+            "upload_us": 0.112969,
+            "compute_us": 7.454166999999999,
+            "readback_us": 0.21406299999999998
+          },
+          "per_run_median_ms": [
+            7.864609000000001,
+            7.854844,
+            7.720702999999999
+          ],
+          "worst_token_nrmse": 0.01596795103737435,
+          "token_expert_pairs_per_second": 16369.812479961367
+        }
+      ],
+      "paired_two_over_one": {
+        "n": 300,
+        "median": 1.847978533637503,
+        "p95": 1.9682012075115958
+      },
+      "per_run_paired_ratio_median": [
+        1.8480898667073533,
+        1.8448508403193677,
+        1.8489036045402645
+      ]
+    }
+  },
+  "provenance": {
+    "hashes": "c1c023f7e2132290ce39a09a31e87b5918d61112d220c4c1b721ce901e0cb7a8  /data/local/tmp/llama-expert-e2e/expert-e2e-probe\ndc7c7d930b2987079aecdb6d9818432ab3ddec2556eb2de8fa16e6d06caf3660  /data/local/tmp/llama-expert-e2e/libggml-base.so\n06a3fe6b0a27c116bfbcec6ba13353fbcac83c12422d8ec8c284d22e3fb9ed32  /data/local/tmp/llama-expert-e2e/libggml-cpu.so\n4244710e61cadb51743d486c8b1b57fb2cb1f607e7c6e13d737e8bd412187398  /data/local/tmp/llama-expert-e2e/libggml-hexagon.so\n48b3aeb4fa140d8ec0469c60f46ac381811d1a25d8bf6ec4619bba9fcf19900f  /data/local/tmp/llama-expert-e2e/libggml-htp-v79.so\n561a1a8deb9102be1f41d2c841276d4d487b17c465adb73b4e7247c150ac768e  /data/local/tmp/llama-expert-e2e/libggml-opencl.so\n7c7c7918a1a1d319b44a0ea5824a7c17ba2a7be9f3c66068cf3627c94d91fbdc  /data/local/tmp/llama-expert-e2e/libggml.so\n",
+    "model_sha256": "8b704c763230935a096c9c810765c8a5483f1724c83e34e253704138ca040473  /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf\n",
+    "serial": "fd8657d6"
+  }
+}
