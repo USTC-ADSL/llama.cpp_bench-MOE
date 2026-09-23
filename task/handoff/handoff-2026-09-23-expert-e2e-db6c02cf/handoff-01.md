@@ -1,5 +1,11 @@
 # Expert E2E Repeat on OnePlus Ace 5 Pro
 
+LATEST STATUS: see handoff-02-history-analysis.md. The complete retransmission
+also did not produce a verified model. On the latest check the sender had ended
+and the destination was absent. Sections below preserve the earlier attempt's
+history; neither the old prefix nor the old conditional resume command is valid
+for the current device state.
+
 ## Scope
 
 User requests the same benchmark as the fd8657d6 experiment, after transferring
@@ -60,6 +66,19 @@ unreachable. Do not blindly rerun `transfer-model.py`: it truncates the partial
 destination and would discard completed data.
 
 ## Resume After ADB Recovers
+
+UPDATE: the user restored connectivity. Device db6c02cf is online and no `dd`
+processes remain. The partial file was 7372699344 bytes. Prefix verification
+returned `29f0dc61fb17918fd45912a96d940e57ab7e29e289a321c55e4160f6e1478618`,
+which does NOT match the host prefix below. Do not use the conditional resume
+command. A complete host retransmission was started using:
+
+```sh
+adb -s db6c02cf push -Z models/Qwen1.5-MoE-A2.7B-Chat-Q4_0-GGUF/qwen1.5-moe-a2.7b-chat-q4_0.gguf /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf
+```
+
+The prior successful sender exits did not establish valid contents; retain
+full-file SHA256 verification as a prerequisite for all tests.
 
 1. Confirm `adb devices -l` responds and db6c02cf is in `device` state. Check for
    leftover task-owned `dd` processes, identifying their command lines before

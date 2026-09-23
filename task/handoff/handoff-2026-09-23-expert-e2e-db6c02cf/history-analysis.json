@@ -1,0 +1,235 @@
+{
+  "device": "fd8657d6",
+  "model_sha256": "8b704c763230935a096c9c810765c8a5483f1724c83e34e253704138ca040473",
+  "metadata_verified_from_host_gguf": {
+    "layers": 24,
+    "experts": 60,
+    "topk": 4,
+    "routed_width": 1408,
+    "shared_width": 5632
+  },
+  "statistics_note": "Micro/layer values are pooled medians; model values are sample means. Independent medians need not add. Mean throughput is not the inverse of mean latency.",
+  "library_differences_micro_vs_model": {
+    "libggml-base.so": [
+      "7765ad7546a694574446d810052f3112c784d4e9cfa986166e84a9ae96f67990",
+      "dc7c7d930b2987079aecdb6d9818432ab3ddec2556eb2de8fa16e6d06caf3660"
+    ]
+  },
+  "micro_full_ffn_ms": {
+    "cpu": {
+      "1": 0.077969,
+      "2": 0.149167,
+      "4": 0.29,
+      "8": 0.5776570000000001,
+      "16": 1.1540625,
+      "32": 2.3483850000000004,
+      "64": 4.7602345,
+      "128": 9.701172
+    },
+    "opencl": {
+      "1": 0.4264585,
+      "2": 1.9093490000000002,
+      "4": 1.891328,
+      "8": 1.8996095,
+      "16": 2.2581770000000003,
+      "32": 3.0381504999999995,
+      "64": 3.438203,
+      "128": 5.491276
+    },
+    "hmx": {
+      "1": 0.4853125,
+      "2": 0.5148440000000001,
+      "4": 0.623047,
+      "8": 0.6221095,
+      "16": 0.59862,
+      "32": 0.6225,
+      "64": 0.717031,
+      "128": 0.938594
+    },
+    "hvx": {
+      "1": 0.4809375,
+      "2": 0.5105729999999999,
+      "4": 0.6206775,
+      "8": 0.8291145,
+      "16": 1.269584,
+      "32": 2.1403905,
+      "64": 3.8864845
+    }
+  },
+  "full_model": [
+    {
+      "run": "cpu-ub128",
+      "backend": "cpu",
+      "threads": 4,
+      "batch": 512,
+      "ubatch": 128,
+      "prompt": 128,
+      "generation": 0,
+      "mean_ts": 74.429071,
+      "sample_sd_ts": 17.82872,
+      "samples_ts": [
+        53.8668,
+        83.8398,
+        85.5806
+      ],
+      "mean_time_ms": 1799.539721,
+      "mean_time_per_token_ms": 14.0589040703125,
+      "rough_ffn_equivalent_ms": 1752.3613253125002,
+      "rough_error_vs_total_mean_fraction": -0.026216923770531197
+    },
+    {
+      "run": "cpu-ub128",
+      "backend": "cpu",
+      "threads": 4,
+      "batch": 512,
+      "ubatch": 128,
+      "prompt": 0,
+      "generation": 128,
+      "mean_ts": 31.993393,
+      "sample_sd_ts": 0.3258,
+      "samples_ts": [
+        32.331,
+        31.9684,
+        31.6808
+      ],
+      "mean_time_ms": 4001.102307,
+      "mean_time_per_token_ms": 31.2586117734375,
+      "rough_ffn_equivalent_ms_per_token": 14.970047999999998
+    },
+    {
+      "run": "htp-ub128",
+      "backend": "htp",
+      "threads": 4,
+      "batch": 512,
+      "ubatch": 128,
+      "prompt": 128,
+      "generation": 0,
+      "mean_ts": 289.544436,
+      "sample_sd_ts": 3.770648,
+      "samples_ts": [
+        285.193,
+        291.59,
+        291.85
+      ],
+      "mean_time_ms": 442.124131,
+      "mean_time_per_token_ms": 3.4540947734375
+    },
+    {
+      "run": "htp-ub128",
+      "backend": "htp",
+      "threads": 4,
+      "batch": 512,
+      "ubatch": 128,
+      "prompt": 0,
+      "generation": 128,
+      "mean_ts": 15.910163,
+      "sample_sd_ts": 0.082033,
+      "samples_ts": [
+        15.938,
+        15.9746,
+        15.8178
+      ],
+      "mean_time_ms": 8045.314927,
+      "mean_time_per_token_ms": 62.8540228671875
+    },
+    {
+      "run": "htp-ub512",
+      "backend": "htp",
+      "threads": 4,
+      "batch": 1024,
+      "ubatch": 512,
+      "prompt": 512,
+      "generation": 0,
+      "mean_ts": 637.081288,
+      "sample_sd_ts": 9.520053,
+      "samples_ts": [
+        626.094,
+        642.883,
+        642.267
+      ],
+      "mean_time_ms": 803.785798,
+      "mean_time_per_token_ms": 1.56989413671875
+    },
+    {
+      "run": "cpu-ub512",
+      "backend": "cpu",
+      "threads": 4,
+      "batch": 1024,
+      "ubatch": 512,
+      "prompt": 512,
+      "generation": 0,
+      "mean_ts": 81.141073,
+      "sample_sd_ts": 1.030407,
+      "samples_ts": [
+        80.1927,
+        80.993,
+        82.2375
+      ],
+      "mean_time_ms": 6310.674546,
+      "mean_time_per_token_ms": 12.32553622265625
+    }
+  ],
+  "first_layer_routing": [
+    {
+      "source": "handoff-2026-09-22-threshold-routing/evidence/summary-p64-t8.json",
+      "input_tokens": 64,
+      "pairs": 256,
+      "active_experts": 56,
+      "max_tokens_per_expert": 11,
+      "hmx_32row_padded_rows_per_projection": 1792,
+      "npu_compute_ms": 15.3197655,
+      "npu_wall_ms": 15.4461715,
+      "invalid_uniform_T64_npu_extrapolation_ms": 2.868124,
+      "cpu_assigned_experts": 53,
+      "cpu_assigned_pairs": 224,
+      "rough_cpu_work_only_ms": 16.660820750000003,
+      "mixed_cpu_compute_ms": 19.61664,
+      "mixed_npu_compute_ms": 1.2542449999999998,
+      "mixed_expert_wall_ms": 19.971979,
+      "baseline_layer_ms": 43.01237,
+      "mixed_layer_ms": 47.478203500000006,
+      "expert_wall_delta_ms": 4.525807500000001,
+      "layer_delta_ms": 4.465833500000009
+    },
+    {
+      "source": "handoff-2026-09-22-threshold-routing/evidence/summary-p128-t8.json",
+      "input_tokens": 128,
+      "pairs": 512,
+      "active_experts": 59,
+      "max_tokens_per_expert": 17,
+      "hmx_32row_padded_rows_per_projection": 1888,
+      "npu_compute_ms": 16.6817965,
+      "npu_wall_ms": 16.920625,
+      "invalid_uniform_T64_npu_extrapolation_ms": 5.736248,
+      "cpu_assigned_experts": 30,
+      "cpu_assigned_pairs": 164,
+      "rough_cpu_work_only_ms": 12.198100906250001,
+      "mixed_cpu_compute_ms": 18.658853999999998,
+      "mixed_npu_compute_ms": 8.927604500000001,
+      "mixed_expert_wall_ms": 19.090468500000004,
+      "baseline_layer_ms": 82.1414065,
+      "mixed_layer_ms": 84.32283799999999,
+      "expert_wall_delta_ms": 2.1698435000000025,
+      "layer_delta_ms": 2.181431499999988
+    }
+  ],
+  "same_graph_2_over_1_E2E_ratio": {
+    "cpu": 1.9881570657629721,
+    "opencl": 1.5857106012256412,
+    "hmx": 1.4695670073988683,
+    "hvx": 1.8541549807850615
+  },
+  "full_model_profile_counts": {
+    "pp128": {
+      "hmx-tiled": 46,
+      "hvx-tiled": 2
+    },
+    "pp512": {
+      "hmx-tiled": 46,
+      "hvx-tiled": 2
+    },
+    "tg4": {
+      "hvx-tiled": 192
+    }
+  }
+}
