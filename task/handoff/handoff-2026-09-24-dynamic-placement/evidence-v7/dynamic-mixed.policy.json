@@ -1,0 +1,62 @@
+{
+  "group_size": 8,
+  "prefill": {
+    "dense": "npu",
+    "routed": "npu",
+    "shared": "gpu",
+    "groups": [
+      {
+        "backend": "cpu",
+        "experts": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "backend": "gpu",
+        "experts": [
+          4,
+          5,
+          6,
+          7
+        ]
+      }
+    ],
+    "layers": {
+      "1": {
+        "shared": "npu"
+      },
+      "2": {
+        "shared": "cpu"
+      }
+    }
+  },
+  "decode": {
+    "dense": "cpu",
+    "routed": "cpu",
+    "shared": "cpu",
+    "steps": {
+      "2": {
+        "shared": "gpu",
+        "groups": [
+          {
+            "backend": "npu",
+            "experts": [
+              0,
+              1,
+              2,
+              3
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "decode_tokens": [
+    279,
+    31774
+  ],
+  "verify_layer": -2
+}
