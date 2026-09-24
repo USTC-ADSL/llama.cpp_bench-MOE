@@ -13,16 +13,24 @@ struct oracle_job {
     std::vector<float> input, output, shared_input, shared_output;
     std::vector<int32_t> indices;
     int stride = 0;
-    oracle_job(bank & b, shared_bank * sw, int rows, int k, int nt, bool native) : dev(b.d) {
+    oracle_job(bank & b, shared_bank * sw, int rows, int k, int nt, bool native, bool single_matmul = false) : dev(b.d) {
         graph = ggml_new_graph_custom(ctx.get(), 64, false);
         if (rows) {
             x = ggml_new_tensor_3d(ctx.get(), GGML_TYPE_F32, b.w[0]->ne[0], 1, rows);
             stride = dev.name == "GPUOpenCL" ? int(b.w[0]->ne[2]) : k;
             ids_storage = ggml_new_tensor_2d(ctx.get(), GGML_TYPE_I32, stride, rows);
             auto * ids = ggml_view_2d(ctx.get(), ids_storage, k, rows, ids_storage->nb[1], 0);
-            auto * u = ggml_mul_mat_id(ctx.get(), b.w[1], x, ids);
-            auto * g = ggml_mul_mat_id(ctx.get(), b.w[0], x, ids);
-            out = ggml_mul_mat_id(ctx.get(), b.w[2], ggml_swiglu_split(ctx.get(), g, u), ids);
+            if (single_matmul && b.w[0]->ne[2] == 1) {
+                require(k == 1, "single Expert requires one route per gathered row");
+                auto * matrix = ggml_reshape_2d(ctx.get(), x, x->ne[0], rows);
+                auto * u = ggml_mul_mat(ctx.get(), b.w[1], matrix);
+                auto * g = ggml_mul_mat(ctx.get(), b.w[0], matrix);
+                out = ggml_mul_mat(ctx.get(), b.w[2], ggml_swiglu_split(ctx.get(), g, u));
+            } else {
+                auto * u = ggml_mul_mat_id(ctx.get(), b.w[1], x, ids);
+                auto * g = ggml_mul_mat_id(ctx.get(), b.w[0], x, ids);
+                out = ggml_mul_mat_id(ctx.get(), b.w[2], ggml_swiglu_split(ctx.get(), g, u), ids);
+            }
             ggml_build_forward_expand(graph, out);
             input.resize(ggml_nelements(x)); indices.resize(stride*rows);
             output.resize(ggml_nelements(out));

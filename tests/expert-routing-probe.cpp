@@ -10,6 +10,17 @@ struct source {
     gguf_context * gguf;
     ggml_context * meta;
     FILE * file;
+    const uint8_t * mapped = nullptr;
+    size_t mapped_size = 0;
+    void read_at(size_t offset, void * dst, size_t bytes) {
+        if (mapped) {
+            require(offset <= mapped_size && bytes <= mapped_size-offset, "weight mapping bounds");
+            std::memcpy(dst, mapped+offset, bytes);
+        } else {
+            require(fseeko(file, off_t(offset), SEEK_SET) == 0, "weight seek failed");
+            require(fread(dst, 1, bytes, file) == bytes, "weight read failed");
+        }
+    }
     ggml_tensor * tensor(const std::string & name) {
         auto * t = ggml_get_tensor(meta, name.c_str());
         require(t != nullptr, "missing model tensor");
@@ -21,8 +32,7 @@ struct source {
         require(i >= 0, "missing GGUF tensor");
         std::vector<uint8_t> bytes(ggml_nbytes(t));
         const auto offset = gguf_get_data_offset(gguf) + gguf_get_tensor_offset(gguf, i);
-        require(fseeko(file, off_t(offset), SEEK_SET) == 0, "weight seek failed");
-        require(fread(bytes.data(), 1, bytes.size(), file) == bytes.size(), "weight read failed");
+        read_at(offset, bytes.data(), bytes.size());
         return bytes;
     }
 };
@@ -61,8 +71,7 @@ struct bank {
                 auto offset = gguf_get_data_offset(s.gguf)+gguf_get_tensor_offset(s.gguf, gguf_find_tensor(s.gguf,t->name));
                 for (size_t i = 0; i < subset->size(); ++i) {
                     require((*subset)[i] >= 0 && (*subset)[i] < original->ne[2], "invalid expert subset");
-                    require(fseeko(s.file, off_t(offset+(*subset)[i]*original->nb[2]), SEEK_SET)==0,"subset seek failed");
-                    require(fread(raw.data()+i*original->nb[2],1,original->nb[2],s.file)==original->nb[2],"subset read failed");
+                    s.read_at(offset+(*subset)[i]*original->nb[2], raw.data()+i*original->nb[2], original->nb[2]);
                 }
             } else { raw = s.read(t->name); }
             ggml_backend_tensor_set(t, raw.data(), 0, raw.size());
