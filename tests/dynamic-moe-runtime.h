@@ -41,6 +41,7 @@ struct dynamic_moe_runtime {
     moe_placement_policy policy;
     int group_size;
     bool decode = false;
+    bool shared_activations = false;
     int step = 0;
     int verify_layer = -1;
     size_t peak_weight_bytes = 0;
@@ -112,21 +113,21 @@ struct dynamic_moe_runtime {
                 int rows=int(pairs[b].size());
                 if (!s.job || s.rows!=rows || s.tokens!=nt) {
                     s.job.reset();
-                    s.job=std::make_unique<oracle_job>(*s.routed,s.shared.get(),rows,1,nt,false,b==0);
+                    s.job=std::make_unique<oracle_job>(*s.routed,s.shared.get(),rows,1,nt,false,b==0,shared_activations);
                     s.rows=rows; s.tokens=nt;
                 }
                 auto & j=*s.job;
-                if (shared) { j.shared_input=x; }
+                if (shared) { j.set_shared_input(x); }
                 for (int r=0;r<rows;++r) {
                     int p=pairs[b][r];
-                    std::copy_n(x.data()+(p/4)*2048,2048,j.input.data()+r*2048);
-                    j.indices[r*j.stride]=local[ids[p]];
+                    std::copy_n(x.data()+(p/4)*2048,2048,j.input_data()+r*2048);
+                    j.index_data()[r*j.stride]=local[ids[p]];
                 }
             }
             size_t weights=0, activations=0;
             for (auto & s:slots) {
                 weights+=s.bytes();
-                if (s.job) { activations+=ggml_backend_buffer_get_size(s.job->buf.get()); }
+                if (s.job) { activations+=s.job->shared_buffer?s.job->shared_buffer->desc.size:ggml_backend_buffer_get_size(s.job->buf.get()); }
             }
             peak_weight_bytes=std::max(peak_weight_bytes,weights);
             double prepare_us=elapsed(prepare);
@@ -145,10 +146,10 @@ struct dynamic_moe_runtime {
                 auto & j=*slots[b].job;
                 for (size_t r=0;r<pairs[b].size();++r) {
                     int p=pairs[b][r]; float weight=probs[(p/4)*60+ids[p]];
-                    for (int c=0;c<2048;++c) { weighted[p*2048+c]=weight*j.output[r*2048+c]; }
+                    for (int c=0;c<2048;++c) { weighted[p*2048+c]=weight*j.output_data()[r*2048+c]; }
                 }
                 if (wave==0 && b==plan.shared) {
-                    shared_output=j.shared_output;
+                    std::copy_n(j.shared_output_data(),shared_output.size(),shared_output.data());
                 }
             }
             wave_records.push_back({{"wave",wave},{"prepare_us",prepare_us},{"cache_misses",misses},

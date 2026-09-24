@@ -62,7 +62,8 @@ struct partitioned_ffn {
     std::vector<int32_t> expected_ids;
     json last;
     size_t allocations=0;
-    partitioned_ffn(device * devs[3],source & src,int layer,int tokens,const placement & p,bool compact) : il(layer),nt(tokens),plan(p) {
+    bool shared_activations=false;
+    partitioned_ffn(device * devs[3],source & src,int layer,int tokens,const placement & p,bool compact,bool shared_buffers=false) : il(layer),nt(tokens),plan(p),shared_activations(shared_buffers) {
         require(plan.owner.size()==60 && plan.shared>=0 && plan.shared<3,"invalid placement");
         for(int b=0;b<3;++b) {
             local[b].fill(-1); std::vector<int> subset;
@@ -90,15 +91,15 @@ struct partitioned_ffn {
             if(pairs[b].empty() && b!=plan.shared) { continue; }
             int rows=pairs[b].empty()?0:native?nt:int(pairs[b].size()); int k=native?4:1;
             auto & ptr=jobs[b][{rows,k}];
-            if(!ptr) { ptr=std::make_unique<oracle_job>(*banks[b],b==plan.shared?shared.get():nullptr,rows,k,nt,native); ++allocations; }
-            work[b]=ptr.get(); auto & j=*ptr; j.shared_input=x;
+            if(!ptr) { ptr=std::make_unique<oracle_job>(*banks[b],b==plan.shared?shared.get():nullptr,rows,k,nt,native,false,shared_activations); ++allocations; }
+            work[b]=ptr.get(); auto & j=*ptr; j.set_shared_input(x);
             if(native && j.x) {
-                j.input=x;
-                for(int t=0;t<nt;++t) { for(int kk=0;kk<4;++kk) { j.indices[t*j.stride+kk]=local[b][ids[t*4+kk]]; } }
+                std::copy(x.begin(),x.end(),j.input_data());
+                for(int t=0;t<nt;++t) { for(int kk=0;kk<4;++kk) { j.index_data()[t*j.stride+kk]=local[b][ids[t*4+kk]]; } }
             } else {
                 for(size_t i=0;i<pairs[b].size();++i) {
                     int p=pairs[b][i]; require(local[b][ids[p]]>=0,"expert not resident");
-                    std::copy_n(x.data()+(p/4)*2048,2048,j.input.data()+i*2048); j.indices[i*j.stride]=local[b][ids[p]];
+                    std::copy_n(x.data()+(p/4)*2048,2048,j.input_data()+i*2048); j.index_data()[i*j.stride]=local[b][ids[p]];
                 }
             }
         }
@@ -111,13 +112,13 @@ struct partitioned_ffn {
         execute(inline_b); for(auto & f:futures) { if(f.valid()) { f.get(); } }
         double wall=elapsed(start); start=timer::now();
         std::vector<const float *> outputs(ids.size());
-        for(int b=0;b<3;++b) { for(size_t i=0;i<pairs[b].size();++i) { outputs[pairs[b][i]]=work[b]->output.data()+i*2048; } }
+        for(int b=0;b<3;++b) { for(size_t i=0;i<pairs[b].size();++i) { outputs[pairs[b][i]]=work[b]->output_data()+i*2048; } }
         std::vector<float> result(x.size(),0);
         for(size_t p=0;p<ids.size();++p) {
             float weight=probs[(p/4)*60+ids[p]];
             for(int c=0;c<2048;++c) { result[(p/4)*2048+c]+=weight*outputs[p][c]; }
         }
-        for(size_t i=0;i<result.size();++i) { result[i]+=work[plan.shared]->shared_output[i]; }
+        for(size_t i=0;i<result.size();++i) { result[i]+=work[plan.shared]->shared_output_data()[i]; }
         if(record) {
             int changed=0; if(expected_ids.size()==ids.size()) { for(size_t i=0;i<ids.size();++i) { changed+=ids[i]!=expected_ids[i]; } }
             last={{"layer",il},{"tokens",nt},{"gather_us",gather},{"expert_wall_us",wall},{"combine_us",elapsed(start)},
@@ -217,6 +218,8 @@ int main(int argc,char ** argv) {
         require(nt>0 && reps>0,"tokens and repetitions must be positive");
         if(mode=="search") { return search_all(argv[1],argv[7],argv[4]); }
         bool custom=mode=="custom" || mode=="branch" || mode=="custom-npu";
+        bool shared_activations=std::getenv("MOE_SHARED_ACTIVATIONS") && std::string(std::getenv("MOE_SHARED_ACTIVATIONS"))=="1";
+        require(!shared_activations || custom,"shared activations require custom mode");
         bool accelerator=mode=="npu" || custom;
         require(custom || mode=="capture" || mode=="cpu" || mode=="npu","invalid mode");
         json plans; if(custom) { std::ifstream in(argv[7]); in>>plans; require(plans["tokens"].get<int>()==nt && plans["layers"].size()==24,"plan shape mismatch"); }
@@ -245,7 +248,7 @@ int main(int argc,char ** argv) {
             for(int b=0;b<3;++b) { devices[b]=std::make_unique<device>(names[b]); devs[b]=devices[b].get(); }
             for(int il=0;il<24;++il) {
                 placement p=mode=="custom-npu"?placement{"all_npu",std::vector<int>(60,1),1}:parse_plan(plans["layers"][il][mode=="branch"?"branch":"selected"]);
-                engine.layers.push_back(std::make_unique<partitioned_ffn>(devs,src,il,plans["layers"][il]["tokens"],p,true));
+                engine.layers.push_back(std::make_unique<partitioned_ffn>(devs,src,il,plans["layers"][il]["tokens"],p,true,shared_activations));
                 engine.layers.back()->expected_ids=plans["layers"][il]["ids"].get<std::vector<int32_t>>();
                 fprintf(stderr,"RESIDENT layer=%d plan=%s\n",il,p.name.c_str());
             }
@@ -261,6 +264,7 @@ int main(int argc,char ** argv) {
         int nv=llama_vocab_n_tokens(vocab);
         json report={{"tokens",nt},{"token_ids",tokens},{"mode",mode},{"samples",json::array()},
             {"scope","native complete model prefill including last-token logits and retained KV; dynamic real routing; weights resident; context reset outside timing"}};
+        report["shared_activations"]=shared_activations;
         if(custom) {
             report["placements"]=json::array();
             for(auto & l:engine.layers) {
@@ -303,6 +307,12 @@ int main(int argc,char ** argv) {
         } else { report["timing"]=stats(times,nt); }
         std::ofstream logits_file(std::string(argv[4])+".logits.bin",std::ios::binary); binary_write(logits_file,logits);
         report["top1"]=std::max_element(logits.begin(),logits.end())-logits.begin();
+        size_t activation_bytes=0;
+        for(auto & l:engine.layers) { for(auto & cache:l->jobs) { for(auto & entry:cache) {
+            auto & j=*entry.second;
+            activation_bytes+=j.shared_buffer?j.shared_buffer->desc.size:ggml_backend_buffer_get_size(j.buf.get());
+        } } }
+        report["expert_activation_buffer_bytes"]=activation_bytes;
         std::ifstream status("/proc/self/status"); report["process_status"]=std::string((std::istreambuf_iterator<char>(status)),{});
         std::ofstream out(argv[4]); out<<report.dump(2)<<'\n'; require(out.good(),"full-model report write failed");
         if(mode!="capture") { fprintf(stderr,"FULL_RESULT %s nt=%d median_ms=%.3f tokens_s=%.3f\n",mode.c_str(),nt,report["timing"]["median_us"].get<double>()/1000,report["timing"]["expert_tokens_per_second"].get<double>()); }

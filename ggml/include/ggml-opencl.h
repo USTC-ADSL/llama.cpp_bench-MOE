@@ -3,6 +3,7 @@
 
 #include "ggml.h"
 #include "ggml-backend.h"
+#include "ggml-shared-dma.h"
 
 #ifdef  __cplusplus
 extern "C" {
@@ -18,6 +19,11 @@ GGML_BACKEND_API ggml_backend_buffer_type_t ggml_backend_opencl_buffer_type(void
 GGML_BACKEND_API ggml_backend_buffer_type_t ggml_backend_opencl_host_buffer_type(void);
 
 GGML_BACKEND_API ggml_backend_reg_t ggml_backend_opencl_reg(void);
+
+// QCOM IO-coherent DMA import, restricted to F32/I32 activation tensors.
+// Returns NULL when unsupported; callers must not silently claim zero-copy.
+GGML_BACKEND_API ggml_backend_buffer_t ggml_backend_opencl_import_shared_dma_compute_buffer(
+        ggml_backend_t backend, const struct ggml_backend_shared_dma_buffer_desc * desc);
 
 #ifdef  __cplusplus
 }

@@ -2,18 +2,20 @@
 #define main legacy_routing_main
 #include "expert-routing-probe.cpp"
 #undef main
+#include "shared-activation-buffer.h"
 
 struct oracle_job {
     device & dev;
     ggml_context_ptr ctx = context(64, 64);
     ggml_backend_buffer_ptr buf;
+    std::unique_ptr<shared_activation_buffer> shared_buffer;
     ggml_tensor * x = nullptr, * ids_storage = nullptr, * out = nullptr;
     ggml_tensor * sx = nullptr, * sout = nullptr;
     ggml_cgraph * graph;
     std::vector<float> input, output, shared_input, shared_output;
     std::vector<int32_t> indices;
     int stride = 0;
-    oracle_job(bank & b, shared_bank * sw, int rows, int k, int nt, bool native, bool single_matmul = false) : dev(b.d) {
+    oracle_job(bank & b, shared_bank * sw, int rows, int k, int nt, bool native, bool single_matmul = false, bool shared_activations = false) : dev(b.d) {
         graph = ggml_new_graph_custom(ctx.get(), 64, false);
         if (rows) {
             x = ggml_new_tensor_3d(ctx.get(), GGML_TYPE_F32, b.w[0]->ne[0], 1, rows);
@@ -32,8 +34,10 @@ struct oracle_job {
                 out = ggml_mul_mat_id(ctx.get(), b.w[2], ggml_swiglu_split(ctx.get(), g, u), ids);
             }
             ggml_build_forward_expand(graph, out);
-            input.resize(ggml_nelements(x)); indices.resize(stride*rows);
-            output.resize(ggml_nelements(out));
+            if (!shared_activations) {
+                input.resize(ggml_nelements(x)); indices.resize(stride*rows);
+                output.resize(ggml_nelements(out));
+            }
         }
         if (sw) {
             sx = native && x ? ggml_reshape_2d(ctx.get(), x, x->ne[0], nt) :
@@ -44,7 +48,7 @@ struct oracle_job {
             auto * r = ggml_mul_mat(ctx.get(), sw->w[3], sx);
             sout = ggml_mul(ctx.get(), d, ggml_div(ctx.get(), ggml_silu(ctx.get(), r), r));
             ggml_build_forward_expand(graph, sout);
-            shared_input.resize(ggml_nelements(sx)); shared_output.resize(ggml_nelements(sout));
+            if (!shared_activations) { shared_input.resize(ggml_nelements(sx)); shared_output.resize(ggml_nelements(sout)); }
         }
         for (int i = 0; i < ggml_graph_n_nodes(graph); ++i) {
             auto * node = ggml_graph_node(graph, i);
@@ -53,11 +57,29 @@ struct oracle_job {
                 throw std::runtime_error("unsupported oracle graph");
             }
         }
-        buf.reset(ggml_backend_alloc_ctx_tensors_from_buft(ctx.get(), ggml_backend_dev_buffer_type(dev.dev)));
-        require(buf != nullptr, "oracle activation allocation failed");
+        if (shared_activations) {
+            shared_buffer=shared_activation_buffer::allocate(dev,ctx.get());
+            if (ids_storage) { std::memset(ids_storage->data,0,ggml_nbytes(ids_storage)); }
+        } else {
+            buf.reset(ggml_backend_alloc_ctx_tensors_from_buft(ctx.get(), ggml_backend_dev_buffer_type(dev.dev)));
+            require(buf != nullptr, "oracle activation allocation failed");
+        }
+    }
+    float * input_data() { return shared_buffer?static_cast<float *>(x->data):input.data(); }
+    int32_t * index_data() { return shared_buffer?static_cast<int32_t *>(ids_storage->data):indices.data(); }
+    const float * output_data() const { return shared_buffer?static_cast<float *>(out->data):output.data(); }
+    const float * shared_output_data() const { return shared_buffer?static_cast<float *>(sout->data):shared_output.data(); }
+    void set_shared_input(const std::vector<float> & values) {
+        if (sx && !sx->view_src) {
+            std::copy(values.begin(),values.end(),shared_buffer?static_cast<float *>(sx->data):shared_input.data());
+        }
     }
     std::array<double, 3> run() {
         auto start = timer::now();
+        if (shared_buffer) {
+            dev.compute(graph);
+            return {0,elapsed(start),0};
+        }
         if (x) {
             ggml_backend_tensor_set(x, input.data(), 0, input.size()*sizeof(float));
             ggml_backend_tensor_set(ids_storage, indices.data(), 0, indices.size()*sizeof(int32_t));

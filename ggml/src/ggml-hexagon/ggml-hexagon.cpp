@@ -6199,8 +6199,21 @@ static bool ggml_backend_hexagon_comm_allreduce_tensor(void * comm_ctx_v, struct
     return true;
 }
 
+bool ggml_backend_hexagon_buffer_export_shared_dma(
+        ggml_backend_buffer_t buffer, ggml_backend_shared_dma_buffer_desc * desc) {
+    if (!buffer || !desc || buffer->iface.free_buffer != ggml_backend_hexagon_buffer_free_buffer) {
+        return false;
+    }
+    auto * shared = static_cast<ggml_hexagon_shared_buffer *>(buffer->context);
+    *desc = {shared->base(), shared->fd(), buffer->size};
+    return desc->host_ptr && desc->dma_buf_fd >= 0;
+}
+
 static void * ggml_backend_hexagon_get_proc_address(ggml_backend_reg_t reg, const char * name) {
     GGML_UNUSED(reg);
+    if (strcmp(name, "ggml_backend_hexagon_buffer_export_shared_dma") == 0) {
+        return (void *) ggml_backend_hexagon_buffer_export_shared_dma;
+    }
     if (strcmp(name, "ggml_backend_comm_init") == 0) {
         return (void *) ggml_backend_hexagon_comm_init;
     }

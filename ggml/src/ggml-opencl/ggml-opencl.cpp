@@ -33,6 +33,10 @@ typedef const void * (*get_adreno_bin_kernel_func_t)(
 );
 
 #include <CL/cl.h>
+#include <CL/cl_ext.h>
+#ifndef _WIN32
+#include <unistd.h>
+#endif
 #include "ggml-opencl-budget.h"
 
 #include <inttypes.h>
@@ -9298,6 +9302,7 @@ struct ggml_backend_opencl_buffer_context {
     // allocation are enabled.
     std::vector<cl_mem> img;
     std::string name;
+    void * shared_host_base = nullptr;
 };
 
 static void ggml_backend_opencl_buffer_free_buffer(ggml_backend_buffer_t buffer) {
@@ -9306,12 +9311,17 @@ static void ggml_backend_opencl_buffer_free_buffer(ggml_backend_buffer_t buffer)
 }
 
 static void * ggml_backend_opencl_buffer_get_base(ggml_backend_buffer_t buffer) {
+    auto * ctx = static_cast<ggml_backend_opencl_buffer_context *>(buffer->context);
+    if (ctx->shared_host_base) { return ctx->shared_host_base; }
     ggml_backend_opencl_device_context * dev_ctx = (ggml_backend_opencl_device_context *) buffer->buft->device->context;
     return (void *) (uintptr_t) dev_ctx->backend_ctx->alignment;
 }
 
 static enum ggml_status ggml_backend_opencl_buffer_init_tensor(ggml_backend_buffer_t buffer, ggml_tensor * tensor) {
     ggml_backend_opencl_buffer_context * ctx = (ggml_backend_opencl_buffer_context *) buffer->context;
+    if (ctx->shared_host_base && tensor->type != GGML_TYPE_F32 && tensor->type != GGML_TYPE_I32) {
+        return GGML_STATUS_FAILED;
+    }
 
     if (tensor->view_src != nullptr) {
         GGML_ASSERT(tensor->view_src->buffer->buft == buffer->buft);
@@ -12536,11 +12546,67 @@ static ggml_backend_dev_t ggml_backend_opencl_reg_device_get(ggml_backend_reg_t 
     GGML_UNUSED(index);
 }
 
+ggml_backend_buffer_t ggml_backend_opencl_import_shared_dma_compute_buffer(
+        ggml_backend_t backend, const ggml_backend_shared_dma_buffer_desc * desc) {
+#ifdef _WIN32
+    GGML_UNUSED(backend); GGML_UNUSED(desc);
+    return nullptr;
+#else
+    if (!backend || !ggml_backend_is_opencl(backend) || !desc || !desc->host_ptr || desc->dma_buf_fd < 0 || !desc->size) {
+        return nullptr;
+    }
+    auto * ctx = ggml_cl_init(backend->device);
+    if (reinterpret_cast<uintptr_t>(desc->host_ptr) % ctx->alignment) { return nullptr; }
+    size_t count = 0;
+    if (clGetDeviceInfo(ctx->device, CL_DEVICE_EXTENSIONS, 0, nullptr, &count) != CL_SUCCESS) { return nullptr; }
+    std::vector<char> extensions(count + 1, 0);
+    if (clGetDeviceInfo(ctx->device, CL_DEVICE_EXTENSIONS, count, extensions.data(), nullptr) != CL_SUCCESS) { return nullptr; }
+    auto has = [&](const char * name) { return strstr(extensions.data(), name) != nullptr; };
+    if (!has("cl_qcom_ext_host_ptr") || !has("cl_qcom_ext_host_ptr_iocoherent") ||
+        (!has("cl_qcom_dmabuf_host_ptr") && !has("cl_qcom_ion_host_ptr"))) { return nullptr; }
+    if (!ctx->program_cache_initialized) {
+        ctx->program_cache = cl_program_cache_init(ctx->device);
+        ctx->program_cache_initialized = true;
+    }
+    load_cl_kernels(ctx);
+    int fd = dup(desc->dma_buf_fd);
+    if (fd < 0) { return nullptr; }
+    // QCOM DMA-BUF and ION host-pointer descriptors have the same field layout.
+    // This mirrors the reference MOE demo's explicit IO-coherent fd import.
+    struct dma_host_ptr { cl_mem_ext_host_ptr ext; int fd; void * host; } imported{};
+    imported.ext.allocation_type = has("cl_qcom_dmabuf_host_ptr") ? 0x411D : CL_MEM_ION_HOST_PTR_QCOM;
+    imported.ext.host_cache_policy = CL_MEM_HOST_IOCOHERENT_QCOM;
+    imported.fd = fd; imported.host = desc->host_ptr;
+    cl_int error = CL_SUCCESS;
+    cl_mem memory = clCreateBuffer(ctx->context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR | CL_MEM_EXT_HOST_PTR_QCOM,
+                                  desc->size, &imported, &error);
+    if (error != CL_SUCCESS || !memory) { close(fd); return nullptr; }
+    auto * retained_fd = new int(fd);
+    error = clSetMemObjectDestructorCallback(memory, [](cl_mem, void * opaque) {
+        auto * saved = static_cast<int *>(opaque); close(*saved); delete saved;
+    }, retained_fd);
+    if (error != CL_SUCCESS) { clReleaseMemObject(memory); close(fd); delete retained_fd; return nullptr; }
+    auto * buffer_ctx = new ggml_backend_opencl_buffer_context(memory);
+    buffer_ctx->shared_host_base = desc->host_ptr;
+    auto result = ggml_backend_buffer_init(ggml_backend_dev_buffer_type(backend->device),
+        ggml_backend_opencl_buffer_interface, buffer_ctx, desc->size);
+    ggml_backend_buffer_set_usage(result, GGML_BACKEND_BUFFER_USAGE_COMPUTE);
+    return result;
+#endif
+}
+
+static void * ggml_backend_opencl_get_proc_address(ggml_backend_reg_t, const char * name) {
+    if (strcmp(name, "ggml_backend_opencl_import_shared_dma_compute_buffer") == 0) {
+        return (void *) ggml_backend_opencl_import_shared_dma_compute_buffer;
+    }
+    return nullptr;
+}
+
 static struct ggml_backend_reg_i ggml_backend_opencl_reg_i = {
     /* .get_name         = */ ggml_backend_opencl_reg_get_name,
     /* .device_count     = */ ggml_backend_opencl_reg_device_count,
     /* .device_get       = */ ggml_backend_opencl_reg_device_get,
-    /* .get_proc_address = */ NULL,
+    /* .get_proc_address = */ ggml_backend_opencl_get_proc_address,
 };
 
 ggml_backend_reg_t ggml_backend_opencl_reg(void) {

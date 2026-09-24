@@ -42,6 +42,9 @@ def main():
            "GGML_HEXAGON_DEVICES=1", "GGML_HEXAGON_NHMX=1", "GGML_HEXAGON_MM_SELECT=3", "GGML_HEXAGON_PROFILE=0"]
 
     def run(tag, config, mode):
+        config = dict(config)
+        if mode == "dynamic" and os.environ.get("DYNAMIC_SHARED_ACTIVATIONS") == "1":
+            config["shared_activations"] = True
         path = OUT / f"{tag}.policy.json"
         assert not (OUT / f"{tag}.json").exists(), "refusing to overwrite evidence"
         path.write_text(json.dumps(config, indent=2)+"\n")

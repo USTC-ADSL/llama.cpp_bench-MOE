@@ -75,6 +75,7 @@ int main(int argc,char ** argv) {
             runtime=std::make_unique<dynamic_moe_runtime>(src,devs,config.value("group_size",8),
                 [&](const moe_route_request & request) { return configured_plan(config,request); });
             runtime->verify_layer=config.value("verify_layer",-1);
+            runtime->shared_activations=config.value("shared_activations",false);
         }
         ggml_backend_dev_t target[2]{};
         std::vector<std::string> patterns;
@@ -128,7 +129,8 @@ int main(int argc,char ** argv) {
         require(n>=nt,"prompt too short"); tokens.resize(nt);
         int nv=llama_vocab_n_tokens(vocab);
         json report={{"mode",argv[7]},{"config",config},{"tokens",tokens},{"load_us",load_us},
-            {"scope","complete Transformer prefill and decode; conversion included; explicit activation copies"},
+            {"scope","complete Transformer prefill and decode; conversion included; host gather and reduction"},
+            {"shared_activations",dynamic && runtime->shared_activations},
             {"samples",json::array()}};
         std::ofstream logits_file(std::string(argv[6])+".logits.bin",std::ios::binary);
         llama_token next=0;
