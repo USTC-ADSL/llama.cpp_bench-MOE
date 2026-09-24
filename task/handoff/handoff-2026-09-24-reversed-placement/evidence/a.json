@@ -1,0 +1,3939 @@
+{
+  "tokens": 128,
+  "layer": 0,
+  "order": 0,
+  "plans": [
+    {
+      "name": "npu_tail24_cpu_shared_gpu",
+      "owner": [
+        1,
+        1,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        1,
+        1,
+        0,
+        1,
+        0,
+        1,
+        1,
+        0,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0,
+        1,
+        0,
+        1,
+        1,
+        0,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0,
+        0,
+        1
+      ],
+      "shared": 2
+    },
+    {
+      "name": "cpu_fixed_gpu_remainder_shared_npu",
+      "owner": [
+        2,
+        2,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0,
+        2,
+        2,
+        2,
+        0,
+        0,
+        2,
+        2,
+        2,
+        2,
+        0,
+        2,
+        0,
+        2,
+        2,
+        0,
+        2,
+        0,
+        0,
+        2,
+        2,
+        0,
+        2,
+        0,
+        2,
+        2,
+        0,
+        2,
+        0,
+        2,
+        2,
+        2,
+        2,
+        0,
+        2,
+        2,
+        2,
+        2,
+        0,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        0,
+        0,
+        2
+      ],
+      "shared": 1
+    }
+  ],
+  "scope": "paired complete FFN replay; fixed CPU Expert IDs and real captured routes; compact resident banks; all transfers/join included; attention excluded",
+  "samples": [
+    {
+      "round": 0,
+      "policy": 0,
+      "total_us": 11477.083,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 258.281,
+        "expert_wall_us": 10948.75,
+        "combine_us": 259.115,
+        "backend_phases_us": [
+          [
+            118.802,
+            10118.438,
+            43.385
+          ],
+          [
+            300.468,
+            10430.469,
+            135.313
+          ],
+          [
+            132.813,
+            6844.323,
+            63.854
+          ]
+        ],
+        "intervals_us": [
+          [
+            60.0,
+            10340.885
+          ],
+          [
+            70.469,
+            10936.823
+          ],
+          [
+            57.187,
+            7098.385
+          ]
+        ],
+        "pairs": [
+          119,
+          393,
+          0
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.008414809734507719,
+        "worst_token_nrmse": 0.01599392806830836,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 104
+    },
+    {
+      "round": 0,
+      "policy": 1,
+      "total_us": 19271.927,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 264.219,
+        "expert_wall_us": 18791.615,
+        "combine_us": 206.354,
+        "backend_phases_us": [
+          [
+            90.26,
+            9913.907,
+            41.718
+          ],
+          [
+            139.896,
+            2207.916,
+            72.188
+          ],
+          [
+            333.281,
+            18268.437,
+            110.312
+          ]
+        ],
+        "intervals_us": [
+          [
+            54.271,
+            10100.208
+          ],
+          [
+            94.115,
+            2514.271
+          ],
+          [
+            77.083,
+            18789.583
+          ]
+        ],
+        "pairs": [
+          119,
+          0,
+          393
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.005908159830098697,
+        "worst_token_nrmse": 0.010042561758502228,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 112
+    },
+    {
+      "round": 1,
+      "policy": 1,
+      "total_us": 18187.812,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 221.146,
+        "expert_wall_us": 17803.593,
+        "combine_us": 154.896,
+        "backend_phases_us": [
+          [
+            204.219,
+            10453.386,
+            41.094
+          ],
+          [
+            252.656,
+            2439.688,
+            94.687
+          ],
+          [
+            165.156,
+            17452.552,
+            108.594
+          ]
+        ],
+        "intervals_us": [
+          [
+            179.01,
+            10878.697
+          ],
+          [
+            194.791,
+            2982.447
+          ],
+          [
+            75.625,
+            17802.031
+          ]
+        ],
+        "pairs": [
+          119,
+          0,
+          393
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.005908159830098697,
+        "worst_token_nrmse": 0.010042561758502228,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 113
+    },
+    {
+      "round": 1,
+      "policy": 0,
+      "total_us": 11534.011,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 213.594,
+        "expert_wall_us": 11030.989,
+        "combine_us": 268.646,
+        "backend_phases_us": [
+          [
+            96.198,
+            10592.813,
+            39.01
+          ],
+          [
+            237.916,
+            10550.573,
+            136.615
+          ],
+          [
+            33.542,
+            6867.5,
+            48.49
+          ]
+        ],
+        "intervals_us": [
+          [
+            91.145,
+            10819.479
+          ],
+          [
+            91.927,
+            11017.239
+          ],
+          [
+            57.968,
+            7008.072
+          ]
+        ],
+        "pairs": [
+          119,
+          393,
+          0
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.008414809734507719,
+        "worst_token_nrmse": 0.01599392806830836,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 105
+    },
+    {
+      "round": 2,
+      "policy": 0,
+      "total_us": 11593.646,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 265.938,
+        "expert_wall_us": 11059.479,
+        "combine_us": 257.24,
+        "backend_phases_us": [
+          [
+            105.365,
+            10107.552,
+            60.156
+          ],
+          [
+            297.136,
+            10477.187,
+            137.188
+          ],
+          [
+            43.437,
+            6922.343,
+            105.782
+          ]
+        ],
+        "intervals_us": [
+          [
+            132.76,
+            10406.042
+          ],
+          [
+            137.812,
+            11049.375
+          ],
+          [
+            93.125,
+            7164.844
+          ]
+        ],
+        "pairs": [
+          119,
+          393,
+          0
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.008414809734507719,
+        "worst_token_nrmse": 0.01599392806830836,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 104
+    },
+    {
+      "round": 2,
+      "policy": 1,
+      "total_us": 18797.813,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 278.489,
+        "expert_wall_us": 18351.823,
+        "combine_us": 158.125,
+        "backend_phases_us": [
+          [
+            146.615,
+            9915.521,
+            42.656
+          ],
+          [
+            174.114,
+            2234.271,
+            61.719
+          ],
+          [
+            357.136,
+            17815.364,
+            110.416
+          ]
+        ],
+        "intervals_us": [
+          [
+            67.343,
+            10172.239
+          ],
+          [
+            81.875,
+            2552.239
+          ],
+          [
+            66.77,
+            18349.791
+          ]
+        ],
+        "pairs": [
+          119,
+          0,
+          393
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.005908159830098697,
+        "worst_token_nrmse": 0.010042561758502228,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 112
+    },
+    {
+      "round": 3,
+      "policy": 1,
+      "total_us": 18672.032,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 212.969,
+        "expert_wall_us": 18273.906,
+        "combine_us": 159.375,
+        "backend_phases_us": [
+          [
+            160.469,
+            10592.813,
+            41.614
+          ],
+          [
+            176.042,
+            2194.844,
+            70.521
+          ],
+          [
+            225.26,
+            17862.969,
+            108.49
+          ]
+        ],
+        "intervals_us": [
+          [
+            96.354,
+            10891.771
+          ],
+          [
+            111.354,
+            2552.917
+          ],
+          [
+            75.625,
+            18272.448
+          ]
+        ],
+        "pairs": [
+          119,
+          0,
+          393
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.005908159830098697,
+        "worst_token_nrmse": 0.010042561758502228,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 114
+    },
+    {
+      "round": 3,
+      "policy": 0,
+      "total_us": 11639.01,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 210.365,
+        "expert_wall_us": 11145.729,
+        "combine_us": 268.437,
+        "backend_phases_us": [
+          [
+            90.313,
+            10448.281,
+            43.907
+          ],
+          [
+            276.51,
+            10576.719,
+            137.656
+          ],
+          [
+            31.615,
+            6773.698,
+            99.062
+          ]
+        ],
+        "intervals_us": [
+          [
+            112.291,
+            10695.104
+          ],
+          [
+            144.583,
+            11135.572
+          ],
+          [
+            62.343,
+            6967.239
+          ]
+        ],
+        "pairs": [
+          119,
+          393,
+          0
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.008414809734507719,
+        "worst_token_nrmse": 0.01599392806830836,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 104
+    },
+    {
+      "round": 4,
+      "policy": 0,
+      "total_us": 11529.531,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 277.813,
+        "expert_wall_us": 10978.385,
+        "combine_us": 258.854,
+        "backend_phases_us": [
+          [
+            112.969,
+            10239.323,
+            36.927
+          ],
+          [
+            297.5,
+            10362.812,
+            207.188
+          ],
+          [
+            132.656,
+            6853.698,
+            64.063
+          ]
+        ],
+        "intervals_us": [
+          [
+            71.666,
+            10460.937
+          ],
+          [
+            95.104,
+            10962.656
+          ],
+          [
+            71.979,
+            7122.812
+          ]
+        ],
+        "pairs": [
+          119,
+          393,
+          0
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.008414809734507719,
+        "worst_token_nrmse": 0.01599392806830836,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 105
+    },
+    {
+      "round": 4,
+      "policy": 1,
+      "total_us": 18852.709,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 261.718,
+        "expert_wall_us": 18423.646,
+        "combine_us": 158.646,
+        "backend_phases_us": [
+          [
+            121.667,
+            10034.375,
+            43.125
+          ],
+          [
+            159.219,
+            2200.312,
+            71.25
+          ],
+          [
+            359.479,
+            17882.604,
+            113.49
+          ]
+        ],
+        "intervals_us": [
+          [
+            61.719,
+            10261.042
+          ],
+          [
+            84.167,
+            2515.0
+          ],
+          [
+            65.938,
+            18421.771
+          ]
+        ],
+        "pairs": [
+          119,
+          0,
+          393
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.005908159830098697,
+        "worst_token_nrmse": 0.010042561758502228,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 114
+    },
+    {
+      "round": 5,
+      "policy": 1,
+      "total_us": 18413.333,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 222.083,
+        "expert_wall_us": 18018.75,
+        "combine_us": 163.75,
+        "backend_phases_us": [
+          [
+            151.927,
+            10080.677,
+            43.333
+          ],
+          [
+            173.437,
+            2226.25,
+            71.25
+          ],
+          [
+            227.605,
+            17598.125,
+            114.844
+          ]
+        ],
+        "intervals_us": [
+          [
+            100.468,
+            10376.875
+          ],
+          [
+            119.375,
+            2590.573
+          ],
+          [
+            76.145,
+            18017.031
+          ]
+        ],
+        "pairs": [
+          119,
+          0,
+          393
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.005908159830098697,
+        "worst_token_nrmse": 0.010042561758502228,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 112
+    },
+    {
+      "round": 5,
+      "policy": 0,
+      "total_us": 12102.187,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 211.25,
+        "expert_wall_us": 11606.614,
+        "combine_us": 264.427,
+        "backend_phases_us": [
+          [
+            115.521,
+            11034.011,
+            41.927
+          ],
+          [
+            328.125,
+            10520.937,
+            144.063
+          ],
+          [
+            33.438,
+            7068.958,
+            73.802
+          ]
+        ],
+        "intervals_us": [
+          [
+            399.583,
+            11591.354
+          ],
+          [
+            423.541,
+            11416.979
+          ],
+          [
+            86.718,
+            7263.177
+          ]
+        ],
+        "pairs": [
+          119,
+          393,
+          0
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.008414809734507719,
+        "worst_token_nrmse": 0.01599392806830836,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 105
+    },
+    {
+      "round": 6,
+      "policy": 0,
+      "total_us": 11586.563,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 262.187,
+        "expert_wall_us": 11051.25,
+        "combine_us": 261.563,
+        "backend_phases_us": [
+          [
+            91.407,
+            10142.5,
+            37.187
+          ],
+          [
+            294.219,
+            10501.718,
+            137.136
+          ],
+          [
+            131.302,
+            6901.198,
+            90.261
+          ]
+        ],
+        "intervals_us": [
+          [
+            73.75,
+            10345.156
+          ],
+          [
+            105.469,
+            11038.594
+          ],
+          [
+            87.604,
+            7210.625
+          ]
+        ],
+        "pairs": [
+          119,
+          393,
+          0
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.008414809734507719,
+        "worst_token_nrmse": 0.01599392806830836,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 105
+    },
+    {
+      "round": 6,
+      "policy": 1,
+      "total_us": 19545.885,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 261.719,
+        "expert_wall_us": 18735.937,
+        "combine_us": 525.105,
+        "backend_phases_us": [
+          [
+            137.187,
+            9952.605,
+            41.718
+          ],
+          [
+            158.907,
+            2167.291,
+            58.177
+          ],
+          [
+            342.031,
+            18018.959,
+            274.479
+          ]
+        ],
+        "intervals_us": [
+          [
+            99.427,
+            10231.146
+          ],
+          [
+            117.864,
+            2502.239
+          ],
+          [
+            98.177,
+            18734.271
+          ]
+        ],
+        "pairs": [
+          119,
+          0,
+          393
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.005908159830098697,
+        "worst_token_nrmse": 0.010042561758502228,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 112
+    },
+    {
+      "round": 7,
+      "policy": 1,
+      "total_us": 18981.615,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 497.969,
+        "expert_wall_us": 18214.271,
+        "combine_us": 256.146,
+        "backend_phases_us": [
+          [
+            129.531,
+            9965.938,
+            40.937
+          ],
+          [
+            144.114,
+            2285.052,
+            69.375
+          ],
+          [
+            327.5,
+            17586.562,
+            142.032
+          ]
+        ],
+        "intervals_us": [
+          [
+            172.969,
+            10309.584
+          ],
+          [
+            207.084,
+            2705.834
+          ],
+          [
+            157.084,
+            18213.438
+          ]
+        ],
+        "pairs": [
+          119,
+          0,
+          393
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.005908159830098697,
+        "worst_token_nrmse": 0.010042561758502228,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 112
+    },
+    {
+      "round": 7,
+      "policy": 0,
+      "total_us": 11899.844,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 263.177,
+        "expert_wall_us": 11371.25,
+        "combine_us": 253.229,
+        "backend_phases_us": [
+          [
+            156.563,
+            10998.958,
+            38.802
+          ],
+          [
+            375.938,
+            10431.302,
+            159.583
+          ],
+          [
+            195.0,
+            6780.469,
+            82.5
+          ]
+        ],
+        "intervals_us": [
+          [
+            161.51,
+            11356.354
+          ],
+          [
+            220.729,
+            11187.968
+          ],
+          [
+            163.229,
+            7221.666
+          ]
+        ],
+        "pairs": [
+          119,
+          393,
+          0
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.008414809734507719,
+        "worst_token_nrmse": 0.01599392806830836,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 104
+    },
+    {
+      "round": 8,
+      "policy": 0,
+      "total_us": 13731.25,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 266.094,
+        "expert_wall_us": 13200.0,
+        "combine_us": 253.438,
+        "backend_phases_us": [
+          [
+            74.219,
+            11984.532,
+            37.968
+          ],
+          [
+            223.541,
+            12484.948,
+            137.969
+          ],
+          [
+            93.854,
+            8151.719,
+            62.24
+          ]
+        ],
+        "intervals_us": [
+          [
+            53.906,
+            12150.938
+          ],
+          [
+            342.813,
+            13189.375
+          ],
+          [
+            60.0,
+            8367.969
+          ]
+        ],
+        "pairs": [
+          119,
+          393,
+          0
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.008414809734507719,
+        "worst_token_nrmse": 0.01599392806830836,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 104
+    },
+    {
+      "round": 8,
+      "policy": 1,
+      "total_us": 18872.657,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 266.979,
+        "expert_wall_us": 18269.739,
+        "combine_us": 315.208,
+        "backend_phases_us": [
+          [
+            136.562,
+            9955.469,
+            40.521
+          ],
+          [
+            163.802,
+            2195.573,
+            55.156
+          ],
+          [
+            343.906,
+            17681.875,
+            176.927
+          ]
+        ],
+        "intervals_us": [
+          [
+            66.875,
+            10199.896
+          ],
+          [
+            86.146,
+            2500.833
+          ],
+          [
+            65.521,
+            18268.646
+          ]
+        ],
+        "pairs": [
+          119,
+          0,
+          393
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.005908159830098697,
+        "worst_token_nrmse": 0.010042561758502228,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 114
+    },
+    {
+      "round": 9,
+      "policy": 1,
+      "total_us": 19955.782,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 307.812,
+        "expert_wall_us": 18164.063,
+        "combine_us": 1433.646,
+        "backend_phases_us": [
+          [
+            84.531,
+            9943.75,
+            41.146
+          ],
+          [
+            124.583,
+            2172.604,
+            52.396
+          ],
+          [
+            317.5,
+            17624.739,
+            142.969
+          ]
+        ],
+        "intervals_us": [
+          [
+            56.563,
+            10126.25
+          ],
+          [
+            114.636,
+            2464.219
+          ],
+          [
+            77.761,
+            18163.229
+          ]
+        ],
+        "pairs": [
+          119,
+          0,
+          393
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.005908159830098697,
+        "worst_token_nrmse": 0.010042561758502228,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 115
+    },
+    {
+      "round": 9,
+      "policy": 0,
+      "total_us": 14673.438,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 1364.219,
+        "expert_wall_us": 13048.542,
+        "combine_us": 247.969,
+        "backend_phases_us": [
+          [
+            213.073,
+            12498.75,
+            35.625
+          ],
+          [
+            516.562,
+            10457.552,
+            151.302
+          ],
+          [
+            241.146,
+            6960.782,
+            82.916
+          ]
+        ],
+        "intervals_us": [
+          [
+            288.282,
+            13036.25
+          ],
+          [
+            323.23,
+            11449.063
+          ],
+          [
+            260.782,
+            7546.25
+          ]
+        ],
+        "pairs": [
+          119,
+          393,
+          0
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.008414809734507719,
+        "worst_token_nrmse": 0.01599392806830836,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 105
+    },
+    {
+      "round": 10,
+      "policy": 0,
+      "total_us": 11547.188,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 258.23,
+        "expert_wall_us": 11017.187,
+        "combine_us": 254.844,
+        "backend_phases_us": [
+          [
+            107.031,
+            10130.625,
+            54.948
+          ],
+          [
+            295.782,
+            10489.114,
+            139.167
+          ],
+          [
+            129.844,
+            6796.302,
+            79.27
+          ]
+        ],
+        "intervals_us": [
+          [
+            50.156,
+            10343.125
+          ],
+          [
+            79.687,
+            11003.906
+          ],
+          [
+            52.968,
+            7058.698
+          ]
+        ],
+        "pairs": [
+          119,
+          393,
+          0
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.008414809734507719,
+        "worst_token_nrmse": 0.01599392806830836,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 105
+    },
+    {
+      "round": 10,
+      "policy": 1,
+      "total_us": 18869.948,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 259.01,
+        "expert_wall_us": 18343.125,
+        "combine_us": 256.354,
+        "backend_phases_us": [
+          [
+            144.219,
+            10035.989,
+            42.864
+          ],
+          [
+            163.125,
+            2193.281,
+            65.73
+          ],
+          [
+            343.125,
+            17758.541,
+            176.25
+          ]
+        ],
+        "intervals_us": [
+          [
+            67.396,
+            10290.677
+          ],
+          [
+            78.125,
+            2500.313
+          ],
+          [
+            64.115,
+            18342.083
+          ]
+        ],
+        "pairs": [
+          119,
+          0,
+          393
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.005908159830098697,
+        "worst_token_nrmse": 0.010042561758502228,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 114
+    },
+    {
+      "round": 11,
+      "policy": 1,
+      "total_us": 18940.417,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 257.864,
+        "expert_wall_us": 18357.969,
+        "combine_us": 310.99,
+        "backend_phases_us": [
+          [
+            92.032,
+            10122.031,
+            40.833
+          ],
+          [
+            130.937,
+            2288.177,
+            64.791
+          ],
+          [
+            390.833,
+            17718.125,
+            166.459
+          ]
+        ],
+        "intervals_us": [
+          [
+            65.104,
+            10320.417
+          ],
+          [
+            112.969,
+            2597.031
+          ],
+          [
+            80.938,
+            18356.667
+          ]
+        ],
+        "pairs": [
+          119,
+          0,
+          393
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.005908159830098697,
+        "worst_token_nrmse": 0.010042561758502228,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 112
+    },
+    {
+      "round": 11,
+      "policy": 0,
+      "total_us": 11649.323,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 308.907,
+        "expert_wall_us": 11078.281,
+        "combine_us": 249.01,
+        "backend_phases_us": [
+          [
+            126.459,
+            10831.094,
+            40.312
+          ],
+          [
+            282.135,
+            10462.76,
+            150.833
+          ],
+          [
+            138.437,
+            6801.667,
+            64.791
+          ]
+        ],
+        "intervals_us": [
+          [
+            64.218,
+            11062.5
+          ],
+          [
+            82.812,
+            10978.697
+          ],
+          [
+            61.093,
+            7066.25
+          ]
+        ],
+        "pairs": [
+          119,
+          393,
+          0
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.008414809734507719,
+        "worst_token_nrmse": 0.01599392806830836,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 104
+    },
+    {
+      "round": 12,
+      "policy": 0,
+      "total_us": 11460.0,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 304.062,
+        "expert_wall_us": 10891.563,
+        "combine_us": 252.865,
+        "backend_phases_us": [
+          [
+            110.885,
+            10160.573,
+            35.521
+          ],
+          [
+            296.302,
+            10372.188,
+            139.843
+          ],
+          [
+            130.312,
+            6818.073,
+            95.26
+          ]
+        ],
+        "intervals_us": [
+          [
+            57.657,
+            10364.844
+          ],
+          [
+            74.167,
+            10882.5
+          ],
+          [
+            58.282,
+            7102.032
+          ]
+        ],
+        "pairs": [
+          119,
+          393,
+          0
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.008414809734507719,
+        "worst_token_nrmse": 0.01599392806830836,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 97
+    },
+    {
+      "round": 12,
+      "policy": 1,
+      "total_us": 18709.063,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 271.197,
+        "expert_wall_us": 18169.479,
+        "combine_us": 257.291,
+        "backend_phases_us": [
+          [
+            135.052,
+            9872.188,
+            40.729
+          ],
+          [
+            155.677,
+            2202.812,
+            89.479
+          ],
+          [
+            340.052,
+            17629.375,
+            137.032
+          ]
+        ],
+        "intervals_us": [
+          [
+            61.406,
+            10109.635
+          ],
+          [
+            76.25,
+            2524.635
+          ],
+          [
+            60.937,
+            18167.5
+          ]
+        ],
+        "pairs": [
+          119,
+          0,
+          393
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.005908159830098697,
+        "worst_token_nrmse": 0.010042561758502228,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 92
+    },
+    {
+      "round": 13,
+      "policy": 1,
+      "total_us": 19556.146,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 258.334,
+        "expert_wall_us": 18855.781,
+        "combine_us": 417.5,
+        "backend_phases_us": [
+          [
+            211.25,
+            10160.313,
+            40.625
+          ],
+          [
+            249.74,
+            2245.0,
+            91.875
+          ],
+          [
+            582.292,
+            17763.906,
+            203.802
+          ]
+        ],
+        "intervals_us": [
+          [
+            309.166,
+            10721.875
+          ],
+          [
+            410.0,
+            2997.031
+          ],
+          [
+            303.75,
+            18854.323
+          ]
+        ],
+        "pairs": [
+          119,
+          0,
+          393
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.005908159830098697,
+        "worst_token_nrmse": 0.010042561758502228,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 10
+    },
+    {
+      "round": 13,
+      "policy": 0,
+      "total_us": 11647.291,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 398.75,
+        "expert_wall_us": 10984.011,
+        "combine_us": 253.125,
+        "backend_phases_us": [
+          [
+            112.5,
+            10289.271,
+            42.865
+          ],
+          [
+            288.021,
+            10420.468,
+            140.729
+          ],
+          [
+            130.572,
+            6855.312,
+            69.323
+          ]
+        ],
+        "intervals_us": [
+          [
+            80.886,
+            10526.25
+          ],
+          [
+            122.657,
+            10972.032
+          ],
+          [
+            84.479,
+            7139.792
+          ]
+        ],
+        "pairs": [
+          119,
+          393,
+          0
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.008414809734507719,
+        "worst_token_nrmse": 0.01599392806830836,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 10
+    },
+    {
+      "round": 14,
+      "policy": 0,
+      "total_us": 11396.198,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 261.719,
+        "expert_wall_us": 10867.187,
+        "combine_us": 255.573,
+        "backend_phases_us": [
+          [
+            117.917,
+            10275.677,
+            38.49
+          ],
+          [
+            299.844,
+            10309.844,
+            139.115
+          ],
+          [
+            130.834,
+            6833.333,
+            82.188
+          ]
+        ],
+        "intervals_us": [
+          [
+            92.812,
+            10525.26
+          ],
+          [
+            108.593,
+            10857.76
+          ],
+          [
+            92.447,
+            7139.166
+          ]
+        ],
+        "pairs": [
+          119,
+          393,
+          0
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.008414809734507719,
+        "worst_token_nrmse": 0.01599392806830836,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 10
+    },
+    {
+      "round": 14,
+      "policy": 1,
+      "total_us": 18865.781,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 263.385,
+        "expert_wall_us": 18337.344,
+        "combine_us": 252.917,
+        "backend_phases_us": [
+          [
+            131.198,
+            9960.052,
+            42.135
+          ],
+          [
+            157.761,
+            2083.281,
+            88.229
+          ],
+          [
+            346.198,
+            17789.219,
+            138.75
+          ]
+        ],
+        "intervals_us": [
+          [
+            59.844,
+            10193.386
+          ],
+          [
+            80.625,
+            2410.0
+          ],
+          [
+            61.875,
+            18336.198
+          ]
+        ],
+        "pairs": [
+          119,
+          0,
+          393
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.005908159830098697,
+        "worst_token_nrmse": 0.010042561758502228,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 9
+    },
+    {
+      "round": 15,
+      "policy": 1,
+      "total_us": 19685.781,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 258.594,
+        "expert_wall_us": 18698.229,
+        "combine_us": 703.594,
+        "backend_phases_us": [
+          [
+            135.312,
+            9979.74,
+            42.031
+          ],
+          [
+            151.198,
+            2103.593,
+            87.187
+          ],
+          [
+            315.572,
+            17970.0,
+            343.177
+          ]
+        ],
+        "intervals_us": [
+          [
+            70.0,
+            10227.344
+          ],
+          [
+            85.625,
+            2427.969
+          ],
+          [
+            67.291,
+            18696.406
+          ]
+        ],
+        "pairs": [
+          119,
+          0,
+          393
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.005908159830098697,
+        "worst_token_nrmse": 0.010042561758502228,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 9
+    },
+    {
+      "round": 15,
+      "policy": 0,
+      "total_us": 14083.646,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 667.5,
+        "expert_wall_us": 13149.166,
+        "combine_us": 255.468,
+        "backend_phases_us": [
+          [
+            116.093,
+            12878.437,
+            34.688
+          ],
+          [
+            373.541,
+            10315.625,
+            166.562
+          ],
+          [
+            134.791,
+            6854.218,
+            99.948
+          ]
+        ],
+        "intervals_us": [
+          [
+            107.187,
+            13137.031
+          ],
+          [
+            160.469,
+            11016.875
+          ],
+          [
+            118.698,
+            7207.812
+          ]
+        ],
+        "pairs": [
+          119,
+          393,
+          0
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.008414809734507719,
+        "worst_token_nrmse": 0.01599392806830836,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 9
+    },
+    {
+      "round": 16,
+      "policy": 0,
+      "total_us": 11402.188,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 255.468,
+        "expert_wall_us": 10878.49,
+        "combine_us": 252.188,
+        "backend_phases_us": [
+          [
+            118.281,
+            10295.625,
+            37.969
+          ],
+          [
+            301.771,
+            10344.062,
+            137.969
+          ],
+          [
+            131.562,
+            6801.354,
+            47.188
+          ]
+        ],
+        "intervals_us": [
+          [
+            70.938,
+            10523.021
+          ],
+          [
+            82.553,
+            10866.459
+          ],
+          [
+            68.803,
+            7049.115
+          ]
+        ],
+        "pairs": [
+          119,
+          393,
+          0
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.008414809734507719,
+        "worst_token_nrmse": 0.01599392806830836,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 10
+    },
+    {
+      "round": 16,
+      "policy": 1,
+      "total_us": 18725.0,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 262.396,
+        "expert_wall_us": 18197.187,
+        "combine_us": 254.844,
+        "backend_phases_us": [
+          [
+            148.542,
+            9908.125,
+            41.875
+          ],
+          [
+            161.459,
+            2101.718,
+            67.084
+          ],
+          [
+            356.667,
+            17647.604,
+            137.188
+          ]
+        ],
+        "intervals_us": [
+          [
+            54.687,
+            10153.437
+          ],
+          [
+            73.281,
+            2403.854
+          ],
+          [
+            54.687,
+            18196.25
+          ]
+        ],
+        "pairs": [
+          119,
+          0,
+          393
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.005908159830098697,
+        "worst_token_nrmse": 0.010042561758502228,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 9
+    },
+    {
+      "round": 17,
+      "policy": 1,
+      "total_us": 19069.219,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 252.032,
+        "expert_wall_us": 18427.5,
+        "combine_us": 374.01,
+        "backend_phases_us": [
+          [
+            112.5,
+            10090.677,
+            39.479
+          ],
+          [
+            137.135,
+            2151.667,
+            52.812
+          ],
+          [
+            456.823,
+            17718.75,
+            182.188
+          ]
+        ],
+        "intervals_us": [
+          [
+            61.458,
+            10304.427
+          ],
+          [
+            88.177,
+            2429.843
+          ],
+          [
+            68.489,
+            18426.458
+          ]
+        ],
+        "pairs": [
+          119,
+          0,
+          393
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.005908159830098697,
+        "worst_token_nrmse": 0.010042561758502228,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 9
+    },
+    {
+      "round": 17,
+      "policy": 0,
+      "total_us": 11606.406,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 368.802,
+        "expert_wall_us": 10971.406,
+        "combine_us": 250.834,
+        "backend_phases_us": [
+          [
+            124.791,
+            10675.468,
+            82.553
+          ],
+          [
+            286.563,
+            10399.948,
+            172.708
+          ],
+          [
+            138.333,
+            6801.407,
+            49.114
+          ]
+        ],
+        "intervals_us": [
+          [
+            75.625,
+            10959.375
+          ],
+          [
+            94.635,
+            10953.906
+          ],
+          [
+            73.75,
+            7062.916
+          ]
+        ],
+        "pairs": [
+          119,
+          393,
+          0
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.008414809734507719,
+        "worst_token_nrmse": 0.01599392806830836,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 10
+    },
+    {
+      "round": 18,
+      "policy": 0,
+      "total_us": 11551.718,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 287.552,
+        "expert_wall_us": 11003.177,
+        "combine_us": 250.0,
+        "backend_phases_us": [
+          [
+            85.886,
+            10264.843,
+            52.5
+          ],
+          [
+            412.5,
+            10354.896,
+            140.625
+          ],
+          [
+            94.167,
+            6738.645,
+            48.75
+          ]
+        ],
+        "intervals_us": [
+          [
+            58.177,
+            10461.719
+          ],
+          [
+            81.563,
+            10989.896
+          ],
+          [
+            63.646,
+            6945.313
+          ]
+        ],
+        "pairs": [
+          119,
+          393,
+          0
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.008414809734507719,
+        "worst_token_nrmse": 0.01599392806830836,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 9
+    },
+    {
+      "round": 18,
+      "policy": 1,
+      "total_us": 18745.052,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 287.708,
+        "expert_wall_us": 18191.354,
+        "combine_us": 255.0,
+        "backend_phases_us": [
+          [
+            113.125,
+            9968.281,
+            42.136
+          ],
+          [
+            150.26,
+            2041.406,
+            88.594
+          ],
+          [
+            347.812,
+            17641.042,
+            140.677
+          ]
+        ],
+        "intervals_us": [
+          [
+            50.313,
+            10174.219
+          ],
+          [
+            78.438,
+            2358.906
+          ],
+          [
+            59.531,
+            18189.219
+          ]
+        ],
+        "pairs": [
+          119,
+          0,
+          393
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.005908159830098697,
+        "worst_token_nrmse": 0.010042561758502228,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 9
+    },
+    {
+      "round": 19,
+      "policy": 1,
+      "total_us": 19236.979,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 260.573,
+        "expert_wall_us": 18542.813,
+        "combine_us": 414.843,
+        "backend_phases_us": [
+          [
+            100.885,
+            10230.99,
+            41.562
+          ],
+          [
+            136.146,
+            2099.74,
+            72.968
+          ],
+          [
+            378.385,
+            17857.24,
+            206.25
+          ]
+        ],
+        "intervals_us": [
+          [
+            87.188,
+            10460.781
+          ],
+          [
+            119.844,
+            2429.375
+          ],
+          [
+            99.011,
+            18541.042
+          ]
+        ],
+        "pairs": [
+          119,
+          0,
+          393
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.005908159830098697,
+        "worst_token_nrmse": 0.010042561758502228,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 9
+    },
+    {
+      "round": 19,
+      "policy": 0,
+      "total_us": 11810.208,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 399.688,
+        "expert_wall_us": 11135.0,
+        "combine_us": 261.25,
+        "backend_phases_us": [
+          [
+            107.5,
+            10666.719,
+            40.365
+          ],
+          [
+            271.875,
+            10560.104,
+            152.917
+          ],
+          [
+            134.532,
+            7330.052,
+            100.208
+          ]
+        ],
+        "intervals_us": [
+          [
+            88.75,
+            10903.906
+          ],
+          [
+            134.323,
+            11119.375
+          ],
+          [
+            97.812,
+            7662.812
+          ]
+        ],
+        "pairs": [
+          119,
+          393,
+          0
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.008414809734507719,
+        "worst_token_nrmse": 0.01599392806830836,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 9
+    },
+    {
+      "round": 20,
+      "policy": 0,
+      "total_us": 11982.083,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 275.261,
+        "expert_wall_us": 11430.625,
+        "combine_us": 261.771,
+        "backend_phases_us": [
+          [
+            119.375,
+            10831.355,
+            54.375
+          ],
+          [
+            321.198,
+            10807.969,
+            162.031
+          ],
+          [
+            159.427,
+            6912.188,
+            95.677
+          ]
+        ],
+        "intervals_us": [
+          [
+            107.291,
+            11112.76
+          ],
+          [
+            122.656,
+            11413.906
+          ],
+          [
+            107.5,
+            7275.0
+          ]
+        ],
+        "pairs": [
+          119,
+          393,
+          0
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.008414809734507719,
+        "worst_token_nrmse": 0.01599392806830836,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 9
+    },
+    {
+      "round": 20,
+      "policy": 1,
+      "total_us": 19036.562,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 290.261,
+        "expert_wall_us": 18469.479,
+        "combine_us": 257.448,
+        "backend_phases_us": [
+          [
+            133.542,
+            10422.708,
+            46.719
+          ],
+          [
+            171.771,
+            2154.219,
+            106.198
+          ],
+          [
+            398.177,
+            17857.031,
+            144.062
+          ]
+        ],
+        "intervals_us": [
+          [
+            67.76,
+            10670.885
+          ],
+          [
+            89.531,
+            2522.76
+          ],
+          [
+            68.593,
+            18468.125
+          ]
+        ],
+        "pairs": [
+          119,
+          0,
+          393
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.005908159830098697,
+        "worst_token_nrmse": 0.010042561758502228,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 10
+    },
+    {
+      "round": 21,
+      "policy": 1,
+      "total_us": 18799.844,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 264.375,
+        "expert_wall_us": 18266.145,
+        "combine_us": 257.5,
+        "backend_phases_us": [
+          [
+            106.355,
+            10212.968,
+            40.938
+          ],
+          [
+            141.614,
+            2090.729,
+            83.438
+          ],
+          [
+            335.938,
+            17669.739,
+            143.958
+          ]
+        ],
+        "intervals_us": [
+          [
+            103.02,
+            10463.489
+          ],
+          [
+            136.77,
+            2452.968
+          ],
+          [
+            114.843,
+            18264.843
+          ]
+        ],
+        "pairs": [
+          119,
+          0,
+          393
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.005908159830098697,
+        "worst_token_nrmse": 0.010042561758502228,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 9
+    },
+    {
+      "round": 21,
+      "policy": 0,
+      "total_us": 11590.834,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 268.333,
+        "expert_wall_us": 11052.656,
+        "combine_us": 258.438,
+        "backend_phases_us": [
+          [
+            112.657,
+            10664.843,
+            78.438
+          ],
+          [
+            320.0,
+            10431.823,
+            188.125
+          ],
+          [
+            133.906,
+            6844.062,
+            48.437
+          ]
+        ],
+        "intervals_us": [
+          [
+            74.01,
+            10930.26
+          ],
+          [
+            101.562,
+            11041.719
+          ],
+          [
+            81.042,
+            7107.76
+          ]
+        ],
+        "pairs": [
+          119,
+          393,
+          0
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.008414809734507719,
+        "worst_token_nrmse": 0.01599392806830836,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 9
+    },
+    {
+      "round": 22,
+      "policy": 0,
+      "total_us": 11475.625,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 265.312,
+        "expert_wall_us": 10945.313,
+        "combine_us": 253.073,
+        "backend_phases_us": [
+          [
+            97.657,
+            10460.312,
+            44.479
+          ],
+          [
+            304.583,
+            10396.406,
+            142.865
+          ],
+          [
+            137.5,
+            6845.157,
+            61.093
+          ]
+        ],
+        "intervals_us": [
+          [
+            61.979,
+            10664.688
+          ],
+          [
+            91.406,
+            10935.469
+          ],
+          [
+            70.729,
+            7114.636
+          ]
+        ],
+        "pairs": [
+          119,
+          393,
+          0
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.008414809734507719,
+        "worst_token_nrmse": 0.01599392806830836,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 9
+    },
+    {
+      "round": 22,
+      "policy": 1,
+      "total_us": 18886.667,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 275.156,
+        "expert_wall_us": 18308.907,
+        "combine_us": 289.114,
+        "backend_phases_us": [
+          [
+            133.438,
+            10248.125,
+            41.302
+          ],
+          [
+            160.209,
+            2108.437,
+            88.959
+          ],
+          [
+            352.292,
+            17725.052,
+            165.312
+          ]
+        ],
+        "intervals_us": [
+          [
+            62.969,
+            10486.25
+          ],
+          [
+            83.594,
+            2441.407
+          ],
+          [
+            64.844,
+            18307.5
+          ]
+        ],
+        "pairs": [
+          119,
+          0,
+          393
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.005908159830098697,
+        "worst_token_nrmse": 0.010042561758502228,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 9
+    },
+    {
+      "round": 23,
+      "policy": 1,
+      "total_us": 18848.438,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 286.51,
+        "expert_wall_us": 18295.469,
+        "combine_us": 254.375,
+        "backend_phases_us": [
+          [
+            114.114,
+            10158.177,
+            40.989
+          ],
+          [
+            137.292,
+            2113.906,
+            88.386
+          ],
+          [
+            324.896,
+            17751.51,
+            141.458
+          ]
+        ],
+        "intervals_us": [
+          [
+            86.042,
+            10399.636
+          ],
+          [
+            159.375,
+            2499.063
+          ],
+          [
+            74.063,
+            18292.656
+          ]
+        ],
+        "pairs": [
+          119,
+          0,
+          393
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.005908159830098697,
+        "worst_token_nrmse": 0.010042561758502228,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 9
+    },
+    {
+      "round": 23,
+      "policy": 0,
+      "total_us": 11789.114,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 269.531,
+        "expert_wall_us": 11004.167,
+        "combine_us": 479.01,
+        "backend_phases_us": [
+          [
+            119.01,
+            10400.157,
+            37.968
+          ],
+          [
+            321.563,
+            10429.531,
+            141.875
+          ],
+          [
+            133.125,
+            6865.573,
+            46.667
+          ]
+        ],
+        "intervals_us": [
+          [
+            74.219,
+            10631.511
+          ],
+          [
+            98.125,
+            10991.094
+          ],
+          [
+            73.229,
+            7118.75
+          ]
+        ],
+        "pairs": [
+          119,
+          393,
+          0
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.008414809734507719,
+        "worst_token_nrmse": 0.01599392806830836,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 10
+    },
+    {
+      "round": 24,
+      "policy": 0,
+      "total_us": 11345.782,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 268.802,
+        "expert_wall_us": 10809.687,
+        "combine_us": 254.636,
+        "backend_phases_us": [
+          [
+            88.281,
+            10401.355,
+            40.625
+          ],
+          [
+            284.584,
+            10304.062,
+            138.75
+          ],
+          [
+            376.979,
+            6809.792,
+            103.75
+          ]
+        ],
+        "intervals_us": [
+          [
+            49.531,
+            10580.0
+          ],
+          [
+            70.208,
+            10797.864
+          ],
+          [
+            52.083,
+            7343.333
+          ]
+        ],
+        "pairs": [
+          119,
+          393,
+          0
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.008414809734507719,
+        "worst_token_nrmse": 0.01599392806830836,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 9
+    },
+    {
+      "round": 24,
+      "policy": 1,
+      "total_us": 18919.688,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 307.084,
+        "expert_wall_us": 18343.229,
+        "combine_us": 256.979,
+        "backend_phases_us": [
+          [
+            151.875,
+            10050.313,
+            40.833
+          ],
+          [
+            165.938,
+            2106.51,
+            84.323
+          ],
+          [
+            350.157,
+            17776.927,
+            140.677
+          ]
+        ],
+        "intervals_us": [
+          [
+            71.562,
+            10314.687
+          ],
+          [
+            88.385,
+            2445.312
+          ],
+          [
+            74.218,
+            18342.187
+          ]
+        ],
+        "pairs": [
+          119,
+          0,
+          393
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.005908159830098697,
+        "worst_token_nrmse": 0.010042561758502228,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 9
+    },
+    {
+      "round": 25,
+      "policy": 1,
+      "total_us": 18879.687,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 262.76,
+        "expert_wall_us": 18345.73,
+        "combine_us": 252.812,
+        "backend_phases_us": [
+          [
+            87.448,
+            10110.677,
+            39.219
+          ],
+          [
+            124.062,
+            2106.511,
+            90.521
+          ],
+          [
+            358.125,
+            17754.323,
+            159.531
+          ]
+        ],
+        "intervals_us": [
+          [
+            51.198,
+            10288.75
+          ],
+          [
+            96.407,
+            2417.657
+          ],
+          [
+            72.344,
+            18344.375
+          ]
+        ],
+        "pairs": [
+          119,
+          0,
+          393
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.005908159830098697,
+        "worst_token_nrmse": 0.010042561758502228,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 10
+    },
+    {
+      "round": 25,
+      "policy": 0,
+      "total_us": 11494.896,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 265.365,
+        "expert_wall_us": 10962.344,
+        "combine_us": 254.843,
+        "backend_phases_us": [
+          [
+            109.166,
+            10693.49,
+            86.719
+          ],
+          [
+            305.625,
+            10362.656,
+            184.532
+          ],
+          [
+            132.604,
+            6836.563,
+            63.906
+          ]
+        ],
+        "intervals_us": [
+          [
+            58.594,
+            10948.333
+          ],
+          [
+            94.375,
+            10947.5
+          ],
+          [
+            63.177,
+            7096.458
+          ]
+        ],
+        "pairs": [
+          119,
+          393,
+          0
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.008414809734507719,
+        "worst_token_nrmse": 0.01599392806830836,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 9
+    },
+    {
+      "round": 26,
+      "policy": 0,
+      "total_us": 11348.958,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 257.448,
+        "expert_wall_us": 10828.281,
+        "combine_us": 251.25,
+        "backend_phases_us": [
+          [
+            93.855,
+            10383.125,
+            39.791
+          ],
+          [
+            305.052,
+            10285.469,
+            139.844
+          ],
+          [
+            131.406,
+            6820.469,
+            69.531
+          ]
+        ],
+        "intervals_us": [
+          [
+            57.604,
+            10574.531
+          ],
+          [
+            87.604,
+            10817.969
+          ],
+          [
+            71.667,
+            7093.281
+          ]
+        ],
+        "pairs": [
+          119,
+          393,
+          0
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.008414809734507719,
+        "worst_token_nrmse": 0.01599392806830836,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 9
+    },
+    {
+      "round": 26,
+      "policy": 1,
+      "total_us": 18937.5,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 262.657,
+        "expert_wall_us": 18394.062,
+        "combine_us": 266.094,
+        "backend_phases_us": [
+          [
+            135.104,
+            9976.406,
+            43.281
+          ],
+          [
+            162.344,
+            2070.625,
+            74.844
+          ],
+          [
+            354.063,
+            17815.156,
+            159.479
+          ]
+        ],
+        "intervals_us": [
+          [
+            63.021,
+            10217.864
+          ],
+          [
+            94.583,
+            2402.552
+          ],
+          [
+            64.427,
+            18393.333
+          ]
+        ],
+        "pairs": [
+          119,
+          0,
+          393
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.005908159830098697,
+        "worst_token_nrmse": 0.010042561758502228,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 9
+    },
+    {
+      "round": 27,
+      "policy": 1,
+      "total_us": 18890.208,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 257.969,
+        "expert_wall_us": 18348.437,
+        "combine_us": 272.032,
+        "backend_phases_us": [
+          [
+            116.25,
+            10157.24,
+            42.344
+          ],
+          [
+            142.188,
+            2148.437,
+            122.188
+          ],
+          [
+            399.844,
+            17729.062,
+            142.136
+          ]
+        ],
+        "intervals_us": [
+          [
+            71.458,
+            10387.552
+          ],
+          [
+            95.833,
+            2508.646
+          ],
+          [
+            75.781,
+            18346.875
+          ]
+        ],
+        "pairs": [
+          119,
+          0,
+          393
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.005908159830098697,
+        "worst_token_nrmse": 0.010042561758502228,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 9
+    },
+    {
+      "round": 27,
+      "policy": 0,
+      "total_us": 11428.281,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 261.562,
+        "expert_wall_us": 10904.219,
+        "combine_us": 251.198,
+        "backend_phases_us": [
+          [
+            124.115,
+            10240.0,
+            38.073
+          ],
+          [
+            285.937,
+            10395.886,
+            140.468
+          ],
+          [
+            138.125,
+            6874.584,
+            122.187
+          ]
+        ],
+        "intervals_us": [
+          [
+            55.469,
+            10457.761
+          ],
+          [
+            72.032,
+            10894.48
+          ],
+          [
+            54.219,
+            7189.323
+          ]
+        ],
+        "pairs": [
+          119,
+          393,
+          0
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.008414809734507719,
+        "worst_token_nrmse": 0.01599392806830836,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 9
+    },
+    {
+      "round": 28,
+      "policy": 0,
+      "total_us": 13238.75,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 258.281,
+        "expert_wall_us": 12710.417,
+        "combine_us": 253.75,
+        "backend_phases_us": [
+          [
+            112.136,
+            11951.198,
+            39.479
+          ],
+          [
+            298.437,
+            12155.834,
+            168.906
+          ],
+          [
+            128.594,
+            7879.375,
+            67.395
+          ]
+        ],
+        "intervals_us": [
+          [
+            58.698,
+            12161.823
+          ],
+          [
+            78.542,
+            12701.823
+          ],
+          [
+            62.292,
+            8137.813
+          ]
+        ],
+        "pairs": [
+          119,
+          393,
+          0
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.008414809734507719,
+        "worst_token_nrmse": 0.01599392806830836,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 10
+    },
+    {
+      "round": 28,
+      "policy": 1,
+      "total_us": 18828.021,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 268.906,
+        "expert_wall_us": 18294.063,
+        "combine_us": 253.437,
+        "backend_phases_us": [
+          [
+            124.531,
+            10022.969,
+            40.313
+          ],
+          [
+            162.032,
+            2077.656,
+            83.594
+          ],
+          [
+            353.073,
+            17730.416,
+            140.782
+          ]
+        ],
+        "intervals_us": [
+          [
+            63.542,
+            10251.719
+          ],
+          [
+            88.75,
+            2412.032
+          ],
+          [
+            68.282,
+            18292.917
+          ]
+        ],
+        "pairs": [
+          119,
+          0,
+          393
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.005908159830098697,
+        "worst_token_nrmse": 0.010042561758502228,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 9
+    },
+    {
+      "round": 29,
+      "policy": 1,
+      "total_us": 18858.125,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 259.531,
+        "expert_wall_us": 18330.104,
+        "combine_us": 255.156,
+        "backend_phases_us": [
+          [
+            108.542,
+            10198.906,
+            43.645
+          ],
+          [
+            138.958,
+            2138.594,
+            79.323
+          ],
+          [
+            403.854,
+            17699.792,
+            149.062
+          ]
+        ],
+        "intervals_us": [
+          [
+            67.187,
+            10418.594
+          ],
+          [
+            96.25,
+            2453.542
+          ],
+          [
+            75.417,
+            18328.281
+          ]
+        ],
+        "pairs": [
+          119,
+          0,
+          393
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.005908159830098697,
+        "worst_token_nrmse": 0.010042561758502228,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 9
+    },
+    {
+      "round": 29,
+      "policy": 0,
+      "total_us": 11518.177,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 343.125,
+        "expert_wall_us": 10911.042,
+        "combine_us": 251.302,
+        "backend_phases_us": [
+          [
+            113.281,
+            10241.615,
+            37.083
+          ],
+          [
+            322.031,
+            10345.156,
+            139.844
+          ],
+          [
+            136.094,
+            6825.0,
+            66.718
+          ]
+        ],
+        "intervals_us": [
+          [
+            69.167,
+            10461.667
+          ],
+          [
+            92.188,
+            10900.104
+          ],
+          [
+            72.292,
+            7100.156
+          ]
+        ],
+        "pairs": [
+          119,
+          393,
+          0
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.008414809734507719,
+        "worst_token_nrmse": 0.01599392806830836,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 9
+    },
+    {
+      "round": 30,
+      "policy": 0,
+      "total_us": 11352.656,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 251.927,
+        "expert_wall_us": 10836.406,
+        "combine_us": 252.084,
+        "backend_phases_us": [
+          [
+            88.906,
+            10125.104,
+            37.5
+          ],
+          [
+            290.0,
+            10292.604,
+            155.208
+          ],
+          [
+            125.73,
+            6836.666,
+            48.177
+          ]
+        ],
+        "intervals_us": [
+          [
+            50.0,
+            10301.875
+          ],
+          [
+            84.167,
+            10822.135
+          ],
+          [
+            65.26,
+            7075.937
+          ]
+        ],
+        "pairs": [
+          119,
+          393,
+          0
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.008414809734507719,
+        "worst_token_nrmse": 0.01599392806830836,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 9
+    },
+    {
+      "round": 30,
+      "policy": 1,
+      "total_us": 18782.5,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 262.344,
+        "expert_wall_us": 18248.75,
+        "combine_us": 259.687,
+        "backend_phases_us": [
+          [
+            113.125,
+            9927.708,
+            41.406
+          ],
+          [
+            153.281,
+            2073.282,
+            69.375
+          ],
+          [
+            349.584,
+            17700.156,
+            142.656
+          ]
+        ],
+        "intervals_us": [
+          [
+            44.687,
+            10127.083
+          ],
+          [
+            73.958,
+            2370.0
+          ],
+          [
+            55.208,
+            18247.708
+          ]
+        ],
+        "pairs": [
+          119,
+          0,
+          393
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.005908159830098697,
+        "worst_token_nrmse": 0.010042561758502228,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 9
+    },
+    {
+      "round": 31,
+      "policy": 1,
+      "total_us": 18844.427,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 262.083,
+        "expert_wall_us": 18323.281,
+        "combine_us": 248.021,
+        "backend_phases_us": [
+          [
+            119.792,
+            10262.24,
+            41.406
+          ],
+          [
+            139.062,
+            2152.292,
+            54.896
+          ],
+          [
+            404.896,
+            17718.594,
+            142.5
+          ]
+        ],
+        "intervals_us": [
+          [
+            53.437,
+            10477.135
+          ],
+          [
+            94.219,
+            2440.573
+          ],
+          [
+            55.729,
+            18321.719
+          ]
+        ],
+        "pairs": [
+          119,
+          0,
+          393
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.005908159830098697,
+        "worst_token_nrmse": 0.010042561758502228,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 9
+    },
+    {
+      "round": 31,
+      "policy": 0,
+      "total_us": 11482.813,
+      "phases": {
+        "layer": 0,
+        "tokens": 128,
+        "gather_us": 266.875,
+        "expert_wall_us": 10946.718,
+        "combine_us": 251.77,
+        "backend_phases_us": [
+          [
+            106.718,
+            10363.855,
+            38.333
+          ],
+          [
+            279.219,
+            10405.416,
+            158.698
+          ],
+          [
+            135.156,
+            6821.51,
+            64.844
+          ]
+        ],
+        "intervals_us": [
+          [
+            66.198,
+            10575.312
+          ],
+          [
+            90.625,
+            10934.218
+          ],
+          [
+            72.5,
+            7094.062
+          ]
+        ],
+        "pairs": [
+          119,
+          393,
+          0
+        ],
+        "changed_route_slots": 0,
+        "allocations": 3
+      },
+      "check": {
+        "nrmse": 0.008414809734507719,
+        "worst_token_nrmse": 0.01599392806830836,
+        "passes_4percent_per_token": true,
+        "tokens_over_4percent": []
+      },
+      "major_faults": 0,
+      "minor_faults": 10
+    }
+  ],
+  "timing": [
+    {
+      "samples_us": [
+        11477.083,
+        11534.011,
+        11593.646,
+        11639.01,
+        11529.531,
+        12102.187,
+        11586.563,
+        11899.844,
+        13731.25,
+        14673.438,
+        11547.188,
+        11649.323,
+        11460.0,
+        11647.291,
+        11396.198,
+        14083.646,
+        11402.188,
+        11606.406,
+        11551.718,
+        11810.208,
+        11982.083,
+        11590.834,
+        11475.625,
+        11789.114,
+        11345.782,
+        11494.896,
+        11348.958,
+        11428.281,
+        13238.75,
+        11518.177,
+        11352.656,
+        11482.813
+      ],
+      "median_us": 11569.140500000001,
+      "mean_us": 11874.021812500003,
+      "p95_us": 14083.646,
+      "amortized_us_per_token": 90.38391015625001,
+      "expert_tokens_per_second": 11063.916113733772
+    },
+    {
+      "samples_us": [
+        19271.927,
+        18187.812,
+        18797.813,
+        18672.032,
+        18852.709,
+        18413.333,
+        19545.885,
+        18981.615,
+        18872.657,
+        19955.782,
+        18869.948,
+        18940.417,
+        18709.063,
+        19556.146,
+        18865.781,
+        19685.781,
+        18725.0,
+        19069.219,
+        18745.052,
+        19236.979,
+        19036.562,
+        18799.844,
+        18886.667,
+        18848.438,
+        18919.688,
+        18879.687,
+        18937.5,
+        18890.208,
+        18828.021,
+        18858.125,
+        18782.5,
+        18844.427
+      ],
+      "median_us": 18871.302499999998,
+      "mean_us": 18952.0818125,
+      "p95_us": 19685.781,
+      "amortized_us_per_token": 147.43205078124998,
+      "expert_tokens_per_second": 6782.785660926161
+    }
+  ],
+  "process_status": "Name:\treversed-expert\nUmask:\t0000\nState:\tR (running)\nTgid:\t30690\nNgid:\t0\nPid:\t30690\nPPid:\t17567\nTracerPid:\t0\nUid:\t2000\t2000\t2000\t2000\nGid:\t2000\t2000\t2000\t2000\nFDSize:\t64\nGroups:\t1004 1007 1011 1015 1028 1078 1079 3001 3002 3003 3006 3009 3011 3012 \nKthread:\t0\nVmPeak:\t12624836 kB\nVmSize:\t12589892 kB\nVmLck:\t       0 kB\nVmPin:\t       0 kB\nVmHWM:\t  415924 kB\nVmRSS:\t  355812 kB\nRssAnon:\t  312788 kB\nRssFile:\t   42640 kB\nRssShmem:\t     384 kB\nVmData:\t  326428 kB\nVmStk:\t     136 kB\nVmExe:\t     236 kB\nVmLib:\t   41156 kB\nVmPTE:\t    1556 kB\nVmSwap:\t       0 kB\nCoreDumping:\t0\nTHP_enabled:\t1\nuntag_mask:\t0xffffffffffffff\nThreads:\t10\nSigQ:\t0/57052\nSigPnd:\t0000000000000000\nShdPnd:\t0000000000000000\nSigBlk:\t0000000080000000\nSigIgn:\t0000002000000000\nSigCgt:\t0000004c400086f8\nCapInh:\t0000000000000000\nCapPrm:\t0000000000000000\nCapEff:\t0000000000000000\nCapBnd:\t00000000008000c0\nCapAmb:\t0000000000000000\nNoNewPrivs:\t0\nSeccomp:\t0\nSeccomp_filters:\t0\nSpeculation_Store_Bypass:\tthread vulnerable\nSpeculationIndirectBranch:\tunknown\nCpus_allowed:\tff\nCpus_allowed_list:\t0-7\nMems_allowed:\t1\nMems_allowed_list:\t0\nvoluntary_ctxt_switches:\t1198\nnonvoluntary_ctxt_switches:\t131\n"
+}

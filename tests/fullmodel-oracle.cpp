@@ -208,6 +208,7 @@ static int search_all(const char * model_path,const std::string & capture_path,c
     return 0;
 }
 
+#ifndef FULLMODEL_ORACLE_NO_MAIN
 int main(int argc,char ** argv) {
     try {
         require(argc==8,"usage: fullmodel-oracle MODEL PROMPT TOKENS OUTPUT MODE REPS PLANS_OR_DASH; modes capture,search,cpu,npu,custom,branch,custom-npu");
@@ -310,3 +311,4 @@ int main(int argc,char ** argv) {
         return 0;
     } catch(const std::exception & e) { fprintf(stderr,"ERROR: %s\n",e.what()); return 1; }
 }
+#endif
