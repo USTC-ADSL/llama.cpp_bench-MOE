@@ -63,6 +63,7 @@ struct partitioned_ffn {
     json last;
     size_t allocations=0;
     bool shared_activations=false;
+    bool direct_callback_io=false;
     partitioned_ffn(device * devs[3],source & src,int layer,int tokens,const placement & p,bool compact,bool shared_buffers=false) : il(layer),nt(tokens),plan(p),shared_activations(shared_buffers) {
         require(plan.owner.size()==60 && plan.shared>=0 && plan.shared<3,"invalid placement");
         for(int b=0;b<3;++b) {
@@ -81,7 +82,11 @@ struct partitioned_ffn {
         for(auto & cache:jobs) { cache.clear(); }
     }
     std::vector<float> run(const std::vector<float> & x,const std::vector<float> & probs,const std::vector<int32_t> & ids,bool record) {
-        require(x.size()==size_t(2048*nt) && probs.size()==size_t(60*nt) && ids.size()==size_t(4*nt),"FFN input shape mismatch");
+        return run_into(x.data(),x.size(),probs.data(),probs.size(),ids,record,nullptr);
+    }
+    std::vector<float> run_into(const float * x,size_t elements,const float * probs,size_t probability_count,
+                              const std::vector<int32_t> & ids,bool record,float * destination) {
+        require(elements==size_t(2048*nt) && probability_count==size_t(60*nt) && ids.size()==size_t(4*nt),"FFN input shape mismatch");
         auto start=timer::now();
         std::vector<int> pairs[3];
         for(int p=0;p<4*nt;++p) { require(ids[p]>=0 && ids[p]<60,"invalid route ID"); pairs[plan.owner[ids[p]]].push_back(p); }
@@ -92,14 +97,14 @@ struct partitioned_ffn {
             int rows=pairs[b].empty()?0:native?nt:int(pairs[b].size()); int k=native?4:1;
             auto & ptr=jobs[b][{rows,k}];
             if(!ptr) { ptr=std::make_unique<oracle_job>(*banks[b],b==plan.shared?shared.get():nullptr,rows,k,nt,native,false,shared_activations); ++allocations; }
-            work[b]=ptr.get(); auto & j=*ptr; j.set_shared_input(x);
+            work[b]=ptr.get(); auto & j=*ptr; j.set_shared_input(x,elements);
             if(native && j.x) {
-                std::copy(x.begin(),x.end(),j.input_data());
+                std::copy_n(x,elements,j.input_data());
                 for(int t=0;t<nt;++t) { for(int kk=0;kk<4;++kk) { j.index_data()[t*j.stride+kk]=local[b][ids[t*4+kk]]; } }
             } else {
                 for(size_t i=0;i<pairs[b].size();++i) {
                     int p=pairs[b][i]; require(local[b][ids[p]]>=0,"expert not resident");
-                    std::copy_n(x.data()+(p/4)*2048,2048,j.input_data()+i*2048); j.index_data()[i*j.stride]=local[b][ids[p]];
+                    std::copy_n(x+(p/4)*2048,2048,j.input_data()+i*2048); j.index_data()[i*j.stride]=local[b][ids[p]];
                 }
             }
         }
@@ -113,19 +118,22 @@ struct partitioned_ffn {
         double wall=elapsed(start); start=timer::now();
         std::vector<const float *> outputs(ids.size());
         for(int b=0;b<3;++b) { for(size_t i=0;i<pairs[b].size();++i) { outputs[pairs[b][i]]=work[b]->output_data()+i*2048; } }
-        std::vector<float> result(x.size(),0);
+        std::vector<float> owned_result;
+        if(destination) { std::fill_n(destination,elements,0.0f); }
+        else { owned_result.resize(elements,0.0f); }
+        float * result=destination?destination:owned_result.data();
         for(size_t p=0;p<ids.size();++p) {
             float weight=probs[(p/4)*60+ids[p]];
             for(int c=0;c<2048;++c) { result[(p/4)*2048+c]+=weight*outputs[p][c]; }
         }
-        for(size_t i=0;i<result.size();++i) { result[i]+=work[plan.shared]->shared_output_data()[i]; }
+        for(size_t i=0;i<elements;++i) { result[i]+=work[plan.shared]->shared_output_data()[i]; }
         if(record) {
             int changed=0; if(expected_ids.size()==ids.size()) { for(size_t i=0;i<ids.size();++i) { changed+=ids[i]!=expected_ids[i]; } }
             last={{"layer",il},{"tokens",nt},{"gather_us",gather},{"expert_wall_us",wall},{"combine_us",elapsed(start)},
                   {"backend_phases_us",phases},{"intervals_us",intervals},{"pairs",{pairs[0].size(),pairs[1].size(),pairs[2].size()}},
                   {"changed_route_slots",changed},{"allocations",allocations}};
         }
-        return result;
+        return owned_result;
     }
 };
 
@@ -136,6 +144,16 @@ struct full_engine {
         if(ith) { return; }
         auto & layer=*static_cast<partitioned_ffn *>(opaque);
         require(ggml_is_contiguous(x) && ggml_is_contiguous(probabilities),"noncontiguous FFN inputs");
+        if(layer.direct_callback_io) {
+            require(ggml_is_contiguous(dst) && dst->type==GGML_TYPE_F32 && x->type==GGML_TYPE_F32 && probabilities->type==GGML_TYPE_F32,
+                    "direct callback requires contiguous F32 activations");
+            std::vector<int32_t> route(ggml_nelements(ids));
+            for(int64_t t=0;t<ids->ne[1];++t) { std::memcpy(route.data()+t*ids->ne[0],static_cast<char *>(ids->data)+t*ids->nb[1],ids->ne[0]*sizeof(int32_t)); }
+            // The scheduler owns these host tensors until this synchronous callback returns.
+            layer.run_into(static_cast<const float *>(x->data),ggml_nelements(x),static_cast<const float *>(probabilities->data),
+                           ggml_nelements(probabilities),route,true,static_cast<float *>(dst->data));
+            return;
+        }
         std::vector<float> input(static_cast<float *>(x->data),static_cast<float *>(x->data)+ggml_nelements(x));
         std::vector<float> probs(static_cast<float *>(probabilities->data),static_cast<float *>(probabilities->data)+ggml_nelements(probabilities));
         std::vector<int32_t> route(ggml_nelements(ids));
@@ -219,7 +237,12 @@ int main(int argc,char ** argv) {
         if(mode=="search") { return search_all(argv[1],argv[7],argv[4]); }
         bool custom=mode=="custom" || mode=="branch" || mode=="custom-npu";
         bool shared_activations=std::getenv("MOE_SHARED_ACTIVATIONS") && std::string(std::getenv("MOE_SHARED_ACTIVATIONS"))=="1";
+        bool direct_callback_io=std::getenv("MOE_DIRECT_CALLBACK_IO") && std::string(std::getenv("MOE_DIRECT_CALLBACK_IO"))=="1";
+        bool alternate_callback_io=std::getenv("MOE_ALTERNATE_CALLBACK_IO") && std::string(std::getenv("MOE_ALTERNATE_CALLBACK_IO"))=="1";
         require(!shared_activations || custom,"shared activations require custom mode");
+        require(!direct_callback_io || custom,"direct callback requires custom mode");
+        require(!alternate_callback_io || (custom && shared_activations && !direct_callback_io && reps%4==0),
+                "alternating callback requires shared custom mode, no direct override, and repetitions divisible by four");
         bool accelerator=mode=="npu" || custom;
         require(custom || mode=="capture" || mode=="cpu" || mode=="npu","invalid mode");
         json plans; if(custom) { std::ifstream in(argv[7]); in>>plans; require(plans["tokens"].get<int>()==nt && plans["layers"].size()==24,"plan shape mismatch"); }
@@ -249,6 +272,7 @@ int main(int argc,char ** argv) {
             for(int il=0;il<24;++il) {
                 placement p=mode=="custom-npu"?placement{"all_npu",std::vector<int>(60,1),1}:parse_plan(plans["layers"][il][mode=="branch"?"branch":"selected"]);
                 engine.layers.push_back(std::make_unique<partitioned_ffn>(devs,src,il,plans["layers"][il]["tokens"],p,true,shared_activations));
+                engine.layers.back()->direct_callback_io=direct_callback_io;
                 engine.layers.back()->expected_ids=plans["layers"][il]["ids"].get<std::vector<int32_t>>();
                 fprintf(stderr,"RESIDENT layer=%d plan=%s\n",il,p.name.c_str());
             }
@@ -265,6 +289,8 @@ int main(int argc,char ** argv) {
         json report={{"tokens",nt},{"token_ids",tokens},{"mode",mode},{"samples",json::array()},
             {"scope","native complete model prefill including last-token logits and retained KV; dynamic real routing; weights resident; context reset outside timing"}};
         report["shared_activations"]=shared_activations;
+        report["direct_callback_io"]=direct_callback_io;
+        report["alternate_callback_io"]=alternate_callback_io;
         if(custom) {
             report["placements"]=json::array();
             for(auto & l:engine.layers) {
@@ -275,10 +301,16 @@ int main(int argc,char ** argv) {
                 p["resident_weight_bytes"]=bytes; report["placements"].push_back(p);
             }
         }
-        std::vector<double> times; std::vector<float> logits;
+        std::vector<double> times; std::vector<float> logits,paired_reference;
         int runs=mode=="capture"?1:reps+2;
         size_t warmed_allocations=0;
         for(int r=0;r<runs;++r) {
+            bool active_direct=direct_callback_io;
+            if(alternate_callback_io) {
+                int position=(r-2)%4;
+                active_direct=r<2?r==1:position==1 || position==2;
+                for(auto & l:engine.layers) { l->direct_callback_io=active_direct; }
+            }
             llama_memory_clear(llama_get_memory(ctx.get()),true);
             auto batch=llama_batch_get_one(tokens.data(),nt);
             rusage before{},after{}; getrusage(RUSAGE_SELF,&before);
@@ -286,11 +318,17 @@ int main(int argc,char ** argv) {
             auto * output=llama_get_logits_ith(ctx.get(),-1); require(code==0 && output,"native decode failed");
             logits.assign(output,output+nv); double us=elapsed(start);
             getrusage(RUSAGE_SELF,&after);
+            if(alternate_callback_io) {
+                if(r==0) { paired_reference=logits; }
+                else { require(std::memcmp(logits.data(),paired_reference.data(),logits.size()*sizeof(float))==0,
+                               "alternating callback logits differ"); }
+            }
             size_t allocations=0; for(auto & l:engine.layers) { allocations+=l->allocations; }
             if(r==1) { warmed_allocations=allocations; }
             if(r>=2) {
                 require(allocations==warmed_allocations,"allocation occurred after warmup"); times.push_back(us);
                 json row={{"round",r-2},{"total_us",us},{"minor_faults",after.ru_minflt-before.ru_minflt},{"major_faults",after.ru_majflt-before.ru_majflt}};
+                row["direct_callback_io"]=active_direct;
                 if(custom) { row["layers"]=json::array(); for(auto & l:engine.layers) { row["layers"].push_back(l->last); } }
                 report["samples"].push_back(row);
             }
@@ -307,6 +345,7 @@ int main(int argc,char ** argv) {
         } else { report["timing"]=stats(times,nt); }
         std::ofstream logits_file(std::string(argv[4])+".logits.bin",std::ios::binary); binary_write(logits_file,logits);
         report["top1"]=std::max_element(logits.begin(),logits.end())-logits.begin();
+        if(alternate_callback_io) { report["all_round_logits_bitwise_equal"]=true; }
         size_t activation_bytes=0;
         for(auto & l:engine.layers) { for(auto & cache:l->jobs) { for(auto & entry:cache) {
             auto & j=*entry.second;

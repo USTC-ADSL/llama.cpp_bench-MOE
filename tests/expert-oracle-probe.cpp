@@ -70,8 +70,12 @@ struct oracle_job {
     const float * output_data() const { return shared_buffer?static_cast<float *>(out->data):output.data(); }
     const float * shared_output_data() const { return shared_buffer?static_cast<float *>(sout->data):shared_output.data(); }
     void set_shared_input(const std::vector<float> & values) {
+        set_shared_input(values.data(),values.size());
+    }
+    void set_shared_input(const float * values,size_t count) {
         if (sx && !sx->view_src) {
-            std::copy(values.begin(),values.end(),shared_buffer?static_cast<float *>(sx->data):shared_input.data());
+            require(count==size_t(ggml_nelements(sx)),"shared input size mismatch");
+            std::copy_n(values,count,shared_buffer?static_cast<float *>(sx->data):shared_input.data());
         }
     }
     std::array<double, 3> run() {
