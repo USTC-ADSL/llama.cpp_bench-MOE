@@ -1,0 +1,48 @@
+{
+  "scope": "functional validation, 128-token full-model prefill + 2 teacher-forced decode steps",
+  "cpu_single_logit_nrmse": [
+    6.963104823766094e-08,
+    6.703014987364967e-08,
+    7.572389698696299e-08
+  ],
+  "mixed_logit_nrmse": [
+    0.04074447065171425,
+    0.028681498457797182,
+    0.09292204203355468
+  ],
+  "native_phase_logit_nrmse": [
+    0.040360653135120036,
+    0.029330283476327903,
+    0.09228995924242984
+  ],
+  "mixed_peak_converted_weight_buffer_bytes": 97328128,
+  "mixed_phase_switch": {
+    "us": 1788988.124,
+    "state_bytes": 25167964,
+    "state_roundtrip_equal": true,
+    "method": "serialize KV and state; release old model/context; load phase backend; restore"
+  },
+  "timing_ms": {
+    "native_cpu": [
+      2152.627031,
+      32.081354,
+      32.962343999999995
+    ],
+    "dynamic_cpu_single": [
+      8257.893018,
+      1350.232135,
+      1335.867031
+    ],
+    "mixed": [
+      10600.833641000001,
+      1223.2560409999999,
+      1527.114895
+    ],
+    "native_phase": [
+      664.705365,
+      232.019375,
+      105.979375
+    ]
+  },
+  "limitations": "10% full-logit NRMSE is a smoke-test bound, not quality equivalence; no physical RAM bound or zero-copy claim"
+}

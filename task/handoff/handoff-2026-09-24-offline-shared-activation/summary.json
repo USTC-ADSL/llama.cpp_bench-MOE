@@ -1,0 +1,86 @@
+{
+  "runs": {
+    "native-final-a": {
+      "median_ms": 519.9398434999999,
+      "tokens_s": 246.18232589824598,
+      "cpu_logit_nrmse": 0.040360653135120036,
+      "top1": 537,
+      "logits_sha256": "873da69b152cd5aa48370a7140fa66d0ee3c8b76d0ef31eda1c3238a64745b58",
+      "major_faults": 0,
+      "minor_faults": 2628,
+      "expert_activation_buffer_bytes": 0
+    },
+    "native-final-b": {
+      "median_ms": 573.988567,
+      "tokens_s": 223.00095743893098,
+      "cpu_logit_nrmse": 0.040360653135120036,
+      "top1": 537,
+      "logits_sha256": "873da69b152cd5aa48370a7140fa66d0ee3c8b76d0ef31eda1c3238a64745b58",
+      "major_faults": 0,
+      "minor_faults": 2628,
+      "expert_activation_buffer_bytes": 0
+    },
+    "copy-final-a": {
+      "median_ms": 395.8810415,
+      "tokens_s": 323.32945148119705,
+      "cpu_logit_nrmse": 0.024074741687120184,
+      "top1": 537,
+      "logits_sha256": "1f075ea3f8bb4ee76404bdb286e1fc935e91c98469160a69918a486f325d4c2b",
+      "major_faults": 1,
+      "minor_faults": 4494,
+      "expert_activation_buffer_bytes": 660355168
+    },
+    "copy-final-b": {
+      "median_ms": 431.0095045,
+      "tokens_s": 296.97720969863207,
+      "cpu_logit_nrmse": 0.024074741687120184,
+      "top1": 537,
+      "logits_sha256": "1f075ea3f8bb4ee76404bdb286e1fc935e91c98469160a69918a486f325d4c2b",
+      "major_faults": 2,
+      "minor_faults": 4489,
+      "expert_activation_buffer_bytes": 660355168
+    },
+    "shared-final-a": {
+      "median_ms": 400.560599,
+      "tokens_s": 319.5521484628097,
+      "cpu_logit_nrmse": 0.024074741687120184,
+      "top1": 537,
+      "logits_sha256": "1f075ea3f8bb4ee76404bdb286e1fc935e91c98469160a69918a486f325d4c2b",
+      "major_faults": 5,
+      "minor_faults": 4489,
+      "expert_activation_buffer_bytes": 660356736
+    },
+    "shared-final-b": {
+      "median_ms": 405.992734,
+      "tokens_s": 315.27657832418254,
+      "cpu_logit_nrmse": 0.024074741687120184,
+      "top1": 537,
+      "logits_sha256": "1f075ea3f8bb4ee76404bdb286e1fc935e91c98469160a69918a486f325d4c2b",
+      "major_faults": 1,
+      "minor_faults": 4492,
+      "expert_activation_buffer_bytes": 660356736
+    }
+  },
+  "pooled": {
+    "native": {
+      "samples": 24,
+      "median_ms": 550.7498435,
+      "tokens_s": 232.41041556464828
+    },
+    "copy": {
+      "samples": 24,
+      "median_ms": 410.00765599999994,
+      "tokens_s": 312.1892923872622,
+      "throughput_gain_vs_native": 0.34326721816140937
+    },
+    "shared": {
+      "samples": 24,
+      "median_ms": 404.262005,
+      "tokens_s": 316.6263423642793,
+      "throughput_gain_vs_native": 0.36235866019612684
+    }
+  },
+  "copy_shared_bitwise_equal": true,
+  "same_binary_hashes": true,
+  "numeric_scope": "same fixed prompt; 10% CPU-logit smoke bound and top1; not model quality equivalence"
+}
