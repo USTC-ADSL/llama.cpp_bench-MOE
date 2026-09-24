@@ -1,0 +1,3451 @@
+{
+  "runs": {
+    "native-a": {
+      "median_ms": 676.4138275,
+      "mean_ms": 674.6675212499999,
+      "tokens_s": 378.4665386663758,
+      "cpu_logit_nrmse": 0.04895784554312516,
+      "top1": 279,
+      "logits_sha256": "a6f34d87f04f4b97a24a5107e3d62699cb04052868eee8569319de686b350fbe",
+      "major_faults": 0,
+      "minor_faults": 2628,
+      "expert_activation_buffer_bytes": 0
+    },
+    "native-b": {
+      "median_ms": 688.183333,
+      "mean_ms": 693.1203296666666,
+      "tokens_s": 371.99389715530936,
+      "cpu_logit_nrmse": 0.04895784554312516,
+      "top1": 279,
+      "logits_sha256": "a6f34d87f04f4b97a24a5107e3d62699cb04052868eee8569319de686b350fbe",
+      "major_faults": 0,
+      "minor_faults": 2628,
+      "expert_activation_buffer_bytes": 0
+    },
+    "copy-a": {
+      "median_ms": 647.520755,
+      "mean_ms": 648.5941925833333,
+      "tokens_s": 395.354122664377,
+      "cpu_logit_nrmse": 0.03949618460304339,
+      "top1": 279,
+      "logits_sha256": "52ac1bdd652099402c8556176f8cad745256088a26b2fd2c521a698994139219",
+      "major_faults": 4,
+      "minor_faults": 287655,
+      "expert_activation_buffer_bytes": 1320654496,
+      "mean_phase_breakdown": {
+        "gather_ms": 11.859245416666667,
+        "expert_wall_ms": 402.3584935833333,
+        "combine_ms": 45.706930916666664,
+        "other_model_and_boundary_ms": 188.6695226666667,
+        "backend_serial_sums_ms": {
+          "cpu": {
+            "upload": 2.5281849166666666,
+            "compute": 239.64164983333333,
+            "readback": 1.25175325
+          },
+          "npu": {
+            "upload": 16.93800325,
+            "compute": 331.4822175833333,
+            "readback": 10.605451833333333
+          },
+          "gpu": {
+            "upload": 7.056702166666667,
+            "compute": 287.4081335,
+            "readback": 4.106050416666667
+          }
+        },
+        "parallel_envelope_minus_longest_job_ms": 2.8518478333333337,
+        "layers": [
+          {
+            "layer": 0,
+            "tokens": 256,
+            "pairs": [
+              0,
+              644,
+              380
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 0,
+              "gpu": 12
+            },
+            "gather_ms": 0.5713934166666667,
+            "expert_wall_ms": 17.737543416666668,
+            "combine_ms": 5.178863000000001,
+            "backend_compute_ms": [
+              0.0,
+              14.385642333333333,
+              16.934184166666665
+            ]
+          },
+          {
+            "layer": 1,
+            "tokens": 256,
+            "pairs": [
+              0,
+              748,
+              276
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 1.3585546666666666,
+            "expert_wall_ms": 18.04623675,
+            "combine_ms": 7.320980916666667,
+            "backend_compute_ms": [
+              0.0,
+              14.743632750000002,
+              13.39143225
+            ]
+          },
+          {
+            "layer": 2,
+            "tokens": 256,
+            "pairs": [
+              0,
+              0,
+              1024
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 0,
+              "gpu": 12
+            },
+            "gather_ms": 0.5620789166666668,
+            "expert_wall_ms": 39.054565833333335,
+            "combine_ms": 1.88493925,
+            "backend_compute_ms": [
+              23.7271875,
+              0.0,
+              38.100260500000005
+            ]
+          },
+          {
+            "layer": 3,
+            "tokens": 256,
+            "pairs": [
+              127,
+              897,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 1,
+              "npu": 11,
+              "gpu": 0
+            },
+            "gather_ms": 0.8216925833333334,
+            "expert_wall_ms": 15.763480916666667,
+            "combine_ms": 1.4756899166666666,
+            "backend_compute_ms": [
+              13.017912333333333,
+              14.524770166666666,
+              11.784127583333333
+            ]
+          },
+          {
+            "layer": 4,
+            "tokens": 256,
+            "pairs": [
+              116,
+              908,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.4096221666666667,
+            "expert_wall_ms": 15.934275416666667,
+            "combine_ms": 1.6660850833333334,
+            "backend_compute_ms": [
+              11.60787325,
+              14.731471416666666,
+              11.659036333333333
+            ]
+          },
+          {
+            "layer": 5,
+            "tokens": 256,
+            "pairs": [
+              111,
+              913,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.42235233333333333,
+            "expert_wall_ms": 17.873693833333334,
+            "combine_ms": 1.4824476666666666,
+            "backend_compute_ms": [
+              10.766367083333332,
+              16.5679905,
+              0.0
+            ]
+          },
+          {
+            "layer": 6,
+            "tokens": 256,
+            "pairs": [
+              102,
+              922,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.4565626666666666,
+            "expert_wall_ms": 17.01130625,
+            "combine_ms": 1.4823611666666665,
+            "backend_compute_ms": [
+              10.0117405,
+              15.799379333333334,
+              11.533428666666667
+            ]
+          },
+          {
+            "layer": 7,
+            "tokens": 256,
+            "pairs": [
+              106,
+              918,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.44712691666666665,
+            "expert_wall_ms": 15.78776025,
+            "combine_ms": 1.579618,
+            "backend_compute_ms": [
+              10.2605165,
+              14.49518225,
+              11.481952666666666
+            ]
+          },
+          {
+            "layer": 8,
+            "tokens": 256,
+            "pairs": [
+              94,
+              930,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.45557291666666666,
+            "expert_wall_ms": 15.950312583333332,
+            "combine_ms": 1.5247134166666667,
+            "backend_compute_ms": [
+              9.54339875,
+              14.718172583333333,
+              11.436979333333333
+            ]
+          },
+          {
+            "layer": 9,
+            "tokens": 256,
+            "pairs": [
+              84,
+              940,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.4098219166666667,
+            "expert_wall_ms": 16.24080725,
+            "combine_ms": 1.485638,
+            "backend_compute_ms": [
+              8.621862083333333,
+              14.939067083333333,
+              11.466571333333333
+            ]
+          },
+          {
+            "layer": 10,
+            "tokens": 256,
+            "pairs": [
+              100,
+              924,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.45951841666666665,
+            "expert_wall_ms": 16.044904416666665,
+            "combine_ms": 1.55597225,
+            "backend_compute_ms": [
+              10.449605166666666,
+              14.819874,
+              11.43042525
+            ]
+          },
+          {
+            "layer": 11,
+            "tokens": 256,
+            "pairs": [
+              96,
+              928,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.4509245833333333,
+            "expert_wall_ms": 16.211649333333334,
+            "combine_ms": 1.6279428333333332,
+            "backend_compute_ms": [
+              9.840303833333333,
+              14.94187075,
+              11.454700500000001
+            ]
+          },
+          {
+            "layer": 12,
+            "tokens": 256,
+            "pairs": [
+              109,
+              915,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.5006945,
+            "expert_wall_ms": 17.114848,
+            "combine_ms": 1.54555125,
+            "backend_compute_ms": [
+              11.02397575,
+              15.867452416666668,
+              11.400238583333334
+            ]
+          },
+          {
+            "layer": 13,
+            "tokens": 256,
+            "pairs": [
+              97,
+              927,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.5141104166666667,
+            "expert_wall_ms": 16.155642166666667,
+            "combine_ms": 1.5339409166666667,
+            "backend_compute_ms": [
+              9.783163916666666,
+              14.872578083333334,
+              11.5914365
+            ]
+          },
+          {
+            "layer": 14,
+            "tokens": 256,
+            "pairs": [
+              103,
+              921,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 1,
+              "npu": 11,
+              "gpu": 0
+            },
+            "gather_ms": 0.46739141666666667,
+            "expert_wall_ms": 16.321275916666668,
+            "combine_ms": 1.5734981666666668,
+            "backend_compute_ms": [
+              11.146814166666667,
+              14.942183000000002,
+              11.58121975
+            ]
+          },
+          {
+            "layer": 15,
+            "tokens": 256,
+            "pairs": [
+              122,
+              902,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.45134983333333334,
+            "expert_wall_ms": 16.12736125,
+            "combine_ms": 1.61505625,
+            "backend_compute_ms": [
+              12.1451865,
+              14.899904333333334,
+              11.381553833333333
+            ]
+          },
+          {
+            "layer": 16,
+            "tokens": 256,
+            "pairs": [
+              103,
+              921,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.45283408333333336,
+            "expert_wall_ms": 15.6504385,
+            "combine_ms": 1.6092575833333334,
+            "backend_compute_ms": [
+              10.522621666666666,
+              14.38163175,
+              11.587230916666668
+            ]
+          },
+          {
+            "layer": 17,
+            "tokens": 256,
+            "pairs": [
+              122,
+              902,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.4683811666666667,
+            "expert_wall_ms": 15.785972166666667,
+            "combine_ms": 1.6179905,
+            "backend_compute_ms": [
+              12.3870485,
+              14.562586750000001,
+              11.600789916666667
+            ]
+          },
+          {
+            "layer": 18,
+            "tokens": 256,
+            "pairs": [
+              129,
+              895,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.43280825,
+            "expert_wall_ms": 17.127747583333335,
+            "combine_ms": 1.65030375,
+            "backend_compute_ms": [
+              12.417604166666665,
+              15.95106775,
+              11.306588666666666
+            ]
+          },
+          {
+            "layer": 19,
+            "tokens": 256,
+            "pairs": [
+              122,
+              902,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.4244270833333333,
+            "expert_wall_ms": 16.052717,
+            "combine_ms": 1.6383985833333334,
+            "backend_compute_ms": [
+              11.741007083333335,
+              14.806488666666667,
+              11.370607666666666
+            ]
+          },
+          {
+            "layer": 20,
+            "tokens": 256,
+            "pairs": [
+              109,
+              915,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.4170181666666667,
+            "expert_wall_ms": 16.02447925,
+            "combine_ms": 1.6089885833333333,
+            "backend_compute_ms": [
+              10.921445416666668,
+              14.766106666666667,
+              11.442799666666666
+            ]
+          },
+          {
+            "layer": 21,
+            "tokens": 256,
+            "pairs": [
+              85,
+              939,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.4274306666666666,
+            "expert_wall_ms": 16.539179583333336,
+            "combine_ms": 1.4973394166666667,
+            "backend_compute_ms": [
+              9.418194416666667,
+              15.216970416666667,
+              11.545043333333332
+            ]
+          },
+          {
+            "layer": 22,
+            "tokens": 256,
+            "pairs": [
+              88,
+              936,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.47518683333333334,
+            "expert_wall_ms": 16.73083325,
+            "combine_ms": 1.5452475833333332,
+            "backend_compute_ms": [
+              9.707078916666667,
+              15.5151475,
+              11.927526083333333
+            ]
+          },
+          {
+            "layer": 23,
+            "tokens": 1,
+            "pairs": [
+              0,
+              4,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.0023915000000000004,
+            "expert_wall_ms": 1.0714626666666667,
+            "combine_ms": 0.006106833333333333,
+            "backend_compute_ms": [
+              0.5807423333333334,
+              1.0330470833333334,
+              0.0
+            ]
+          }
+        ]
+      }
+    },
+    "copy-b": {
+      "median_ms": 700.5880464999999,
+      "mean_ms": 699.7128339166667,
+      "tokens_s": 365.40731929259374,
+      "cpu_logit_nrmse": 0.03949618460304339,
+      "top1": 279,
+      "logits_sha256": "52ac1bdd652099402c8556176f8cad745256088a26b2fd2c521a698994139219",
+      "major_faults": 2,
+      "minor_faults": 287673,
+      "expert_activation_buffer_bytes": 1320654496,
+      "mean_phase_breakdown": {
+        "gather_ms": 12.3221,
+        "expert_wall_ms": 412.3627993333333,
+        "combine_ms": 55.19124983333334,
+        "other_model_and_boundary_ms": 219.83668475000002,
+        "backend_serial_sums_ms": {
+          "cpu": {
+            "upload": 2.656342,
+            "compute": 291.6802858333333,
+            "readback": 1.2692233333333334
+          },
+          "npu": {
+            "upload": 17.37566375,
+            "compute": 340.88306008333336,
+            "readback": 11.158896916666666
+          },
+          "gpu": {
+            "upload": 6.9748745,
+            "compute": 286.00278975,
+            "readback": 4.640937083333333
+          }
+        },
+        "parallel_envelope_minus_longest_job_ms": 2.946320166666666,
+        "layers": [
+          {
+            "layer": 0,
+            "tokens": 256,
+            "pairs": [
+              0,
+              644,
+              380
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 1,
+              "gpu": 11
+            },
+            "gather_ms": 0.57795975,
+            "expert_wall_ms": 17.403927916666667,
+            "combine_ms": 5.93979175,
+            "backend_compute_ms": [
+              0.0,
+              14.512091916666666,
+              16.599730833333336
+            ]
+          },
+          {
+            "layer": 1,
+            "tokens": 256,
+            "pairs": [
+              0,
+              748,
+              276
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 1.4938715,
+            "expert_wall_ms": 18.2990755,
+            "combine_ms": 7.503012249999999,
+            "backend_compute_ms": [
+              0.0,
+              15.058190249999999,
+              13.649678583333333
+            ]
+          },
+          {
+            "layer": 2,
+            "tokens": 256,
+            "pairs": [
+              0,
+              0,
+              1024
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 0,
+              "gpu": 12
+            },
+            "gather_ms": 0.47199216666666666,
+            "expert_wall_ms": 39.0417795,
+            "combine_ms": 1.9558809166666666,
+            "backend_compute_ms": [
+              31.384275166666665,
+              0.0,
+              38.09025166666666
+            ]
+          },
+          {
+            "layer": 3,
+            "tokens": 256,
+            "pairs": [
+              127,
+              897,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 2,
+              "npu": 10,
+              "gpu": 0
+            },
+            "gather_ms": 0.5660677500000001,
+            "expert_wall_ms": 16.53352841666667,
+            "combine_ms": 2.0043403333333334,
+            "backend_compute_ms": [
+              15.625281916666667,
+              14.994986916666667,
+              11.757391666666667
+            ]
+          },
+          {
+            "layer": 4,
+            "tokens": 256,
+            "pairs": [
+              116,
+              908,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.488815,
+            "expert_wall_ms": 16.360920166666666,
+            "combine_ms": 1.9745485833333334,
+            "backend_compute_ms": [
+              14.03170575,
+              15.143420083333332,
+              11.628185583333334
+            ]
+          },
+          {
+            "layer": 5,
+            "tokens": 256,
+            "pairs": [
+              111,
+              913,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.47994333333333333,
+            "expert_wall_ms": 18.604258166666668,
+            "combine_ms": 1.9588800833333335,
+            "backend_compute_ms": [
+              13.101271500000001,
+              17.252066,
+              0.0
+            ]
+          },
+          {
+            "layer": 6,
+            "tokens": 256,
+            "pairs": [
+              102,
+              922,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.4814583333333333,
+            "expert_wall_ms": 17.775876416666666,
+            "combine_ms": 1.9997006666666666,
+            "backend_compute_ms": [
+              12.421640666666667,
+              16.42402775,
+              11.530299333333332
+            ]
+          },
+          {
+            "layer": 7,
+            "tokens": 256,
+            "pairs": [
+              106,
+              918,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.48733933333333335,
+            "expert_wall_ms": 16.35805125,
+            "combine_ms": 1.9831076666666667,
+            "backend_compute_ms": [
+              12.828342000000001,
+              15.023290083333332,
+              11.410516583333335
+            ]
+          },
+          {
+            "layer": 8,
+            "tokens": 256,
+            "pairs": [
+              94,
+              930,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.4789105,
+            "expert_wall_ms": 16.377534916666665,
+            "combine_ms": 1.9954251666666667,
+            "backend_compute_ms": [
+              11.742521666666665,
+              15.10918425,
+              11.420143249999999
+            ]
+          },
+          {
+            "layer": 9,
+            "tokens": 256,
+            "pairs": [
+              84,
+              940,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.49162775,
+            "expert_wall_ms": 16.934874083333334,
+            "combine_ms": 2.0436503333333333,
+            "backend_compute_ms": [
+              10.916280083333334,
+              15.38803375,
+              11.440980916666668
+            ]
+          },
+          {
+            "layer": 10,
+            "tokens": 256,
+            "pairs": [
+              100,
+              924,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.48872825,
+            "expert_wall_ms": 16.391805416666667,
+            "combine_ms": 1.986901,
+            "backend_compute_ms": [
+              12.21285175,
+              15.13784725,
+              11.379466166666667
+            ]
+          },
+          {
+            "layer": 11,
+            "tokens": 256,
+            "pairs": [
+              96,
+              928,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.4845528333333334,
+            "expert_wall_ms": 16.55554258333333,
+            "combine_ms": 2.09752175,
+            "backend_compute_ms": [
+              11.97560325,
+              15.229123333333334,
+              11.460334166666668
+            ]
+          },
+          {
+            "layer": 12,
+            "tokens": 256,
+            "pairs": [
+              109,
+              915,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.49265625,
+            "expert_wall_ms": 17.5232205,
+            "combine_ms": 2.0070093333333334,
+            "backend_compute_ms": [
+              13.077734249999999,
+              16.242178916666667,
+              11.24660575
+            ]
+          },
+          {
+            "layer": 13,
+            "tokens": 256,
+            "pairs": [
+              97,
+              927,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.49855475,
+            "expert_wall_ms": 16.317803833333333,
+            "combine_ms": 1.9785632499999999,
+            "backend_compute_ms": [
+              12.11104175,
+              15.042738416666667,
+              11.4008465
+            ]
+          },
+          {
+            "layer": 14,
+            "tokens": 256,
+            "pairs": [
+              103,
+              921,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.48171891666666666,
+            "expert_wall_ms": 16.611245583333332,
+            "combine_ms": 1.9746744166666668,
+            "backend_compute_ms": [
+              12.65084625,
+              15.148611333333335,
+              11.430203916666667
+            ]
+          },
+          {
+            "layer": 15,
+            "tokens": 256,
+            "pairs": [
+              122,
+              902,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 2,
+              "npu": 10,
+              "gpu": 0
+            },
+            "gather_ms": 0.48134974999999997,
+            "expert_wall_ms": 16.553624083333332,
+            "combine_ms": 1.98212675,
+            "backend_compute_ms": [
+              14.820303916666665,
+              15.282994583333332,
+              11.4675
+            ]
+          },
+          {
+            "layer": 16,
+            "tokens": 256,
+            "pairs": [
+              103,
+              921,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.4728124166666666,
+            "expert_wall_ms": 16.268442,
+            "combine_ms": 1.9640710833333332,
+            "backend_compute_ms": [
+              12.615186666666666,
+              15.015694416666667,
+              11.51143225
+            ]
+          },
+          {
+            "layer": 17,
+            "tokens": 256,
+            "pairs": [
+              122,
+              902,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.4798656666666667,
+            "expert_wall_ms": 16.272669166666667,
+            "combine_ms": 1.9641840833333333,
+            "backend_compute_ms": [
+              14.59653625,
+              15.062743249999999,
+              11.385208333333335
+            ]
+          },
+          {
+            "layer": 18,
+            "tokens": 256,
+            "pairs": [
+              129,
+              895,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.48698766666666665,
+            "expert_wall_ms": 17.735620583333333,
+            "combine_ms": 1.9728169166666667,
+            "backend_compute_ms": [
+              15.338186,
+              16.52521691666667,
+              11.345989416666667
+            ]
+          },
+          {
+            "layer": 19,
+            "tokens": 256,
+            "pairs": [
+              122,
+              902,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.48997825,
+            "expert_wall_ms": 16.511462666666667,
+            "combine_ms": 1.9725175,
+            "backend_compute_ms": [
+              14.703394083333333,
+              15.296909666666666,
+              11.564548666666665
+            ]
+          },
+          {
+            "layer": 20,
+            "tokens": 256,
+            "pairs": [
+              109,
+              915,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.480664,
+            "expert_wall_ms": 16.73533433333333,
+            "combine_ms": 1.9698394166666666,
+            "backend_compute_ms": [
+              13.105342833333333,
+              15.464422749999999,
+              11.518207166666667
+            ]
+          },
+          {
+            "layer": 21,
+            "tokens": 256,
+            "pairs": [
+              85,
+              939,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.47467899999999996,
+            "expert_wall_ms": 17.073276833333335,
+            "combine_ms": 1.9836935833333331,
+            "backend_compute_ms": [
+              10.5521615,
+              15.764791583333334,
+              11.418993083333334
+            ]
+          },
+          {
+            "layer": 22,
+            "tokens": 256,
+            "pairs": [
+              88,
+              936,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.48941841666666663,
+            "expert_wall_ms": 17.031562583333333,
+            "combine_ms": 1.9711935833333332,
+            "backend_compute_ms": [
+              11.31810325,
+              15.717916833333332,
+              11.346275916666668
+            ]
+          },
+          {
+            "layer": 23,
+            "tokens": 1,
+            "pairs": [
+              0,
+              4,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.002148416666666667,
+            "expert_wall_ms": 1.0913628333333334,
+            "combine_ms": 0.007799416666666666,
+            "backend_compute_ms": [
+              0.5516753333333334,
+              1.0465798333333334,
+              0.0
+            ]
+          }
+        ]
+      }
+    },
+    "shared-a": {
+      "median_ms": 624.4136975,
+      "mean_ms": 624.3245439166667,
+      "tokens_s": 409.9845999935003,
+      "cpu_logit_nrmse": 0.03949618460304339,
+      "top1": 279,
+      "logits_sha256": "52ac1bdd652099402c8556176f8cad745256088a26b2fd2c521a698994139219",
+      "major_faults": 2,
+      "minor_faults": 287677,
+      "expert_activation_buffer_bytes": 1320655744,
+      "mean_phase_breakdown": {
+        "gather_ms": 11.854661833333333,
+        "expert_wall_ms": 375.8100175,
+        "combine_ms": 46.71125433333333,
+        "other_model_and_boundary_ms": 189.94861025,
+        "backend_serial_sums_ms": {
+          "cpu": {
+            "upload": 0.0,
+            "compute": 240.44835475,
+            "readback": 0.0
+          },
+          "npu": {
+            "upload": 0.0,
+            "compute": 332.73167141666664,
+            "readback": 0.0
+          },
+          "gpu": {
+            "upload": 0.0,
+            "compute": 284.2783161666667,
+            "readback": 0.0
+          }
+        },
+        "parallel_envelope_minus_longest_job_ms": 2.4302210000000013,
+        "layers": [
+          {
+            "layer": 0,
+            "tokens": 256,
+            "pairs": [
+              0,
+              644,
+              380
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 0,
+              "gpu": 12
+            },
+            "gather_ms": 0.44592883333333333,
+            "expert_wall_ms": 16.61378483333333,
+            "combine_ms": 5.983033750000001,
+            "backend_compute_ms": [
+              0.0,
+              14.017725666666667,
+              16.55921875
+            ]
+          },
+          {
+            "layer": 1,
+            "tokens": 256,
+            "pairs": [
+              0,
+              748,
+              276
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 1.53597225,
+            "expert_wall_ms": 15.080985333333334,
+            "combine_ms": 7.539375083333334,
+            "backend_compute_ms": [
+              0.0,
+              14.815286583333334,
+              13.316592833333335
+            ]
+          },
+          {
+            "layer": 2,
+            "tokens": 256,
+            "pairs": [
+              0,
+              0,
+              1024
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 0,
+              "gpu": 12
+            },
+            "gather_ms": 0.6655858333333333,
+            "expert_wall_ms": 38.13189233333334,
+            "combine_ms": 1.7877864166666666,
+            "backend_compute_ms": [
+              24.642673666666667,
+              0.0,
+              38.03861983333333
+            ]
+          },
+          {
+            "layer": 3,
+            "tokens": 256,
+            "pairs": [
+              127,
+              897,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 2,
+              "npu": 10,
+              "gpu": 0
+            },
+            "gather_ms": 0.84426225,
+            "expert_wall_ms": 14.790000166666667,
+            "combine_ms": 1.5459113333333332,
+            "backend_compute_ms": [
+              13.288467916666667,
+              14.561584083333333,
+              11.677686583333331
+            ]
+          },
+          {
+            "layer": 4,
+            "tokens": 256,
+            "pairs": [
+              116,
+              908,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.40259558333333334,
+            "expert_wall_ms": 14.912096333333333,
+            "combine_ms": 1.5876649166666665,
+            "backend_compute_ms": [
+              11.365898583333333,
+              14.826323833333333,
+              11.494453333333333
+            ]
+          },
+          {
+            "layer": 5,
+            "tokens": 256,
+            "pairs": [
+              111,
+              913,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.4344965833333333,
+            "expert_wall_ms": 16.62147141666667,
+            "combine_ms": 1.64013025,
+            "backend_compute_ms": [
+              11.28551225,
+              16.585308416666667,
+              0.0
+            ]
+          },
+          {
+            "layer": 6,
+            "tokens": 256,
+            "pairs": [
+              102,
+              922,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.44204858333333336,
+            "expert_wall_ms": 16.013094666666667,
+            "combine_ms": 1.5745095833333331,
+            "backend_compute_ms": [
+              11.2657985,
+              15.90768675,
+              11.504162416666667
+            ]
+          },
+          {
+            "layer": 7,
+            "tokens": 256,
+            "pairs": [
+              106,
+              918,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.43059891666666666,
+            "expert_wall_ms": 14.688007833333334,
+            "combine_ms": 1.5261588333333334,
+            "backend_compute_ms": [
+              10.28717,
+              14.601809916666667,
+              11.287790666666666
+            ]
+          },
+          {
+            "layer": 8,
+            "tokens": 256,
+            "pairs": [
+              94,
+              930,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.41406258333333334,
+            "expert_wall_ms": 14.765034833333333,
+            "combine_ms": 1.4427125,
+            "backend_compute_ms": [
+              9.1668055,
+              14.673237916666666,
+              11.415946083333333
+            ]
+          },
+          {
+            "layer": 9,
+            "tokens": 256,
+            "pairs": [
+              84,
+              940,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.44299916666666667,
+            "expert_wall_ms": 15.027465249999999,
+            "combine_ms": 1.4215799166666665,
+            "backend_compute_ms": [
+              8.725833333333334,
+              14.9317665,
+              11.373771666666668
+            ]
+          },
+          {
+            "layer": 10,
+            "tokens": 256,
+            "pairs": [
+              100,
+              924,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.4935285833333334,
+            "expert_wall_ms": 14.769956583333332,
+            "combine_ms": 1.5981815833333333,
+            "backend_compute_ms": [
+              10.519895833333335,
+              14.65026475,
+              11.43508675
+            ]
+          },
+          {
+            "layer": 11,
+            "tokens": 256,
+            "pairs": [
+              96,
+              928,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.46334183333333334,
+            "expert_wall_ms": 15.083953916666667,
+            "combine_ms": 1.6144358333333335,
+            "backend_compute_ms": [
+              10.025112833333333,
+              14.985616333333333,
+              11.40912325
+            ]
+          },
+          {
+            "layer": 12,
+            "tokens": 256,
+            "pairs": [
+              109,
+              915,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.4922655833333333,
+            "expert_wall_ms": 15.959908666666665,
+            "combine_ms": 1.5946223333333331,
+            "backend_compute_ms": [
+              11.162512833333334,
+              15.8380165,
+              11.131258749999999
+            ]
+          },
+          {
+            "layer": 13,
+            "tokens": 256,
+            "pairs": [
+              97,
+              927,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.45078975,
+            "expert_wall_ms": 14.893350666666667,
+            "combine_ms": 1.5217925,
+            "backend_compute_ms": [
+              9.759231583333333,
+              14.800156333333332,
+              11.445985166666667
+            ]
+          },
+          {
+            "layer": 14,
+            "tokens": 256,
+            "pairs": [
+              103,
+              921,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.4317013333333333,
+            "expert_wall_ms": 14.996762333333335,
+            "combine_ms": 1.5471180833333333,
+            "backend_compute_ms": [
+              10.31895825,
+              14.895312416666668,
+              11.294032083333333
+            ]
+          },
+          {
+            "layer": 15,
+            "tokens": 256,
+            "pairs": [
+              122,
+              902,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.42195316666666666,
+            "expert_wall_ms": 15.250829,
+            "combine_ms": 1.57440525,
+            "backend_compute_ms": [
+              11.595742416666665,
+              15.158793333333334,
+              11.21259125
+            ]
+          },
+          {
+            "layer": 16,
+            "tokens": 256,
+            "pairs": [
+              103,
+              921,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.43601575000000004,
+            "expert_wall_ms": 14.810416499999999,
+            "combine_ms": 1.6238193333333333,
+            "backend_compute_ms": [
+              10.395802999999999,
+              14.706701333333333,
+              11.310738083333334
+            ]
+          },
+          {
+            "layer": 17,
+            "tokens": 256,
+            "pairs": [
+              122,
+              902,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.44610241666666667,
+            "expert_wall_ms": 15.024071166666667,
+            "combine_ms": 1.5694399166666666,
+            "backend_compute_ms": [
+              11.909001666666667,
+              14.931327999999999,
+              11.281879333333334
+            ]
+          },
+          {
+            "layer": 18,
+            "tokens": 256,
+            "pairs": [
+              129,
+              895,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.41442266666666666,
+            "expert_wall_ms": 16.178867166666667,
+            "combine_ms": 1.6075565833333332,
+            "backend_compute_ms": [
+              12.614440166666666,
+              16.089119083333333,
+              11.37828575
+            ]
+          },
+          {
+            "layer": 19,
+            "tokens": 256,
+            "pairs": [
+              122,
+              902,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.427066,
+            "expert_wall_ms": 15.012651916666668,
+            "combine_ms": 1.6861633333333335,
+            "backend_compute_ms": [
+              12.399336,
+              14.916684083333333,
+              11.467890583333334
+            ]
+          },
+          {
+            "layer": 20,
+            "tokens": 256,
+            "pairs": [
+              109,
+              915,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.42723541666666665,
+            "expert_wall_ms": 15.079487833333333,
+            "combine_ms": 1.5939410833333334,
+            "backend_compute_ms": [
+              11.073259583333332,
+              14.980269166666666,
+              11.525755166666668
+            ]
+          },
+          {
+            "layer": 21,
+            "tokens": 256,
+            "pairs": [
+              85,
+              939,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.41136291666666663,
+            "expert_wall_ms": 15.458055583333334,
+            "combine_ms": 1.5909766666666667,
+            "backend_compute_ms": [
+              8.8992795,
+              15.3602865,
+              11.32348525
+            ]
+          },
+          {
+            "layer": 22,
+            "tokens": 256,
+            "pairs": [
+              88,
+              936,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.47745258333333335,
+            "expert_wall_ms": 15.56878475,
+            "combine_ms": 1.5337846666666666,
+            "backend_compute_ms": [
+              9.22134975,
+              15.450078083333334,
+              11.393962583333334
+            ]
+          },
+          {
+            "layer": 23,
+            "tokens": 1,
+            "pairs": [
+              0,
+              4,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.00287325,
+            "expert_wall_ms": 1.0790884166666668,
+            "combine_ms": 0.006154583333333333,
+            "backend_compute_ms": [
+              0.5262715833333333,
+              1.0483158333333333,
+              0.0
+            ]
+          }
+        ]
+      }
+    },
+    "shared-b": {
+      "median_ms": 659.0011455,
+      "mean_ms": 660.17404075,
+      "tokens_s": 388.46669956205716,
+      "cpu_logit_nrmse": 0.03949618460304339,
+      "top1": 279,
+      "logits_sha256": "52ac1bdd652099402c8556176f8cad745256088a26b2fd2c521a698994139219",
+      "major_faults": 2,
+      "minor_faults": 287662,
+      "expert_activation_buffer_bytes": 1320655744,
+      "mean_phase_breakdown": {
+        "gather_ms": 13.66300325,
+        "expert_wall_ms": 384.66457033333336,
+        "combine_ms": 51.204566916666664,
+        "other_model_and_boundary_ms": 210.64190025,
+        "backend_serial_sums_ms": {
+          "cpu": {
+            "upload": 0.0,
+            "compute": 264.4048741666667,
+            "readback": 0.0
+          },
+          "npu": {
+            "upload": 0.0,
+            "compute": 341.07698908333333,
+            "readback": 0.0
+          },
+          "gpu": {
+            "upload": 0.0,
+            "compute": 283.87657566666667,
+            "readback": 0.0
+          }
+        },
+        "parallel_envelope_minus_longest_job_ms": 2.7416433333333354,
+        "layers": [
+          {
+            "layer": 0,
+            "tokens": 256,
+            "pairs": [
+              0,
+              644,
+              380
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 0,
+              "gpu": 12
+            },
+            "gather_ms": 0.46696183333333335,
+            "expert_wall_ms": 16.535195416666667,
+            "combine_ms": 5.866593,
+            "backend_compute_ms": [
+              0.0,
+              14.424240166666667,
+              16.48650191666667
+            ]
+          },
+          {
+            "layer": 1,
+            "tokens": 256,
+            "pairs": [
+              0,
+              748,
+              276
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 1.5269704166666664,
+            "expert_wall_ms": 15.361827333333332,
+            "combine_ms": 7.735247583333334,
+            "backend_compute_ms": [
+              0.0,
+              15.097031416666667,
+              13.372369666666668
+            ]
+          },
+          {
+            "layer": 2,
+            "tokens": 256,
+            "pairs": [
+              0,
+              0,
+              1024
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 0,
+              "gpu": 12
+            },
+            "gather_ms": 0.8348439166666667,
+            "expert_wall_ms": 38.15653616666666,
+            "combine_ms": 1.9532856666666667,
+            "backend_compute_ms": [
+              25.985876666666666,
+              0.0,
+              38.05504333333334
+            ]
+          },
+          {
+            "layer": 3,
+            "tokens": 256,
+            "pairs": [
+              127,
+              897,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 6,
+              "npu": 6,
+              "gpu": 0
+            },
+            "gather_ms": 0.8260809166666667,
+            "expert_wall_ms": 15.649366166666667,
+            "combine_ms": 1.7251908333333332,
+            "backend_compute_ms": [
+              15.096106749999999,
+              14.818585083333334,
+              11.51522125
+            ]
+          },
+          {
+            "layer": 4,
+            "tokens": 256,
+            "pairs": [
+              116,
+              908,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.49268225,
+            "expert_wall_ms": 15.227283083333333,
+            "combine_ms": 1.7404080833333333,
+            "backend_compute_ms": [
+              12.47198775,
+              15.115946333333333,
+              11.478263833333335
+            ]
+          },
+          {
+            "layer": 5,
+            "tokens": 256,
+            "pairs": [
+              111,
+              913,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.46753449999999996,
+            "expert_wall_ms": 17.031740666666664,
+            "combine_ms": 1.707474,
+            "backend_compute_ms": [
+              11.86095925,
+              16.990486083333334,
+              0.0
+            ]
+          },
+          {
+            "layer": 6,
+            "tokens": 256,
+            "pairs": [
+              102,
+              922,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.6215843333333333,
+            "expert_wall_ms": 16.53903216666667,
+            "combine_ms": 1.7878864166666668,
+            "backend_compute_ms": [
+              11.87952675,
+              16.401688333333333,
+              11.558724
+            ]
+          },
+          {
+            "layer": 7,
+            "tokens": 256,
+            "pairs": [
+              106,
+              918,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.6218229166666667,
+            "expert_wall_ms": 15.174509583333332,
+            "combine_ms": 1.7687674166666665,
+            "backend_compute_ms": [
+              11.725399166666666,
+              15.049032083333334,
+              11.221115666666666
+            ]
+          },
+          {
+            "layer": 8,
+            "tokens": 256,
+            "pairs": [
+              94,
+              930,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.54174475,
+            "expert_wall_ms": 15.265611916666666,
+            "combine_ms": 1.7890713333333332,
+            "backend_compute_ms": [
+              10.614531166666668,
+              15.146545249999999,
+              11.537860333333334
+            ]
+          },
+          {
+            "layer": 9,
+            "tokens": 256,
+            "pairs": [
+              84,
+              940,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.5811980833333333,
+            "expert_wall_ms": 15.472304583333333,
+            "combine_ms": 1.7555904166666667,
+            "backend_compute_ms": [
+              9.525659833333334,
+              15.350980916666668,
+              11.286406416666667
+            ]
+          },
+          {
+            "layer": 10,
+            "tokens": 256,
+            "pairs": [
+              100,
+              924,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 1,
+              "npu": 11,
+              "gpu": 0
+            },
+            "gather_ms": 0.54221325,
+            "expert_wall_ms": 15.195312583333335,
+            "combine_ms": 1.7436978333333335,
+            "backend_compute_ms": [
+              11.530672916666667,
+              15.073515583333334,
+              11.228385416666667
+            ]
+          },
+          {
+            "layer": 11,
+            "tokens": 256,
+            "pairs": [
+              96,
+              928,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.5517533333333333,
+            "expert_wall_ms": 15.416054666666668,
+            "combine_ms": 1.77431425,
+            "backend_compute_ms": [
+              10.596601583333333,
+              15.284414083333333,
+              11.395012916666667
+            ]
+          },
+          {
+            "layer": 12,
+            "tokens": 256,
+            "pairs": [
+              109,
+              915,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.5203645833333334,
+            "expert_wall_ms": 16.48586375,
+            "combine_ms": 1.7745573333333333,
+            "backend_compute_ms": [
+              11.739991166666666,
+              16.3842535,
+              11.2316495
+            ]
+          },
+          {
+            "layer": 13,
+            "tokens": 256,
+            "pairs": [
+              97,
+              927,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.49389324999999995,
+            "expert_wall_ms": 15.22949225,
+            "combine_ms": 1.7496006666666668,
+            "backend_compute_ms": [
+              11.336927,
+              15.117244,
+              11.446505916666666
+            ]
+          },
+          {
+            "layer": 14,
+            "tokens": 256,
+            "pairs": [
+              103,
+              921,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.57044275,
+            "expert_wall_ms": 15.489435833333333,
+            "combine_ms": 1.7777603333333334,
+            "backend_compute_ms": [
+              11.518546,
+              15.34980925,
+              11.542283166666666
+            ]
+          },
+          {
+            "layer": 15,
+            "tokens": 256,
+            "pairs": [
+              122,
+              902,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.55430575,
+            "expert_wall_ms": 15.34865875,
+            "combine_ms": 1.7757424166666667,
+            "backend_compute_ms": [
+              13.293559083333333,
+              15.232066166666668,
+              11.321792416666668
+            ]
+          },
+          {
+            "layer": 16,
+            "tokens": 256,
+            "pairs": [
+              103,
+              921,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.4942145,
+            "expert_wall_ms": 15.174157916666667,
+            "combine_ms": 1.8210720833333331,
+            "backend_compute_ms": [
+              11.387057333333335,
+              15.056814166666667,
+              11.183111833333335
+            ]
+          },
+          {
+            "layer": 17,
+            "tokens": 256,
+            "pairs": [
+              122,
+              902,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 1,
+              "npu": 11,
+              "gpu": 0
+            },
+            "gather_ms": 0.4653125,
+            "expert_wall_ms": 15.29583775,
+            "combine_ms": 1.8354384166666666,
+            "backend_compute_ms": [
+              13.432066333333331,
+              15.182209166666665,
+              11.340954750000002
+            ]
+          },
+          {
+            "layer": 18,
+            "tokens": 256,
+            "pairs": [
+              129,
+              895,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.4549045,
+            "expert_wall_ms": 16.41049475,
+            "combine_ms": 1.8069401666666665,
+            "backend_compute_ms": [
+              13.865269,
+              16.302574,
+              11.181280500000002
+            ]
+          },
+          {
+            "layer": 19,
+            "tokens": 256,
+            "pairs": [
+              122,
+              902,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.4627255,
+            "expert_wall_ms": 15.391935833333333,
+            "combine_ms": 1.801441,
+            "backend_compute_ms": [
+              13.691840333333333,
+              15.292838583333333,
+              11.214943499999999
+            ]
+          },
+          {
+            "layer": 20,
+            "tokens": 256,
+            "pairs": [
+              109,
+              915,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.49610241666666666,
+            "expert_wall_ms": 15.55756075,
+            "combine_ms": 1.8408594166666667,
+            "backend_compute_ms": [
+              11.994427,
+              15.448602583333333,
+              11.198710916666666
+            ]
+          },
+          {
+            "layer": 21,
+            "tokens": 256,
+            "pairs": [
+              85,
+              939,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.46478291666666666,
+            "expert_wall_ms": 15.587916666666667,
+            "combine_ms": 1.8688238333333334,
+            "backend_compute_ms": [
+              9.780573083333334,
+              15.471319416666667,
+              11.309084083333333
+            ]
+          },
+          {
+            "layer": 22,
+            "tokens": 256,
+            "pairs": [
+              88,
+              936,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.6071788333333333,
+            "expert_wall_ms": 16.561796666666666,
+            "combine_ms": 1.7954122499999998,
+            "backend_compute_ms": [
+              10.503407,
+              16.421102666666666,
+              11.771354333333333
+            ]
+          },
+          {
+            "layer": 23,
+            "tokens": 1,
+            "pairs": [
+              0,
+              4,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.0033852500000000002,
+            "expert_wall_ms": 1.1066450833333332,
+            "combine_ms": 0.009392166666666667,
+            "backend_compute_ms": [
+              0.573889,
+              1.06569025,
+              0.0
+            ]
+          }
+        ]
+      }
+    },
+    "interface-copy": {
+      "median_ms": 1007.6229685,
+      "mean_ms": 1008.3961845833334,
+      "tokens_s": 254.06328359217034,
+      "cpu_logit_nrmse": 0.04631995684882857,
+      "top1": 279,
+      "logits_sha256": "c6728ab81f538d401762c412ba3b6f09a3d36b226a2a2e639f0d27746602b6ae",
+      "major_faults": 0,
+      "minor_faults": 285769,
+      "expert_activation_buffer_bytes": 1133868544,
+      "mean_phase_breakdown": {
+        "gather_ms": 7.806805000000001,
+        "expert_wall_ms": 570.3618970833334,
+        "combine_ms": 157.24464858333332,
+        "other_model_and_boundary_ms": 272.98283391666666,
+        "backend_serial_sums_ms": {
+          "cpu": {
+            "upload": 0.0,
+            "compute": 0.0,
+            "readback": 0.0
+          },
+          "npu": {
+            "upload": 7.374473833333333,
+            "compute": 518.293107,
+            "readback": 44.66437058333333
+          },
+          "gpu": {
+            "upload": 0.0,
+            "compute": 0.0,
+            "readback": 0.0
+          }
+        },
+        "parallel_envelope_minus_longest_job_ms": 0.029945666666664407,
+        "layers": [
+          {
+            "layer": 0,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.1469315833333333,
+            "expert_wall_ms": 25.339032083333333,
+            "combine_ms": 6.7597786666666675,
+            "backend_compute_ms": [
+              0.0,
+              23.306753583333332,
+              0.0
+            ]
+          },
+          {
+            "layer": 1,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.35474391666666666,
+            "expert_wall_ms": 24.06121525,
+            "combine_ms": 7.20518225,
+            "backend_compute_ms": [
+              0.0,
+              21.73340266666667,
+              0.0
+            ]
+          },
+          {
+            "layer": 2,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.34817291666666667,
+            "expert_wall_ms": 24.171909833333334,
+            "combine_ms": 7.2379991666666665,
+            "backend_compute_ms": [
+              0.0,
+              21.797339333333333,
+              0.0
+            ]
+          },
+          {
+            "layer": 3,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.38154083333333333,
+            "expert_wall_ms": 24.037582666666665,
+            "combine_ms": 7.131323833333334,
+            "backend_compute_ms": [
+              0.0,
+              21.680321083333332,
+              0.0
+            ]
+          },
+          {
+            "layer": 4,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.35210050000000004,
+            "expert_wall_ms": 26.2453645,
+            "combine_ms": 7.020329833333333,
+            "backend_compute_ms": [
+              0.0,
+              23.906358333333333,
+              0.0
+            ]
+          },
+          {
+            "layer": 5,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.41269533333333336,
+            "expert_wall_ms": 24.39940125,
+            "combine_ms": 6.901528,
+            "backend_compute_ms": [
+              0.0,
+              22.08520825,
+              0.0
+            ]
+          },
+          {
+            "layer": 6,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.3224653333333333,
+            "expert_wall_ms": 24.178333416666668,
+            "combine_ms": 6.631493000000001,
+            "backend_compute_ms": [
+              0.0,
+              21.921115333333336,
+              0.0
+            ]
+          },
+          {
+            "layer": 7,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.29521275,
+            "expert_wall_ms": 23.757487,
+            "combine_ms": 6.9490929999999995,
+            "backend_compute_ms": [
+              0.0,
+              21.5371875,
+              0.0
+            ]
+          },
+          {
+            "layer": 8,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.36543824999999996,
+            "expert_wall_ms": 25.965681416666666,
+            "combine_ms": 7.534591916666666,
+            "backend_compute_ms": [
+              0.0,
+              23.680043333333334,
+              0.0
+            ]
+          },
+          {
+            "layer": 9,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.391454,
+            "expert_wall_ms": 24.964835166666667,
+            "combine_ms": 6.82564225,
+            "backend_compute_ms": [
+              0.0,
+              22.55228316666667,
+              0.0
+            ]
+          },
+          {
+            "layer": 10,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.3764191666666667,
+            "expert_wall_ms": 24.387152833333335,
+            "combine_ms": 7.032343666666667,
+            "backend_compute_ms": [
+              0.0,
+              21.956619,
+              0.0
+            ]
+          },
+          {
+            "layer": 11,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.33352425,
+            "expert_wall_ms": 24.143090416666666,
+            "combine_ms": 5.683207333333333,
+            "backend_compute_ms": [
+              0.0,
+              22.208537333333332,
+              0.0
+            ]
+          },
+          {
+            "layer": 12,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.2842145,
+            "expert_wall_ms": 25.729900166666667,
+            "combine_ms": 6.407508666666667,
+            "backend_compute_ms": [
+              0.0,
+              23.556584166666667,
+              0.0
+            ]
+          },
+          {
+            "layer": 13,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.33511291666666665,
+            "expert_wall_ms": 24.3613715,
+            "combine_ms": 6.449175416666667,
+            "backend_compute_ms": [
+              0.0,
+              22.16633241666667,
+              0.0
+            ]
+          },
+          {
+            "layer": 14,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.34842874999999995,
+            "expert_wall_ms": 24.505850666666664,
+            "combine_ms": 7.0387630833333334,
+            "backend_compute_ms": [
+              0.0,
+              22.117807916666667,
+              0.0
+            ]
+          },
+          {
+            "layer": 15,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.36208341666666666,
+            "expert_wall_ms": 24.78703116666667,
+            "combine_ms": 6.707673833333334,
+            "backend_compute_ms": [
+              0.0,
+              22.432616916666667,
+              0.0
+            ]
+          },
+          {
+            "layer": 16,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.31770825,
+            "expert_wall_ms": 25.645017333333332,
+            "combine_ms": 6.523698,
+            "backend_compute_ms": [
+              0.0,
+              23.499140833333335,
+              0.0
+            ]
+          },
+          {
+            "layer": 17,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.31439225,
+            "expert_wall_ms": 24.11232191666667,
+            "combine_ms": 6.829201416666667,
+            "backend_compute_ms": [
+              0.0,
+              21.92525175,
+              0.0
+            ]
+          },
+          {
+            "layer": 18,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.36991741666666667,
+            "expert_wall_ms": 23.67318566666667,
+            "combine_ms": 6.463762916666666,
+            "backend_compute_ms": [
+              0.0,
+              21.532999333333333,
+              0.0
+            ]
+          },
+          {
+            "layer": 19,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.3117836666666666,
+            "expert_wall_ms": 24.501566999999998,
+            "combine_ms": 6.97409725,
+            "backend_compute_ms": [
+              0.0,
+              22.22694866666667,
+              0.0
+            ]
+          },
+          {
+            "layer": 20,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.36726975,
+            "expert_wall_ms": 26.109140583333335,
+            "combine_ms": 6.770620583333334,
+            "backend_compute_ms": [
+              0.0,
+              23.845052166666665,
+              0.0
+            ]
+          },
+          {
+            "layer": 21,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.3994488333333333,
+            "expert_wall_ms": 24.981835999999998,
+            "combine_ms": 6.893550333333334,
+            "backend_compute_ms": [
+              0.0,
+              22.66231325,
+              0.0
+            ]
+          },
+          {
+            "layer": 22,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.31295575,
+            "expert_wall_ms": 24.67029075,
+            "combine_ms": 7.260095416666667,
+            "backend_compute_ms": [
+              0.0,
+              22.33709208333333,
+              0.0
+            ]
+          },
+          {
+            "layer": 23,
+            "tokens": 1,
+            "pairs": [
+              0,
+              4,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.0027906666666666666,
+            "expert_wall_ms": 1.6332985,
+            "combine_ms": 0.01398875,
+            "backend_compute_ms": [
+              0.0,
+              1.6257985833333333,
+              0.0
+            ]
+          }
+        ]
+      }
+    },
+    "interface-shared": {
+      "median_ms": 979.3519004999999,
+      "mean_ms": 973.41564625,
+      "tokens_s": 261.39735867087336,
+      "cpu_logit_nrmse": 0.04631995684882857,
+      "top1": 279,
+      "logits_sha256": "c6728ab81f538d401762c412ba3b6f09a3d36b226a2a2e639f0d27746602b6ae",
+      "major_faults": 1,
+      "minor_faults": 285769,
+      "expert_activation_buffer_bytes": 1133868544,
+      "mean_phase_breakdown": {
+        "gather_ms": 8.009478833333334,
+        "expert_wall_ms": 521.4415494166667,
+        "combine_ms": 163.60648824999998,
+        "other_model_and_boundary_ms": 280.35812975,
+        "backend_serial_sums_ms": {
+          "cpu": {
+            "upload": 0.0,
+            "compute": 0.0,
+            "readback": 0.0
+          },
+          "npu": {
+            "upload": 0.0,
+            "compute": 521.4192480833333,
+            "readback": 0.0
+          },
+          "gpu": {
+            "upload": 0.0,
+            "compute": 0.0,
+            "readback": 0.0
+          }
+        },
+        "parallel_envelope_minus_longest_job_ms": 0.02230133333333178,
+        "layers": [
+          {
+            "layer": 0,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.18239133333333332,
+            "expert_wall_ms": 23.00648875,
+            "combine_ms": 7.158211916666667,
+            "backend_compute_ms": [
+              0.0,
+              23.00567725,
+              0.0
+            ]
+          },
+          {
+            "layer": 1,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.42856758333333334,
+            "expert_wall_ms": 21.81081616666667,
+            "combine_ms": 6.507717166666667,
+            "backend_compute_ms": [
+              0.0,
+              21.809869833333334,
+              0.0
+            ]
+          },
+          {
+            "layer": 2,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.30797725000000004,
+            "expert_wall_ms": 21.734262083333334,
+            "combine_ms": 7.154309916666666,
+            "backend_compute_ms": [
+              0.0,
+              21.7332985,
+              0.0
+            ]
+          },
+          {
+            "layer": 3,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.3432898333333333,
+            "expert_wall_ms": 21.892026916666666,
+            "combine_ms": 7.038485083333333,
+            "backend_compute_ms": [
+              0.0,
+              21.890989333333334,
+              0.0
+            ]
+          },
+          {
+            "layer": 4,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.34506925,
+            "expert_wall_ms": 23.898845249999997,
+            "combine_ms": 7.145651,
+            "backend_compute_ms": [
+              0.0,
+              23.89787325,
+              0.0
+            ]
+          },
+          {
+            "layer": 5,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.3615235833333333,
+            "expert_wall_ms": 22.75215275,
+            "combine_ms": 7.063598166666667,
+            "backend_compute_ms": [
+              0.0,
+              22.751206666666665,
+              0.0
+            ]
+          },
+          {
+            "layer": 6,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.33433166666666664,
+            "expert_wall_ms": 22.464748333333333,
+            "combine_ms": 7.32703575,
+            "backend_compute_ms": [
+              0.0,
+              22.46379325,
+              0.0
+            ]
+          },
+          {
+            "layer": 7,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.37838983333333337,
+            "expert_wall_ms": 22.019704833333332,
+            "combine_ms": 7.70309025,
+            "backend_compute_ms": [
+              0.0,
+              22.01864133333333,
+              0.0
+            ]
+          },
+          {
+            "layer": 8,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.3512803333333333,
+            "expert_wall_ms": 23.927469583333334,
+            "combine_ms": 7.3498915,
+            "backend_compute_ms": [
+              0.0,
+              23.92654058333333,
+              0.0
+            ]
+          },
+          {
+            "layer": 9,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.39851133333333333,
+            "expert_wall_ms": 22.17591566666667,
+            "combine_ms": 7.344830833333334,
+            "backend_compute_ms": [
+              0.0,
+              22.1749305,
+              0.0
+            ]
+          },
+          {
+            "layer": 10,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.29763458333333337,
+            "expert_wall_ms": 21.92095925,
+            "combine_ms": 6.702100416666666,
+            "backend_compute_ms": [
+              0.0,
+              21.920099750000002,
+              0.0
+            ]
+          },
+          {
+            "layer": 11,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.39973525,
+            "expert_wall_ms": 22.22042975,
+            "combine_ms": 6.643941083333333,
+            "backend_compute_ms": [
+              0.0,
+              22.219527083333336,
+              0.0
+            ]
+          },
+          {
+            "layer": 12,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.363216,
+            "expert_wall_ms": 23.926645,
+            "combine_ms": 6.859210166666667,
+            "backend_compute_ms": [
+              0.0,
+              23.925772333333335,
+              0.0
+            ]
+          },
+          {
+            "layer": 13,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.36488716666666665,
+            "expert_wall_ms": 22.574283750000003,
+            "combine_ms": 6.858667333333334,
+            "backend_compute_ms": [
+              0.0,
+              22.573381166666667,
+              0.0
+            ]
+          },
+          {
+            "layer": 14,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.3632465833333333,
+            "expert_wall_ms": 22.385985416666667,
+            "combine_ms": 6.9772135833333335,
+            "backend_compute_ms": [
+              0.0,
+              22.385056416666668,
+              0.0
+            ]
+          },
+          {
+            "layer": 15,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.33938799999999997,
+            "expert_wall_ms": 22.179131916666666,
+            "combine_ms": 7.135256083333334,
+            "backend_compute_ms": [
+              0.0,
+              22.17822041666667,
+              0.0
+            ]
+          },
+          {
+            "layer": 16,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.31142791666666664,
+            "expert_wall_ms": 23.380442749999997,
+            "combine_ms": 7.190425083333333,
+            "backend_compute_ms": [
+              0.0,
+              23.379518333333333,
+              0.0
+            ]
+          },
+          {
+            "layer": 17,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.4039278333333334,
+            "expert_wall_ms": 22.153827916666664,
+            "combine_ms": 7.308033666666666,
+            "backend_compute_ms": [
+              0.0,
+              22.15278616666667,
+              0.0
+            ]
+          },
+          {
+            "layer": 18,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.3732855833333333,
+            "expert_wall_ms": 21.992456416666666,
+            "combine_ms": 7.156671,
+            "backend_compute_ms": [
+              0.0,
+              21.991432333333336,
+              0.0
+            ]
+          },
+          {
+            "layer": 19,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.30541250000000003,
+            "expert_wall_ms": 22.463928,
+            "combine_ms": 7.000282166666667,
+            "backend_compute_ms": [
+              0.0,
+              22.463099000000003,
+              0.0
+            ]
+          },
+          {
+            "layer": 20,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.33904091666666664,
+            "expert_wall_ms": 23.76765633333333,
+            "combine_ms": 7.235499,
+            "backend_compute_ms": [
+              0.0,
+              23.766718583333336,
+              0.0
+            ]
+          },
+          {
+            "layer": 21,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.3192491666666667,
+            "expert_wall_ms": 22.698025249999997,
+            "combine_ms": 7.242530333333333,
+            "backend_compute_ms": [
+              0.0,
+              22.697118166666666,
+              0.0
+            ]
+          },
+          {
+            "layer": 22,
+            "tokens": 256,
+            "pairs": [
+              0,
+              1024,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.39421883333333335,
+            "expert_wall_ms": 22.484201416666668,
+            "combine_ms": 7.4842794999999995,
+            "backend_compute_ms": [
+              0.0,
+              22.48319875,
+              0.0
+            ]
+          },
+          {
+            "layer": 23,
+            "tokens": 1,
+            "pairs": [
+              0,
+              4,
+              0
+            ],
+            "last_finisher_counts": {
+              "cpu": 0,
+              "npu": 12,
+              "gpu": 0
+            },
+            "gather_ms": 0.0034765,
+            "expert_wall_ms": 1.6111459166666666,
+            "combine_ms": 0.019557249999999998,
+            "backend_compute_ms": [
+              0.0,
+              1.6104990833333335,
+              0.0
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "pooled": {
+    "native": {
+      "samples": 24,
+      "median_ms": 680.0860415000001,
+      "tokens_s": 376.4229588293939
+    },
+    "copy": {
+      "samples": 24,
+      "median_ms": 672.8398175,
+      "tokens_s": 380.4768881710839,
+      "throughput_gain_vs_native": 0.010769612337932166
+    },
+    "shared": {
+      "samples": 24,
+      "median_ms": 636.457005,
+      "tokens_s": 402.22669872256336,
+      "throughput_gain_vs_native": 0.06854985671812996
+    },
+    "interface-copy": {
+      "samples": 12,
+      "median_ms": 1007.6229685,
+      "tokens_s": 254.06328359217034,
+      "throughput_gain_vs_native": -0.32505901238792567
+    },
+    "interface-shared": {
+      "samples": 12,
+      "median_ms": 979.3519004999999,
+      "tokens_s": 261.39735867087336,
+      "throughput_gain_vs_native": -0.30557541048035164
+    }
+  },
+  "copy_shared_bitwise_equal": true,
+  "same_binary_hashes": true,
+  "copy_direct_bitwise_equal": false,
+  "numeric_scope": "same fixed prompt; 10% CPU-logit smoke bound and top1; not model quality equivalence"
+}
