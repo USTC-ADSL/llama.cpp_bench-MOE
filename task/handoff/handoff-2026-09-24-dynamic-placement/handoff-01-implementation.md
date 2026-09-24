@@ -61,3 +61,5 @@ adb -s fd8657d6 shell 'cd /data/local/tmp/llama-dynamic-moe && LD_LIBRARY_PATH=.
 Main JSON, binary outputs and logs are gzip-archived; gzip integrity passes. SHA256SUMS records archived evidence including ignored large captures/failed logits retained on the host. Runner verifies hashes for its remote outputs before pulling. No original experiment is overwritten.
 
 No dynamic-moe or dynamic-moe-check process remained before cleanup. Removed only /data/local/tmp/llama-dynamic-moe, verified absence, and checked the original model size8149865792bytes. Future runs need deployment again; the runner performs it. No required work is pending for this functional scope. Future true cross-backend shared activations, fused conversion and faster phase migration are not implemented.
+
+Final runner guard rejects every nonempty evidence directory, including failed and gzip-archived runs. Verified with DYNAMIC_EVIDENCE=evidence-v9: expected refusal occurs before deployment and existing evidence is preserved. Python py_compile passes after this host-only guard change; the device executable is unchanged.

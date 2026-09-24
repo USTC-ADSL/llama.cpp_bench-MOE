@@ -32,7 +32,7 @@ def main():
     assert adb("get-state").stdout.strip() == "device"
     assert not adb("shell", "pidof dynamic-moe fullmodel-oracle llama-cli", check=False).stdout.strip()
     OUT.mkdir(parents=True, exist_ok=True)
-    assert not (OUT / "summary.json").exists(), "use a new evidence directory for another completed suite"
+    assert not any(OUT.iterdir()), "use a fresh evidence directory; archived and failed runs must be preserved"
     adb("shell", f"mkdir -p {REMOTE}")
     names = ["dynamic-moe", "libllama.so", "libggml.so", "libggml-base.so", "libggml-cpu.so", "libggml-opencl.so", "libggml-hexagon.so"]
     paths = [BUILD / "bin" / name for name in names] + [BUILD / "ggml/src/ggml-hexagon/libggml-htp-v79.so"]
