@@ -4,6 +4,10 @@
 
 #include <iomanip>
 #include <sys/resource.h>
+#include <set>
+#if defined(__aarch64__)
+#include <arm_neon.h>
+#endif
 
 template<class T> static std::vector<T> dense_read(ggml_tensor * t) {
     require(t->nb[0] == sizeof(T) && t->ne[2] == 1 && t->ne[3] == 1,"unexpected capture layout");
@@ -64,6 +68,8 @@ struct partitioned_ffn {
     size_t allocations=0;
     bool shared_activations=false;
     bool direct_callback_io=false;
+    bool fused_host_reduce=false;
+    std::shared_ptr<shared_activation_buffer> arenas[3];
     partitioned_ffn(device * devs[3],source & src,int layer,int tokens,const placement & p,bool compact,bool shared_buffers=false) : il(layer),nt(tokens),plan(p),shared_activations(shared_buffers) {
         require(plan.owner.size()==60 && plan.shared>=0 && plan.shared<3,"invalid placement");
         for(int b=0;b<3;++b) {
@@ -96,8 +102,8 @@ struct partitioned_ffn {
             if(pairs[b].empty() && b!=plan.shared) { continue; }
             int rows=pairs[b].empty()?0:native?nt:int(pairs[b].size()); int k=native?4:1;
             auto & ptr=jobs[b][{rows,k}];
-            if(!ptr) { ptr=std::make_unique<oracle_job>(*banks[b],b==plan.shared?shared.get():nullptr,rows,k,nt,native,false,shared_activations); ++allocations; }
-            work[b]=ptr.get(); auto & j=*ptr; j.set_shared_input(x,elements);
+            if(!ptr) { ptr=std::make_unique<oracle_job>(*banks[b],b==plan.shared?shared.get():nullptr,rows,k,nt,native,false,shared_activations,arenas[b]); ++allocations; }
+            work[b]=ptr.get(); auto & j=*ptr; j.reset_index_padding(); j.set_shared_input(x,elements);
             if(native && j.x) {
                 std::copy_n(x,elements,j.input_data());
                 for(int t=0;t<nt;++t) { for(int kk=0;kk<4;++kk) { j.index_data()[t*j.stride+kk]=local[b][ids[t*4+kk]]; } }
@@ -119,14 +125,36 @@ struct partitioned_ffn {
         std::vector<const float *> outputs(ids.size());
         for(int b=0;b<3;++b) { for(size_t i=0;i<pairs[b].size();++i) { outputs[pairs[b][i]]=work[b]->output_data()+i*2048; } }
         std::vector<float> owned_result;
-        if(destination) { std::fill_n(destination,elements,0.0f); }
-        else { owned_result.resize(elements,0.0f); }
+        if(!destination) { owned_result.resize(elements,0.0f); }
+        else if(!fused_host_reduce) { std::fill_n(destination,elements,0.0f); }
         float * result=destination?destination:owned_result.data();
-        for(size_t p=0;p<ids.size();++p) {
-            float weight=probs[(p/4)*60+ids[p]];
-            for(int c=0;c<2048;++c) { result[(p/4)*2048+c]+=weight*outputs[p][c]; }
+        if(fused_host_reduce) {
+            for(int t=0;t<nt;++t) {
+                float w[4]; const float * o[4];
+                for(int k=0;k<4;++k) { w[k]=probs[t*60+ids[t*4+k]]; o[k]=outputs[t*4+k]; }
+                auto * shared_out=work[plan.shared]->shared_output_data()+t*2048;
+                for(int c=0;c<2048;c+=4) {
+#if defined(__aarch64__)
+                    // Retain the existing AArch64 FMA/top-k order; write each output once.
+                    auto sum=vdupq_n_f32(0.0f);
+                    for(int k=0;k<4;++k) { sum=vfmaq_n_f32(sum,vld1q_f32(o[k]+c),w[k]); }
+                    vst1q_f32(result+t*2048+c,vaddq_f32(sum,vld1q_f32(shared_out+c)));
+#else
+                    for(int lane=0;lane<4;++lane) {
+                        float sum=0;
+                        for(int k=0;k<4;++k) { sum=std::fma(w[k],o[k][c+lane],sum); }
+                        result[t*2048+c+lane]=sum+shared_out[c+lane];
+                    }
+#endif
+                }
+            }
+        } else {
+            for(size_t p=0;p<ids.size();++p) {
+                float weight=probs[(p/4)*60+ids[p]];
+                for(int c=0;c<2048;++c) { result[(p/4)*2048+c]+=weight*outputs[p][c]; }
+            }
+            for(size_t i=0;i<elements;++i) { result[i]+=work[plan.shared]->shared_output_data()[i]; }
         }
-        for(size_t i=0;i<elements;++i) { result[i]+=work[plan.shared]->shared_output_data()[i]; }
         if(record) {
             int changed=0; if(expected_ids.size()==ids.size()) { for(size_t i=0;i<ids.size();++i) { changed+=ids[i]!=expected_ids[i]; } }
             last={{"layer",il},{"tokens",nt},{"gather_us",gather},{"expert_wall_us",wall},{"combine_us",elapsed(start)},
@@ -138,8 +166,24 @@ struct partitioned_ffn {
 };
 
 struct full_engine {
+    std::shared_ptr<shared_activation_buffer> arenas[3];
     std::vector<std::unique_ptr<partitioned_ffn>> layers;
     bool record=false;
+    void prepare_arenas(device * devs[3]) {
+        std::array<size_t,3> capacities{};
+        for(auto & l:layers) { for(int b=0;b<3;++b) {
+            require(l->shared_activations,"arena requires shared layer");
+            if(!l->banks[b]->buf && l->plan.shared!=b) { continue; }
+            // k=1 with all 4*nt routed pairs bounds both split and native k=4 graphs.
+            oracle_job layout(*l->banks[b],l->plan.shared==b?l->shared.get():nullptr,
+                              l->banks[b]->buf?4*l->nt:0,1,l->nt,false,false,true,{},true);
+            capacities[b]=std::max(capacities[b],shared_activation_buffer::required_size(*devs[b],layout.ctx.get()));
+        } }
+        for(int b=0;b<3;++b) {
+            if(capacities[b]) { arenas[b]=std::make_shared<shared_activation_buffer>(*devs[b],capacities[b]); }
+            for(auto & l:layers) { l->arenas[b]=arenas[b]; }
+        }
+    }
     static void compute(ggml_tensor * dst,const ggml_tensor * x,const ggml_tensor * probabilities,const ggml_tensor * ids,int ith,int,void * opaque) {
         if(ith) { return; }
         auto & layer=*static_cast<partitioned_ffn *>(opaque);
@@ -239,6 +283,13 @@ int main(int argc,char ** argv) {
         bool shared_activations=std::getenv("MOE_SHARED_ACTIVATIONS") && std::string(std::getenv("MOE_SHARED_ACTIVATIONS"))=="1";
         bool direct_callback_io=std::getenv("MOE_DIRECT_CALLBACK_IO") && std::string(std::getenv("MOE_DIRECT_CALLBACK_IO"))=="1";
         bool alternate_callback_io=std::getenv("MOE_ALTERNATE_CALLBACK_IO") && std::string(std::getenv("MOE_ALTERNATE_CALLBACK_IO"))=="1";
+        bool activation_arena=std::getenv("MOE_ACTIVATION_ARENA") && std::string(std::getenv("MOE_ACTIVATION_ARENA"))=="1";
+        bool fused_host_reduce=std::getenv("MOE_FUSED_HOST_REDUCE") && std::string(std::getenv("MOE_FUSED_HOST_REDUCE"))=="1";
+        bool alternate_host_reduce=std::getenv("MOE_ALTERNATE_HOST_REDUCE") && std::string(std::getenv("MOE_ALTERNATE_HOST_REDUCE"))=="1";
+        require(!fused_host_reduce || custom,"fused reduction requires custom mode");
+        require(!alternate_host_reduce || (custom && !fused_host_reduce && !alternate_callback_io && reps%4==0),
+                "alternating reduction requires custom mode, no other alternation, and repetitions divisible by four");
+        require(!activation_arena || (custom && shared_activations),"activation arena requires shared custom mode");
         require(!shared_activations || custom,"shared activations require custom mode");
         require(!direct_callback_io || custom,"direct callback requires custom mode");
         require(!alternate_callback_io || (custom && shared_activations && !direct_callback_io && reps%4==0),
@@ -273,9 +324,11 @@ int main(int argc,char ** argv) {
                 placement p=mode=="custom-npu"?placement{"all_npu",std::vector<int>(60,1),1}:parse_plan(plans["layers"][il][mode=="branch"?"branch":"selected"]);
                 engine.layers.push_back(std::make_unique<partitioned_ffn>(devs,src,il,plans["layers"][il]["tokens"],p,true,shared_activations));
                 engine.layers.back()->direct_callback_io=direct_callback_io;
+                engine.layers.back()->fused_host_reduce=fused_host_reduce;
                 engine.layers.back()->expected_ids=plans["layers"][il]["ids"].get<std::vector<int32_t>>();
                 fprintf(stderr,"RESIDENT layer=%d plan=%s\n",il,p.name.c_str());
             }
+            if(activation_arena) { engine.prepare_arenas(devs); }
             require(llama_model_set_moe_graph_callback(model.get(),full_engine::build,&engine),"model rejected FFN callback");
         }
         capture_all capture;
@@ -291,6 +344,9 @@ int main(int argc,char ** argv) {
         report["shared_activations"]=shared_activations;
         report["direct_callback_io"]=direct_callback_io;
         report["alternate_callback_io"]=alternate_callback_io;
+        report["activation_arena"]=activation_arena;
+        report["fused_host_reduce"]=fused_host_reduce;
+        report["alternate_host_reduce"]=alternate_host_reduce;
         if(custom) {
             report["placements"]=json::array();
             for(auto & l:engine.layers) {
@@ -306,6 +362,12 @@ int main(int argc,char ** argv) {
         size_t warmed_allocations=0;
         for(int r=0;r<runs;++r) {
             bool active_direct=direct_callback_io;
+            bool active_reduce=fused_host_reduce;
+            if(alternate_host_reduce) {
+                int position=(r-2)%4;
+                active_reduce=r<2?r==1:position==1 || position==2;
+                for(auto & l:engine.layers) { l->fused_host_reduce=active_reduce; }
+            }
             if(alternate_callback_io) {
                 int position=(r-2)%4;
                 active_direct=r<2?r==1:position==1 || position==2;
@@ -318,7 +380,7 @@ int main(int argc,char ** argv) {
             auto * output=llama_get_logits_ith(ctx.get(),-1); require(code==0 && output,"native decode failed");
             logits.assign(output,output+nv); double us=elapsed(start);
             getrusage(RUSAGE_SELF,&after);
-            if(alternate_callback_io) {
+            if(alternate_callback_io || alternate_host_reduce || activation_arena) {
                 if(r==0) { paired_reference=logits; }
                 else { require(std::memcmp(logits.data(),paired_reference.data(),logits.size()*sizeof(float))==0,
                                "alternating callback logits differ"); }
@@ -329,6 +391,7 @@ int main(int argc,char ** argv) {
                 require(allocations==warmed_allocations,"allocation occurred after warmup"); times.push_back(us);
                 json row={{"round",r-2},{"total_us",us},{"minor_faults",after.ru_minflt-before.ru_minflt},{"major_faults",after.ru_majflt-before.ru_majflt}};
                 row["direct_callback_io"]=active_direct;
+                row["fused_host_reduce"]=active_reduce;
                 if(custom) { row["layers"]=json::array(); for(auto & l:engine.layers) { row["layers"].push_back(l->last); } }
                 report["samples"].push_back(row);
             }
@@ -345,13 +408,21 @@ int main(int argc,char ** argv) {
         } else { report["timing"]=stats(times,nt); }
         std::ofstream logits_file(std::string(argv[4])+".logits.bin",std::ios::binary); binary_write(logits_file,logits);
         report["top1"]=std::max_element(logits.begin(),logits.end())-logits.begin();
-        if(alternate_callback_io) { report["all_round_logits_bitwise_equal"]=true; }
+        if(alternate_callback_io || alternate_host_reduce || activation_arena) { report["all_round_logits_bitwise_equal"]=true; }
         size_t activation_bytes=0;
+        size_t logical_activation_bytes=0;
+        std::set<const shared_activation_buffer *> seen;
         for(auto & l:engine.layers) { for(auto & cache:l->jobs) { for(auto & entry:cache) {
             auto & j=*entry.second;
-            activation_bytes+=j.shared_buffer?j.shared_buffer->desc.size:ggml_backend_buffer_get_size(j.buf.get());
+            logical_activation_bytes+=shared_activation_buffer::required_size(j.dev,j.ctx.get());
+            if(j.shared_buffer) {
+                if(seen.insert(j.shared_buffer.get()).second) { activation_bytes+=j.shared_buffer->desc.size; }
+            } else { activation_bytes+=ggml_backend_buffer_get_size(j.buf.get()); }
         } } }
         report["expert_activation_buffer_bytes"]=activation_bytes;
+        report["expert_activation_graph_bytes"]=logical_activation_bytes;
+        report["arena_capacity_bytes"]=json::array();
+        for(auto & arena:engine.arenas) { report["arena_capacity_bytes"].push_back(arena?arena->desc.size:0); }
         std::ifstream status("/proc/self/status"); report["process_status"]=std::string((std::istreambuf_iterator<char>(status)),{});
         std::ofstream out(argv[4]); out<<report.dump(2)<<'\n'; require(out.good(),"full-model report write failed");
         if(mode!="capture") { fprintf(stderr,"FULL_RESULT %s nt=%d median_ms=%.3f tokens_s=%.3f\n",mode.c_str(),nt,report["timing"]["median_us"].get<double>()/1000,report["timing"]["expert_tokens_per_second"].get<double>()); }

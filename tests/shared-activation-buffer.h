@@ -35,23 +35,31 @@ struct shared_activation_buffer {
     }
     ggml_backend_buffer_t get() const { return imported?imported.get():backing.get(); }
     static size_t align(size_t bytes,size_t alignment) { return (bytes+alignment-1)/alignment*alignment; }
-    static std::unique_ptr<shared_activation_buffer> allocate(device & dev,ggml_context * ctx) {
+    static size_t required_size(device & dev,ggml_context * ctx) {
         size_t alignment=std::max<size_t>(128,ggml_backend_buft_get_alignment(ggml_backend_dev_buffer_type(dev.dev)));
         size_t bytes=0;
         for (auto * t=ggml_get_first_tensor(ctx);t;t=ggml_get_next_tensor(ctx,t)) {
             if (!t->view_src) { bytes=align(bytes,alignment)+ggml_nbytes(t); }
         }
-        auto buffer=std::make_unique<shared_activation_buffer>(dev,align(bytes,alignment));
+        return align(bytes,alignment);
+    }
+    void bind(device & dev,ggml_context * ctx) {
+        size_t alignment=std::max<size_t>(128,ggml_backend_buft_get_alignment(ggml_backend_dev_buffer_type(dev.dev)));
+        require(required_size(dev,ctx)<=desc.size,"shared activation arena capacity exceeded");
         size_t offset=0;
         for (auto * t=ggml_get_first_tensor(ctx);t;t=ggml_get_next_tensor(ctx,t)) {
             if (t->view_src) { require(ggml_backend_view_init(t)==GGML_STATUS_SUCCESS,"shared view init failed"); }
             else {
                 offset=align(offset,alignment);
-                require(ggml_backend_tensor_alloc(buffer->get(),t,static_cast<uint8_t *>(buffer->desc.host_ptr)+offset)==GGML_STATUS_SUCCESS,
+                require(ggml_backend_tensor_alloc(get(),t,static_cast<uint8_t *>(desc.host_ptr)+offset)==GGML_STATUS_SUCCESS,
                         "shared tensor allocation failed");
                 offset+=ggml_nbytes(t);
             }
         }
+    }
+    static std::unique_ptr<shared_activation_buffer> allocate(device & dev,ggml_context * ctx) {
+        auto buffer=std::make_unique<shared_activation_buffer>(dev,required_size(dev,ctx));
+        buffer->bind(dev,ctx);
         return buffer;
     }
 };

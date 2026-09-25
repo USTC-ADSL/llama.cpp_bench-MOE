@@ -8,14 +8,16 @@ struct oracle_job {
     device & dev;
     ggml_context_ptr ctx = context(64, 64);
     ggml_backend_buffer_ptr buf;
-    std::unique_ptr<shared_activation_buffer> shared_buffer;
+    std::shared_ptr<shared_activation_buffer> shared_buffer;
+    bool pooled_activations=false;
     ggml_tensor * x = nullptr, * ids_storage = nullptr, * out = nullptr;
     ggml_tensor * sx = nullptr, * sout = nullptr;
     ggml_cgraph * graph;
     std::vector<float> input, output, shared_input, shared_output;
     std::vector<int32_t> indices;
     int stride = 0;
-    oracle_job(bank & b, shared_bank * sw, int rows, int k, int nt, bool native, bool single_matmul = false, bool shared_activations = false) : dev(b.d) {
+    oracle_job(bank & b, shared_bank * sw, int rows, int k, int nt, bool native, bool single_matmul = false, bool shared_activations = false,
+               std::shared_ptr<shared_activation_buffer> arena = {}, bool layout_only = false) : dev(b.d) {
         graph = ggml_new_graph_custom(ctx.get(), 64, false);
         if (rows) {
             x = ggml_new_tensor_3d(ctx.get(), GGML_TYPE_F32, b.w[0]->ne[0], 1, rows);
@@ -57,13 +59,20 @@ struct oracle_job {
                 throw std::runtime_error("unsupported oracle graph");
             }
         }
+        require((!arena && !layout_only) || shared_activations,"arena/layout requires shared activations");
+        if(layout_only) { return; }
         if (shared_activations) {
-            shared_buffer=shared_activation_buffer::allocate(dev,ctx.get());
+            pooled_activations=bool(arena);
+            if(arena) { shared_buffer=std::move(arena); shared_buffer->bind(dev,ctx.get()); }
+            else { shared_buffer=shared_activation_buffer::allocate(dev,ctx.get()); }
             if (ids_storage) { std::memset(ids_storage->data,0,ggml_nbytes(ids_storage)); }
         } else {
             buf.reset(ggml_backend_alloc_ctx_tensors_from_buft(ctx.get(), ggml_backend_dev_buffer_type(dev.dev)));
             require(buf != nullptr, "oracle activation allocation failed");
         }
+    }
+    void reset_index_padding() {
+        if(pooled_activations && ids_storage) { std::memset(ids_storage->data,0,ggml_nbytes(ids_storage)); }
     }
     float * input_data() { return shared_buffer?static_cast<float *>(x->data):input.data(); }
     int32_t * index_data() { return shared_buffer?static_cast<int32_t *>(ids_storage->data):indices.data(); }
@@ -79,6 +88,7 @@ struct oracle_job {
         }
     }
     std::array<double, 3> run() {
+        require(buf || shared_buffer,"oracle activation buffers are unbound");
         auto start = timer::now();
         if (shared_buffer) {
             dev.compute(graph);

@@ -32,6 +32,9 @@ def main():
     p.add_argument("--shared-activations", action="store_true")
     p.add_argument("--direct-callback-io", action="store_true")
     p.add_argument("--alternate-callback-io", action="store_true")
+    p.add_argument("--activation-arena", action="store_true")
+    p.add_argument("--fused-host-reduce", action="store_true")
+    p.add_argument("--alternate-host-reduce", action="store_true")
     args = p.parse_args()
     assert args.tag.replace("-", "").replace("_", "").isalnum()
     assert adb("get-state").stdout.strip() == "device"
@@ -73,6 +76,15 @@ def main():
     if args.alternate_callback_io:
         assert args.shared_activations and not args.direct_callback_io and args.reps % 4 == 0
         env.append("MOE_ALTERNATE_CALLBACK_IO=1")
+    if args.activation_arena:
+        assert args.shared_activations
+        env.append("MOE_ACTIVATION_ARENA=1")
+    if args.fused_host_reduce:
+        assert args.mode in ("custom", "branch", "custom-npu")
+        env.append("MOE_FUSED_HOST_REDUCE=1")
+    if args.alternate_host_reduce:
+        assert not args.fused_host_reduce and not args.alternate_callback_io and args.reps % 4 == 0
+        env.append("MOE_ALTERNATE_HOST_REDUCE=1")
     reference = "-" if args.reference == "-" else f"{REMOTE}/{args.reference}.json"
     argv = [f"{REMOTE}/fullmodel-oracle", MODEL, f"{REMOTE}/prompt.txt", str(args.tokens), f"{REMOTE}/{args.tag}.json", args.mode, str(args.reps), reference]
     command = f"cd {shlex.quote(REMOTE)} && exec " + shlex.join(env + argv)
