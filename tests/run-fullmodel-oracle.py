@@ -21,7 +21,7 @@ def adb(*args, check=True):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--mode", required=True, choices=["capture", "search", "cpu", "npu", "custom", "branch", "custom-npu"])
+    p.add_argument("--mode", required=True, choices=["capture", "search", "cpu", "gpu", "npu", "custom", "branch", "custom-npu"])
     p.add_argument("--tokens", type=int, default=128)
     p.add_argument("--tag", required=True)
     p.add_argument("--reference", default="-")
@@ -29,6 +29,8 @@ def main():
     p.add_argument("--deploy", action="store_true")
     p.add_argument("--output-dir", type=pathlib.Path, default=OUT)
     p.add_argument("--plan-file", type=pathlib.Path)
+    p.add_argument("--prompt-file", type=pathlib.Path)
+    p.add_argument("--transfer-placement", action="store_true", help="Use frozen expert ownership on another prompt/length; no route replay")
     p.add_argument("--shared-activations", action="store_true")
     p.add_argument("--direct-callback-io", action="store_true")
     p.add_argument("--alternate-callback-io", action="store_true")
@@ -50,7 +52,10 @@ def main():
         for path in paths:
             adb("push", str(path), f"{REMOTE}/{path.name}")
             assert adb("shell", f"sha256sum {REMOTE}/{path.name}").stdout.split()[0] == hashlib.sha256(path.read_bytes()).hexdigest()
-        adb("push", str(ROOT / "tests/expert-routing-prompt.txt"), f"{REMOTE}/prompt.txt")
+    prompt_path = args.prompt_file or (ROOT / "tests/expert-routing-prompt.txt" if args.deploy else None)
+    if prompt_path:
+        adb("push", str(prompt_path), f"{REMOTE}/prompt.txt")
+        assert adb("shell", f"sha256sum {REMOTE}/prompt.txt").stdout.split()[0] == hashlib.sha256(prompt_path.read_bytes()).hexdigest()
     if args.plan_file:
         opener = gzip.open if args.plan_file.suffix == ".gz" else open
         with opener(args.plan_file, "rb") as source:
@@ -66,7 +71,16 @@ def main():
               "before_thermal": adb("shell", "dumpsys thermalservice").stdout,
               "hashes": adb("shell", f"sha256sum {REMOTE}/*.so {REMOTE}/fullmodel-oracle {REMOTE}/prompt.txt").stdout,
               "memory_before": adb("shell", "cat /proc/meminfo").stdout}
+    record["prompt_source"] = str(prompt_path.resolve()) if prompt_path else "existing remote prompt"
+    if args.reference != "-":
+        assert args.reference.replace("-", "").replace("_", "").isalnum()
+        record["reference_hash"] = adb("shell", f"sha256sum {REMOTE}/{args.reference}.json").stdout
+    if args.plan_file:
+        record["plan_source"] = str(args.plan_file.resolve())
     env = ["env", f"LD_LIBRARY_PATH={REMOTE}", f"ADSP_LIBRARY_PATH={REMOTE}", "GGML_HEXAGON_DEVICES=1", "GGML_HEXAGON_NHMX=1", "GGML_HEXAGON_MM_SELECT=3", "GGML_HEXAGON_PROFILE=0"]
+    if args.transfer_placement:
+        assert args.mode in ("custom", "branch", "custom-npu")
+        env.append("MOE_TRANSFER_PLACEMENT=1")
     if args.shared_activations:
         assert args.mode in ("custom", "branch", "custom-npu")
         env.append("MOE_SHARED_ACTIVATIONS=1")

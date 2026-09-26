@@ -156,10 +156,12 @@ struct partitioned_ffn {
             for(size_t i=0;i<elements;++i) { result[i]+=work[plan.shared]->shared_output_data()[i]; }
         }
         if(record) {
+            std::array<int,60> counts{}; for(auto id:ids) { ++counts[id]; }
             int changed=0; if(expected_ids.size()==ids.size()) { for(size_t i=0;i<ids.size();++i) { changed+=ids[i]!=expected_ids[i]; } }
             last={{"layer",il},{"tokens",nt},{"gather_us",gather},{"expert_wall_us",wall},{"combine_us",elapsed(start)},
                   {"backend_phases_us",phases},{"intervals_us",intervals},{"pairs",{pairs[0].size(),pairs[1].size(),pairs[2].size()}},
-                  {"changed_route_slots",changed},{"allocations",allocations}};
+                  {"changed_route_slots",changed},{"route_reference_available",expected_ids.size()==ids.size()},
+                  {"expert_token_counts",counts},{"allocations",allocations}};
         }
         return owned_result;
     }
@@ -274,12 +276,14 @@ static int search_all(const char * model_path,const std::string & capture_path,c
 #ifndef FULLMODEL_ORACLE_NO_MAIN
 int main(int argc,char ** argv) {
     try {
-        require(argc==8,"usage: fullmodel-oracle MODEL PROMPT TOKENS OUTPUT MODE REPS PLANS_OR_DASH; modes capture,search,cpu,npu,custom,branch,custom-npu");
+        require(argc==8,"usage: fullmodel-oracle MODEL PROMPT TOKENS OUTPUT MODE REPS PLANS_OR_DASH; modes capture,search,cpu,gpu,npu,custom,branch,custom-npu");
         ggml_backend_load_all(); llama_backend_init();
         std::string mode=argv[5]; int nt=std::stoi(argv[3]),reps=std::stoi(argv[6]);
         require(nt>0 && reps>0,"tokens and repetitions must be positive");
         if(mode=="search") { return search_all(argv[1],argv[7],argv[4]); }
         bool custom=mode=="custom" || mode=="branch" || mode=="custom-npu";
+        bool transfer_placement=std::getenv("MOE_TRANSFER_PLACEMENT") && std::string(std::getenv("MOE_TRANSFER_PLACEMENT"))=="1";
+        require(!transfer_placement || custom,"placement transfer requires custom mode");
         bool shared_activations=std::getenv("MOE_SHARED_ACTIVATIONS") && std::string(std::getenv("MOE_SHARED_ACTIVATIONS"))=="1";
         bool direct_callback_io=std::getenv("MOE_DIRECT_CALLBACK_IO") && std::string(std::getenv("MOE_DIRECT_CALLBACK_IO"))=="1";
         bool alternate_callback_io=std::getenv("MOE_ALTERNATE_CALLBACK_IO") && std::string(std::getenv("MOE_ALTERNATE_CALLBACK_IO"))=="1";
@@ -294,10 +298,11 @@ int main(int argc,char ** argv) {
         require(!direct_callback_io || custom,"direct callback requires custom mode");
         require(!alternate_callback_io || (custom && shared_activations && !direct_callback_io && reps%4==0),
                 "alternating callback requires shared custom mode, no direct override, and repetitions divisible by four");
-        bool accelerator=mode=="npu" || custom;
-        require(custom || mode=="capture" || mode=="cpu" || mode=="npu","invalid mode");
-        json plans; if(custom) { std::ifstream in(argv[7]); in>>plans; require(plans["tokens"].get<int>()==nt && plans["layers"].size()==24,"plan shape mismatch"); }
-        ggml_backend_dev_t target[]={ggml_backend_dev_by_name("HTP0"),nullptr};
+        bool accelerator=mode=="npu" || mode=="gpu" || custom;
+        require(custom || mode=="capture" || mode=="cpu" || mode=="npu" || mode=="gpu","invalid mode");
+        json plans; if(custom) { std::ifstream in(argv[7]); in>>plans; require((transfer_placement || plans["tokens"].get<int>()==nt) && plans["layers"].size()==24,"plan shape mismatch"); }
+        ggml_backend_dev_t target[]={ggml_backend_dev_by_name(mode=="gpu"?"GPUOpenCL":"HTP0"),nullptr};
+        require(!accelerator || target[0],"requested accelerator unavailable");
         auto mp=llama_model_default_params(); mp.n_gpu_layers=accelerator?99:0;
         mp.devices=accelerator?target:nullptr;
         llama_model_tensor_buft_override overrides[]={
@@ -311,7 +316,7 @@ int main(int argc,char ** argv) {
         auto * vocab=llama_model_get_vocab(model.get()); std::vector<llama_token> tokens(prompt.size()+32);
         int count=llama_tokenize(vocab,prompt.data(),prompt.size(),tokens.data(),tokens.size(),true,true);
         require(count>=nt,"prompt too short"); tokens.resize(nt);
-        if(custom) { require(tokens==plans["token_ids"].get<std::vector<int32_t>>(),"fixed prompt token mismatch"); }
+        if(custom && !transfer_placement) { require(tokens==plans["token_ids"].get<std::vector<int32_t>>(),"fixed prompt token mismatch"); }
         std::unique_ptr<device> devices[3];
         full_engine engine;
         if(custom) {
@@ -322,10 +327,11 @@ int main(int argc,char ** argv) {
             for(int b=0;b<3;++b) { devices[b]=std::make_unique<device>(names[b]); devs[b]=devices[b].get(); }
             for(int il=0;il<24;++il) {
                 placement p=mode=="custom-npu"?placement{"all_npu",std::vector<int>(60,1),1}:parse_plan(plans["layers"][il][mode=="branch"?"branch":"selected"]);
-                engine.layers.push_back(std::make_unique<partitioned_ffn>(devs,src,il,plans["layers"][il]["tokens"],p,true,shared_activations));
+                int layer_tokens=transfer_placement?(il==23?1:nt):plans["layers"][il]["tokens"].get<int>();
+                engine.layers.push_back(std::make_unique<partitioned_ffn>(devs,src,il,layer_tokens,p,true,shared_activations));
                 engine.layers.back()->direct_callback_io=direct_callback_io;
                 engine.layers.back()->fused_host_reduce=fused_host_reduce;
-                engine.layers.back()->expected_ids=plans["layers"][il]["ids"].get<std::vector<int32_t>>();
+                if(!transfer_placement) { engine.layers.back()->expected_ids=plans["layers"][il]["ids"].get<std::vector<int32_t>>(); }
                 fprintf(stderr,"RESIDENT layer=%d plan=%s\n",il,p.name.c_str());
             }
             if(activation_arena) { engine.prepare_arenas(devs); }
@@ -347,6 +353,8 @@ int main(int argc,char ** argv) {
         report["activation_arena"]=activation_arena;
         report["fused_host_reduce"]=fused_host_reduce;
         report["alternate_host_reduce"]=alternate_host_reduce;
+        report["transfer_placement"]=transfer_placement;
+        if(custom) { report["placement_source_tokens"]=plans["tokens"]; }
         if(custom) {
             report["placements"]=json::array();
             for(auto & l:engine.layers) {
