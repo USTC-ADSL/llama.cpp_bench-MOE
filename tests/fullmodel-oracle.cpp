@@ -71,7 +71,10 @@ struct partitioned_ffn {
     bool shared_activations=false;
     bool direct_callback_io=false;
     bool fused_host_reduce=false;
+    bool reuse_lifetimes=false;
     std::shared_ptr<shared_activation_buffer> arenas[3];
+    // Separate contracts for split routed, native top-k, and shared-only graphs.
+    std::unique_ptr<shared_activation_layout::reservation> reservations[3][3];
     partitioned_ffn(device * devs[3],source & src,int layer,int tokens,const placement & p,bool compact,bool shared_buffers=false) : il(layer),nt(tokens),plan(p),shared_activations(shared_buffers) {
         require(plan.owner.size()==60 && plan.shared>=0 && plan.shared<3,"invalid placement");
         for(int b=0;b<3;++b) {
@@ -107,7 +110,12 @@ struct partitioned_ffn {
             // A compact one-Expert CPU repack tensor is 2D: its backend accepts
             // MUL_MAT, not MUL_MAT_ID. oracle_job uses the equivalent single-bank
             // path only when ne[2]==1 (and asserts k==1).
-            if(!ptr) { ptr=std::make_unique<oracle_job>(*banks[b],b==plan.shared?shared.get():nullptr,rows,k,nt,native,b==0,shared_activations,arenas[b]); ++allocations; }
+            if(!ptr) {
+                auto * reserved=reservations[b][!rows?2:native?1:0].get();
+                require(!reuse_lifetimes || reserved,"missing activation layout reservation");
+                ptr=std::make_unique<oracle_job>(*banks[b],b==plan.shared?shared.get():nullptr,rows,k,nt,native,b==0,shared_activations,arenas[b],false,reuse_lifetimes,reserved);
+                ++allocations;
+            }
             work[b]=ptr.get(); auto & j=*ptr; j.reset_index_padding(); j.set_shared_input(x,elements);
             if(native && j.x) {
                 std::copy_n(x,elements,j.input_data());
@@ -184,7 +192,28 @@ struct full_engine {
             // k=1 with all 4*nt routed pairs bounds both split and native k=4 graphs.
             oracle_job layout(*l->banks[b],l->plan.shared==b?l->shared.get():nullptr,
                               l->banks[b]->buf?4*l->nt:0,1,l->nt,false,b==0,true,{},true);
-            capacities[b]=std::max(capacities[b],shared_activation_buffer::required_size(*devs[b],layout.ctx.get()));
+            capacities[b]=std::max(capacities[b],shared_activation_buffer::required_size(*devs[b],layout.ctx.get(),l->reuse_lifetimes?layout.graph:nullptr));
+            if(l->reuse_lifetimes) {
+                // Reuse the maximum-shape offsets, not a separately packed small
+                // graph: best-fit capacity need not be monotonic in routed rows.
+                l->reservations[b][l->banks[b]->buf?0:2]=std::make_unique<shared_activation_layout::reservation>(
+                    shared_activation_layout(*devs[b],layout.ctx.get(),layout.graph).freeze());
+            }
+            if(l->reuse_lifetimes && l->banks[b]->buf && l->banks[b]->w[0]->ne[2]>=4) {
+                // Native k=4 has a different dependency graph (shared aliases x).
+                // Reserve it separately rather than assume split liveness bounds it.
+                oracle_job native(*l->banks[b],l->plan.shared==b?l->shared.get():nullptr,
+                                  l->nt,4,l->nt,true,false,true,{},true);
+                capacities[b]=std::max(capacities[b],shared_activation_buffer::required_size(*devs[b],native.ctx.get(),native.graph));
+                l->reservations[b][1]=std::make_unique<shared_activation_layout::reservation>(
+                    shared_activation_layout(*devs[b],native.ctx.get(),native.graph).freeze());
+            }
+            if(l->reuse_lifetimes && l->banks[b]->buf && l->plan.shared==b) {
+                oracle_job only_shared(*l->banks[b],l->shared.get(),0,1,l->nt,false,b==0,true,{},true);
+                auto reserved=shared_activation_layout(*devs[b],only_shared.ctx.get(),only_shared.graph).freeze();
+                capacities[b]=std::max(capacities[b],reserved.bytes);
+                l->reservations[b][2]=std::make_unique<shared_activation_layout::reservation>(std::move(reserved));
+            }
         } }
         for(int b=0;b<3;++b) {
             if(capacities[b]) { arenas[b]=std::make_shared<shared_activation_buffer>(*devs[b],capacities[b]); }
@@ -374,6 +403,8 @@ int main(int argc,char ** argv) {
         bool direct_callback_io=std::getenv("MOE_DIRECT_CALLBACK_IO") && std::string(std::getenv("MOE_DIRECT_CALLBACK_IO"))=="1";
         bool alternate_callback_io=std::getenv("MOE_ALTERNATE_CALLBACK_IO") && std::string(std::getenv("MOE_ALTERNATE_CALLBACK_IO"))=="1";
         bool activation_arena=std::getenv("MOE_ACTIVATION_ARENA") && std::string(std::getenv("MOE_ACTIVATION_ARENA"))=="1";
+        bool activation_lifetimes=std::getenv("MOE_ACTIVATION_LIFETIMES") && std::string(std::getenv("MOE_ACTIVATION_LIFETIMES"))=="1";
+        require(!activation_lifetimes || activation_arena,"activation lifetime reuse requires arena");
         bool fused_host_reduce=std::getenv("MOE_FUSED_HOST_REDUCE") && std::string(std::getenv("MOE_FUSED_HOST_REDUCE"))=="1";
         bool alternate_host_reduce=std::getenv("MOE_ALTERNATE_HOST_REDUCE") && std::string(std::getenv("MOE_ALTERNATE_HOST_REDUCE"))=="1";
         require(!fused_host_reduce || custom,"fused reduction requires custom mode");
@@ -423,6 +454,7 @@ int main(int argc,char ** argv) {
                 engine.layers.push_back(std::make_unique<partitioned_ffn>(devs,src,il,layer_tokens,p,true,shared_activations));
                 engine.layers.back()->direct_callback_io=direct_callback_io;
                 engine.layers.back()->fused_host_reduce=fused_host_reduce;
+                engine.layers.back()->reuse_lifetimes=activation_lifetimes;
                 if(!transfer_placement) { engine.layers.back()->expected_ids=plans["layers"][il]["ids"].get<std::vector<int32_t>>(); }
                 fprintf(stderr,"RESIDENT layer=%d plan=%s\n",il,p.name.c_str());
             }
@@ -443,6 +475,7 @@ int main(int argc,char ** argv) {
         report["direct_callback_io"]=direct_callback_io;
         report["alternate_callback_io"]=alternate_callback_io;
         report["activation_arena"]=activation_arena;
+        report["activation_lifetimes"]=activation_lifetimes;
         report["fused_host_reduce"]=fused_host_reduce;
         report["alternate_host_reduce"]=alternate_host_reduce;
         report["transfer_placement"]=transfer_placement;

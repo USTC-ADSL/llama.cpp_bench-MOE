@@ -17,7 +17,8 @@ struct oracle_job {
     std::vector<int32_t> indices;
     int stride = 0;
     oracle_job(bank & b, shared_bank * sw, int rows, int k, int nt, bool native, bool single_matmul = false, bool shared_activations = false,
-               std::shared_ptr<shared_activation_buffer> arena = {}, bool layout_only = false) : dev(b.d) {
+               std::shared_ptr<shared_activation_buffer> arena = {}, bool layout_only = false, bool reuse_lifetimes = false,
+               const shared_activation_layout::reservation * reserved = nullptr) : dev(b.d) {
         graph = ggml_new_graph_custom(ctx.get(), 64, false);
         if (rows) {
             x = ggml_new_tensor_3d(ctx.get(), GGML_TYPE_F32, b.w[0]->ne[0], 1, rows);
@@ -63,7 +64,7 @@ struct oracle_job {
         if(layout_only) { return; }
         if (shared_activations) {
             pooled_activations=bool(arena);
-            if(arena) { shared_buffer=std::move(arena); shared_buffer->bind(dev,ctx.get()); }
+            if(arena) { shared_buffer=std::move(arena); shared_buffer->bind(dev,ctx.get(),reuse_lifetimes?graph:nullptr,reserved); }
             else { shared_buffer=shared_activation_buffer::allocate(dev,ctx.get()); }
             if (ids_storage) { std::memset(ids_storage->data,0,ggml_nbytes(ids_storage)); }
         } else {

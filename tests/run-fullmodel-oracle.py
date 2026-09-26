@@ -38,6 +38,7 @@ def main():
     p.add_argument("--direct-callback-io", action="store_true")
     p.add_argument("--alternate-callback-io", action="store_true")
     p.add_argument("--activation-arena", action="store_true")
+    p.add_argument("--activation-lifetimes", action="store_true", help="Reuse disjoint tensor lifetimes within each shared activation arena")
     p.add_argument("--fused-host-reduce", action="store_true")
     p.add_argument("--alternate-host-reduce", action="store_true")
     args = p.parse_args()
@@ -127,6 +128,9 @@ def main():
     if args.activation_arena:
         assert args.shared_activations
         env.append("MOE_ACTIVATION_ARENA=1")
+    if args.activation_lifetimes:
+        assert args.activation_arena and resolved_mode == "custom"
+        env.append("MOE_ACTIVATION_LIFETIMES=1")
     if args.fused_host_reduce:
         assert resolved_mode in ("custom", "branch", "custom-npu")
         env.append("MOE_FUSED_HOST_REDUCE=1")
