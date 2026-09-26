@@ -1,0 +1,470 @@
+{
+  "calibration": [
+    {
+      "tokens": 128,
+      "native_ms": 543.7602345,
+      "families": {
+        "cpu": {
+          "barrier": 364.199297,
+          "overlap": 371.07544299999995
+        },
+        "gpu": {
+          "barrier": 476.1516405,
+          "overlap": 459.60919299999995
+        },
+        "branch": {
+          "barrier": 570.3365359999999,
+          "overlap": 565.1671614999999
+        }
+      }
+    },
+    {
+      "tokens": 512,
+      "native_ms": 910.7935415000001,
+      "families": {
+        "cpu": {
+          "barrier": 790.81888,
+          "overlap": 794.4524994999999
+        },
+        "gpu": {
+          "barrier": 965.233333,
+          "overlap": 944.2144525
+        },
+        "branch": {
+          "barrier": 960.3166145,
+          "overlap": 947.2981769999999
+        }
+      }
+    },
+    {
+      "tokens": 768,
+      "native_ms": 1151.449817,
+      "families": {
+        "cpu": {
+          "barrier": 1119.7278900000001,
+          "overlap": 1096.279583
+        },
+        "gpu": {
+          "barrier": 1268.2128385,
+          "overlap": 1236.7649215
+        },
+        "branch": {
+          "barrier": 1285.4571615,
+          "overlap": 1262.655599
+        }
+      }
+    },
+    {
+      "tokens": 1024,
+      "native_ms": 1493.1769,
+      "families": {
+        "cpu": {
+          "barrier": 1835.6608059999999,
+          "overlap": 1789.269582
+        },
+        "gpu": {
+          "barrier": 1929.9480985,
+          "overlap": 1871.3625255
+        },
+        "branch": {
+          "barrier": 1771.016249,
+          "overlap": 1727.969895
+        }
+      }
+    }
+  ],
+  "confirmation": [
+    {
+      "prompt": "museum",
+      "tokens": 128,
+      "execution_mode": "custom",
+      "policy": {
+        "family": "cpu",
+        "overlap_gather": false,
+        "activation_lifetimes": true
+      },
+      "decision_ms": 18.058021,
+      "path_decision": {
+        "execution_mode": "custom",
+        "custom_predicted_us": 364682.25344947487,
+        "native_predicted_us": 551306.70402911,
+        "custom_upper_us": 394437.4619494749,
+        "native_lower_us": 544024.14722911,
+        "custom_uncertainty_us": 11705.625499999995,
+        "native_uncertainty_us": 7282.556800000032,
+        "decision_budget_us": 18049.583,
+        "reserved_decision_budget_us": 2000.0,
+        "observed_planning_us": 18049.583
+      },
+      "regular_layer_placements": {
+        "npu_tail24_cpu_shared_gpu": 23
+      },
+      "modes": {
+        "npu": [
+          {
+            "repeat": "a",
+            "median_ms": 574.815781,
+            "accounted_ms": 574.815781,
+            "tokens_s": 222.68003807640767,
+            "activation_mib": 0.0,
+            "major_faults": 0,
+            "cpu_logit_nrmse": 0.08435399353970459,
+            "cpu_top1_agrees": false
+          },
+          {
+            "repeat": "b",
+            "median_ms": 574.22289,
+            "accounted_ms": 574.22289,
+            "tokens_s": 222.90995749054866,
+            "activation_mib": 0.0,
+            "major_faults": 0,
+            "cpu_logit_nrmse": 0.08435399353970459,
+            "cpu_top1_agrees": false
+          }
+        ],
+        "auto": [
+          {
+            "repeat": "a",
+            "median_ms": 383.106484,
+            "accounted_ms": 401.164505,
+            "tokens_s": 319.07110027094745,
+            "activation_mib": 28.25390625,
+            "major_faults": 0,
+            "cpu_logit_nrmse": 0.0868722735476954,
+            "cpu_top1_agrees": true
+          },
+          {
+            "repeat": "b",
+            "median_ms": 393.82250050000005,
+            "accounted_ms": 411.88052150000004,
+            "tokens_s": 310.76973374182734,
+            "activation_mib": 28.25390625,
+            "major_faults": 0,
+            "cpu_logit_nrmse": 0.0868722735476954,
+            "cpu_top1_agrees": true
+          }
+        ]
+      },
+      "auto_paired_throughput_gain_percent": [
+        43.28679976310465,
+        39.414917682627035
+      ]
+    },
+    {
+      "prompt": "museum",
+      "tokens": 768,
+      "execution_mode": "custom",
+      "policy": {
+        "family": "cpu",
+        "overlap_gather": true,
+        "activation_lifetimes": true
+      },
+      "decision_ms": 30.778125,
+      "path_decision": {
+        "execution_mode": "custom",
+        "custom_predicted_us": 1067995.7284820098,
+        "native_predicted_us": 1152589.724666752,
+        "custom_upper_us": 1111225.8844820098,
+        "native_lower_us": 1146839.177916752,
+        "custom_uncertainty_us": 12455.780999999959,
+        "native_uncertainty_us": 5750.5467499999795,
+        "decision_budget_us": 30774.375,
+        "reserved_decision_budget_us": 2000.0,
+        "observed_planning_us": 30774.375
+      },
+      "regular_layer_placements": {
+        "npu_tail1_cpu_shared_gpu": 23
+      },
+      "modes": {
+        "npu": [
+          {
+            "repeat": "a",
+            "median_ms": 1163.8093489999999,
+            "accounted_ms": 1163.8093489999999,
+            "tokens_s": 659.9018994476216,
+            "activation_mib": 0.0,
+            "major_faults": 0,
+            "cpu_logit_nrmse": 0.04381416216674281,
+            "cpu_top1_agrees": true
+          },
+          {
+            "repeat": "b",
+            "median_ms": 1119.757239,
+            "accounted_ms": 1119.757239,
+            "tokens_s": 685.8629471204516,
+            "activation_mib": 0.0,
+            "major_faults": 0,
+            "cpu_logit_nrmse": 0.04381416216674281,
+            "cpu_top1_agrees": true
+          }
+        ],
+        "auto": [
+          {
+            "repeat": "a",
+            "median_ms": 1144.570651,
+            "accounted_ms": 1175.348776,
+            "tokens_s": 653.4230652910468,
+            "activation_mib": 169.5234375,
+            "major_faults": 0,
+            "cpu_logit_nrmse": 0.044136372238210556,
+            "cpu_top1_agrees": true
+          },
+          {
+            "repeat": "b",
+            "median_ms": 1142.585807,
+            "accounted_ms": 1173.363932,
+            "tokens_s": 654.5283854864562,
+            "activation_mib": 169.5234375,
+            "major_faults": 0,
+            "cpu_logit_nrmse": 0.044136372238210556,
+            "cpu_top1_agrees": true
+          }
+        ]
+      },
+      "auto_paired_throughput_gain_percent": [
+        -0.9817874690159378,
+        -4.568633101635166
+      ]
+    },
+    {
+      "prompt": "programming",
+      "tokens": 768,
+      "execution_mode": "custom",
+      "policy": {
+        "family": "cpu",
+        "overlap_gather": true,
+        "activation_lifetimes": true
+      },
+      "decision_ms": 29.964530999999997,
+      "path_decision": {
+        "execution_mode": "custom",
+        "custom_predicted_us": 1068109.0218429782,
+        "native_predicted_us": 1152725.38922974,
+        "custom_upper_us": 1110525.4278429782,
+        "native_lower_us": 1146974.84247974,
+        "custom_uncertainty_us": 12455.780999999959,
+        "native_uncertainty_us": 5750.5467499999795,
+        "decision_budget_us": 29960.625,
+        "reserved_decision_budget_us": 2000.0,
+        "observed_planning_us": 29960.625
+      },
+      "regular_layer_placements": {
+        "npu_tail1_cpu_shared_gpu": 23
+      },
+      "modes": {
+        "npu": [
+          {
+            "repeat": "a",
+            "median_ms": 1117.9074994999999,
+            "accounted_ms": 1117.9074994999999,
+            "tokens_s": 686.9978064763847,
+            "activation_mib": 0.0,
+            "major_faults": 0,
+            "cpu_logit_nrmse": 0.10078596317747558,
+            "cpu_top1_agrees": false
+          },
+          {
+            "repeat": "b",
+            "median_ms": 1164.463932,
+            "accounted_ms": 1164.463932,
+            "tokens_s": 659.5309471551756,
+            "activation_mib": 0.0,
+            "major_faults": 0,
+            "cpu_logit_nrmse": 0.10078596317747558,
+            "cpu_top1_agrees": false
+          }
+        ],
+        "auto": [
+          {
+            "repeat": "a",
+            "median_ms": 1149.480104,
+            "accounted_ms": 1179.444635,
+            "tokens_s": 651.1539221169122,
+            "activation_mib": 169.5234375,
+            "major_faults": 0,
+            "cpu_logit_nrmse": 0.09880582934463406,
+            "cpu_top1_agrees": false
+          },
+          {
+            "repeat": "b",
+            "median_ms": 1144.3630205000002,
+            "accounted_ms": 1174.3275515,
+            "tokens_s": 653.9912982702424,
+            "activation_mib": 169.5234375,
+            "major_faults": 0,
+            "cpu_logit_nrmse": 0.09880582934463406,
+            "cpu_top1_agrees": false
+          }
+        ]
+      },
+      "auto_paired_throughput_gain_percent": [
+        -5.21746707508659,
+        -0.8399376721938356
+      ]
+    },
+    {
+      "prompt": "astronomy",
+      "tokens": 384,
+      "execution_mode": "custom",
+      "policy": {
+        "family": "cpu",
+        "overlap_gather": false,
+        "activation_lifetimes": true
+      },
+      "decision_ms": 28.662187000000003,
+      "path_decision": {
+        "execution_mode": "custom",
+        "custom_predicted_us": 629784.9048217465,
+        "native_predicted_us": 786586.4632318742,
+        "custom_upper_us": 674522.2836550798,
+        "native_lower_us": 780898.9439652074,
+        "custom_uncertainty_us": 16083.107833333323,
+        "native_uncertainty_us": 5687.519266666671,
+        "decision_budget_us": 28654.271,
+        "reserved_decision_budget_us": 2000.0,
+        "observed_planning_us": 28654.271
+      },
+      "regular_layer_placements": {
+        "npu_tail8_cpu_shared_gpu": 5,
+        "npu_tail16_cpu_shared_gpu": 18
+      },
+      "modes": {
+        "npu": [
+          {
+            "repeat": "a",
+            "median_ms": 789.911875,
+            "accounted_ms": 789.911875,
+            "tokens_s": 486.13017749606564,
+            "activation_mib": 0.0,
+            "major_faults": 0,
+            "cpu_logit_nrmse": 0.0843278975373674,
+            "cpu_top1_agrees": true
+          },
+          {
+            "repeat": "b",
+            "median_ms": 814.338203,
+            "accounted_ms": 814.338203,
+            "tokens_s": 471.5485514315236,
+            "activation_mib": 0.0,
+            "major_faults": 0,
+            "cpu_logit_nrmse": 0.0843278975373674,
+            "cpu_top1_agrees": true
+          }
+        ],
+        "auto": [
+          {
+            "repeat": "a",
+            "median_ms": 659.038958,
+            "accounted_ms": 687.701145,
+            "tokens_s": 558.3820861604062,
+            "activation_mib": 84.76171875,
+            "major_faults": 0,
+            "cpu_logit_nrmse": 0.08398510534890337,
+            "cpu_top1_agrees": true
+          },
+          {
+            "repeat": "b",
+            "median_ms": 654.2018744999999,
+            "accounted_ms": 682.8640614999999,
+            "tokens_s": 562.3373986859024,
+            "activation_mib": 84.76171875,
+            "major_faults": 0,
+            "cpu_logit_nrmse": 0.08398510534890337,
+            "cpu_top1_agrees": true
+          }
+        ]
+      },
+      "auto_paired_throughput_gain_percent": [
+        14.86266683473385,
+        19.25334029311778
+      ]
+    },
+    {
+      "prompt": "astronomy",
+      "tokens": 768,
+      "execution_mode": "custom",
+      "policy": {
+        "family": "cpu",
+        "overlap_gather": true,
+        "activation_lifetimes": true
+      },
+      "decision_ms": 33.357656000000006,
+      "path_decision": {
+        "execution_mode": "custom",
+        "custom_predicted_us": 1067894.4876062516,
+        "native_predicted_us": 1152374.8200755953,
+        "custom_upper_us": 1113700.3726062516,
+        "native_lower_us": 1146624.2733255953,
+        "custom_uncertainty_us": 12455.780999999959,
+        "native_uncertainty_us": 5750.5467499999795,
+        "decision_budget_us": 33350.104,
+        "reserved_decision_budget_us": 2000.0,
+        "observed_planning_us": 33350.104
+      },
+      "regular_layer_placements": {
+        "npu_tail1_cpu_shared_gpu": 23
+      },
+      "modes": {
+        "npu": [
+          {
+            "repeat": "a",
+            "median_ms": 1102.0167185,
+            "accounted_ms": 1102.0167185,
+            "tokens_s": 696.904127775263,
+            "activation_mib": 0.0,
+            "major_faults": 0,
+            "cpu_logit_nrmse": 0.06177261794585728,
+            "cpu_top1_agrees": true
+          },
+          {
+            "repeat": "b",
+            "median_ms": 1114.1631244999999,
+            "accounted_ms": 1114.1631244999999,
+            "tokens_s": 689.3066043131282,
+            "activation_mib": 0.0,
+            "major_faults": 0,
+            "cpu_logit_nrmse": 0.06177261794585728,
+            "cpu_top1_agrees": true
+          }
+        ],
+        "auto": [
+          {
+            "repeat": "a",
+            "median_ms": 1148.2915095,
+            "accounted_ms": 1181.6491655000002,
+            "tokens_s": 649.939104112201,
+            "activation_mib": 169.5234375,
+            "major_faults": 5,
+            "cpu_logit_nrmse": 0.07499490307838796,
+            "cpu_top1_agrees": true
+          },
+          {
+            "repeat": "b",
+            "median_ms": 1138.047239,
+            "accounted_ms": 1171.4048950000001,
+            "tokens_s": 655.6230072779404,
+            "activation_mib": 169.5234375,
+            "major_faults": 0,
+            "cpu_logit_nrmse": 0.07499490307838796,
+            "cpu_top1_agrees": true
+          }
+        ]
+      },
+      "auto_paired_throughput_gain_percent": [
+        -6.739093914250316,
+        -4.88659136941717
+      ]
+    }
+  ],
+  "hashes": {
+    "libggml-base.so": "138af1064a0f6a166bf46532a3e8195ac379383d15fec1dcd9db5945c3a977c0",
+    "libggml-cpu.so": "06a3fe6b0a27c116bfbcec6ba13353fbcac83c12422d8ec8c284d22e3fb9ed32",
+    "libggml-hexagon.so": "01c6ee6844c8ffc3326d6ed7c7d43ae8d0e81d29bff88d4a2cbde59caa2a55f6",
+    "libggml-htp-v79.so": "48b3aeb4fa140d8ec0469c60f46ac381811d1a25d8bf6ec4619bba9fcf19900f",
+    "libggml-opencl.so": "0f3686fbad099c79360f32d182b2ad5b41b8236be8a3cb6d0ebeec672c0d120f",
+    "libggml.so": "7c7c7918a1a1d319b44a0ea5824a7c17ba2a7be9f3c66068cf3627c94d91fbdc",
+    "libllama.so": "51f129016af1dcfa96b773926f97350141b735072eef258ca59aa1faf6d4a8b1",
+    "fullmodel-oracle": "4ac5f5a09ecf55e5fb3891f4a3e8b02c7ac9b3bd941e0642013e72b28dafb183"
+  },
+  "scope": "process medians; auto includes device decision core, forced custom execution only; scatter is not confidence; CPU logits diagnostic is not quality equivalence"
+}

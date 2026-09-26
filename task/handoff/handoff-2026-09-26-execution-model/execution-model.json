@@ -1,0 +1,594 @@
+{
+  "version": 2,
+  "model_type": "branch_critical_path",
+  "base": {
+    "backends": [
+      [
+        2692.5043754910803,
+        35285.14978135769,
+        -20857.618874724543,
+        23948.975525425638,
+        7524.529618208202,
+        7280.724502047177,
+        57331.35697333124,
+        -4784.978097371613,
+        -6618.972037610989,
+        1799.5906732973806,
+        226.174702474432,
+        94655.50392007927,
+        -2755.060968006841,
+        30246.0048788847,
+        29192.45414874334,
+        1652.7388648825242,
+        -8805.685444807616,
+        0.0,
+        0.0,
+        0.0,
+        -2078.2687218678884,
+        -3411.722326003986,
+        4032.5821444672724,
+        -826.5220044084656,
+        -5847.790794613944,
+        5218.0081578471145
+      ],
+      [
+        1413.0557380737243,
+        675.3148753069705,
+        11496.37357572398,
+        995.5450879839606,
+        1835.720168371073,
+        -260.83484256864506,
+        1097.3888877158565,
+        -779.5829411425136,
+        -820.4974101127062,
+        603.9577671297588,
+        -1410.8689930945952,
+        1980.2827957343084,
+        -16.08745809929714,
+        2421.78479450248,
+        -248.38423695363832,
+        828.9699955122251,
+        436.1194199720309,
+        -252.43308229974997,
+        456.21989649844767,
+        -1532.43129216404,
+        0.0,
+        0.0,
+        0.0,
+        -201.64396632340475,
+        977.998485808506,
+        -121.58016619675765
+      ],
+      [
+        536.1855763018978,
+        13328.745538557632,
+        2582.0814448899837,
+        11051.441758746001,
+        3931.0835424171173,
+        737.0569796119473,
+        237.38059727529406,
+        -694.2392099688185,
+        -9714.987359006947,
+        520.9157571329832,
+        -1039.0456930791627,
+        30188.837251200668,
+        812.6560379078783,
+        9718.504925911804,
+        6468.05720802086,
+        276.76625780308103,
+        -1536.1855243360421,
+        -465.04247663910945,
+        2463.5091309678837,
+        -2172.8671980535714,
+        906.5244235183749,
+        1177.883008213352,
+        -1798.751398224204,
+        0.0,
+        0.0,
+        0.0
+      ]
+    ],
+    "host": [
+      819.7357146072449,
+      1566.335436666167,
+      -211.16995256725053,
+      -1819.6200455930616,
+      -1040.3146932925151,
+      101.63845172108488,
+      1581.1960073176317,
+      -340.2756242003805
+    ],
+    "version": 1,
+    "alpha": 1.0,
+    "cross_validation": [
+      {
+        "alpha": 0.01,
+        "mean_absolute_relative_error": 0.587265058454274
+      },
+      {
+        "alpha": 0.1,
+        "mean_absolute_relative_error": 0.4329726464492847
+      },
+      {
+        "alpha": 1.0,
+        "mean_absolute_relative_error": 0.4282480501363226
+      },
+      {
+        "alpha": 10.0,
+        "mean_absolute_relative_error": 0.5435429499465848
+      }
+    ],
+    "training_rows": 435,
+    "training_files": {
+      "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-placement-model/evidence/technical-128-profile-v2.json": "d467548b72e2808183c8a59e7828016a9d770bfb763b8b9c04d0372b3a8cdd52",
+      "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-placement-model/evidence/technical-256-profile-v2.json": "2c0ff045782841d509f4057ffa29ece0f4e30ed7060aa85ca96df8804b84c9b2",
+      "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-placement-model/evidence/technical-512-profile-v2.json": "974c63c52fe27a02deafdd9a4ddfecf0bf9705d62b4329d1309354bbb9e0d5cc"
+    },
+    "contract": "Qwen1.5-MoE Q4_0, fd8657d6, compact resident banks, shared arenas, fused host reduction; offline placement before weight preparation",
+    "training_tokens": [
+      1,
+      128,
+      256,
+      512
+    ],
+    "training_layers": [
+      0,
+      3,
+      11,
+      19,
+      23
+    ]
+  },
+  "base_sha256": "cc07b31f227ef35d4d35dd9fe19b7beb504bd9a67a3e1c04bea2d35747ca66fb",
+  "decision_budget_us": 2000.0,
+  "training_files": {
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-128-native-a.json": "dae87398b7083c3f305f46c2ccdfe4f0f6105b0ef11e35ec62418e117c8f3d3b",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-128-native-b.json": "7748748e6dd661c14b9f9a2a350d64949c2271f6d1e57c5f2845d1dd3d5e9484",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/technical-128-cpu-plan.json": "88d809bbdc50a35d5c7adfb8e2c6048639dcdf53c1bc9f9602b3d4a884150783",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-128-cpu.json": "cb7a25ef72199164e11a67e85c3f9ca2e4486107273370dfa97e4eac3a1b686a",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-128-gpu.json": "44f39f0b6cca6668fe30d41a36292759472601da4f29cec50afb1a55798e93c9",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-128-branch.json": "8953c25dcc921c898026cb6a059be2b89265cff1db3f1313b2aa89cd3277696e",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-512-native-a.json": "f93ae4e8e72adeb8d91d9276b24c8d3eb9227c9aecf7a90427c688927aa0099f",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-512-native-b.json": "5d03300b160e8f34449c9ddf37c11d5634f04517d83b3fc7a960be59e3183f6a",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/technical-512-cpu-plan.json": "1f2d9f9d09f8defe33c558767a29c10b032b3ddaa652ca16e26501040901c95e",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-512-cpu.json": "1411926d586b306e06afaa29678813b8d1445d8a7ce15c18f85ab3fedf0b7df4",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-512-gpu.json": "6ca5812a6ac61c7482d0bbae397370ba5c7d9daee135276947429d95b5f4c131",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-512-branch.json": "20468134c6128568aa863706937bd95561518d4353686074d175e9a6aa4bdd79",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-768-native-a.json": "42eb785f8f3990629617028809e701eaa051f57bf382c4bfde0417824d044c1b",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-768-native-b.json": "6385e43f9093f60238d6c492e8d8eb618d54ba142c66cbd344bd30ab8f0d123d",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/technical-768-cpu-plan.json": "f2b9eb535ff23f8650c7976235588b94c62fc6769228da0fa1ef6a295ffa12d4",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-768-cpu.json": "88bb49be4ce7c65a68095736cee14ae1215f6dc87cf5c69c13f48098b10f32eb",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-768-gpu.json": "923aabcd95acbec7b30b46f7fb450100d9284e87cee2622850b5d40784641ed5",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-768-branch.json": "0feb3170eec11579e3398b7973d46f57769be61039f50ac52614780cfce63b18",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-1024-native-a.json": "2b4e62dfd54586ab56d300425bf08f9062ba34b86a4e7391bcb1b11a08ceeba8",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-1024-native-b.json": "2d7cffae3cdfdc360dda7c7451e78fd1f8259258ce31bd65a0e7f2b3b55625d2",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/technical-1024-cpu-plan.json": "b034bb10cdaa631e690e9d63c752eb593627b2ead28a34ab36bc9a52b9db3b66",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-1024-cpu.json": "cc7f8f53e0ec0e8ff4b84298faab5c8476e35bdd7763d17aa3156eff87cdd13c",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-1024-gpu.json": "51c26085bf9633d900290bd509b80821705c4cd1cbfe6a933ae818a31409964c",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-1024-branch.json": "19a761a365b800ec4a2b374065c6b02b81d46e40f0492426f773113b38bc793e"
+  },
+  "nodes": [
+    {
+      "tokens": 128,
+      "families": {
+        "cpu": {
+          "barrier": {
+            "compute_scales": [
+              1.3389723567839362,
+              1.056288228975403,
+              1.0437801193521947
+            ],
+            "gather_us_per_mib": [
+              45.39211463659952,
+              35.94366038991053,
+              39.32302173913044
+            ],
+            "host_us_per_token": 1.9599629755434784,
+            "outside_us": 105264.06399999995,
+            "uncertainty_us": 11705.625499999995
+          },
+          "overlap": {
+            "compute_scales": [
+              1.3447910710105,
+              1.0551770057880931,
+              1.051867660781729
+            ],
+            "gather_us_per_mib": [
+              75.93190538086611,
+              59.40362116941298,
+              69.71343478260869
+            ],
+            "host_us_per_token": 1.9830859375000005,
+            "outside_us": 115094.76749999999,
+            "uncertainty_us": 9942.890500000009
+          }
+        },
+        "gpu": {
+          "barrier": {
+            "compute_scales": [
+              1.0,
+              1.0846431965869612,
+              0.9918183803393416
+            ],
+            "gather_us_per_mib": [
+              0.0,
+              176.21592477464753,
+              183.33772417196013
+            ],
+            "host_us_per_token": 7.142881623641305,
+            "outside_us": 163284.406,
+            "uncertainty_us": 8861.978999999963
+          },
+          "overlap": {
+            "compute_scales": [
+              1.0,
+              1.0827205739689076,
+              0.9911224079145797
+            ],
+            "gather_us_per_mib": [
+              0.0,
+              177.76421799978746,
+              185.14822880233515
+            ],
+            "host_us_per_token": 7.474700577445653,
+            "outside_us": 155565.936,
+            "uncertainty_us": 8800.208000000013
+          }
+        },
+        "branch": {
+          "barrier": {
+            "compute_scales": [
+              1.0,
+              0.9893889787789409,
+              0.9984868162034893
+            ],
+            "gather_us_per_mib": [
+              0.0,
+              212.03152809560132,
+              206.63721739130438
+            ],
+            "host_us_per_token": 8.49861616847826,
+            "outside_us": 155867.20949999997,
+            "uncertainty_us": 9851.01549999998
+          },
+          "overlap": {
+            "compute_scales": [
+              1.0,
+              0.9882756140454949,
+              1.0000970477155906
+            ],
+            "gather_us_per_mib": [
+              0.0,
+              224.30820239003305,
+              210.51860869565218
+            ],
+            "host_us_per_token": 8.44479789402174,
+            "outside_us": 155842.13749999998,
+            "uncertainty_us": 6485.780999999959
+          }
+        }
+      },
+      "native_us": 543760.2345,
+      "native_uncertainty_us": 7282.556800000032,
+      "native_base_compute_us": 425386.09705288644
+    },
+    {
+      "tokens": 512,
+      "families": {
+        "cpu": {
+          "barrier": {
+            "compute_scales": [
+              1.1036457527704409,
+              1.0321706455483703,
+              0.9813740198757912
+            ],
+            "gather_us_per_mib": [
+              72.36160450884444,
+              46.03999380083954,
+              57.970717391304355
+            ],
+            "host_us_per_token": 1.7501698369565233,
+            "outside_us": 258000.07749999998,
+            "uncertainty_us": 18271.848999999987
+          },
+          "overlap": {
+            "compute_scales": [
+              1.1406625629311469,
+              1.0362179022236915,
+              0.9903584011883861
+            ],
+            "gather_us_per_mib": [
+              152.08364441703395,
+              71.43604882616383,
+              112.22884239130434
+            ],
+            "host_us_per_token": 1.7366408797554356,
+            "outside_us": 262042.91500000004,
+            "uncertainty_us": 20514.296999999962
+          }
+        },
+        "gpu": {
+          "barrier": {
+            "compute_scales": [
+              1.0,
+              1.0543608186169053,
+              1.0412621779283118
+            ],
+            "gather_us_per_mib": [
+              0.0,
+              174.41809907916866,
+              191.08330328539387
+            ],
+            "host_us_per_token": 6.5357301715353255,
+            "outside_us": 344388.15200000006,
+            "uncertainty_us": 11336.666499999992
+          },
+          "overlap": {
+            "compute_scales": [
+              1.0,
+              1.0490692749430535,
+              1.0466982565868812
+            ],
+            "gather_us_per_mib": [
+              0.0,
+              179.21571736426938,
+              196.06023450835286
+            ],
+            "host_us_per_token": 6.632880604619565,
+            "outside_us": 337486.6665000001,
+            "uncertainty_us": 13796.510499999975
+          }
+        },
+        "branch": {
+          "barrier": {
+            "compute_scales": [
+              1.0,
+              1.016931802398815,
+              0.9885134761735515
+            ],
+            "gather_us_per_mib": [
+              0.0,
+              204.12126044580052,
+              199.6362826086957
+            ],
+            "host_us_per_token": 6.558777895720107,
+            "outside_us": 333620.96350000007,
+            "uncertainty_us": 25612.031000000017
+          },
+          "overlap": {
+            "compute_scales": [
+              1.0,
+              1.0194452916787193,
+              0.9887648815517933
+            ],
+            "gather_us_per_mib": [
+              0.0,
+              208.05519654207984,
+              207.56142391304346
+            ],
+            "host_us_per_token": 6.677323581861412,
+            "outside_us": 337580.208,
+            "uncertainty_us": 11628.750000000058
+          }
+        }
+      },
+      "native_us": 910793.5415,
+      "native_uncertainty_us": 4890.00049999999,
+      "native_base_compute_us": 597239.0867639474
+    },
+    {
+      "tokens": 768,
+      "families": {
+        "cpu": {
+          "barrier": {
+            "compute_scales": [
+              1.2212062887873185,
+              1.0275696851018767,
+              0.9558948937756852
+            ],
+            "gather_us_per_mib": [
+              105.00907347709405,
+              73.12704471755367,
+              97.44941666666666
+            ],
+            "host_us_per_token": 1.7182899116847836,
+            "outside_us": 362072.75999999995,
+            "uncertainty_us": 24798.64599999995
+          },
+          "overlap": {
+            "compute_scales": [
+              1.2366792153769417,
+              1.0140214542875605,
+              0.9599793155983851
+            ],
+            "gather_us_per_mib": [
+              181.12070246880165,
+              79.49486135359464,
+              123.52468478260869
+            ],
+            "host_us_per_token": 1.6713727355072465,
+            "outside_us": 366912.5840000001,
+            "uncertainty_us": 12455.780999999959
+          }
+        },
+        "gpu": {
+          "barrier": {
+            "compute_scales": [
+              1.0,
+              1.0564657674193443,
+              1.0297977628957689
+            ],
+            "gather_us_per_mib": [
+              0.0,
+              174.80374732166968,
+              197.74136995372413
+            ],
+            "host_us_per_token": 5.8237358469202904,
+            "outside_us": 456060.3375000001,
+            "uncertainty_us": 14824.661500000046
+          },
+          "overlap": {
+            "compute_scales": [
+              1.0,
+              1.0510155030542174,
+              1.0344287306822515
+            ],
+            "gather_us_per_mib": [
+              0.0,
+              179.762715060242,
+              198.19334878786836
+            ],
+            "host_us_per_token": 6.034826058650362,
+            "outside_us": 452126.0195,
+            "uncertainty_us": 21885.39049999998
+          }
+        },
+        "branch": {
+          "barrier": {
+            "compute_scales": [
+              1.0,
+              1.0346976417589793,
+              0.9598809761592524
+            ],
+            "gather_us_per_mib": [
+              0.0,
+              214.8255601322146,
+              212.43809782608696
+            ],
+            "host_us_per_token": 5.68831006567029,
+            "outside_us": 459361.0919999999,
+            "uncertainty_us": 334587.6560000001
+          },
+          "overlap": {
+            "compute_scales": [
+              1.0,
+              1.0456906203518193,
+              0.9648033619859184
+            ],
+            "gather_us_per_mib": [
+              0.0,
+              217.0652798824759,
+              211.81234782608695
+            ],
+            "host_us_per_token": 5.726371376811595,
+            "outside_us": 463660.3639999998,
+            "uncertainty_us": 426954.2175
+          }
+        }
+      },
+      "native_us": 1151449.817,
+      "native_uncertainty_us": 5750.5467499999795,
+      "native_base_compute_us": 718765.0467274337
+    },
+    {
+      "tokens": 1024,
+      "families": {
+        "cpu": {
+          "barrier": {
+            "compute_scales": [
+              1.2936640604672132,
+              0.9900918505381536,
+              1.1305982577445857
+            ],
+            "gather_us_per_mib": [
+              192.52550815831793,
+              140.42407550565508,
+              189.7792092391304
+            ],
+            "host_us_per_token": 2.436268172554348,
+            "outside_us": 606738.5145,
+            "uncertainty_us": 133331.53599999996
+          },
+          "overlap": {
+            "compute_scales": [
+              1.2730065813686835,
+              0.9919301939473223,
+              1.1834621641000256
+            ],
+            "gather_us_per_mib": [
+              256.71753488707003,
+              96.21231418426939,
+              168.39050815217388
+            ],
+            "host_us_per_token": 2.4801500721807055,
+            "outside_us": 619254.7150000002,
+            "uncertainty_us": 144685.59849999996
+          }
+        },
+        "gpu": {
+          "barrier": {
+            "compute_scales": [
+              1.0,
+              1.0255061430653152,
+              1.03920323872194
+            ],
+            "gather_us_per_mib": [
+              0.0,
+              195.3725332078472,
+              233.7213577866147
+            ],
+            "host_us_per_token": 7.383298870584238,
+            "outside_us": 844969.8979999999,
+            "uncertainty_us": 254592.91649999982
+          },
+          "overlap": {
+            "compute_scales": [
+              1.0,
+              1.0132266602284314,
+              1.0441130868965376
+            ],
+            "gather_us_per_mib": [
+              0.0,
+              200.375848965059,
+              229.28538881817198
+            ],
+            "host_us_per_token": 7.665010614809784,
+            "outside_us": 847681.352,
+            "uncertainty_us": 244793.61899999995
+          }
+        },
+        "branch": {
+          "barrier": {
+            "compute_scales": [
+              1.0,
+              1.0264661954408811,
+              0.9692795379184942
+            ],
+            "gather_us_per_mib": [
+              0.0,
+              215.18037528604123,
+              217.16316032608694
+            ],
+            "host_us_per_token": 5.877832561990489,
+            "outside_us": 676987.4230000001,
+            "uncertainty_us": 8725.54700000002
+          },
+          "overlap": {
+            "compute_scales": [
+              1.0,
+              1.0357731939184398,
+              0.9689594070244801
+            ],
+            "gather_us_per_mib": [
+              0.0,
+              215.86221476396307,
+              211.50107608695652
+            ],
+            "host_us_per_token": 5.850172129755436,
+            "outside_us": 668911.6690000002,
+            "uncertainty_us": 28713.619999999995
+          }
+        }
+      },
+      "native_us": 1493176.9,
+      "native_uncertainty_us": 23660.41650000005,
+      "native_base_compute_us": 839128.8384576498
+    }
+  ],
+  "calibrated_shared_backend": {
+    "cpu": 2,
+    "gpu": 1,
+    "branch": 2
+  },
+  "scope": "resident branch gather+compute critical path; conversion excluded; whole-request calibrated family/policy"
+}
