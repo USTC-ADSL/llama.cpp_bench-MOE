@@ -186,11 +186,16 @@ def train(args):
 
 def load_routes(path):
     capture = read(path)
+    stem = str(path).removesuffix(".gz")
     layers = []
     for l in capture["layers"]:
         nt = l["tokens"]
-        name = str(path) + f'.layer{l["layer"]}.bin'
-        data = np.fromfile(name, dtype=np.int32, count=4 * nt, offset=(2048 + 60) * nt * 4)
+        name = pathlib.Path(stem + f'.layer{l["layer"]}.bin')
+        if name.exists():
+            data = np.fromfile(name, dtype=np.int32, count=4 * nt, offset=(2048 + 60) * nt * 4)
+        else:
+            raw = gzip.decompress(name.with_name(name.name + ".gz").read_bytes())
+            data = np.frombuffer(raw, dtype=np.int32, count=4 * nt, offset=(2048 + 60) * nt * 4)
         assert len(data) == 4 * nt and all(0 <= x < 60 for x in data)
         layers.append({"layer": l["layer"], "tokens": nt, "ids": data.tolist(), "counts": np.bincount(data, minlength=60).tolist()})
     return capture, layers

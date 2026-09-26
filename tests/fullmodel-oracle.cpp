@@ -2,6 +2,7 @@
 #include "expert-oracle-probe.cpp"
 #include "llama.h"
 #include "moe-placement-model.h"
+#include "moe-context-model.h"
 
 #include <iomanip>
 #include <sys/resource.h>
@@ -308,23 +309,43 @@ static int search_all(const char * model_path,const std::string & capture_path,c
 static int predict_all(const std::string & capture_path,const char * output) {
     require(std::getenv("MOE_PLACEMENT_MODEL"),"prediction requires MOE_PLACEMENT_MODEL");
     std::ifstream model_file(std::getenv("MOE_PLACEMENT_MODEL")); json coefficients; model_file>>coefficients;
-    resident_placement_model model(coefficients);
+    bool contextual=coefficients.contains("base");
+    resident_placement_model model(contextual?coefficients.at("base"):coefficients);
     std::ifstream capture_file(capture_path); json capture; capture_file>>capture;
+    std::unique_ptr<fullmodel_context_model> context;
+    if(contextual) { context=std::make_unique<fullmodel_context_model>(coefficients,capture.at("tokens")); }
     resident_placement_model::availability preparable;
     // Offline planner contract: weights are subsequently prepared on the selected
     // backend before full-model timing. This is NOT an assertion of online residency.
     for(auto & row:preparable.experts) { row.fill(true); } preparable.shared.fill(true);
     json report={{"tokens",capture["tokens"]},{"token_ids",capture["token_ids"]},{"layers",json::array()},
                  {"scope","offline route-conditioned model selection; weights prepared later; decision only timed"}};
+    double custom_total=0,native_compute=0,uncertainty=0,decision_total=0;
     for(int il=0;il<24;++il) {
         int nt=capture["layers"][il]["tokens"];
         std::ifstream bin(capture_path+".layer"+std::to_string(il)+".bin",std::ios::binary);
         bin.seekg((2048+60)*size_t(nt)*sizeof(float)); auto ids=binary_read<int32_t>(bin,4*nt);
         std::vector<int> counts(60); for(int id:ids) { require(id>=0 && id<60,"invalid captured ID"); ++counts[id]; }
         resident_placement_model::prediction estimate; double prepare=0;
-        auto start=timer::now(); auto selected=model.choose(nt,counts,preparable,estimate,prepare); double us=elapsed(start);
+        auto start=timer::now(); placement selected;
+        fullmodel_context_model::prediction corrected;
+        if(context) {
+            selected=context->choose(nt,counts,corrected); estimate=corrected.ffn;
+            custom_total+=corrected.score; uncertainty+=corrected.uncertainty;
+            native_compute+=model.predict(nt,counts,{"npu_shared_npu",std::vector<int>(60,1),1}).backend[1];
+        } else { selected=model.choose(nt,counts,preparable,estimate,prepare); }
+        double us=elapsed(start); decision_total+=us;
         report["layers"].push_back({{"layer",il},{"tokens",nt},{"counts",counts},{"ids",ids},{"selected",plan_json(selected)},
             {"decision_device_us",us},{"prediction",{{"backend_us",estimate.backend},{"host_us",estimate.host},{"total_us",estimate.total}}}});
+        if(context) {
+            auto & pred=report["layers"].back()["prediction"];
+            pred["outside_share_us"]=corrected.outside; pred["uncertainty_share_us"]=corrected.uncertainty; pred["score_us"]=corrected.score;
+        }
+    }
+    if(context) {
+        auto start=timer::now(); report["path_decision"]=context->decide(custom_total,native_compute,uncertainty,decision_total);
+        report["execution_mode"]=report["path_decision"]["execution_mode"]; decision_total+=elapsed(start);
+        report["decision_device_total_us"]=decision_total;
     }
     std::ofstream out(output); out<<report.dump(2)<<'\n'; require(out.good(),"model plan write failed");
     return 0;
@@ -333,12 +354,19 @@ static int predict_all(const std::string & capture_path,const char * output) {
 #ifndef FULLMODEL_ORACLE_NO_MAIN
 int main(int argc,char ** argv) {
     try {
-        require(argc==8,"usage: fullmodel-oracle MODEL PROMPT TOKENS OUTPUT MODE REPS PLANS_OR_DASH; modes capture,search,profile,predict,cpu,gpu,npu,custom,branch,custom-npu");
+        require(argc==8,"usage: fullmodel-oracle MODEL PROMPT TOKENS OUTPUT MODE REPS PLANS_OR_DASH; modes capture,search,profile,predict,auto,cpu,gpu,npu,custom,branch,custom-npu");
         ggml_backend_load_all(); llama_backend_init();
         std::string mode=argv[5]; int nt=std::stoi(argv[3]),reps=std::stoi(argv[6]);
         require(nt>0 && reps>0,"tokens and repetitions must be positive");
         if(mode=="search" || mode=="profile") { return search_all(argv[1],argv[7],argv[4],mode=="profile",reps); }
         if(mode=="predict") { return predict_all(argv[7],argv[4]); }
+        bool automatic=mode=="auto"; json plans;
+        if(automatic) {
+            std::ifstream in(argv[7]); in>>plans;
+            mode=plans.at("execution_mode").get<std::string>();
+            require(mode=="npu" || mode=="custom","invalid pre-load execution mode");
+            require(plans.at("tokens").get<int>()==nt && plans.at("layers").size()==24,"automatic plan shape mismatch");
+        }
         bool custom=mode=="custom" || mode=="branch" || mode=="custom-npu";
         bool transfer_placement=std::getenv("MOE_TRANSFER_PLACEMENT") && std::string(std::getenv("MOE_TRANSFER_PLACEMENT"))=="1";
         require(!transfer_placement || custom,"placement transfer requires custom mode");
@@ -358,7 +386,13 @@ int main(int argc,char ** argv) {
                 "alternating callback requires shared custom mode, no direct override, and repetitions divisible by four");
         bool accelerator=mode=="npu" || mode=="gpu" || custom;
         require(custom || mode=="capture" || mode=="cpu" || mode=="npu" || mode=="gpu","invalid mode");
-        json plans; if(custom) { std::ifstream in(argv[7]); in>>plans; require((transfer_placement || plans["tokens"].get<int>()==nt) && plans["layers"].size()==24,"plan shape mismatch"); }
+        if(custom && !automatic) { std::ifstream in(argv[7]); in>>plans; require((transfer_placement || plans["tokens"].get<int>()==nt) && plans["layers"].size()==24,"plan shape mismatch"); }
+        std::unique_ptr<fullmodel_context_model> feedback;
+        if(std::getenv("MOE_FEEDBACK_MODEL")) {
+            require(custom && !transfer_placement,"shadow feedback requires custom mode with matching route reference");
+            std::ifstream in(std::getenv("MOE_FEEDBACK_MODEL")); json parameters; in>>parameters;
+            feedback=std::make_unique<fullmodel_context_model>(parameters,nt);
+        }
         ggml_backend_dev_t target[]={ggml_backend_dev_by_name(mode=="gpu"?"GPUOpenCL":"HTP0"),nullptr};
         require(!accelerator || target[0],"requested accelerator unavailable");
         auto mp=llama_model_default_params(); mp.n_gpu_layers=accelerator?99:0;
@@ -374,7 +408,7 @@ int main(int argc,char ** argv) {
         auto * vocab=llama_model_get_vocab(model.get()); std::vector<llama_token> tokens(prompt.size()+32);
         int count=llama_tokenize(vocab,prompt.data(),prompt.size(),tokens.data(),tokens.size(),true,true);
         require(count>=nt,"prompt too short"); tokens.resize(nt);
-        if(custom && !transfer_placement) { require(tokens==plans["token_ids"].get<std::vector<int32_t>>(),"fixed prompt token mismatch"); }
+        if(automatic || (custom && !transfer_placement)) { require(tokens==plans["token_ids"].get<std::vector<int32_t>>(),"fixed prompt token mismatch"); }
         std::unique_ptr<device> devices[3];
         full_engine engine;
         if(custom) {
@@ -412,6 +446,10 @@ int main(int argc,char ** argv) {
         report["fused_host_reduce"]=fused_host_reduce;
         report["alternate_host_reduce"]=alternate_host_reduce;
         report["transfer_placement"]=transfer_placement;
+        report["requested_mode"]=argv[5];
+        report["shadow_feedback"]=bool(feedback);
+        if(automatic) { report["path_decision"]=plans.at("path_decision"); }
+        if(feedback) { report["feedback_history"]=json::array(); }
         if(custom) { report["placement_source_tokens"]=plans["tokens"]; }
         if(custom) {
             report["placements"]=json::array();
@@ -426,6 +464,10 @@ int main(int argc,char ** argv) {
         std::vector<double> times; std::vector<float> logits,paired_reference;
         int runs=mode=="capture"?1:reps+2;
         size_t warmed_allocations=0;
+        std::array<std::array<double,4>,24> residual;
+        for(auto & row:residual) { row.fill(1.0); }
+        size_t feedback_allocations=0;
+        int feedback_observations=0;
         for(int r=0;r<runs;++r) {
             bool active_direct=direct_callback_io;
             bool active_reduce=fused_host_reduce;
@@ -439,6 +481,23 @@ int main(int argc,char ** argv) {
                 active_direct=r<2?r==1:position==1 || position==2;
                 for(auto & l:engine.layers) { l->direct_callback_io=active_direct; }
             }
+            std::array<resident_placement_model::prediction,24> predicted;
+            std::array<double,24> adapted{};
+            auto residual_before=residual;
+            double feedback_cost=0;
+            if(feedback) {
+                auto start=timer::now();
+                for(int il=0;il<24;++il) {
+                    auto & l=*engine.layers[il]; std::vector<int> counts(60);
+                    if(l.last.contains("expert_token_counts")) { counts=l.last["expert_token_counts"].get<std::vector<int>>(); }
+                    else { for(int id:l.expected_ids) { ++counts[id]; } }
+                    predicted[il]=feedback->predict(l.nt,counts,l.plan).ffn;
+                    double critical=0;
+                    for(int b=0;b<3;++b) { critical=std::max(critical,predicted[il].backend[b]*residual[il][b]); }
+                    adapted[il]=critical+predicted[il].host*residual[il][3];
+                }
+                feedback_cost+=elapsed(start);
+            }
             llama_memory_clear(llama_get_memory(ctx.get()),true);
             auto batch=llama_batch_get_one(tokens.data(),nt);
             rusage before{},after{}; getrusage(RUSAGE_SELF,&before);
@@ -446,6 +505,37 @@ int main(int argc,char ** argv) {
             auto * output=llama_get_logits_ith(ctx.get(),-1); require(code==0 && output,"native decode failed");
             logits.assign(output,output+nv); double us=elapsed(start);
             getrusage(RUSAGE_SELF,&after);
+            if(feedback) {
+                // Predict BEFORE this invocation; update only AFTER observing it.
+                // Ownership/banks never change. This is a causal shadow estimator.
+                auto start=timer::now(); double fixed_sum=0,adapted_sum=0,actual_sum=0;
+                std::array<std::array<double,4>,24> frozen_components{},measured_components{};
+                size_t current_allocations=0;
+                for(auto & l:engine.layers) { current_allocations+=l->allocations; }
+                bool accept=r>0 && current_allocations==feedback_allocations;
+                for(int il=0;il<24;++il) {
+                    const auto & l=engine.layers[il]->last;
+                    double actual=l["gather_us"].get<double>()+l["expert_wall_us"].get<double>()+l["combine_us"].get<double>();
+                    std::array<double,4> observation{},prior{};
+                    for(int b=0;b<3;++b) { observation[b]=l["backend_phases_us"][b][1]; prior[b]=predicted[il].backend[b]; }
+                    observation[3]=actual-*std::max_element(observation.begin(),observation.begin()+3); prior[3]=predicted[il].host;
+                    frozen_components[il]=prior; measured_components[il]=observation;
+                    for(int b=0;b<4;++b) { if(accept && prior[b]>1) {
+                        double ratio=std::max(.25,std::min(4.,observation[b]/prior[b]));
+                        residual[il][b]=.5*residual[il][b]+.5*ratio;
+                    } }
+                    fixed_sum+=predicted[il].total; adapted_sum+=adapted[il]; actual_sum+=actual;
+                }
+                feedback_cost+=elapsed(start);
+                report["feedback_history"].push_back({{"invocation",r},{"observations_before",feedback_observations},{"warmup",r<2},
+                    {"update_accepted",accept},{"expert_graph_allocations",current_allocations},
+                    {"frozen_ffn_predicted_us",fixed_sum},{"adaptive_ffn_predicted_us",adapted_sum},
+                    {"actual_ffn_us",actual_sum},{"feedback_compute_us",feedback_cost},
+                    {"state_before",residual_before},{"state_after",residual},
+                    {"frozen_components_us",frozen_components},{"measured_components_us",measured_components}});
+                feedback_allocations=current_allocations;
+                if(accept) { ++feedback_observations; }
+            }
             if(alternate_callback_io || alternate_host_reduce || activation_arena) {
                 if(r==0) { paired_reference=logits; }
                 else { require(std::memcmp(logits.data(),paired_reference.data(),logits.size()*sizeof(float))==0,
@@ -458,6 +548,7 @@ int main(int argc,char ** argv) {
                 json row={{"round",r-2},{"total_us",us},{"minor_faults",after.ru_minflt-before.ru_minflt},{"major_faults",after.ru_majflt-before.ru_majflt}};
                 row["direct_callback_io"]=active_direct;
                 row["fused_host_reduce"]=active_reduce;
+                if(feedback) { row["feedback_compute_us"]=feedback_cost; row["total_with_feedback_us"]=us+feedback_cost; }
                 if(custom) { row["layers"]=json::array(); for(auto & l:engine.layers) { row["layers"].push_back(l->last); } }
                 report["samples"].push_back(row);
             }

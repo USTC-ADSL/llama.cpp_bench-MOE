@@ -21,8 +21,9 @@ def adb(*args, check=True):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--mode", required=True, choices=["capture", "search", "profile", "predict", "cpu", "gpu", "npu", "custom", "branch", "custom-npu"])
+    p.add_argument("--mode", required=True, choices=["capture", "search", "profile", "predict", "auto", "cpu", "gpu", "npu", "custom", "branch", "custom-npu"])
     p.add_argument("--cost-model", type=pathlib.Path)
+    p.add_argument("--feedback-model", type=pathlib.Path, help="Causal shadow cost updates; does not move weights or change ownership")
     p.add_argument("--profile-layers", help="Comma-separated layer indices for optimized compact candidate profiling")
     p.add_argument("--tokens", type=int, default=128)
     p.add_argument("--tag", required=True)
@@ -40,6 +41,17 @@ def main():
     p.add_argument("--fused-host-reduce", action="store_true")
     p.add_argument("--alternate-host-reduce", action="store_true")
     args = p.parse_args()
+    resolved_mode = args.mode
+    if args.mode == "auto":
+        assert args.plan_file and not args.transfer_placement
+        opener = gzip.open if args.plan_file.suffix == ".gz" else open
+        with opener(args.plan_file, "rt") as source:
+            resolved_mode = json.load(source)["execution_mode"]
+        assert resolved_mode in ("custom", "npu")
+        assert not any((args.shared_activations, args.direct_callback_io, args.activation_arena,
+                        args.fused_host_reduce, args.alternate_callback_io, args.alternate_host_reduce))
+        if resolved_mode == "custom":
+            args.shared_activations = args.direct_callback_io = args.activation_arena = args.fused_host_reduce = True
     assert args.tag.replace("-", "").replace("_", "").isalnum()
     assert adb("get-state").stdout.strip() == "device"
     assert not adb("shell", "pidof fullmodel-oracle", check=False).stdout.strip()
@@ -74,6 +86,7 @@ def main():
               "hashes": adb("shell", f"sha256sum {REMOTE}/*.so {REMOTE}/fullmodel-oracle {REMOTE}/prompt.txt").stdout,
               "memory_before": adb("shell", "cat /proc/meminfo").stdout}
     record["prompt_source"] = str(prompt_path.resolve()) if prompt_path else "existing remote prompt"
+    record["resolved_mode"] = resolved_mode
     if args.reference != "-":
         assert args.reference.replace("-", "").replace("_", "").isalnum()
         record["reference_hash"] = adb("shell", f"sha256sum {REMOTE}/{args.reference}.json").stdout
@@ -87,19 +100,26 @@ def main():
         assert adb("shell", f"sha256sum {REMOTE}/cost-model.json").stdout.split()[0] == digest
         record["cost_model_sha256"] = digest
         env.append(f"MOE_PLACEMENT_MODEL={REMOTE}/cost-model.json")
+    if args.feedback_model:
+        assert resolved_mode == "custom" and not args.transfer_placement
+        adb("push", str(args.feedback_model), f"{REMOTE}/feedback-model.json")
+        digest = hashlib.sha256(args.feedback_model.read_bytes()).hexdigest()
+        assert adb("shell", f"sha256sum {REMOTE}/feedback-model.json").stdout.split()[0] == digest
+        record["feedback_model_sha256"] = digest
+        env.append(f"MOE_FEEDBACK_MODEL={REMOTE}/feedback-model.json")
     if args.profile_layers:
         assert args.mode == "profile"
         layers = [int(i) for i in args.profile_layers.split(",")]
         assert layers and all(0 <= i < 24 for i in layers)
         env.append("MOE_PROFILE_LAYERS=" + ",".join(map(str, layers)))
     if args.transfer_placement:
-        assert args.mode in ("custom", "branch", "custom-npu")
+        assert resolved_mode in ("custom", "branch", "custom-npu")
         env.append("MOE_TRANSFER_PLACEMENT=1")
     if args.shared_activations:
-        assert args.mode in ("custom", "branch", "custom-npu")
+        assert resolved_mode in ("custom", "branch", "custom-npu")
         env.append("MOE_SHARED_ACTIVATIONS=1")
     if args.direct_callback_io:
-        assert args.mode in ("custom", "branch", "custom-npu")
+        assert resolved_mode in ("custom", "branch", "custom-npu")
         env.append("MOE_DIRECT_CALLBACK_IO=1")
     if args.alternate_callback_io:
         assert args.shared_activations and not args.direct_callback_io and args.reps % 4 == 0
@@ -108,7 +128,7 @@ def main():
         assert args.shared_activations
         env.append("MOE_ACTIVATION_ARENA=1")
     if args.fused_host_reduce:
-        assert args.mode in ("custom", "branch", "custom-npu")
+        assert resolved_mode in ("custom", "branch", "custom-npu")
         env.append("MOE_FUSED_HOST_REDUCE=1")
     if args.alternate_host_reduce:
         assert not args.fused_host_reduce and not args.alternate_callback_io and args.reps % 4 == 0
