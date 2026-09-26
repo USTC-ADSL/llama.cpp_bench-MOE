@@ -1,0 +1,402 @@
+{
+  "scope": "fixed ownership; original cost model unchanged; pure resident execution; no decision/preparation amortization",
+  "pilot": {
+    "tag": "overlap-technical-768",
+    "barrier": {
+      "total_mean_ms": 1128.9746958333333,
+      "total_median_ms": 1125.2417705,
+      "prepare_compute_ms": 736.8866925,
+      "combine_ms": 25.794409166666668,
+      "outside_ms": 366.2935941666666,
+      "backend_gather_sum_ms": [
+        3.1211971666666667,
+        37.7840975,
+        12.685008666666667
+      ],
+      "backend_compute_sum_ms": [
+        487.0087671666667,
+        544.2866921666667,
+        660.0461715
+      ]
+    },
+    "overlap": {
+      "total_mean_ms": 1089.537239,
+      "total_median_ms": 1087.0271345,
+      "prepare_compute_ms": 699.8814683333333,
+      "combine_ms": 25.953341166666664,
+      "outside_ms": 363.70242950000005,
+      "backend_gather_sum_ms": [
+        5.056953999999999,
+        45.15670933333333,
+        17.6269715
+      ],
+      "backend_compute_sum_ms": [
+        476.5585416666667,
+        538.2897485,
+        663.2104073333333
+      ]
+    },
+    "throughput_change": 0.03619652034062626,
+    "activation_mib": 169.5234375,
+    "blocks": [
+      {
+        "latency_saved_ms": 43.503177999999934,
+        "prepare_compute_saved_ms": 48.25155949999987
+      },
+      {
+        "latency_saved_ms": 45.52867149999997,
+        "prepare_compute_saved_ms": 38.716146000000094
+      },
+      {
+        "latency_saved_ms": 29.280520999999908,
+        "prepare_compute_saved_ms": 24.04796699999997
+      }
+    ]
+  },
+  "cases": [
+    {
+      "prompt": "museum",
+      "tokens": 128,
+      "runs": [
+        {
+          "tag": "overlap-museum-128-a",
+          "barrier": {
+            "total_mean_ms": 374.4896268333333,
+            "total_median_ms": 375.333047,
+            "prepare_compute_ms": 257.6035333333333,
+            "combine_ms": 4.1227773333333335,
+            "outside_ms": 112.76331616666668,
+            "backend_gather_sum_ms": [
+              0.7715536666666667,
+              2.743271333333333,
+              0.965478
+            ],
+            "backend_compute_sum_ms": [
+              217.41973016666668,
+              250.11526816666668,
+              156.49523583333334
+            ]
+          },
+          "overlap": {
+            "total_mean_ms": 375.5693748333333,
+            "total_median_ms": 372.118854,
+            "prepare_compute_ms": 260.3057293333333,
+            "combine_ms": 4.280269666666667,
+            "outside_ms": 110.98337583333333,
+            "backend_gather_sum_ms": [
+              1.1619443333333335,
+              3.8709213333333334,
+              1.5599574999999999
+            ],
+            "backend_compute_sum_ms": [
+              231.21612933333336,
+              250.32403533333334,
+              156.27989633333334
+            ]
+          },
+          "throughput_change": -0.0028749628493515145,
+          "activation_mib": 28.25390625,
+          "blocks": [
+            {
+              "latency_saved_ms": 2.8092975000000138,
+              "prepare_compute_saved_ms": -0.6672399999999925
+            },
+            {
+              "latency_saved_ms": -13.30320299999994,
+              "prepare_compute_saved_ms": -6.7096614999999815
+            },
+            {
+              "latency_saved_ms": 7.254661500000054,
+              "prepare_compute_saved_ms": -0.729686499999957
+            }
+          ]
+        },
+        {
+          "tag": "overlap-museum-128-b",
+          "barrier": {
+            "total_mean_ms": 379.4497305,
+            "total_median_ms": 380.6331765,
+            "prepare_compute_ms": 261.1592275,
+            "combine_ms": 4.635172833333334,
+            "outside_ms": 113.65533016666667,
+            "backend_gather_sum_ms": [
+              0.7763101666666666,
+              2.7807033333333333,
+              0.9641591666666666
+            ],
+            "backend_compute_sum_ms": [
+              226.63275233333334,
+              250.35216983333333,
+              156.00985283333333
+            ]
+          },
+          "overlap": {
+            "total_mean_ms": 377.8888455,
+            "total_median_ms": 378.39640650000007,
+            "prepare_compute_ms": 259.89697766666666,
+            "combine_ms": 4.2911546666666665,
+            "outside_ms": 113.70071316666667,
+            "backend_gather_sum_ms": [
+              1.133724,
+              3.8622286666666668,
+              1.4186375
+            ],
+            "backend_compute_sum_ms": [
+              229.08406266666665,
+              251.76869816666667,
+              156.606642
+            ]
+          },
+          "throughput_change": 0.004130540021457074,
+          "activation_mib": 28.25390625,
+          "blocks": [
+            {
+              "latency_saved_ms": 5.591380000000015,
+              "prepare_compute_saved_ms": 2.4667160000000194
+            },
+            {
+              "latency_saved_ms": -4.04734400000001,
+              "prepare_compute_saved_ms": 0.004640499999993608
+            },
+            {
+              "latency_saved_ms": 3.1386190000000624,
+              "prepare_compute_saved_ms": 1.3153929999999718
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "prompt": "museum",
+      "tokens": 768,
+      "runs": [
+        {
+          "tag": "overlap-museum-768-a",
+          "barrier": {
+            "total_mean_ms": 1122.2124648333333,
+            "total_median_ms": 1122.7852340000002,
+            "prepare_compute_ms": 729.8890441666667,
+            "combine_ms": 27.066606666666665,
+            "outside_ms": 365.25681399999996,
+            "backend_gather_sum_ms": [
+              2.7829520000000003,
+              38.263689666666664,
+              12.744385166666667
+            ],
+            "backend_compute_sum_ms": [
+              441.640955,
+              552.3542878333334,
+              666.4891158333334
+            ]
+          },
+          "overlap": {
+            "total_mean_ms": 1099.3052686666667,
+            "total_median_ms": 1088.5911455,
+            "prepare_compute_ms": 703.8394866666667,
+            "combine_ms": 26.9237675,
+            "outside_ms": 368.5420145,
+            "backend_gather_sum_ms": [
+              4.3655045,
+              44.23154483333333,
+              17.530000666666666
+            ],
+            "backend_compute_sum_ms": [
+              440.13112033333334,
+              548.9231506666666,
+              678.6404494999999
+            ]
+          },
+          "throughput_change": 0.020837884452651112,
+          "activation_mib": 169.5234375,
+          "blocks": [
+            {
+              "latency_saved_ms": 39.65359349999994,
+              "prepare_compute_saved_ms": 41.060048999999935
+            },
+            {
+              "latency_saved_ms": 28.601380499999777,
+              "prepare_compute_saved_ms": 30.70070550000014
+            },
+            {
+              "latency_saved_ms": 0.4666145000001052,
+              "prepare_compute_saved_ms": 6.387918000000127
+            }
+          ],
+          "native_median_ms": 1152.235338,
+          "overlap_vs_native_throughput": 0.058464734683072894
+        },
+        {
+          "tag": "overlap-museum-768-b",
+          "barrier": {
+            "total_mean_ms": 1175.4025603333334,
+            "total_median_ms": 1143.7621609999999,
+            "prepare_compute_ms": 764.1224400000001,
+            "combine_ms": 27.7688725,
+            "outside_ms": 383.51124783333336,
+            "backend_gather_sum_ms": [
+              2.8446195,
+              42.1653395,
+              14.089210666666666
+            ],
+            "backend_compute_sum_ms": [
+              454.45322899999996,
+              552.2848086666668,
+              695.8140786666667
+            ]
+          },
+          "overlap": {
+            "total_mean_ms": 1143.7132115,
+            "total_median_ms": 1099.22013,
+            "prepare_compute_ms": 732.079521,
+            "combine_ms": 27.504513833333334,
+            "outside_ms": 384.1291766666666,
+            "backend_gather_sum_ms": [
+              4.591683833333334,
+              39.66269966666667,
+              18.849331
+            ],
+            "backend_compute_sum_ms": [
+              451.641823,
+              548.1460408333332,
+              705.9872303333334
+            ]
+          },
+          "throughput_change": 0.027707425703138,
+          "activation_mib": 169.5234375,
+          "blocks": [
+            {
+              "latency_saved_ms": 49.873202999999876,
+              "prepare_compute_saved_ms": 41.89279249999993
+            },
+            {
+              "latency_saved_ms": 39.01106750000008,
+              "prepare_compute_saved_ms": 39.42567599999995
+            },
+            {
+              "latency_saved_ms": 6.18377600000008,
+              "prepare_compute_saved_ms": 14.81028850000007
+            }
+          ],
+          "native_median_ms": 1164.7921605,
+          "overlap_vs_native_throughput": 0.05965322933087114
+        }
+      ]
+    },
+    {
+      "prompt": "programming",
+      "tokens": 768,
+      "runs": [
+        {
+          "tag": "overlap-programming-768-a",
+          "barrier": {
+            "total_mean_ms": 1337.2364233333333,
+            "total_median_ms": 1341.775156,
+            "prepare_compute_ms": 899.6891923333333,
+            "combine_ms": 30.252648,
+            "outside_ms": 407.294583,
+            "backend_gather_sum_ms": [
+              3.950181333333333,
+              44.167326,
+              15.831094833333333
+            ],
+            "backend_compute_sum_ms": [
+              610.0328384999999,
+              572.5213271666668,
+              814.2351546666666
+            ]
+          },
+          "overlap": {
+            "total_mean_ms": 1325.1237325,
+            "total_median_ms": 1332.9281770000002,
+            "prepare_compute_ms": 879.1874553333333,
+            "combine_ms": 32.12617183333333,
+            "outside_ms": 413.8101053333333,
+            "backend_gather_sum_ms": [
+              6.409098833333333,
+              44.3901825,
+              19.282855166666668
+            ],
+            "backend_compute_sum_ms": [
+              616.2726653333333,
+              575.3245211666666,
+              843.5930986666666
+            ]
+          },
+          "throughput_change": 0.009140799863633253,
+          "activation_mib": 169.5234375,
+          "blocks": [
+            {
+              "latency_saved_ms": -9.150807000000214,
+              "prepare_compute_saved_ms": 5.17489999999998
+            },
+            {
+              "latency_saved_ms": 4.1817969999999605,
+              "prepare_compute_saved_ms": 18.231142499999805
+            },
+            {
+              "latency_saved_ms": 41.30708249999998,
+              "prepare_compute_saved_ms": 38.09916850000002
+            }
+          ],
+          "native_median_ms": 1165.640937,
+          "overlap_vs_native_throughput": -0.12550356642359461
+        },
+        {
+          "tag": "overlap-programming-768-b",
+          "barrier": {
+            "total_mean_ms": 1301.8370046666664,
+            "total_median_ms": 1324.804244,
+            "prepare_compute_ms": 861.787613,
+            "combine_ms": 30.009982,
+            "outside_ms": 410.0394096666665,
+            "backend_gather_sum_ms": [
+              3.384843,
+              36.869998833333334,
+              12.457334333333332
+            ],
+            "backend_compute_sum_ms": [
+              519.1792875,
+              580.1039835,
+              802.7293665
+            ]
+          },
+          "overlap": {
+            "total_mean_ms": 1277.8029510000001,
+            "total_median_ms": 1306.729583,
+            "prepare_compute_ms": 838.5318153333334,
+            "combine_ms": 29.96099816666667,
+            "outside_ms": 409.31013750000005,
+            "backend_gather_sum_ms": [
+              5.479991166666666,
+              39.73587666666666,
+              16.628185000000002
+            ],
+            "backend_compute_sum_ms": [
+              517.8685586666667,
+              578.9133576666666,
+              816.2947911666666
+            ]
+          },
+          "throughput_change": 0.018808888841473914,
+          "activation_mib": 169.5234375,
+          "blocks": [
+            {
+              "latency_saved_ms": 25.420338499999843,
+              "prepare_compute_saved_ms": 24.401351500000033
+            },
+            {
+              "latency_saved_ms": 36.85059849999993,
+              "prepare_compute_saved_ms": 30.471900499999947
+            },
+            {
+              "latency_saved_ms": 9.831224000000248,
+              "prepare_compute_saved_ms": 14.894141000000104
+            }
+          ],
+          "native_median_ms": 1237.0877335,
+          "overlap_vs_native_throughput": -0.053294767644362806
+        }
+      ]
+    }
+  ]
+}
