@@ -50,7 +50,7 @@ def main():
         digest = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
         frozen = {"model_sha256": digest(TASK / "context-model.json"), "previous_sha256": digest(PREVIOUS / "context-model.json"),
                   "prompt_sha256": {p.name: digest(p) for p in sorted((TASK / "prompts").glob("*.txt"))},
-                  "scope": "1024 technical node appended before museum/programming capture or timing; lifetime reuse excluded from fitting"}
+                  "scope": "1024 technical node frozen before held-out performance confirmation; only technical timing used for fitting; lifetime reuse excluded from fitting"}
         (TASK / "freeze.json").write_text(json.dumps(frozen, indent=2) + "\n")
     elif a.stage == "prepare":
         for prompt in ("museum", "programming"):
