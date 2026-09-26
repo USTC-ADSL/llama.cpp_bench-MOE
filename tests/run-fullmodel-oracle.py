@@ -41,6 +41,12 @@ def main():
     p.add_argument("--activation-lifetimes", action="store_true", help="Reuse disjoint tensor lifetimes within each shared activation arena")
     p.add_argument("--fused-host-reduce", action="store_true")
     p.add_argument("--alternate-host-reduce", action="store_true")
+    p.add_argument("--host-reduce-threads", type=int, default=1)
+    p.add_argument("--alternate-reduce-threads", action="store_true", help="ABBA serial/parallel fused reduction, preserving per-token FMA order")
+    p.add_argument("--overlap-gather", action="store_true", help="Each backend starts compute after its own input preparation")
+    p.add_argument("--alternate-overlap-gather", action="store_true", help="ABBA barrier/independent branch preparation")
+    p.add_argument("--quality-steps", type=int, default=0, help="Diagnostic continuation after timing; resident weights and KV retained")
+    p.add_argument("--quality-tokens", type=pathlib.Path, help="JSON token array for equal-prefix teacher forcing")
     args = p.parse_args()
     resolved_mode = args.mode
     if args.mode == "auto":
@@ -94,6 +100,17 @@ def main():
     if args.plan_file:
         record["plan_source"] = str(args.plan_file.resolve())
     env = ["env", f"LD_LIBRARY_PATH={REMOTE}", f"ADSP_LIBRARY_PATH={REMOTE}", "GGML_HEXAGON_DEVICES=1", "GGML_HEXAGON_NHMX=1", "GGML_HEXAGON_MM_SELECT=3", "GGML_HEXAGON_PROFILE=0"]
+    assert 0 <= args.quality_steps <= 64
+    if args.quality_steps:
+        assert resolved_mode in ("cpu", "gpu", "npu", "custom", "custom-npu", "branch")
+        env.append(f"MOE_QUALITY_STEPS={args.quality_steps}")
+    if args.quality_tokens:
+        data = args.quality_tokens.read_bytes()
+        assert args.quality_steps and len(json.loads(data)) == args.quality_steps
+        adb("push", str(args.quality_tokens), f"{REMOTE}/quality-tokens.json")
+        record["quality_tokens_sha256"] = hashlib.sha256(data).hexdigest()
+        assert adb("shell", f"sha256sum {REMOTE}/quality-tokens.json").stdout.split()[0] == record["quality_tokens_sha256"]
+        env.append(f"MOE_QUALITY_TOKENS={REMOTE}/quality-tokens.json")
     if args.cost_model:
         assert args.mode == "predict"
         adb("push", str(args.cost_model), f"{REMOTE}/cost-model.json")
@@ -137,6 +154,21 @@ def main():
     if args.alternate_host_reduce:
         assert not args.fused_host_reduce and not args.alternate_callback_io and args.reps % 4 == 0
         env.append("MOE_ALTERNATE_HOST_REDUCE=1")
+    assert 1 <= args.host_reduce_threads <= 8
+    if args.host_reduce_threads > 1:
+        assert resolved_mode in ("custom", "branch", "custom-npu") and args.fused_host_reduce
+        env.append(f"MOE_REDUCE_THREADS={args.host_reduce_threads}")
+    if args.alternate_reduce_threads:
+        assert args.host_reduce_threads > 1 and args.reps % 4 == 0
+        assert not any((args.alternate_host_reduce, args.alternate_callback_io, args.quality_steps))
+        env.append("MOE_ALTERNATE_REDUCE_THREADS=1")
+    if args.overlap_gather or args.alternate_overlap_gather:
+        assert resolved_mode in ("custom", "branch", "custom-npu") and args.shared_activations
+        if args.overlap_gather:
+            env.append("MOE_OVERLAP_GATHER=1")
+        if args.alternate_overlap_gather:
+            assert args.reps % 4 == 0 and not any((args.overlap_gather, args.alternate_reduce_threads, args.alternate_host_reduce, args.alternate_callback_io, args.quality_steps))
+            env.append("MOE_ALTERNATE_OVERLAP_GATHER=1")
     reference = "-" if args.reference == "-" else f"{REMOTE}/{args.reference}.json"
     argv = [f"{REMOTE}/fullmodel-oracle", MODEL, f"{REMOTE}/prompt.txt", str(args.tokens), f"{REMOTE}/{args.tag}.json", args.mode, str(args.reps), reference]
     command = f"cd {shlex.quote(REMOTE)} && exec " + shlex.join(env + argv)
@@ -160,6 +192,8 @@ def main():
         filenames += [f"{args.tag}.json.layer{i}.bin" for i in range(24)]
     if args.mode not in ("search", "profile", "predict"):
         filenames += [f"{args.tag}.json.logits.bin"]
+    if args.quality_steps:
+        filenames += [f"{args.tag}.json.quality.bin"]
     for name in filenames:
         adb("pull", f"{REMOTE}/{name}", str(output / name))
         assert adb("shell", f"sha256sum {REMOTE}/{name}").stdout.split()[0] == hashlib.sha256((output / name).read_bytes()).hexdigest()

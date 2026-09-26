@@ -3,6 +3,7 @@
 #include "llama.h"
 #include "moe-placement-model.h"
 #include "moe-context-model.h"
+#include "moe-token-workers.h"
 
 #include <iomanip>
 #include <sys/resource.h>
@@ -63,7 +64,7 @@ struct partitioned_ffn {
     placement plan;
     std::unique_ptr<bank> banks[3];
     std::unique_ptr<shared_bank> shared;
-    std::map<std::pair<int,int>,std::unique_ptr<oracle_job>> jobs[3];
+    std::map<std::tuple<int,int,int>,std::unique_ptr<oracle_job>> jobs[3];
     std::array<std::array<int,60>,3> local{};
     std::vector<int32_t> expected_ids;
     json last;
@@ -72,6 +73,9 @@ struct partitioned_ffn {
     bool direct_callback_io=false;
     bool fused_host_reduce=false;
     bool reuse_lifetimes=false;
+    moe_token_workers * reduce_workers=nullptr;
+    bool parallel_reduce=false;
+    bool overlap_gather=false;
     std::shared_ptr<shared_activation_buffer> arenas[3];
     // Separate contracts for split routed, native top-k, and shared-only graphs.
     std::unique_ptr<shared_activation_layout::reservation> reservations[3][3];
@@ -97,7 +101,8 @@ struct partitioned_ffn {
     }
     std::vector<float> run_into(const float * x,size_t elements,const float * probs,size_t probability_count,
                               const std::vector<int32_t> & ids,bool record,float * destination) {
-        require(elements==size_t(2048*nt) && probability_count==size_t(60*nt) && ids.size()==size_t(4*nt),"FFN input shape mismatch");
+        int nt=int(elements/2048);
+        require((nt==this->nt || nt==1) && elements==size_t(2048*nt) && probability_count==size_t(60*nt) && ids.size()==size_t(4*nt),"FFN input shape mismatch");
         auto start=timer::now();
         std::vector<int> pairs[3];
         for(int p=0;p<4*nt;++p) { require(ids[p]>=0 && ids[p]<60,"invalid route ID"); pairs[plan.owner[ids[p]]].push_back(p); }
@@ -106,7 +111,7 @@ struct partitioned_ffn {
         for(int b=0;b<3;++b) {
             if(pairs[b].empty() && b!=plan.shared) { continue; }
             int rows=pairs[b].empty()?0:native?nt:int(pairs[b].size()); int k=native?4:1;
-            auto & ptr=jobs[b][{rows,k}];
+            auto & ptr=jobs[b][{rows,k,nt}];
             // A compact one-Expert CPU repack tensor is 2D: its backend accepts
             // MUL_MAT, not MUL_MAT_ID. oracle_job uses the equivalent single-bank
             // path only when ne[2]==1 (and asserts k==1).
@@ -116,7 +121,12 @@ struct partitioned_ffn {
                 ptr=std::make_unique<oracle_job>(*banks[b],b==plan.shared?shared.get():nullptr,rows,k,nt,native,b==0,shared_activations,arenas[b],false,reuse_lifetimes,reserved);
                 ++allocations;
             }
-            work[b]=ptr.get(); auto & j=*ptr; j.reset_index_padding(); j.set_shared_input(x,elements);
+            work[b]=ptr.get();
+        }
+        std::array<double,3> branch_gather{};
+        auto prepare=[&](int b) {
+            auto begin=timer::now(); auto & j=*work[b];
+            j.reset_index_padding(); j.set_shared_input(x,elements);
             if(native && j.x) {
                 std::copy_n(x,elements,j.input_data());
                 for(int t=0;t<nt;++t) { for(int kk=0;kk<4;++kk) { j.index_data()[t*j.stride+kk]=local[b][ids[t*4+kk]]; } }
@@ -126,12 +136,16 @@ struct partitioned_ffn {
                     std::copy_n(x+(p/4)*2048,2048,j.input_data()+i*2048); j.index_data()[i*j.stride]=local[b][ids[p]];
                 }
             }
-        }
+            branch_gather[b]=elapsed(begin);
+        };
+        // Banks and graph metadata are prepared serially. Each branch then owns
+        // a disjoint backend arena and may gather while another backend computes.
+        if(!overlap_gather) { for(int b=0;b<3;++b) { if(work[b]) { prepare(b); } } }
         double gather=elapsed(start); start=timer::now();
         std::array<double,3> phases[3]{}; std::array<double,2> intervals[3]{};
         std::future<void> futures[3]; int inline_b=-1;
         for(int b=0;b<3;++b) { if(work[b]) { inline_b=b; } }
-        auto execute=[&](int b) { intervals[b][0]=elapsed(start); phases[b]=work[b]->run(); intervals[b][1]=elapsed(start); };
+        auto execute=[&](int b) { intervals[b][0]=elapsed(start); if(overlap_gather) { prepare(b); } phases[b]=work[b]->run(); intervals[b][1]=elapsed(start); };
         for(int b=0;b<3;++b) { if(work[b] && b!=inline_b) { futures[b]=std::async(std::launch::async,execute,b); } }
         execute(inline_b); for(auto & f:futures) { if(f.valid()) { f.get(); } }
         double wall=elapsed(start); start=timer::now();
@@ -142,7 +156,7 @@ struct partitioned_ffn {
         else if(!fused_host_reduce) { std::fill_n(destination,elements,0.0f); }
         float * result=destination?destination:owned_result.data();
         if(fused_host_reduce) {
-            for(int t=0;t<nt;++t) {
+            auto reduce=[&](int begin,int end) { for(int t=begin;t<end;++t) {
                 float w[4]; const float * o[4];
                 for(int k=0;k<4;++k) { w[k]=probs[t*60+ids[t*4+k]]; o[k]=outputs[t*4+k]; }
                 auto * shared_out=work[plan.shared]->shared_output_data()+t*2048;
@@ -160,7 +174,9 @@ struct partitioned_ffn {
                     }
 #endif
                 }
-            }
+            } };
+            if(parallel_reduce && reduce_workers) { reduce_workers->run(nt,reduce); }
+            else { reduce(0,nt); }
         } else {
             for(size_t p=0;p<ids.size();++p) {
                 float weight=probs[(p/4)*60+ids[p]];
@@ -174,6 +190,8 @@ struct partitioned_ffn {
             last={{"layer",il},{"tokens",nt},{"gather_us",gather},{"expert_wall_us",wall},{"combine_us",elapsed(start)},
                   {"backend_phases_us",phases},{"intervals_us",intervals},{"pairs",{pairs[0].size(),pairs[1].size(),pairs[2].size()}},
                   {"changed_route_slots",changed},{"route_reference_available",expected_ids.size()==ids.size()},
+                  {"reduce_threads",parallel_reduce && reduce_workers && nt>=reduce_workers->count()?reduce_workers->count():1},
+                  {"overlap_gather",overlap_gather},{"backend_gather_us",branch_gather},{"expert_wall_includes_gather",overlap_gather},
                   {"expert_token_counts",counts},{"allocations",allocations}};
         }
         return owned_result;
@@ -181,6 +199,7 @@ struct partitioned_ffn {
 };
 
 struct full_engine {
+    std::unique_ptr<moe_token_workers> reduce_workers;
     std::shared_ptr<shared_activation_buffer> arenas[3];
     std::vector<std::unique_ptr<partitioned_ffn>> layers;
     bool record=false;
@@ -397,6 +416,14 @@ int main(int argc,char ** argv) {
             require(plans.at("tokens").get<int>()==nt && plans.at("layers").size()==24,"automatic plan shape mismatch");
         }
         bool custom=mode=="custom" || mode=="branch" || mode=="custom-npu";
+        int quality_steps=std::getenv("MOE_QUALITY_STEPS")?std::stoi(std::getenv("MOE_QUALITY_STEPS")):0;
+        require(quality_steps>=0 && quality_steps<=64 && (!quality_steps || mode!="capture"),"invalid quality steps");
+        std::vector<llama_token> forced_tokens;
+        if(std::getenv("MOE_QUALITY_TOKENS")) {
+            std::ifstream in(std::getenv("MOE_QUALITY_TOKENS")); json forced; in>>forced;
+            forced_tokens=forced.get<std::vector<llama_token>>();
+            require(quality_steps>0 && int(forced_tokens.size())==quality_steps,"teacher forcing length mismatch");
+        }
         bool transfer_placement=std::getenv("MOE_TRANSFER_PLACEMENT") && std::string(std::getenv("MOE_TRANSFER_PLACEMENT"))=="1";
         require(!transfer_placement || custom,"placement transfer requires custom mode");
         bool shared_activations=std::getenv("MOE_SHARED_ACTIVATIONS") && std::string(std::getenv("MOE_SHARED_ACTIVATIONS"))=="1";
@@ -407,6 +434,14 @@ int main(int argc,char ** argv) {
         require(!activation_lifetimes || activation_arena,"activation lifetime reuse requires arena");
         bool fused_host_reduce=std::getenv("MOE_FUSED_HOST_REDUCE") && std::string(std::getenv("MOE_FUSED_HOST_REDUCE"))=="1";
         bool alternate_host_reduce=std::getenv("MOE_ALTERNATE_HOST_REDUCE") && std::string(std::getenv("MOE_ALTERNATE_HOST_REDUCE"))=="1";
+        int reduce_threads=std::getenv("MOE_REDUCE_THREADS")?std::stoi(std::getenv("MOE_REDUCE_THREADS")):1;
+        bool alternate_reduce_threads=std::getenv("MOE_ALTERNATE_REDUCE_THREADS") && std::string(std::getenv("MOE_ALTERNATE_REDUCE_THREADS"))=="1";
+        require(reduce_threads>=1 && reduce_threads<=8 && (reduce_threads==1 || (custom && fused_host_reduce)),"parallel reduce requires fused custom path and 1..8 threads");
+        require(!alternate_reduce_threads || (reduce_threads>1 && reps%4==0 && !alternate_callback_io && !alternate_host_reduce && !quality_steps),"invalid parallel reduce alternation");
+        bool overlap_gather=std::getenv("MOE_OVERLAP_GATHER") && std::string(std::getenv("MOE_OVERLAP_GATHER"))=="1";
+        bool alternate_overlap_gather=std::getenv("MOE_ALTERNATE_OVERLAP_GATHER") && std::string(std::getenv("MOE_ALTERNATE_OVERLAP_GATHER"))=="1";
+        require(!(overlap_gather || alternate_overlap_gather) || (custom && shared_activations),"gather overlap requires shared custom mode");
+        require(!alternate_overlap_gather || (!overlap_gather && reps%4==0 && !alternate_reduce_threads && !alternate_callback_io && !alternate_host_reduce && !quality_steps),"invalid gather overlap alternation");
         require(!fused_host_reduce || custom,"fused reduction requires custom mode");
         require(!alternate_host_reduce || (custom && !fused_host_reduce && !alternate_callback_io && reps%4==0),
                 "alternating reduction requires custom mode, no other alternation, and repetitions divisible by four");
@@ -442,6 +477,7 @@ int main(int argc,char ** argv) {
         if(automatic || (custom && !transfer_placement)) { require(tokens==plans["token_ids"].get<std::vector<int32_t>>(),"fixed prompt token mismatch"); }
         std::unique_ptr<device> devices[3];
         full_engine engine;
+        if(reduce_threads>1) { engine.reduce_workers=std::make_unique<moe_token_workers>(reduce_threads); }
         if(custom) {
             ggml_context * raw=nullptr; gguf_context_ptr gguf(gguf_init_from_file(argv[1],{true,&raw})); ggml_context_ptr meta(raw);
             std::unique_ptr<FILE,decltype(&fclose)> f(fopen(argv[1],"rb"),fclose); require(gguf && meta && f,"compact model open failed");
@@ -455,6 +491,9 @@ int main(int argc,char ** argv) {
                 engine.layers.back()->direct_callback_io=direct_callback_io;
                 engine.layers.back()->fused_host_reduce=fused_host_reduce;
                 engine.layers.back()->reuse_lifetimes=activation_lifetimes;
+                engine.layers.back()->reduce_workers=engine.reduce_workers.get();
+                engine.layers.back()->parallel_reduce=reduce_threads>1;
+                engine.layers.back()->overlap_gather=overlap_gather;
                 if(!transfer_placement) { engine.layers.back()->expected_ids=plans["layers"][il]["ids"].get<std::vector<int32_t>>(); }
                 fprintf(stderr,"RESIDENT layer=%d plan=%s\n",il,p.name.c_str());
             }
@@ -462,13 +501,14 @@ int main(int argc,char ** argv) {
             require(llama_model_set_moe_graph_callback(model.get(),full_engine::build,&engine),"model rejected FFN callback");
         }
         capture_all capture;
-        auto cp=llama_context_default_params(); cp.n_ctx=nt; cp.n_batch=nt; cp.n_ubatch=nt;
+        auto cp=llama_context_default_params(); cp.n_ctx=quality_steps?nt+quality_steps+32:nt; cp.n_batch=nt; cp.n_ubatch=nt;
         cp.n_threads=4; cp.n_threads_batch=4; cp.type_k=GGML_TYPE_F16; cp.type_v=GGML_TYPE_F16;
         cp.flash_attn_type=LLAMA_FLASH_ATTN_TYPE_ENABLED; cp.offload_kqv=accelerator; cp.op_offload=accelerator;
         if(mode=="capture") { cp.cb_eval=capture_all::callback; cp.cb_eval_user_data=&capture; }
         std::unique_ptr<llama_context,decltype(&llama_free)> ctx(llama_init_from_model(model.get(),cp),llama_free);
         require(ctx!=nullptr,"native context init failed");
         int nv=llama_vocab_n_tokens(vocab);
+        for(auto t:forced_tokens) { require(t>=0 && t<nv,"teacher forcing token out of range"); }
         json report={{"tokens",nt},{"token_ids",tokens},{"mode",mode},{"samples",json::array()},
             {"scope","native complete model prefill including last-token logits and retained KV; dynamic real routing; weights resident; context reset outside timing"}};
         report["shared_activations"]=shared_activations;
@@ -478,6 +518,10 @@ int main(int argc,char ** argv) {
         report["activation_lifetimes"]=activation_lifetimes;
         report["fused_host_reduce"]=fused_host_reduce;
         report["alternate_host_reduce"]=alternate_host_reduce;
+        report["host_reduce_threads"]=reduce_threads;
+        report["alternate_reduce_threads"]=alternate_reduce_threads;
+        report["overlap_gather"]=overlap_gather;
+        report["alternate_overlap_gather"]=alternate_overlap_gather;
         report["transfer_placement"]=transfer_placement;
         report["requested_mode"]=argv[5];
         report["shadow_feedback"]=bool(feedback);
@@ -502,6 +546,12 @@ int main(int argc,char ** argv) {
         size_t feedback_allocations=0;
         int feedback_observations=0;
         for(int r=0;r<runs;++r) {
+            bool active_parallel=reduce_threads>1;
+            if(alternate_reduce_threads) { int position=(r-2)%4; active_parallel=r<2?r==1:position==1 || position==2; }
+            for(auto & l:engine.layers) { l->parallel_reduce=active_parallel; }
+            bool active_overlap=overlap_gather;
+            if(alternate_overlap_gather) { int position=(r-2)%4; active_overlap=r<2?r==1:position==1 || position==2; }
+            for(auto & l:engine.layers) { l->overlap_gather=active_overlap; }
             bool active_direct=direct_callback_io;
             bool active_reduce=fused_host_reduce;
             if(alternate_host_reduce) {
@@ -569,7 +619,7 @@ int main(int argc,char ** argv) {
                 feedback_allocations=current_allocations;
                 if(accept) { ++feedback_observations; }
             }
-            if(alternate_callback_io || alternate_host_reduce || activation_arena) {
+            if(alternate_callback_io || alternate_host_reduce || alternate_reduce_threads || alternate_overlap_gather || activation_arena) {
                 if(r==0) { paired_reference=logits; }
                 else { require(std::memcmp(logits.data(),paired_reference.data(),logits.size()*sizeof(float))==0,
                                "alternating callback logits differ"); }
@@ -581,6 +631,8 @@ int main(int argc,char ** argv) {
                 json row={{"round",r-2},{"total_us",us},{"minor_faults",after.ru_minflt-before.ru_minflt},{"major_faults",after.ru_majflt-before.ru_majflt}};
                 row["direct_callback_io"]=active_direct;
                 row["fused_host_reduce"]=active_reduce;
+                row["host_reduce_threads"]=active_parallel?reduce_threads:1;
+                row["overlap_gather"]=active_overlap;
                 if(feedback) { row["feedback_compute_us"]=feedback_cost; row["total_with_feedback_us"]=us+feedback_cost; }
                 if(custom) { row["layers"]=json::array(); for(auto & l:engine.layers) { row["layers"].push_back(l->last); } }
                 report["samples"].push_back(row);
@@ -598,7 +650,36 @@ int main(int argc,char ** argv) {
         } else { report["timing"]=stats(times,nt); }
         std::ofstream logits_file(std::string(argv[4])+".logits.bin",std::ios::binary); binary_write(logits_file,logits);
         report["top1"]=std::max_element(logits.begin(),logits.end())-logits.begin();
-        if(alternate_callback_io || alternate_host_reduce || activation_arena) { report["all_round_logits_bitwise_equal"]=true; }
+        if(quality_steps) {
+            // Retain the final prefill KV and resident banks. Only activation
+            // graphs change shape; these diagnostic calls are outside timing.
+            std::ofstream quality_file(std::string(argv[4])+".quality.bin",std::ios::binary);
+            json quality={{"teacher_forced",!forced_tokens.empty()},{"steps",json::array()},
+                          {"scope","same resident weights; fixed-length diagnostic continuation, including EOG tokens"}};
+            std::vector<float> qlogits=logits;
+            for(auto & l:engine.layers) { l->expected_ids.clear(); }
+            for(int step=0;step<=quality_steps;++step) {
+                for(float v:qlogits) { require(std::isfinite(v),"nonfinite quality logits"); }
+                binary_write(quality_file,qlogits);
+                llama_token predicted=std::max_element(qlogits.begin(),qlogits.end())-qlogits.begin();
+                std::vector<char> piece(256); int length=llama_token_to_piece(vocab,predicted,piece.data(),piece.size(),0,true);
+                if(length<0) { piece.resize(-length); length=llama_token_to_piece(vocab,predicted,piece.data(),piece.size(),0,true); }
+                require(length>=0,"quality token piece conversion failed");
+                json row={{"step",step},{"top1",predicted},{"piece_bytes",std::vector<uint8_t>(piece.begin(),piece.begin()+length)},
+                          {"eog",llama_vocab_is_eog(vocab,predicted)}};
+                if(step<quality_steps) {
+                    llama_token input=forced_tokens.empty()?predicted:forced_tokens[step]; row["next_input_token"]=input;
+                    auto batch=llama_batch_get_one(&input,1);
+                    auto begin=timer::now(); int code=llama_decode(ctx.get(),batch); llama_synchronize(ctx.get());
+                    auto * output=llama_get_logits_ith(ctx.get(),-1); require(code==0 && output,"quality decode failed");
+                    qlogits.assign(output,output+nv); row["next_decode_us"]=elapsed(begin);
+                    if(custom) { row["next_layers"]=json::array(); for(auto & l:engine.layers) { row["next_layers"].push_back(l->last); } }
+                }
+                quality["steps"].push_back(row);
+            }
+            report["quality"]=quality;
+        }
+        if(alternate_callback_io || alternate_host_reduce || alternate_reduce_threads || alternate_overlap_gather || activation_arena) { report["all_round_logits_bitwise_equal"]=true; }
         size_t activation_bytes=0;
         size_t logical_activation_bytes=0;
         std::set<const shared_activation_buffer *> seen;
