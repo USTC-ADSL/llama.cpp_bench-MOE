@@ -11,7 +11,10 @@
 | 保序融合 routed/shared 聚合 | 分别累加 top-k 输出和 shared 输出会反复读写结果数组，放大 host 聚合开销。 | 按 token 在寄存器中保持原 top-k FMA 顺序，融合 shared 加法并仅写回一次结果。 | 256-token 两个独立进程共 12 组 ABBA 均获益，聚合均值约 31–36→11 ms、端到端均值减少 20.75/29.45 ms（3.56%/4.76%），输出逐字节一致；128-token 端到端收益尚不稳定。 |
 | 按组按需转换的权重驻留控制 | 各后端权重格式不同，完整保留三份转换权重会造成内存膨胀。 | 保留不可变源权重，通过在线放置接口按 Expert 组转换并维护受限后端工作集，支持 Prefill/Decode 阶段切换。 | 128-token 功能验证中转换后 Expert 权重峰值约 92.82 MiB、采样激活约 17.54 MiB，但重复转换使该路径尚未取得吞吐收益，不能与常驻方案的加速混为一谈。 |
 | 分组关键路径的轻量分配模型 | 固定 Expert 归属在路由和输入长度变化时产生 CPU 长尾，逐个 Expert 阈值无法决定 shared/routed 的整体分配。 | 用 86 个系数预测并发后端分组与 host 成本，联合选择低负载 Expert 组和 shared 后端；以独立 prompt 验证，权重预先准备。 | 未参与拟合的128-token完整模型吞吐提升31.5%/38.0%；512-token将旧固定方案38%–42%的吞吐损失缩小至约2%，但尚未超过原生NPU，后续需校准整模型host与图边界成本。 |
+| 完整模型环境下的成本校正 | 孤立 FFN 预测遗漏执行形态对 host 和非 FFN 成本的影响，导致大输入下选错 routed/shared 分工。 | 以少量完整模型观测校正后端、host 与非 FFN 残差，加载前联合选择 Expert 分组及原生/异构执行路径；模型仅 11.7 KB。 | 新独立 prompt 的 512-token 吞吐由首版相对 NPU 下降约 7.5%–7.7%，转为提升 11.9%–12.5%（已计决策成本）；因果残差反馈另将 FFN 预测 MAPE 从 4.06% 降至 2.35%，尚不代表在线迁移收益。 |
 
 证据：[常驻与共享激活](../task/handoff/handoff-2026-09-24-offline-shared-activation/results.md)、[256-token 消融](../task/handoff/handoff-2026-09-24-shared256/results.md)、[激活池与聚合](../task/handoff/handoff-2026-09-25-activation-arena/results.md)。上述内存数字不是总物理内存上限，固定 prompt 的数值验证也不等于通用模型质量评估。
 
 轻量模型证据：[独立路由与完整模型验证](../task/handoff/handoff-2026-09-26-placement-model/results.md)。当前结果不包含在线权重转换/迁移，不能表述为完整在线调度器收益。
+
+环境校正证据：[新 prompt 完整模型与反馈验证](../task/handoff/handoff-2026-09-26-context-model/results.md)。实际三个长度均选择异构，原生回退仅验证加载功能；256 的新旧映射相同，未显示额外收益。

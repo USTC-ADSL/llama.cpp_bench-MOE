@@ -1,0 +1,754 @@
+{
+  "context_model_sha256": "d30363c298e1cce9dfb605f65bc81860e6dd70f4827cb124f629d763f81e0cdb",
+  "model_bytes": 11715,
+  "cases": [
+    {
+      "tokens": 128,
+      "decision": {
+        "execution_mode": "custom",
+        "custom_predicted_us": 374093.23681026767,
+        "native_predicted_us": 550147.5145103917,
+        "custom_upper_us": 390059.8560102677,
+        "native_lower_us": 537376.8404103917,
+        "custom_uncertainty_us": 13966.61920000001,
+        "native_uncertainty_us": 12770.674100000038,
+        "decision_budget_us": 2000.0,
+        "reserved_decision_budget_us": 2000.0,
+        "observed_planning_us": 1455.418
+      },
+      "decision_device_us": 2418.855,
+      "placements": {
+        "npu_tail24_cpu_shared_gpu": 22,
+        "npu_tail32_cpu_shared_gpu": 1,
+        "npu_shared_cpu": 1
+      },
+      "policies": {
+        "npu": [
+          {
+            "tag": "ecology-128-npu-a",
+            "mode": "npu",
+            "latency_ms": 514.5451555,
+            "accounted_latency_ms": 514.5451555,
+            "tokens_per_second": 248.76339546063417,
+            "top1": 31366,
+            "cpu_top1": 31366,
+            "cpu_logit_nrmse": 0.03602851813420494,
+            "activation_mib": 0.0,
+            "major_faults": 0,
+            "samples_ms": [
+              513.787968,
+              515.302343,
+              511.694375,
+              520.572031,
+              512.784531,
+              527.1054690000001
+            ],
+            "fullmodel_prediction_relative_error": 0.06919190401432473
+          },
+          {
+            "tag": "ecology-128-npu-b",
+            "mode": "npu",
+            "latency_ms": 532.372083,
+            "accounted_latency_ms": 532.372083,
+            "tokens_per_second": 240.4333436845523,
+            "top1": 31366,
+            "cpu_top1": 31366,
+            "cpu_logit_nrmse": 0.03602851813420494,
+            "activation_mib": 0.0,
+            "major_faults": 0,
+            "samples_ms": [
+              523.427812,
+              515.274843,
+              512.956458,
+              541.316354,
+              542.9067709999999,
+              543.775885
+            ],
+            "fullmodel_prediction_relative_error": 0.03338911276155665
+          }
+        ],
+        "selected": [
+          {
+            "tag": "ecology-128-selected-a",
+            "mode": "custom",
+            "latency_ms": 368.0469790000001,
+            "accounted_latency_ms": 370.46583400000003,
+            "tokens_per_second": 345.51094393228175,
+            "top1": 31366,
+            "cpu_top1": 31366,
+            "cpu_logit_nrmse": 0.0386270725464385,
+            "activation_mib": 43.75537109375,
+            "major_faults": 0,
+            "samples_ms": [
+              376.462396,
+              374.60932299999996,
+              367.831145,
+              366.318125,
+              361.12703100000004,
+              368.26281300000005
+            ],
+            "fullmodel_prediction_relative_error": 0.016427951199859292,
+            "phases_mean_ms": {
+              "gather_us": 4.375477333333333,
+              "expert_wall_us": 247.65697866666667,
+              "combine_us": 3.9793663333333336,
+              "outside_ffn": 113.08998316666668
+            },
+            "throughput_change_vs_npu": 0.3889139247858411
+          },
+          {
+            "tag": "ecology-128-selected-b",
+            "mode": "custom",
+            "latency_ms": 369.3618235,
+            "accounted_latency_ms": 371.78067849999996,
+            "tokens_per_second": 344.2890053254879,
+            "top1": 31366,
+            "cpu_top1": 31366,
+            "cpu_logit_nrmse": 0.0386270725464385,
+            "activation_mib": 43.75537109375,
+            "major_faults": 0,
+            "samples_ms": [
+              373.08015600000004,
+              370.388438,
+              385.26875,
+              361.37046899999996,
+              366.058438,
+              368.33520899999996
+            ],
+            "fullmodel_prediction_relative_error": 0.012809697725210789,
+            "phases_mean_ms": {
+              "gather_us": 4.5965964999999995,
+              "expert_wall_us": 253.443654,
+              "combine_us": 4.089887333333333,
+              "outside_ffn": 108.62010550000002
+            },
+            "throughput_change_vs_npu": 0.4319519915556882
+          }
+        ],
+        "v1": [
+          {
+            "tag": "ecology-128-v1-a",
+            "mode": "custom",
+            "latency_ms": 374.65617149999997,
+            "accounted_latency_ms": 374.65617149999997,
+            "tokens_per_second": 341.64658088382777,
+            "top1": 31366,
+            "cpu_top1": 31366,
+            "cpu_logit_nrmse": 0.03577744369640177,
+            "activation_mib": 43.75537109375,
+            "major_faults": 1,
+            "samples_ms": [
+              380.689687,
+              374.921562,
+              356.818645,
+              362.50104200000004,
+              381.170156,
+              374.390781
+            ],
+            "phases_mean_ms": {
+              "gather_us": 4.6472145000000005,
+              "expert_wall_us": 252.19533766666666,
+              "combine_us": 4.020721166666667,
+              "outside_ffn": 110.88537216666668
+            },
+            "throughput_change_vs_npu": 0.3733796334915038
+          },
+          {
+            "tag": "ecology-128-v1-b",
+            "mode": "custom",
+            "latency_ms": 381.9027605,
+            "accounted_latency_ms": 381.9027605,
+            "tokens_per_second": 335.1638512180904,
+            "top1": 31366,
+            "cpu_top1": 31366,
+            "cpu_logit_nrmse": 0.03577744369640177,
+            "activation_mib": 43.75537109375,
+            "major_faults": 0,
+            "samples_ms": [
+              354.20343699999995,
+              381.285469,
+              383.65364500000004,
+              387.750885,
+              375.05968800000005,
+              382.520052
+            ],
+            "phases_mean_ms": {
+              "gather_us": 4.929149833333333,
+              "expert_wall_us": 260.5066313333333,
+              "combine_us": 4.192718666666667,
+              "outside_ffn": 107.78369616666669
+            },
+            "throughput_change_vs_npu": 0.3939990439006005
+          }
+        ],
+        "custom": [
+          {
+            "tag": "ecology-128-custom-a",
+            "mode": "custom",
+            "latency_ms": 366.8940105,
+            "accounted_latency_ms": 366.9725515,
+            "tokens_per_second": 348.7999292502943,
+            "top1": 31366,
+            "cpu_top1": 31366,
+            "cpu_logit_nrmse": 0.0386270725464385,
+            "activation_mib": 43.75537109375,
+            "major_faults": 1,
+            "samples_ms": [
+              360.083594,
+              370.803177,
+              374.735104,
+              357.36296899999996,
+              367.812969,
+              365.975052
+            ],
+            "fullmodel_prediction_relative_error": 0.019622087317415327,
+            "phases_mean_ms": {
+              "gather_us": 4.549697166666667,
+              "expert_wall_us": 248.93798483333336,
+              "combine_us": 4.065686333333333,
+              "outside_ffn": 108.57544250000001
+            },
+            "feedback": {
+              "frozen_ffn_mape": 0.04145919791648778,
+              "adaptive_ffn_mape": 0.011417132814765788,
+              "mean_feedback_compute_us": 76.467
+            },
+            "throughput_change_vs_npu": 0.4021352643318883
+          },
+          {
+            "tag": "ecology-128-custom-b",
+            "mode": "custom",
+            "latency_ms": 365.776224,
+            "accounted_latency_ms": 365.8543495,
+            "tokens_per_second": 349.86600589806574,
+            "top1": 31366,
+            "cpu_top1": 31366,
+            "cpu_logit_nrmse": 0.0386270725464385,
+            "activation_mib": 43.75537109375,
+            "major_faults": 1,
+            "samples_ms": [
+              352.39526,
+              360.515416,
+              376.970677,
+              366.961823,
+              364.590625,
+              561.305729
+            ],
+            "fullmodel_prediction_relative_error": 0.02273798094177848,
+            "phases_mean_ms": {
+              "gather_us": 4.634947833333333,
+              "expert_wall_us": 267.5111381666667,
+              "combine_us": 4.45408,
+              "outside_ffn": 120.52308900000003
+            },
+            "feedback": {
+              "frozen_ffn_mape": 0.07416938180969479,
+              "adaptive_ffn_mape": 0.057636416141294,
+              "mean_feedback_compute_us": 81.563
+            },
+            "throughput_change_vs_npu": 0.4551476119597151
+          }
+        ]
+      }
+    },
+    {
+      "tokens": 256,
+      "decision": {
+        "execution_mode": "custom",
+        "custom_predicted_us": 512132.20248935855,
+        "native_predicted_us": 679231.5853713101,
+        "custom_upper_us": 520928.51523935853,
+        "native_lower_us": 671663.4370213101,
+        "custom_uncertainty_us": 6796.312749999998,
+        "native_uncertainty_us": 7568.148350000009,
+        "decision_budget_us": 2000.0,
+        "reserved_decision_budget_us": 2000.0,
+        "observed_planning_us": 592.084
+      },
+      "decision_device_us": 1319.2199999999998,
+      "placements": {
+        "npu_tail16_cpu_shared_gpu": 22,
+        "npu_tail24_cpu_shared_gpu": 1,
+        "npu_shared_cpu": 1
+      },
+      "policies": {
+        "npu": [
+          {
+            "tag": "ecology-256-npu-a",
+            "mode": "npu",
+            "latency_ms": 647.0950515000001,
+            "accounted_latency_ms": 647.0950515000001,
+            "tokens_per_second": 395.61421371802896,
+            "top1": 3015,
+            "cpu_top1": 3015,
+            "cpu_logit_nrmse": 0.0228381647575871,
+            "activation_mib": 0.0,
+            "major_faults": 0,
+            "samples_ms": [
+              641.715312,
+              638.762552,
+              650.054999,
+              644.1351040000001,
+              651.520625,
+              660.237969
+            ],
+            "fullmodel_prediction_relative_error": 0.04966277179344192
+          },
+          {
+            "tag": "ecology-256-npu-b",
+            "mode": "npu",
+            "latency_ms": 654.831328,
+            "accounted_latency_ms": 654.831328,
+            "tokens_per_second": 390.9403674712399,
+            "top1": 3015,
+            "cpu_top1": 3015,
+            "cpu_logit_nrmse": 0.0228381647575871,
+            "activation_mib": 0.0,
+            "major_faults": 0,
+            "samples_ms": [
+              659.108438,
+              653.5068739999999,
+              654.69625,
+              655.7504690000001,
+              653.967969,
+              654.966406
+            ],
+            "fullmodel_prediction_relative_error": 0.037261896809112516
+          }
+        ],
+        "selected": [
+          {
+            "tag": "ecology-256-selected-a",
+            "mode": "custom",
+            "latency_ms": 502.795703,
+            "accounted_latency_ms": 504.114923,
+            "tokens_per_second": 507.8207137303889,
+            "top1": 3015,
+            "cpu_top1": 3015,
+            "cpu_logit_nrmse": 0.023050666057260968,
+            "activation_mib": 87.5107421875,
+            "major_faults": 0,
+            "samples_ms": [
+              498.547604,
+              493.861667,
+              505.159531,
+              505.945469,
+              505.465416,
+              500.431875
+            ],
+            "fullmodel_prediction_relative_error": 0.018569171203435264,
+            "phases_mean_ms": {
+              "gather_us": 9.263394166666666,
+              "expert_wall_us": 322.77112,
+              "combine_us": 8.530807833333334,
+              "outside_ffn": 161.00327166666665
+            },
+            "throughput_change_vs_npu": 0.2836260582192687
+          },
+          {
+            "tag": "ecology-256-selected-b",
+            "mode": "custom",
+            "latency_ms": 522.2015104999999,
+            "accounted_latency_ms": 523.5207304999999,
+            "tokens_per_second": 488.9968726844906,
+            "top1": 3015,
+            "cpu_top1": 3015,
+            "cpu_logit_nrmse": 0.023050666057260968,
+            "activation_mib": 87.5107421875,
+            "major_faults": 2,
+            "samples_ms": [
+              507.20520799999997,
+              490.479688,
+              533.287656,
+              531.589583,
+              513.61125,
+              530.7917709999999
+            ],
+            "fullmodel_prediction_relative_error": -0.019282418392471135,
+            "phases_mean_ms": {
+              "gather_us": 9.780095833333332,
+              "expert_wall_us": 337.61200333333335,
+              "combine_us": 9.011650666666666,
+              "outside_ffn": 161.42377616666658
+            },
+            "throughput_change_vs_npu": 0.2508221544055935
+          }
+        ],
+        "v1": [
+          {
+            "tag": "ecology-256-v1-a",
+            "mode": "custom",
+            "latency_ms": 496.6799475,
+            "accounted_latency_ms": 496.6799475,
+            "tokens_per_second": 515.42245924877,
+            "top1": 3015,
+            "cpu_top1": 3015,
+            "cpu_logit_nrmse": 0.023050666057260968,
+            "activation_mib": 87.5107421875,
+            "major_faults": 0,
+            "samples_ms": [
+              494.950417,
+              498.02270799999997,
+              495.337187,
+              500.103125,
+              487.3825,
+              503.035729
+            ],
+            "phases_mean_ms": {
+              "gather_us": 9.429269333333334,
+              "expert_wall_us": 324.57053833333333,
+              "combine_us": 8.442429833333334,
+              "outside_ffn": 154.02970683333336
+            },
+            "throughput_change_vs_npu": 0.30284110473374826
+          },
+          {
+            "tag": "ecology-256-v1-b",
+            "mode": "custom",
+            "latency_ms": 504.4141665000001,
+            "accounted_latency_ms": 504.4141665000001,
+            "tokens_per_second": 507.5194492976239,
+            "top1": 3015,
+            "cpu_top1": 3015,
+            "cpu_logit_nrmse": 0.023050666057260968,
+            "activation_mib": 87.5107421875,
+            "major_faults": 0,
+            "samples_ms": [
+              511.972604,
+              484.932291,
+              508.105677,
+              517.9303649999999,
+              499.669531,
+              500.72265600000003
+            ],
+            "phases_mean_ms": {
+              "gather_us": 9.696831666666666,
+              "expert_wall_us": 326.73992316666664,
+              "combine_us": 8.870061,
+              "outside_ffn": 158.58203816666668
+            },
+            "throughput_change_vs_npu": 0.29820169909918626
+          }
+        ],
+        "custom": [
+          {
+            "tag": "ecology-256-custom-a",
+            "mode": "custom",
+            "latency_ms": 501.32901,
+            "accounted_latency_ms": 501.408385,
+            "tokens_per_second": 510.56186465649154,
+            "top1": 3015,
+            "cpu_top1": 3015,
+            "cpu_logit_nrmse": 0.023050666057260968,
+            "activation_mib": 87.5107421875,
+            "major_faults": 0,
+            "samples_ms": [
+              490.602968,
+              504.23875,
+              503.191874,
+              491.74651,
+              514.210104,
+              499.466146
+            ],
+            "fullmodel_prediction_relative_error": 0.02154910702127233,
+            "phases_mean_ms": {
+              "gather_us": 9.485572,
+              "expert_wall_us": 325.44489633333336,
+              "combine_us": 8.763107166666666,
+              "outside_ffn": 156.88248316666665
+            },
+            "feedback": {
+              "frozen_ffn_mape": 0.028821339726868806,
+              "adaptive_ffn_mape": 0.011044881189504585,
+              "mean_feedback_compute_us": 82.4565
+            },
+            "throughput_change_vs_npu": 0.2905549066555799
+          },
+          {
+            "tag": "ecology-256-custom-b",
+            "mode": "custom",
+            "latency_ms": 496.710625,
+            "accounted_latency_ms": 496.78523349999995,
+            "tokens_per_second": 515.3132233750262,
+            "top1": 3015,
+            "cpu_top1": 3015,
+            "cpu_logit_nrmse": 0.023050666057260968,
+            "activation_mib": 87.5107421875,
+            "major_faults": 0,
+            "samples_ms": [
+              494.363177,
+              482.295729,
+              503.980156,
+              485.14421899999996,
+              513.725364,
+              499.058073
+            ],
+            "fullmodel_prediction_relative_error": 0.031047408114852626,
+            "phases_mean_ms": {
+              "gather_us": 9.310998166666666,
+              "expert_wall_us": 325.18180516666666,
+              "combine_us": 8.673629166666666,
+              "outside_ffn": 153.26135383333337
+            },
+            "feedback": {
+              "frozen_ffn_mape": 0.030400346373114284,
+              "adaptive_ffn_mape": 0.012144595706467124,
+              "mean_feedback_compute_us": 84.33166666666666
+            },
+            "throughput_change_vs_npu": 0.3181376656196446
+          }
+        ]
+      }
+    },
+    {
+      "tokens": 512,
+      "decision": {
+        "execution_mode": "custom",
+        "custom_predicted_us": 791692.2927237046,
+        "native_predicted_us": 905750.7329563609,
+        "custom_upper_us": 802586.0432737046,
+        "native_lower_us": 882414.1967063609,
+        "custom_uncertainty_us": 8893.75055000002,
+        "native_uncertainty_us": 23336.536250000005,
+        "decision_budget_us": 2000.0,
+        "reserved_decision_budget_us": 2000.0,
+        "observed_planning_us": 914.4789999999998
+      },
+      "decision_device_us": 2962.0829999999996,
+      "placements": {
+        "npu_tail8_cpu_shared_gpu": 21,
+        "npu_tail16_cpu_shared_gpu": 2,
+        "npu_shared_cpu": 1
+      },
+      "policies": {
+        "npu": [
+          {
+            "tag": "ecology-512-npu-a",
+            "mode": "npu",
+            "latency_ms": 896.5455985000001,
+            "accounted_latency_ms": 896.5455985000001,
+            "tokens_per_second": 571.0808249537125,
+            "top1": 2083,
+            "cpu_top1": 2083,
+            "cpu_logit_nrmse": 0.06107865812989261,
+            "activation_mib": 0.0,
+            "major_faults": 0,
+            "samples_ms": [
+              898.264844,
+              894.8339050000001,
+              885.566146,
+              893.41625,
+              901.466406,
+              898.257292
+            ],
+            "fullmodel_prediction_relative_error": 0.010267335506149111
+          },
+          {
+            "tag": "ecology-512-npu-b",
+            "mode": "npu",
+            "latency_ms": 895.7893755,
+            "accounted_latency_ms": 895.7893755,
+            "tokens_per_second": 571.5629298619651,
+            "top1": 2083,
+            "cpu_top1": 2083,
+            "cpu_logit_nrmse": 0.06107865812989261,
+            "activation_mib": 0.0,
+            "major_faults": 0,
+            "samples_ms": [
+              899.358125,
+              907.210468,
+              895.909063,
+              895.340781,
+              895.669688,
+              894.184583
+            ],
+            "fullmodel_prediction_relative_error": 0.011120200494453059
+          }
+        ],
+        "selected": [
+          {
+            "tag": "ecology-512-selected-a",
+            "mode": "custom",
+            "latency_ms": 793.7,
+            "accounted_latency_ms": 796.6620829999999,
+            "tokens_per_second": 642.6815219722212,
+            "top1": 2083,
+            "cpu_top1": 2083,
+            "cpu_logit_nrmse": 0.06439446510067895,
+            "activation_mib": 175.021484375,
+            "major_faults": 0,
+            "samples_ms": [
+              794.748073,
+              785.383281,
+              797.35,
+              792.651927,
+              791.652083,
+              810.01651
+            ],
+            "fullmodel_prediction_relative_error": -0.0025295543357634065,
+            "phases_mean_ms": {
+              "gather_us": 23.3743825,
+              "expert_wall_us": 481.6602953333333,
+              "combine_us": 18.666885,
+              "outside_ffn": 271.59874950000005
+            },
+            "throughput_change_vs_npu": 0.12537751906538297
+          },
+          {
+            "tag": "ecology-512-selected-b",
+            "mode": "custom",
+            "latency_ms": 797.709375,
+            "accounted_latency_ms": 800.671458,
+            "tokens_per_second": 639.4632840777497,
+            "top1": 2083,
+            "cpu_top1": 2083,
+            "cpu_logit_nrmse": 0.06439446510067895,
+            "activation_mib": 175.021484375,
+            "major_faults": 0,
+            "samples_ms": [
+              802.5111979999999,
+              780.117343,
+              792.8818739999999,
+              792.907552,
+              828.810052,
+              826.072187
+            ],
+            "fullmodel_prediction_relative_error": -0.0075429504339163955,
+            "phases_mean_ms": {
+              "gather_us": 24.020956333333334,
+              "expert_wall_us": 490.34643983333336,
+              "combine_us": 18.768142500000003,
+              "outside_ffn": 270.7478289999999
+            },
+            "throughput_change_vs_npu": 0.11879768730309848
+          }
+        ],
+        "v1": [
+          {
+            "tag": "ecology-512-v1-a",
+            "mode": "custom",
+            "latency_ms": 971.195156,
+            "accounted_latency_ms": 971.195156,
+            "tokens_per_second": 527.1854959704926,
+            "top1": 2083,
+            "cpu_top1": 2083,
+            "cpu_logit_nrmse": 0.062004362044510306,
+            "activation_mib": 175.2894287109375,
+            "major_faults": 2,
+            "samples_ms": [
+              970.955312,
+              977.98901,
+              970.0871870000001,
+              977.454375,
+              964.870625,
+              971.435
+            ],
+            "phases_mean_ms": {
+              "gather_us": 81.94515566666668,
+              "expert_wall_us": 474.2670495,
+              "combine_us": 62.74715333333334,
+              "outside_ffn": 353.17255966666664
+            },
+            "throughput_change_vs_npu": -0.07686360155198291
+          },
+          {
+            "tag": "ecology-512-v1-b",
+            "mode": "custom",
+            "latency_ms": 968.4408070000001,
+            "accounted_latency_ms": 968.4408070000001,
+            "tokens_per_second": 528.6848677783979,
+            "top1": 2083,
+            "cpu_top1": 2083,
+            "cpu_logit_nrmse": 0.062004362044510306,
+            "activation_mib": 175.2894287109375,
+            "major_faults": 3,
+            "samples_ms": [
+              959.55375,
+              969.078906,
+              940.626042,
+              975.621562,
+              967.8027079999999,
+              984.994635
+            ],
+            "phases_mean_ms": {
+              "gather_us": 78.68841183333333,
+              "expert_wall_us": 474.35559866666665,
+              "combine_us": 61.2989945,
+              "outside_ffn": 351.93659549999995
+            },
+            "throughput_change_vs_npu": -0.07501896964157984
+          }
+        ],
+        "custom": [
+          {
+            "tag": "ecology-512-custom-a",
+            "mode": "custom",
+            "latency_ms": 803.084218,
+            "accounted_latency_ms": 803.166796,
+            "tokens_per_second": 637.4765522552802,
+            "top1": 2083,
+            "cpu_top1": 2083,
+            "cpu_logit_nrmse": 0.06439446510067895,
+            "activation_mib": 175.021484375,
+            "major_faults": 0,
+            "samples_ms": [
+              785.394323,
+              782.18052,
+              796.460312,
+              809.708124,
+              843.874375,
+              824.9652600000001
+            ],
+            "fullmodel_prediction_relative_error": -0.014185218711763259,
+            "phases_mean_ms": {
+              "gather_us": 24.80128483333333,
+              "expert_wall_us": 489.96086833333334,
+              "combine_us": 18.716128333333334,
+              "outside_ffn": 273.6188708333334
+            },
+            "feedback": {
+              "frozen_ffn_mape": 0.02799183254521533,
+              "adaptive_ffn_mape": 0.02455536399429964,
+              "mean_feedback_compute_us": 81.1285
+            },
+            "throughput_change_vs_npu": 0.1162632755301305
+          },
+          {
+            "tag": "ecology-512-custom-b",
+            "mode": "custom",
+            "latency_ms": 814.8261715,
+            "accounted_latency_ms": 814.9117185,
+            "tokens_per_second": 628.2889156906879,
+            "top1": 2083,
+            "cpu_top1": 2083,
+            "cpu_logit_nrmse": 0.06439446510067895,
+            "activation_mib": 175.021484375,
+            "major_faults": 0,
+            "samples_ms": [
+              810.65526,
+              792.326718,
+              812.7795309999999,
+              816.8728120000001,
+              828.712812,
+              842.725625
+            ],
+            "fullmodel_prediction_relative_error": -0.02839118278897268,
+            "phases_mean_ms": {
+              "gather_us": 24.635581666666663,
+              "expert_wall_us": 499.49675233333335,
+              "combine_us": 19.127126166666667,
+              "outside_ffn": 274.08599949999996
+            },
+            "feedback": {
+              "frozen_ffn_mape": 0.04062557886883387,
+              "adaptive_ffn_mape": 0.02402258894026495,
+              "mean_feedback_compute_us": 80.06083333333333
+            },
+            "throughput_change_vs_npu": 0.0992471394924479
+          }
+        ]
+      }
+    }
+  ],
+  "native_loader_contract": "passed; forced functional check, not a model decision"
+}

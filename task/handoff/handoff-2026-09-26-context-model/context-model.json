@@ -1,0 +1,286 @@
+{
+  "version": 1,
+  "base": {
+    "backends": [
+      [
+        2692.5043754910803,
+        35285.14978135769,
+        -20857.618874724543,
+        23948.975525425638,
+        7524.529618208202,
+        7280.724502047177,
+        57331.35697333124,
+        -4784.978097371613,
+        -6618.972037610989,
+        1799.5906732973806,
+        226.174702474432,
+        94655.50392007927,
+        -2755.060968006841,
+        30246.0048788847,
+        29192.45414874334,
+        1652.7388648825242,
+        -8805.685444807616,
+        0.0,
+        0.0,
+        0.0,
+        -2078.2687218678884,
+        -3411.722326003986,
+        4032.5821444672724,
+        -826.5220044084656,
+        -5847.790794613944,
+        5218.0081578471145
+      ],
+      [
+        1413.0557380737243,
+        675.3148753069705,
+        11496.37357572398,
+        995.5450879839606,
+        1835.720168371073,
+        -260.83484256864506,
+        1097.3888877158565,
+        -779.5829411425136,
+        -820.4974101127062,
+        603.9577671297588,
+        -1410.8689930945952,
+        1980.2827957343084,
+        -16.08745809929714,
+        2421.78479450248,
+        -248.38423695363832,
+        828.9699955122251,
+        436.1194199720309,
+        -252.43308229974997,
+        456.21989649844767,
+        -1532.43129216404,
+        0.0,
+        0.0,
+        0.0,
+        -201.64396632340475,
+        977.998485808506,
+        -121.58016619675765
+      ],
+      [
+        536.1855763018978,
+        13328.745538557632,
+        2582.0814448899837,
+        11051.441758746001,
+        3931.0835424171173,
+        737.0569796119473,
+        237.38059727529406,
+        -694.2392099688185,
+        -9714.987359006947,
+        520.9157571329832,
+        -1039.0456930791627,
+        30188.837251200668,
+        812.6560379078783,
+        9718.504925911804,
+        6468.05720802086,
+        276.76625780308103,
+        -1536.1855243360421,
+        -465.04247663910945,
+        2463.5091309678837,
+        -2172.8671980535714,
+        906.5244235183749,
+        1177.883008213352,
+        -1798.751398224204,
+        0.0,
+        0.0,
+        0.0
+      ]
+    ],
+    "host": [
+      819.7357146072449,
+      1566.335436666167,
+      -211.16995256725053,
+      -1819.6200455930616,
+      -1040.3146932925151,
+      101.63845172108488,
+      1581.1960073176317,
+      -340.2756242003805
+    ],
+    "version": 1,
+    "alpha": 1.0,
+    "cross_validation": [
+      {
+        "alpha": 0.01,
+        "mean_absolute_relative_error": 0.587265058454274
+      },
+      {
+        "alpha": 0.1,
+        "mean_absolute_relative_error": 0.4329726464492847
+      },
+      {
+        "alpha": 1.0,
+        "mean_absolute_relative_error": 0.4282480501363226
+      },
+      {
+        "alpha": 10.0,
+        "mean_absolute_relative_error": 0.5435429499465848
+      }
+    ],
+    "training_rows": 435,
+    "training_files": {
+      "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-placement-model/evidence/technical-128-profile-v2.json": "d467548b72e2808183c8a59e7828016a9d770bfb763b8b9c04d0372b3a8cdd52",
+      "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-placement-model/evidence/technical-256-profile-v2.json": "2c0ff045782841d509f4057ffa29ece0f4e30ed7060aa85ca96df8804b84c9b2",
+      "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-placement-model/evidence/technical-512-profile-v2.json": "974c63c52fe27a02deafdd9a4ddfecf0bf9705d62b4329d1309354bbb9e0d5cc"
+    },
+    "contract": "Qwen1.5-MoE Q4_0, fd8657d6, compact resident banks, shared arenas, fused host reduction; offline placement before weight preparation",
+    "training_tokens": [
+      1,
+      128,
+      256,
+      512
+    ],
+    "training_layers": [
+      0,
+      3,
+      11,
+      19,
+      23
+    ]
+  },
+  "base_sha256": "cc07b31f227ef35d4d35dd9fe19b7beb504bd9a67a3e1c04bea2d35747ca66fb",
+  "scope": "fullmodel resident context calibration; offline pre-load path choice; no migration",
+  "decision_budget_us": 2000.0,
+  "training_files": {
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-context-model/evidence/technical-128-cpu-a.json": "a52ce8bdbefd963dd5a3e83841e5b536a56d3a45b51319194e982162158250ef",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-context-model/evidence/technical-128-cpu-b.json": "7b3e93159b5a6cf8e9e37034191b5f9485ce06f3077af292397185530b75d0c2",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-context-model/evidence/technical-128-gpu-a.json": "70a9b9b51c44ccbd0381e1f27a3f2c8ccd861d33ee879ba4d91c8a46fcb7ee51",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-context-model/evidence/technical-128-gpu-b.json": "d1a0bd007bce753d4f32d5ad0c3f491e685e2496e82f20ea9fbee0dafa5f91d9",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-context-model/evidence/technical-128-branch-a.json": "f00436b128d22c1632bc251aa82b87f01834f3d4b051aadaa150aa23467d6a2f",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-context-model/evidence/technical-128-branch-b.json": "2f643a86eac573eedc9c662ded7e11d130219769bbeed71a304bdf6c6c432ced",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-context-model/evidence/technical-128-npu-a.json": "51f9074025bc80774f40d11647e28d5e6b54eb11ace35067c96ebfa86eba7401",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-context-model/evidence/technical-128-npu-b.json": "551a856399dab067426da47c6a96e850e078c0fe9ebbb3b0bb0579325a0b19a8",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-context-model/evidence/technical-256-cpu-a.json": "d148115e90a1ab8dce3d5b233a3c766fb9cb9edd2c15937181e92ddb26a9133e",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-context-model/evidence/technical-256-cpu-b.json": "030f13088366742bed04ffcdc15f9f1a0f2b8991b1bd20b0b4283c88f372d2d7",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-context-model/evidence/technical-256-gpu-a.json": "2a5bad23eadd4035f5650a1dd43fc09e3c6e7cf11f42985c8063ef3565339612",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-context-model/evidence/technical-256-gpu-b.json": "101fe617b88f87fbd2756db3ef3d0239c75aac0f988ea4eb6b0ba25d58d7be1c",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-context-model/evidence/technical-256-branch-a.json": "dfb6fbdd2309b17d3e49b0b6f6bcae807cf1bb59e63fe0e9ec03754e62f84899",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-context-model/evidence/technical-256-branch-b.json": "8c0411b76c68e116c743e6cf9a75820ac70d6ca9031b908f1ea6fead85463879",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-context-model/evidence/technical-256-npu-a.json": "744dd17e088843ab628c1a4f3504e5b6a743ca60b1f979317da13e1c545b5efc",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-context-model/evidence/technical-256-npu-b.json": "274c858ad95c694fba4784293f3b9a8326972a2eec42cf0b7e7465aa0416b2ae",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-context-model/evidence/technical-512-cpu-a.json": "7ac17421632e6661ab30297c6765c4e374e18975b7e335a5d23ecafa23506091",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-context-model/evidence/technical-512-cpu-b.json": "5feda9bf733428fcdf8141f637e1d6cf05da4738a34c7578441d026cf9178062",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-context-model/evidence/technical-512-gpu-a.json": "ce04cd32dd85134a6219117dcdea62f1f93598a2eb5376f38d5e0c98d98015a7",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-context-model/evidence/technical-512-gpu-b.json": "a0a9ec97fc3758ef357b0b90d632a4750e06b9f493bfc0c1c05bf6e2ea192524",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-context-model/evidence/technical-512-branch-a.json": "d8c899215454bd0dbde6b919b396c689a9b04a105bc7cbf69d0b91298b9c1557",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-context-model/evidence/technical-512-branch-b.json": "215de65e563ffac4c8b05cc01b770ef2fa48740af3c8bb202d3b6d980bf64112",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-context-model/evidence/technical-512-npu-a.json": "e81debc436884f52826bade143d30a0ace70ad4f1c42cea5b1d4061148c514be",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-context-model/evidence/technical-512-npu-b.json": "e3e7e7c7a120f233aa16001a0146500c8571359667a269e80f008e5f4a88daa0"
+  },
+  "nodes": [
+    {
+      "tokens": 128,
+      "families": {
+        "cpu": {
+          "scales": [
+            1.3242519437024645,
+            1.0873985881375696,
+            1.0382591033602764,
+            0.8969350955281459
+          ],
+          "outside_us": 107490.88449999996,
+          "uncertainty_us": 13966.619200000016
+        },
+        "gpu": {
+          "scales": [
+            1.0,
+            1.1140162293097835,
+            0.9954955087040305,
+            2.200225846718425
+          ],
+          "outside_us": 151608.07149999996,
+          "uncertainty_us": 6833.546800000004
+        },
+        "branch": {
+          "scales": [
+            1.0,
+            1.0240704199726993,
+            1.0063041572595477,
+            4.471961431315467
+          ],
+          "outside_us": 157526.2455,
+          "uncertainty_us": 5475.057599999953
+        }
+      },
+      "native_us": 543147.7339999999,
+      "native_uncertainty_us": 12770.674100000038,
+      "native_base_compute_us": 425386.09705288644
+    },
+    {
+      "tokens": 256,
+      "families": {
+        "cpu": {
+          "scales": [
+            1.1321719348563661,
+            1.0664882084242073,
+            1.0228058372269402,
+            0.7183937600306154
+          ],
+          "outside_us": 158204.65900000004,
+          "uncertainty_us": 6796.31275
+        },
+        "gpu": {
+          "scales": [
+            1.0,
+            1.1016482487958075,
+            1.0172793739954131,
+            2.4521539543293054
+          ],
+          "outside_us": 215161.35350000006,
+          "uncertainty_us": 7157.55199999999
+        },
+        "branch": {
+          "scales": [
+            1.0,
+            1.0247064533389447,
+            1.0104795778536673,
+            4.052697620188704
+          ],
+          "outside_us": 210015.98699999994,
+          "uncertainty_us": 6056.854300000006
+        }
+      },
+      "native_us": 680240.5989999999,
+      "native_uncertainty_us": 7568.148350000009,
+      "native_base_compute_us": 481553.4459187114
+    },
+    {
+      "tokens": 512,
+      "families": {
+        "cpu": {
+          "scales": [
+            1.1074154662339657,
+            1.0621367207258041,
+            0.9785267410432879,
+            0.7267141759916775
+          ],
+          "outside_us": 270771.14749999996,
+          "uncertainty_us": 8893.75055000002
+        },
+        "gpu": {
+          "scales": [
+            1.0,
+            1.1109723792035129,
+            1.0424918133360952,
+            2.42895472101924
+          ],
+          "outside_us": 348375.1280000001,
+          "uncertainty_us": 12336.289250000065
+        },
+        "branch": {
+          "scales": [
+            1.0,
+            1.0482956056432184,
+            0.99040121575082,
+            3.6505134661919003
+          ],
+          "outside_us": 345643.04500000004,
+          "uncertainty_us": 18736.684950000046
+        }
+      },
+      "native_us": 904349.3485,
+      "native_uncertainty_us": 23336.536250000005,
+      "native_base_compute_us": 597239.0867639474
+    }
+  ]
+}
