@@ -118,8 +118,58 @@ def confirm():
                 run(prompt, nt, f"{prompt_name}-{nt}-{mode}-{repeat}", mode, plan if mode != "npu" else None)
 
 
+def fast_validation():
+    model = TASK / "execution-model.json"
+    assert hashlib.sha256(model.read_bytes()).hexdigest() == execution.read(TASK / "freeze.json")["model_sha256"]
+    result = {"model_sha256": hashlib.sha256(model.read_bytes()).hexdigest(),
+              "binary_sha256": hashlib.sha256((ROOT / "build-android-opencl-hexagon/bin/fullmodel-oracle").read_bytes()).hexdigest(),
+              "scope": "unchanged coefficients and placements; reaccount original inference observations using new measured planner cost; smoke runs validate outputs, not new throughput claims", "cases":[]}
+    for name, nt in execution.read(TASK / "confirmation-contract.json")["cases"]:
+        prompt = (TASK if name == "astronomy" else PRIOR) / f"prompts/{name}.txt"
+        source = TASK / f"evidence/{name}-{nt}-plan.json"
+        tag = f"fast-{name}-{nt}-plan"
+        run(prompt, nt, tag, "predict", source, cost=model)
+        before = execution.read(source); after = execution.read(TASK / f"evidence/{tag}.json")
+        for key in ("custom_candidates", "layers", "execution_policy", "execution_mode"):
+            assert before[key] == after[key], f"fast planner changed {key}"
+        row = {"prompt":name,"tokens":nt,"old_decision_us":before["decision_device_total_us"],
+               "new_decision_us":after["decision_device_total_us"],"reaccounted_samples":[]}
+        for repeat in ("a","b"):
+            old = execution.read(TASK / f"evidence/{name}-{nt}-auto-{repeat}.json")["timing"]["median_us"]
+            native = execution.read(TASK / f"evidence/{name}-{nt}-npu-{repeat}.json")["timing"]["median_us"]
+            row["reaccounted_samples"].append({"repeat":repeat,"native_ms":native/1000,"auto_ms":(old+after["decision_device_total_us"])/1000,
+                "throughput_gain_percent":100*(native/(old+after["decision_device_total_us"])-1)})
+        if (name,nt) in (("museum",128),("astronomy",768)):
+            smoke = f"fast-{name}-{nt}-smoke"
+            run(prompt, nt, smoke, "auto", TASK / f"evidence/{tag}.json")
+            assert execution.raw(TASK / f"evidence/{smoke}.json.logits.bin") == execution.raw(TASK / f"evidence/{name}-{nt}-auto-a.json.logits.bin")
+            d = execution.read(TASK / f"evidence/{smoke}.json")
+            assert d["all_round_logits_bitwise_equal"] and d["overlap_gather"] == after["execution_policy"]["overlap_gather"]
+            row["integration_logits_bitwise_equal"] = True
+        result["cases"].append(row)
+    prompt = PRIOR / "prompts/technical.txt"
+    legacy_model = PRIOR / "context-model.json"
+    run(prompt, 768, "legacy-context-plan", "predict", reference="technical-768-capture", cost=legacy_model)
+    routes = execution.read(TASK / "technical-768-cpu-plan.json")
+    host = execution.context.make_plan(execution.read(legacy_model), routes, routes["layers"])
+    device = execution.read(TASK / "evidence/legacy-context-plan.json")
+    for a,b in zip(host["layers"],device["layers"]):
+        assert a["selected"] == b["selected"] and abs(a["prediction"]["total_us"]-b["prediction"]["total_us"]) < 1e-6
+    result["legacy_v1_placement_parity"] = True
+    forced = execution.read(TASK / "evidence/fast-museum-128-plan.json")
+    forced["execution_mode"] = "npu"
+    forced["path_decision"] = {"execution_mode":"npu", "scope":"forced native for v2 auto flag-reset functional test; not a model decision or performance result"}
+    execution.base.write(TASK / "forced-native-functional-plan.json",forced)
+    run(PRIOR / "prompts/museum.txt",128,"fast-native-functional","auto",TASK / "forced-native-functional-plan.json")
+    native = execution.read(TASK / "evidence/fast-native-functional.json")
+    assert native["mode"]=="npu" and not any(native[k] for k in ("shared_activations","activation_arena","activation_lifetimes","overlap_gather","fused_host_reduce"))
+    assert execution.raw(TASK / "evidence/fast-native-functional.json.logits.bin") == execution.raw(TASK / "evidence/museum-128-npu-a.json.logits.bin")
+    result["native_auto_flags_and_logits"] = True
+    execution.base.write(TASK / "fast-validation.json",result)
+
+
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("stage", choices=("calibrate", "confirm"))
+    p.add_argument("stage", choices=("calibrate", "confirm", "fast"))
     args = p.parse_args()
-    calibration() if args.stage == "calibrate" else confirm()
+    {"calibrate":calibration,"confirm":confirm,"fast":fast_validation}[args.stage]()

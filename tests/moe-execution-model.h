@@ -81,28 +81,63 @@ struct fullmodel_execution_model {
     json plan(const json & capture,const json & layers) const {
         int tokens=capture.at("tokens"); require(capture.at("token_ids").size()==size_t(tokens) && layers.size()==24,"invalid fullmodel route shape");
         for(int il=0;il<24;++il) { require(layers[il].at("layer")==il && layers[il].at("tokens")== (il==23?1:tokens),"invalid fullmodel layer shape"); }
-        double native_compute=0; for(const auto & l:layers) { native_compute+=base.predict(l.at("tokens"),l.at("counts").get<std::vector<int>>(),{"npu_shared_npu",std::vector<int>(60,1),1}).backend[1]; }
-        json options=json::array(),best_layers,best; double best_score=INFINITY;
+        struct candidate {
+            placement p;
+            std::string family;
+            resident_placement_model::prediction plain;
+            std::array<double,3> gather;
+        };
+        std::array<std::vector<candidate>,24> cache;
+        std::array<std::vector<int>,24> counts;
+        std::array<int,24> lengths{};
+        double native_compute=0;
+        for(int il=0;il<24;++il) {
+            lengths[il]=layers[il].at("tokens"); counts[il]=layers[il].at("counts").get<std::vector<int>>();
+            native_compute+=base.predict(lengths[il],counts[il],{"npu_shared_npu",std::vector<int>(60,1),1}).backend[1];
+            for(const auto & p:model_candidates(counts[il])) {
+                auto f=fullmodel_context_model::family(p);
+                if(lengths[il]>1 && (f.empty() || p.shared!=shared(f))) { continue; }
+                cache[il].push_back({p,f,base.predict(lengths[il],counts[il],p),gather_mib(lengths[il],counts[il],p)});
+            }
+        }
+        // Evaluate numeric costs only. Route IDs and JSON reports are materialized
+        // once for the winning request policy, not six times inside the search.
+        json options=json::array(),best; double best_score=INFINITY;
+        std::array<size_t,24> best_indices{};
         for(const char * f:{"cpu","gpu","branch"}) { for(bool overlap:{false,true}) {
-            const auto & c=node.at("families").at(f).at(overlap?"overlap":"barrier"); json selected=json::array(); double cost=c.at("outside_us");
-            for(const auto & l:layers) {
-                int nt=l.at("tokens"); auto counts=l.at("counts").get<std::vector<int>>(); double fastest=INFINITY; placement chosen; json prediction;
-                for(const auto & p:model_candidates(counts)) {
-                    if(nt>1 && (fullmodel_context_model::family(p)!=f || p.shared!=shared(f))) { continue; }
-                    auto pred=predict(nt,counts,p,f,overlap); double total=pred.at("total_us");
-                    if(total<fastest) { fastest=total; chosen=p; prediction=std::move(pred); }
+            const auto & c=node.at("families").at(f).at(overlap?"overlap":"barrier"); double cost=c.at("outside_us");
+            auto scales=c.at("compute_scales").get<std::array<double,3>>(),rates=c.at("gather_us_per_mib").get<std::array<double,3>>();
+            double host=c.at("host_us_per_token"); std::array<size_t,24> indices{};
+            for(int il=0;il<24;++il) {
+                int nt=lengths[il]; double fastest=INFINITY;
+                for(size_t i=0;i<cache[il].size();++i) {
+                    const auto & x=cache[il][i]; if(nt>1 && x.family!=f) { continue; }
+                    double total=x.plain.total;
+                    if(nt>1) {
+                        auto compute=x.plain.backend,gather=x.gather;
+                        for(int b=0;b<3;++b) { compute[b]*=scales[b]; gather[b]*=rates[b]; }
+                        total=critical(gather,compute,overlap)+nt*host;
+                    }
+                    if(total<fastest) { fastest=total; indices[il]=i; }
                 }
-                require(std::isfinite(fastest),"no eligible execution candidate"); auto row=l;
-                row["selected"]={{"name",chosen.name},{"owner",chosen.owner},{"shared",chosen.shared}}; row["prediction"]=prediction; selected.push_back(std::move(row)); cost+=fastest;
+                require(std::isfinite(fastest),"no eligible execution candidate"); cost+=fastest;
             }
             json option={{"family",f},{"policy",overlap?"overlap":"barrier"},{"predicted_us",cost},{"uncertainty_us",c.at("uncertainty_us")},{"outside_us",c.at("outside_us")}};
             options.push_back(option); double score=cost+c.at("uncertainty_us").get<double>();
-            if(score<best_score) { best_score=score; best=option; best_layers=std::move(selected); }
+            if(score<best_score) { best_score=score; best=option; best_indices=indices; }
         } }
         auto decision=decide(best.at("predicted_us"),native_compute,best.at("uncertainty_us"),0);
-        return {{"tokens",tokens},{"token_ids",capture.at("token_ids")},{"layers",best_layers},{"model_type","branch_critical_path"},
+        json report={{"tokens",tokens},{"token_ids",capture.at("token_ids")},{"model_type","branch_critical_path"},
             {"execution_mode",decision.at("execution_mode")},{"path_decision",decision},{"native_base_compute_us",native_compute},
             {"execution_policy",{{"family",best.at("family")},{"overlap_gather",best.at("policy")=="overlap"},{"activation_lifetimes",true}}},
-            {"custom_candidates",options},{"scope","offline pre-load; one calibrated family/policy per request, layer-specific owners; no migration"}};
+            {"scope","offline pre-load; one calibrated family/policy per request, layer-specific owners; no migration"}};
+        report["custom_candidates"]=std::move(options);
+        report["layers"]=layers;
+        for(int il=0;il<24;++il) {
+            auto & row=report["layers"][il]; const auto & p=cache[il][best_indices[il]].p;
+            row["selected"]={{"name",p.name},{"owner",p.owner},{"shared",p.shared}};
+            row["prediction"]=predict(lengths[il],counts[il],p,best.at("family"),best.at("policy")=="overlap");
+        }
+        return report;
     }
 };
