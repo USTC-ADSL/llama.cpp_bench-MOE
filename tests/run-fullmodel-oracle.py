@@ -21,7 +21,9 @@ def adb(*args, check=True):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--mode", required=True, choices=["capture", "search", "cpu", "gpu", "npu", "custom", "branch", "custom-npu"])
+    p.add_argument("--mode", required=True, choices=["capture", "search", "profile", "predict", "cpu", "gpu", "npu", "custom", "branch", "custom-npu"])
+    p.add_argument("--cost-model", type=pathlib.Path)
+    p.add_argument("--profile-layers", help="Comma-separated layer indices for optimized compact candidate profiling")
     p.add_argument("--tokens", type=int, default=128)
     p.add_argument("--tag", required=True)
     p.add_argument("--reference", default="-")
@@ -78,6 +80,18 @@ def main():
     if args.plan_file:
         record["plan_source"] = str(args.plan_file.resolve())
     env = ["env", f"LD_LIBRARY_PATH={REMOTE}", f"ADSP_LIBRARY_PATH={REMOTE}", "GGML_HEXAGON_DEVICES=1", "GGML_HEXAGON_NHMX=1", "GGML_HEXAGON_MM_SELECT=3", "GGML_HEXAGON_PROFILE=0"]
+    if args.cost_model:
+        assert args.mode == "predict"
+        adb("push", str(args.cost_model), f"{REMOTE}/cost-model.json")
+        digest = hashlib.sha256(args.cost_model.read_bytes()).hexdigest()
+        assert adb("shell", f"sha256sum {REMOTE}/cost-model.json").stdout.split()[0] == digest
+        record["cost_model_sha256"] = digest
+        env.append(f"MOE_PLACEMENT_MODEL={REMOTE}/cost-model.json")
+    if args.profile_layers:
+        assert args.mode == "profile"
+        layers = [int(i) for i in args.profile_layers.split(",")]
+        assert layers and all(0 <= i < 24 for i in layers)
+        env.append("MOE_PROFILE_LAYERS=" + ",".join(map(str, layers)))
     if args.transfer_placement:
         assert args.mode in ("custom", "branch", "custom-npu")
         env.append("MOE_TRANSFER_PLACEMENT=1")
@@ -120,7 +134,7 @@ def main():
     filenames = [f"{args.tag}.json"]
     if args.mode == "capture":
         filenames += [f"{args.tag}.json.layer{i}.bin" for i in range(24)]
-    if args.mode != "search":
+    if args.mode not in ("search", "profile", "predict"):
         filenames += [f"{args.tag}.json.logits.bin"]
     for name in filenames:
         adb("pull", f"{REMOTE}/{name}", str(output / name))

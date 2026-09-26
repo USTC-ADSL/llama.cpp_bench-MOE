@@ -1,6 +1,7 @@
 #define EXPERT_ORACLE_NO_MAIN
 #include "expert-oracle-probe.cpp"
 #include "llama.h"
+#include "moe-placement-model.h"
 
 #include <iomanip>
 #include <sys/resource.h>
@@ -102,7 +103,10 @@ struct partitioned_ffn {
             if(pairs[b].empty() && b!=plan.shared) { continue; }
             int rows=pairs[b].empty()?0:native?nt:int(pairs[b].size()); int k=native?4:1;
             auto & ptr=jobs[b][{rows,k}];
-            if(!ptr) { ptr=std::make_unique<oracle_job>(*banks[b],b==plan.shared?shared.get():nullptr,rows,k,nt,native,false,shared_activations,arenas[b]); ++allocations; }
+            // A compact one-Expert CPU repack tensor is 2D: its backend accepts
+            // MUL_MAT, not MUL_MAT_ID. oracle_job uses the equivalent single-bank
+            // path only when ne[2]==1 (and asserts k==1).
+            if(!ptr) { ptr=std::make_unique<oracle_job>(*banks[b],b==plan.shared?shared.get():nullptr,rows,k,nt,native,b==0,shared_activations,arenas[b]); ++allocations; }
             work[b]=ptr.get(); auto & j=*ptr; j.reset_index_padding(); j.set_shared_input(x,elements);
             if(native && j.x) {
                 std::copy_n(x,elements,j.input_data());
@@ -178,7 +182,7 @@ struct full_engine {
             if(!l->banks[b]->buf && l->plan.shared!=b) { continue; }
             // k=1 with all 4*nt routed pairs bounds both split and native k=4 graphs.
             oracle_job layout(*l->banks[b],l->plan.shared==b?l->shared.get():nullptr,
-                              l->banks[b]->buf?4*l->nt:0,1,l->nt,false,false,true,{},true);
+                              l->banks[b]->buf?4*l->nt:0,1,l->nt,false,b==0,true,{},true);
             capacities[b]=std::max(capacities[b],shared_activation_buffer::required_size(*devs[b],layout.ctx.get()));
         } }
         for(int b=0;b<3;++b) {
@@ -217,32 +221,60 @@ struct full_engine {
 static placement parse_plan(const json & p) { return {p.at("name"),p.at("owner").get<std::vector<int>>(),p.at("shared")}; }
 static json plan_json(const placement & p) { return {{"name",p.name},{"owner",p.owner},{"shared",p.shared}}; }
 
-static int search_all(const char * model_path,const std::string & capture_path,const char * output) {
+static int search_all(const char * model_path,const std::string & capture_path,const char * output,bool profile=false,int repetitions=3) {
     std::ifstream in(capture_path); json capture; in>>capture;
     ggml_context * raw=nullptr; gguf_context_ptr gguf(gguf_init_from_file(model_path,{true,&raw})); ggml_context_ptr meta(raw);
     std::unique_ptr<FILE,decltype(&fclose)> f(fopen(model_path,"rb"),fclose); require(gguf && meta && f,"search model open failed");
     source src{gguf.get(),meta.get(),f.get()}; device cpu("CPU"),npu("HTP0"),gpu("GPUOpenCL"); device * devs[]={&cpu,&npu,&gpu};
     json report={{"tokens",capture["tokens"]},{"token_ids",capture["token_ids"]},{"layers",json::array()},{"scope","offline real captured routes; bounded joint routed/shared placement search"}};
-    const char * names[]={"cpu","npu","gpu"};
+    report["optimized_profile"]=profile;
+    if(profile) { report["profile_contract"]="compact banks; shared activation arenas; direct output; fused reduction; two warmups; weight preparation excluded"; }
+    std::set<int> profile_layers;
+    if(profile && std::getenv("MOE_PROFILE_LAYERS")) {
+        std::istringstream list(std::getenv("MOE_PROFILE_LAYERS")); std::string value;
+        while(std::getline(list,value,',')) { int il=std::stoi(value); require(il>=0 && il<24,"invalid profile layer"); profile_layers.insert(il); }
+        require(!profile_layers.empty(),"empty profile layer selection");
+    }
     for(int il=0;il<24;++il) {
+        if(profile && !profile_layers.empty() && !profile_layers.count(il)) { continue; }
         int nt=capture["layers"][il]["tokens"];
         std::ifstream bin(capture_path+".layer"+std::to_string(il)+".bin",std::ios::binary);
         auto x=binary_read<float>(bin,2048*nt); auto probs=binary_read<float>(bin,60*nt);
         auto ids=binary_read<int32_t>(bin,4*nt); auto reference=binary_read<float>(bin,2048*nt);
-        std::vector<int> counts(60),order; for(auto id:ids) { ++counts[id]; }
-        for(int e=0;e<60;++e) { if(counts[e]) { order.push_back(e); } }
-        std::sort(order.begin(),order.end(),[&](int a,int b) { return counts[a]==counts[b]?a<b:counts[a]<counts[b]; });
-        std::vector<placement> candidates;
-        for(int main=0;main<3;++main) { for(int shared=0;shared<3;++shared) {
-            candidates.push_back({std::string(names[main])+"_shared_"+names[shared],std::vector<int>(60,main),shared});
-        } }
-        for(int other : {0,2}) { for(int count : {1,4,8,16,24,32}) {
-            if(count>=int(order.size())) { continue; }
-            for(int shared : {1,2}) {
-                placement p{"npu_tail"+std::to_string(count)+"_"+names[other]+"_shared_"+names[shared],std::vector<int>(60,1),shared};
-                for(int i=0;i<count;++i) { p.owner[order[i]]=other; } candidates.push_back(p);
+        std::vector<int> counts(60); for(auto id:ids) { ++counts[id]; }
+        auto candidates=model_candidates(counts);
+        if(profile) {
+            json result={{"layer",il},{"tokens",nt},{"counts",counts},{"ids",ids},{"candidates",json::array()}};
+            for(const auto & p:candidates) {
+                // Use exactly the resident confirmation layout; never time conversion.
+                full_engine engine;
+                engine.layers.push_back(std::make_unique<partitioned_ffn>(devs,src,il,nt,p,true,true));
+                auto & ff=*engine.layers.back(); ff.fused_host_reduce=true;
+                engine.prepare_arenas(devs);
+                std::vector<float> actual(x.size());
+                auto run=[&](bool record) { ff.run_into(x.data(),x.size(),probs.data(),probs.size(),ids,record,actual.data()); };
+                run(false); run(false);
+                auto check=chain_difference(actual,reference,nt);
+                auto warmed=ff.allocations;
+                json item=plan_json(p); item["check"]=check; item["samples"]=json::array();
+                std::vector<double> times;
+                for(int r=0;r<repetitions;++r) {
+                    rusage before{},after{}; getrusage(RUSAGE_SELF,&before);
+                    auto start=timer::now(); run(true); double us=elapsed(start);
+                    getrusage(RUSAGE_SELF,&after);
+                    require(ff.allocations==warmed,"profile allocated after warmup");
+                    auto sample=ff.last; sample["total_us"]=us;
+                    sample["major_faults"]=after.ru_majflt-before.ru_majflt;
+                    sample["minor_faults"]=after.ru_minflt-before.ru_minflt;
+                    item["samples"].push_back(sample); times.push_back(us);
+                }
+                item["timing"]=stats(times,nt); result["candidates"].push_back(item);
+                fprintf(stderr,"PROFILE layer=%d nt=%d plan=%s %.3f ms\n",il,nt,p.name.c_str(),item["timing"]["median_us"].get<double>()/1000);
             }
-        } }
+            report["layers"].push_back(result);
+            std::ofstream out(output); out<<report.dump(2)<<'\n'; require(out.good(),"profile report write failed");
+            continue;
+        }
         partitioned_ffn ff(devs,src,il,nt,candidates[0],false);
         json result={{"layer",il},{"tokens",nt},{"counts",counts},{"ids",ids},{"candidates",json::array()}};
         double best=INFINITY,branch_best=INFINITY; placement winner,branch;
@@ -273,14 +305,40 @@ static int search_all(const char * model_path,const std::string & capture_path,c
     return 0;
 }
 
+static int predict_all(const std::string & capture_path,const char * output) {
+    require(std::getenv("MOE_PLACEMENT_MODEL"),"prediction requires MOE_PLACEMENT_MODEL");
+    std::ifstream model_file(std::getenv("MOE_PLACEMENT_MODEL")); json coefficients; model_file>>coefficients;
+    resident_placement_model model(coefficients);
+    std::ifstream capture_file(capture_path); json capture; capture_file>>capture;
+    resident_placement_model::availability preparable;
+    // Offline planner contract: weights are subsequently prepared on the selected
+    // backend before full-model timing. This is NOT an assertion of online residency.
+    for(auto & row:preparable.experts) { row.fill(true); } preparable.shared.fill(true);
+    json report={{"tokens",capture["tokens"]},{"token_ids",capture["token_ids"]},{"layers",json::array()},
+                 {"scope","offline route-conditioned model selection; weights prepared later; decision only timed"}};
+    for(int il=0;il<24;++il) {
+        int nt=capture["layers"][il]["tokens"];
+        std::ifstream bin(capture_path+".layer"+std::to_string(il)+".bin",std::ios::binary);
+        bin.seekg((2048+60)*size_t(nt)*sizeof(float)); auto ids=binary_read<int32_t>(bin,4*nt);
+        std::vector<int> counts(60); for(int id:ids) { require(id>=0 && id<60,"invalid captured ID"); ++counts[id]; }
+        resident_placement_model::prediction estimate; double prepare=0;
+        auto start=timer::now(); auto selected=model.choose(nt,counts,preparable,estimate,prepare); double us=elapsed(start);
+        report["layers"].push_back({{"layer",il},{"tokens",nt},{"counts",counts},{"ids",ids},{"selected",plan_json(selected)},
+            {"decision_device_us",us},{"prediction",{{"backend_us",estimate.backend},{"host_us",estimate.host},{"total_us",estimate.total}}}});
+    }
+    std::ofstream out(output); out<<report.dump(2)<<'\n'; require(out.good(),"model plan write failed");
+    return 0;
+}
+
 #ifndef FULLMODEL_ORACLE_NO_MAIN
 int main(int argc,char ** argv) {
     try {
-        require(argc==8,"usage: fullmodel-oracle MODEL PROMPT TOKENS OUTPUT MODE REPS PLANS_OR_DASH; modes capture,search,cpu,gpu,npu,custom,branch,custom-npu");
+        require(argc==8,"usage: fullmodel-oracle MODEL PROMPT TOKENS OUTPUT MODE REPS PLANS_OR_DASH; modes capture,search,profile,predict,cpu,gpu,npu,custom,branch,custom-npu");
         ggml_backend_load_all(); llama_backend_init();
         std::string mode=argv[5]; int nt=std::stoi(argv[3]),reps=std::stoi(argv[6]);
         require(nt>0 && reps>0,"tokens and repetitions must be positive");
-        if(mode=="search") { return search_all(argv[1],argv[7],argv[4]); }
+        if(mode=="search" || mode=="profile") { return search_all(argv[1],argv[7],argv[4],mode=="profile",reps); }
+        if(mode=="predict") { return predict_all(argv[7],argv[4]); }
         bool custom=mode=="custom" || mode=="branch" || mode=="custom-npu";
         bool transfer_placement=std::getenv("MOE_TRANSFER_PLACEMENT") && std::string(std::getenv("MOE_TRANSFER_PLACEMENT"))=="1";
         require(!transfer_placement || custom,"placement transfer requires custom mode");
