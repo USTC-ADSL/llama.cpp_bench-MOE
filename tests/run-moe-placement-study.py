@@ -27,13 +27,20 @@ def run(mode, tokens, tag, *extra):
 
 
 def main():
+    global TASK
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("stage", choices=["calibrate", "validate", "fullmodel"])
+    p.add_argument("--task-dir", type=pathlib.Path, default=TASK, help="Use a fresh directory for a new cohort; resume only before archiving")
+    p.add_argument("--deploy", action="store_true", help="Deploy binaries with the first calibration capture")
     args = p.parse_args()
+    TASK = args.task_dir.resolve()
+    if args.deploy and args.stage != "calibrate":
+        p.error("--deploy applies to the initial calibrate stage")
     ev = TASK / "evidence"
     if args.stage == "calibrate":
         for n in (128, 256, 512):
-            run("capture", n, f"technical-{n}-capture", "--reps", 1, "--prompt-file", PROMPTS / "technical.txt")
+            run("capture", n, f"technical-{n}-capture", "--reps", 1, "--prompt-file", PROMPTS / "technical.txt",
+                *(["--deploy"] if args.deploy and n == 128 else []))
             run("profile", n, f"technical-{n}-profile-v2", "--reference", f"technical-{n}-capture",
                 "--profile-layers", "0,3,11,19,23", "--reps", 3)
         command(sys.executable, "tests/moe-placement-model.py", "train",
