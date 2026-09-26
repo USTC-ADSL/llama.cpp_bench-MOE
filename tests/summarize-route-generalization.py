@@ -102,6 +102,45 @@ def main():
     assert len(binary_hashes) <= 1, "mixed executable/library cohort"
     result = {"scope": "authored prompt screen; frozen placement transfer, no timed migration; four samples/process; no general quality guarantee",
               "cases": cases}
+    research_tags = [f"narrative-128-research-{mode}-{cohort}" for mode in ("npu", "frozen", "new") for cohort in ("a", "b")]
+    if all((evidence / f"{tag}.json.logits.bin").exists() or (evidence / f"{tag}.json.logits.bin.gz").exists() for tag in research_tags):
+        research = {}
+        reference = np.frombuffer(read(evidence / "narrative-128-cpu-a.json.logits.bin"), dtype="<f4").astype(np.float64)
+        reference_ids = json.loads(read(evidence / "narrative-128-cpu-a.json"))["token_ids"]
+        search = json.loads(read(evidence / "narrative-128-search.json"))
+        repeated = {}
+        for tag in research_tags:
+            mode, cohort = tag.rsplit("-", 2)[-2:]
+            d = json.loads(read(evidence / f"{tag}.json"))
+            m = json.loads(read(evidence / f"{tag}.run.json"))
+            assert m["exit"] == 0 and d["token_ids"] == reference_ids
+            assert tuple(line for line in m["hashes"].splitlines() if not line.endswith("/prompt.txt")) in binary_hashes
+            raw = read(evidence / f"{tag}.json.logits.bin")
+            values = np.frombuffer(raw, dtype="<f4").astype(np.float64)
+            assert values.shape == reference.shape and np.isfinite(values).all()
+            if mode in repeated:
+                assert raw == repeated[mode], "re-search repeat logits differ"
+            repeated[mode] = raw
+            samples = d["samples"]
+            assert len(samples) == 8
+            if mode != "npu":
+                assert d["all_round_logits_bitwise_equal"] and d["transfer_placement"] == (mode == "frozen")
+                for s in samples:
+                    assert len(s["layers"]) == 24
+                    assert [l["allocations"] for l in s["layers"]] == [l["allocations"] for l in samples[0]["layers"]]
+                    for l in s["layers"]:
+                        assert sum(l["pairs"]) == sum(l["expert_token_counts"]) == 4*l["tokens"]
+                if mode == "new":
+                    for actual, planned in zip(d["placements"], search["layers"]):
+                        assert actual["owner"] == planned["selected"]["owner"] and actual["shared"] == planned["selected"]["shared"]
+                else:
+                    assert raw == read(evidence / "narrative-128-custom-a.json.logits.bin")
+            median = statistics.median(s["total_us"] for s in samples)/1000
+            research[f"{mode}-{cohort}"] = {"median_ms": median, "tokens_s": 128000/median,
+                "cpu_logit_nrmse": float(np.linalg.norm(values-reference)/np.linalg.norm(reference)),
+                "top1": int(np.argmax(values)), "major_faults": sum(s["major_faults"] for s in samples)}
+        result["target_input_research"] = research
+        print("target-input re-search", research)
     (args.task_dir / "summary.json").write_text(json.dumps(result, indent=2) + "\n")
     for case in cases:
         compact = {key: round(row["median_ms"], 2) if "median_ms" in row else "FAILED" for key, row in case["runs"].items()}
