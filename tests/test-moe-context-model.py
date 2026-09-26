@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """Semantic checks for context correction and conservative pre-load choice."""
 import importlib.util
+import hashlib
+import json
 import pathlib
+import tempfile
+import types
 import unittest
 
 spec = importlib.util.spec_from_file_location("context_model", pathlib.Path(__file__).with_name("moe-context-model.py"))
@@ -42,6 +46,14 @@ class ContextContract(unittest.TestCase):
         self.assertIsNone(m.family({"owner": [1] * 60, "shared": 1}))
         self.assertEqual(m.family({"owner": [1] * 60, "shared": 2}), "branch")
 
+    def test_shared_placement_is_part_of_calibration_coverage(self):
+        self.model["calibrated_shared_backend"] = {"cpu": 2, "gpu": 1, "branch": 2}
+        counts = [9] * 32 + [8] * 28
+        covered = {"owner": [0] * 24 + [1] * 36, "shared": 2}
+        self.assertTrue(m.eligible(self.model, covered))
+        with self.assertRaises(ValueError):
+            m.corrected(self.model, self.node, 128, counts, {**covered, "shared": 1})
+
     def test_fullmodel_residual_is_added_once_despite_24_layers(self):
         p = {"owner": [0] * 24 + [1] * 36, "shared": 2}
         regular = m.corrected(self.model, self.node, 128, [9] * 32 + [8] * 28, p)
@@ -53,6 +65,19 @@ class ContextContract(unittest.TestCase):
         for nt in (64, 1024):
             with self.assertRaises(ValueError):
                 m.interpolate(model, nt)
+
+    def test_extension_cannot_refit_frozen_nodes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            base = root / "base.json"
+            base.write_text(json.dumps(self.model["base"]))
+            old = root / "old.json"
+            old.write_text(json.dumps({"base": self.model["base"], "base_sha256": hashlib.sha256(base.read_bytes()).hexdigest(),
+                                       "nodes": [{"tokens": 128}], "training_files": {}}))
+            args = types.SimpleNamespace(task_dir=root, base_model=base, extend_model=old, lengths=[128], output=root / "new.json")
+            with self.assertRaisesRegex(AssertionError, "cannot overwrite frozen nodes"):
+                m.fit(args)
+            self.assertFalse(args.output.exists())
 
 
 if __name__ == "__main__":

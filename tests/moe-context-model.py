@@ -30,12 +30,19 @@ def family(p):
     return None
 
 
-def calibration_plan(model, capture, layers, selected_family):
+def eligible(model, p):
+    f = family(p)
+    return f is not None and p["shared"] == model.get("calibrated_shared_backend", {}).get(f, p["shared"])
+
+
+def calibration_plan(model, capture, layers, selected_family, shared_backend=None):
     out = {"tokens": capture["tokens"], "token_ids": capture["token_ids"], "layers": [],
            "calibration_family": selected_family}
     for l in layers:
         ranked = base.select(model, l["tokens"], l["counts"], base.OFFLINE_AVAILABLE)
         eligible = [r for r in ranked if family(r["placement"]) == selected_family] if l["tokens"] > 1 else ranked
+        if shared_backend is not None and l["tokens"] > 1:
+            eligible = [r for r in eligible if r["placement"]["shared"] == shared_backend]
         assert eligible
         out["layers"].append({**l, "selected": eligible[0]["placement"], "prediction": eligible[0]["prediction"]})
     return out
@@ -53,7 +60,22 @@ def fit(args):
     out = {"version": 1, "base": original, "base_sha256": hashlib.sha256(args.base_model.read_bytes()).hexdigest(),
            "scope": "fullmodel resident context calibration; offline pre-load path choice; no migration",
            "decision_budget_us": 2000., "training_files": {}, "nodes": []}
-    for nt in (128, 256, 512):
+    if getattr(args, "extend_model", None):
+        previous = base.read(args.extend_model)
+        assert previous["base"] == original and previous["base_sha256"] == out["base_sha256"]
+        out = previous
+    if getattr(args, "shared_family_policy", False):
+        out["calibrated_shared_backend"] = {"cpu": 2, "gpu": 1, "branch": 2}
+        # Appending a range must not silently reclassify old calibration samples.
+        for source in out["training_files"]:
+            report = json.loads(archived_bytes(pathlib.Path(source)))
+            for p in report.get("placements", []):
+                if p["layer"] != 23:
+                    assert eligible(out, p), "old calibration is outside shared-family policy"
+    lengths = getattr(args, "lengths", (128, 256, 512))
+    assert lengths and len(set(lengths)) == len(lengths) and all(nt > 1 for nt in lengths)
+    assert not set(lengths).intersection(n["tokens"] for n in out["nodes"]), "extension cannot overwrite frozen nodes"
+    for nt in sorted(lengths):
         node = {"tokens": nt, "families": {}}
         route_plan = json.loads(archived_bytes(args.task_dir / f"technical-{nt}-cpu-plan.json"))
         for f in (*FAMILIES, "npu"):
@@ -83,6 +105,7 @@ def fit(args):
                         if l["tokens"] == 1:
                             continue
                         assert family(p) == f
+                        assert eligible(out, p), "calibration shared backend differs from candidate family"
                         pred = base.predict(original, l["tokens"], l["expert_token_counts"], p)
                         compute = [v[1] for v in l["backend_phases_us"]]
                         measured += compute + [actual - max(compute)]
@@ -96,6 +119,7 @@ def fit(args):
             node["families"][f] = {"scales": scales, "outside_us": statistics.median(outside),
                                     "uncertainty_us": noise(runs)}
         out["nodes"].append(node)
+    out["nodes"].sort(key=lambda n: n["tokens"])
     base.write(args.output, out)
     print("CONTEXT MODEL", args.output, "bytes", args.output.stat().st_size)
     for n in out["nodes"]:
@@ -127,7 +151,7 @@ def corrected(model, node, nt, counts, p):
     if nt == 1:
         return {**raw, "outside_share_us": 0., "uncertainty_share_us": 0., "score_us": raw["total_us"]}
     f = family(p)
-    if f is None:
+    if not eligible(model, p):
         raise ValueError("candidate family not calibrated in fullmodel context")
     c = node["families"][f]
     backend = [x * k for x, k in zip(raw["backend_us"], c["scales"])]
@@ -160,7 +184,7 @@ def make_plan(model, capture, layers):
     for l in layers:
         options = []
         for p in base.candidates(l["counts"]):
-            if l["tokens"] > 1 and family(p) is None:
+            if l["tokens"] > 1 and not eligible(model, p):
                 continue
             pred = corrected(model, node, l["tokens"], l["counts"], p)
             options.append((pred["score_us"], p, pred))
@@ -182,11 +206,15 @@ def main():
     q.add_argument("--capture", type=pathlib.Path, required=True)
     q.add_argument("--base-model", type=pathlib.Path, required=True)
     q.add_argument("--family", choices=FAMILIES, required=True)
+    q.add_argument("--shared-backend", type=int, choices=(0, 1, 2))
     q.add_argument("--output", type=pathlib.Path, required=True)
     q = sub.add_parser("fit")
     q.add_argument("--task-dir", type=pathlib.Path, required=True)
     q.add_argument("--base-model", type=pathlib.Path, required=True)
     q.add_argument("--output", type=pathlib.Path, required=True)
+    q.add_argument("--lengths", type=int, nargs="+", default=[128, 256, 512])
+    q.add_argument("--extend-model", type=pathlib.Path, help="Preserve frozen nodes and append disjoint technical calibration lengths")
+    q.add_argument("--shared-family-policy", action="store_true", help="Restrict CPU-tail to shared GPU and GPU-tail to shared NPU, with calibration checks")
     q = sub.add_parser("plan")
     q.add_argument("--capture", type=pathlib.Path, required=True)
     q.add_argument("--model", type=pathlib.Path, required=True)
@@ -197,7 +225,7 @@ def main():
     else:
         capture, layers = base.load_routes(a.capture)
         if a.command == "calibration-plan":
-            result = calibration_plan(base.read(a.base_model), capture, layers, a.family)
+            result = calibration_plan(base.read(a.base_model), capture, layers, a.family, a.shared_backend)
         else:
             result = make_plan(base.read(a.model), capture, layers)
             result["context_model_sha256"] = hashlib.sha256(a.model.read_bytes()).hexdigest()

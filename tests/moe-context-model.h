@@ -6,6 +6,7 @@
 struct fullmodel_context_model {
     resident_placement_model base;
     json node;
+    json shared_policy;
     double decision_budget;
     static std::string family(const placement & p) {
         bool cpu=std::find(p.owner.begin(),p.owner.end(),0)!=p.owner.end();
@@ -16,7 +17,12 @@ struct fullmodel_context_model {
         if(npu && !cpu && !gpu && p.shared==2) { return "branch"; }
         return "";
     }
-    fullmodel_context_model(const json & model,int tokens) : base(model.at("base")),decision_budget(model.at("decision_budget_us")) {
+    bool eligible(const placement & p) const {
+        auto f=family(p);
+        return !f.empty() && (!shared_policy.contains(f) || p.shared==shared_policy.at(f).get<int>());
+    }
+    fullmodel_context_model(const json & model,int tokens) : base(model.at("base")),
+        shared_policy(model.value("calibrated_shared_backend",json::object())),decision_budget(model.at("decision_budget_us")) {
         require(model.at("version")==1,"invalid context model version");
         const auto & nodes=model.at("nodes");
         require(nodes.size()>=2 && tokens>=nodes.front().at("tokens").get<int>() &&
@@ -47,7 +53,7 @@ struct fullmodel_context_model {
     prediction predict(int nt,const std::vector<int> & counts,const placement & p) const {
         prediction out; out.ffn=base.predict(nt,counts,p);
         if(nt>1) {
-            auto f=family(p); require(!f.empty(),"candidate family not calibrated");
+            auto f=family(p); require(eligible(p),"candidate family/shared backend not calibrated");
             const auto & c=node.at("families").at(f);
             for(int b=0;b<3;++b) { out.ffn.backend[b]*=c.at("scales").at(b).get<double>(); }
             out.ffn.host*=c.at("scales").at(3).get<double>();
@@ -61,7 +67,7 @@ struct fullmodel_context_model {
     placement choose(int nt,const std::vector<int> & counts,prediction & predicted) const {
         double best=INFINITY; placement chosen;
         for(const auto & p:model_candidates(counts)) {
-            if(nt>1 && family(p).empty()) { continue; }
+            if(nt>1 && !eligible(p)) { continue; }
             auto est=predict(nt,counts,p);
             if(est.score<best) { best=est.score; chosen=p; predicted=est; }
         }

@@ -1,0 +1,62 @@
+Review the following design for a small library lending service. The service must track physical copies separately from book titles, preserve historical loans, and prevent two concurrent requests from lending the same copy. Explain transaction boundaries and suggest focused tests. Do not assume an in-memory lock coordinates multiple application processes. The database is PostgreSQL, and all timestamps are stored in UTC. A borrower may have several loans, but a physical copy may have at most one open loan. A returned copy can be borrowed again without rewriting its previous loan record.
+
+CREATE TABLE titles (
+    title_id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    isbn text UNIQUE,
+    title text NOT NULL,
+    author text NOT NULL
+);
+CREATE TABLE copies (
+    copy_id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    title_id bigint NOT NULL REFERENCES titles(title_id),
+    shelf_code text NOT NULL,
+    retired_at timestamptz
+);
+CREATE TABLE borrowers (
+    borrower_id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    display_name text NOT NULL,
+    membership_expires date NOT NULL
+);
+CREATE TABLE loans (
+    loan_id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    copy_id bigint NOT NULL REFERENCES copies(copy_id),
+    borrower_id bigint NOT NULL REFERENCES borrowers(borrower_id),
+    borrowed_at timestamptz NOT NULL,
+    due_at timestamptz NOT NULL,
+    returned_at timestamptz,
+    CHECK (due_at >= borrowed_at),
+    CHECK (returned_at IS NULL OR returned_at >= borrowed_at)
+);
+CREATE UNIQUE INDEX one_open_loan_per_copy ON loans(copy_id)
+WHERE returned_at IS NULL;
+
+The draft endpoint first looks up an available copy, then checks the borrower's membership, and finally inserts a loan. These steps currently use separate transactions. Two requests can both observe the same copy as available before either inserts a row. The partial unique index prevents two open loans from committing, but the application still needs a clear response when the second insert fails. It must not retry forever or report a generic success with a missing loan identifier. Explain which validation belongs inside the transaction and how lock ordering can avoid unnecessary deadlocks when a request borrows several copies.
+
+The proposed query for finding a copy is:
+
+SELECT c.copy_id
+FROM copies AS c
+WHERE c.title_id = $1
+  AND c.retired_at IS NULL
+  AND NOT EXISTS (
+      SELECT 1 FROM loans AS l
+      WHERE l.copy_id = c.copy_id AND l.returned_at IS NULL
+  )
+ORDER BY c.copy_id
+LIMIT 1
+FOR UPDATE OF c SKIP LOCKED;
+
+Discuss the difference between no suitable copy existing and all suitable copies being temporarily locked. The user-facing message may be similar, but operational metrics should distinguish inventory exhaustion from contention. The query must run in the same transaction as insertion. If membership can be suspended while a loan is being created, define whether the suspension takes effect immediately or only for subsequent requests, and specify how that policy is enforced. Do not introduce serializable isolation without considering expected contention and retry behavior.
+
+Returns also require careful handling. A scanner may send the same return request twice if the network response is lost. The second request should be idempotent and should not change the recorded return time. A request referencing an unknown loan should be distinguishable from one that is already returned. Consider the following operation and explain what the caller must do if no row is returned:
+
+UPDATE loans
+SET returned_at = $2
+WHERE loan_id = $1 AND returned_at IS NULL
+RETURNING loan_id, copy_id, returned_at;
+
+An import job brings historical loans from an older system. Some timestamps only have day precision, and some records have missing return dates. Missing data must not automatically imply that an old loan is still physically active. Propose a staging table and validation process so uncertain historical records cannot block circulation indefinitely. Preserve the original source values and record the transformation decisions. A staff member should be able to trace an imported record back to a source file and row number.
+
+For reporting, the team wants a count of loans per title per calendar month, a list of currently overdue copies, and the fraction of loans returned before their due time. Explain the denominator of the last metric: mixing still-open loans with completed loans can produce a misleading comparison between recent and older months. Membership expiration should be evaluated in the library's business time zone rather than by blindly comparing a UTC timestamp with a date. The implementation should use an explicit configured time zone and test the boundary around midnight and daylight-saving transitions where applicable.
+
+Finally, outline a compact test plan. Include two concurrent attempts to borrow the same physical copy, retries after a lost response, a return arriving concurrently with a new borrowing request, retirement of a copy with an outstanding loan, and import of an ambiguous historical record. Tests should check committed database state as well as HTTP responses. Use barriers or explicit coordination to create the intended interleaving rather than relying on arbitrary sleeps. Keep the design simple enough for a small team to maintain, and identify which guarantees come from database constraints and which require application policy.
