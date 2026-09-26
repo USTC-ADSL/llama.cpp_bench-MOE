@@ -3,6 +3,7 @@
 #include "llama.h"
 #include "moe-placement-model.h"
 #include "moe-context-model.h"
+#include "moe-execution-model.h"
 #include "moe-token-workers.h"
 
 #include <iomanip>
@@ -360,6 +361,29 @@ static int predict_all(const std::string & capture_path,const char * output) {
     bool contextual=coefficients.contains("base");
     resident_placement_model model(contextual?coefficients.at("base"):coefficients);
     std::ifstream capture_file(capture_path); json capture; capture_file>>capture;
+    if(coefficients.value("model_type",std::string())=="branch_critical_path") {
+        json layers=json::array();
+        require(capture.at("layers").size()==24,"incomplete route capture");
+        for(int il=0;il<24;++il) {
+            int nt=capture.at("layers").at(il).at("tokens"); std::vector<int32_t> ids;
+            if(capture.at("layers").at(il).contains("ids")) { ids=capture["layers"][il]["ids"].get<std::vector<int32_t>>(); }
+            else {
+                std::ifstream bin(capture_path+".layer"+std::to_string(il)+".bin",std::ios::binary);
+                bin.seekg((2048+60)*size_t(nt)*sizeof(float)); ids=binary_read<int32_t>(bin,4*nt);
+            }
+            require(nt>0 && ids.size()==size_t(4*nt),"invalid captured shape");
+            std::vector<int> counts(60); for(int id:ids) { require(id>=0 && id<60,"invalid captured ID"); ++counts[id]; }
+            layers.push_back({{"layer",il},{"tokens",nt},{"counts",counts},{"ids",ids}});
+        }
+        auto start=timer::now(); fullmodel_execution_model execution(coefficients,capture.at("tokens"));
+        auto report=execution.plan(capture,layers); double observed=elapsed(start);
+        auto old=report.at("path_decision");
+        report["path_decision"]=execution.decide(old.at("custom_predicted_us"),report.at("native_base_compute_us"),old.at("custom_uncertainty_us"),observed);
+        report["execution_mode"]=report["path_decision"]["execution_mode"];
+        report["decision_device_total_us"]=elapsed(start);
+        report["decision_timing_scope"]="validation, candidate evaluation and plan construction; excludes route/model file IO and output serialization";
+        std::ofstream out(output); out<<report.dump(2)<<'\n'; require(out.good(),"execution plan write failed"); return 0;
+    }
     std::unique_ptr<fullmodel_context_model> context;
     if(contextual) { context=std::make_unique<fullmodel_context_model>(coefficients,capture.at("tokens")); }
     resident_placement_model::availability preparable;
@@ -416,6 +440,16 @@ int main(int argc,char ** argv) {
             require(plans.at("tokens").get<int>()==nt && plans.at("layers").size()==24,"automatic plan shape mismatch");
         }
         bool custom=mode=="custom" || mode=="branch" || mode=="custom-npu";
+        if(automatic && plans.value("model_type",std::string())=="branch_critical_path") {
+            for(const char * name:{"MOE_ALTERNATE_CALLBACK_IO","MOE_ALTERNATE_HOST_REDUCE","MOE_ALTERNATE_REDUCE_THREADS","MOE_ALTERNATE_OVERLAP_GATHER"}) {
+                require(!std::getenv(name) || std::string(std::getenv(name))!="1","auto execution policy cannot alternate");
+            }
+            const auto & policy=plans.at("execution_policy");
+            require(policy.at("activation_lifetimes")==true && policy.at("overlap_gather").is_boolean(),"invalid automatic execution policy");
+            for(const char * name:{"MOE_SHARED_ACTIVATIONS","MOE_DIRECT_CALLBACK_IO","MOE_ACTIVATION_ARENA","MOE_ACTIVATION_LIFETIMES","MOE_FUSED_HOST_REDUCE"}) { setenv(name,custom?"1":"0",1); }
+            setenv("MOE_OVERLAP_GATHER",custom && policy.at("overlap_gather").get<bool>()?"1":"0",1);
+            setenv("MOE_REDUCE_THREADS","1",1);
+        }
         int quality_steps=std::getenv("MOE_QUALITY_STEPS")?std::stoi(std::getenv("MOE_QUALITY_STEPS")):0;
         require(quality_steps>=0 && quality_steps<=64 && (!quality_steps || mode!="capture"),"invalid quality steps");
         std::vector<llama_token> forced_tokens;
@@ -526,6 +560,7 @@ int main(int argc,char ** argv) {
         report["requested_mode"]=argv[5];
         report["shadow_feedback"]=bool(feedback);
         if(automatic) { report["path_decision"]=plans.at("path_decision"); }
+        if(automatic && plans.contains("execution_policy")) { report["planned_execution_policy"]=plans.at("execution_policy"); }
         if(feedback) { report["feedback_history"]=json::array(); }
         if(custom) { report["placement_source_tokens"]=plans["tokens"]; }
         if(custom) {

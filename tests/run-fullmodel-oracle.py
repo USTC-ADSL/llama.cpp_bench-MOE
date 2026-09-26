@@ -53,12 +53,18 @@ def main():
         assert args.plan_file and not args.transfer_placement
         opener = gzip.open if args.plan_file.suffix == ".gz" else open
         with opener(args.plan_file, "rt") as source:
-            resolved_mode = json.load(source)["execution_mode"]
+            auto_plan = json.load(source)
+            resolved_mode = auto_plan["execution_mode"]
         assert resolved_mode in ("custom", "npu")
         assert not any((args.shared_activations, args.direct_callback_io, args.activation_arena,
-                        args.fused_host_reduce, args.alternate_callback_io, args.alternate_host_reduce))
+                        args.fused_host_reduce, args.alternate_callback_io, args.alternate_host_reduce,
+                        args.activation_lifetimes, args.overlap_gather, args.alternate_overlap_gather,
+                        args.alternate_reduce_threads, args.host_reduce_threads != 1))
         if resolved_mode == "custom":
             args.shared_activations = args.direct_callback_io = args.activation_arena = args.fused_host_reduce = True
+            if auto_plan.get("model_type") == "branch_critical_path":
+                args.activation_lifetimes = auto_plan["execution_policy"]["activation_lifetimes"]
+                args.overlap_gather = auto_plan["execution_policy"]["overlap_gather"]
     assert args.tag.replace("-", "").replace("_", "").isalnum()
     assert adb("get-state").stdout.strip() == "device"
     assert not adb("shell", "pidof fullmodel-oracle", check=False).stdout.strip()
