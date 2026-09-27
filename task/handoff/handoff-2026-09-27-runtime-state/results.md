@@ -36,7 +36,9 @@ C列仅用四个强制路径进程（每长度两次）的preload特征和实际
 
 ## 能解释什么，下一步做什么
 
-CPU频率分别来自policy0（CPU0–5）和policy6（CPU6–7）；`skin_c`实际为`quiet_therm`，不是HAL综合skin温度。GPU/NPU时钟不可读，保持null。所有28个校准preload的policy6频率都相同，其系数约为零，未学到该频率域对耗时的影响。
+CPU频率分别来自policy0（CPU0–5）和policy6（CPU6–7）；`skin_c`实际为`quiet_therm`，不是HAL综合skin温度。本轮普通shell采样未获得GPU/NPU时钟，保持null。所有28个校准preload的policy6频率都相同，其系数约为零，未学到该频率域对耗时的影响。
+
+事后接口核验修正：当前HTP代码显式关闭DCVS并请求core/bus/HMX最高性能档位；请求耗时变化不能直接归因于NPU动态调频。同一设备已有root权限，`su -c cat`可读GPU的`gpuclk`、`clock_mhz`和`devfreq/cur_freq`，本次无推理时均对应222MHz。因此“GPU频率不可读”只适用于上一轮普通shell上下文，并非设备无读取接口。完整命令、权限和范围见[解释边界补充](interpretation-notes.md)。原数据、拟合与确认结果保持原样；尚未验证GPU频率输入对预测的收益。
 
 预加载观测到第一轮正式计时相隔7.30–13.27秒；加载和预热可能改变状态。1秒时效检查针对采样到决策，不能解释为采样到推理不到1秒。当前采样对异构路径有有限预测价值，对NPU波动缺乏可靠解释；不能据此声称温度或DVFS已被因果定位。
 
