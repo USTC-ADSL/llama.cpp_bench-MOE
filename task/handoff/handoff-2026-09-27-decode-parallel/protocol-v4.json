@@ -1,0 +1,15 @@
+{
+  "scope": "resident full-model single-request decode; no migration speedup claim",
+  "pilot": "museum128 CPU, GPU, customCPU, sharedGPU, sharedNPU, CPU bracket",
+  "sequence": "16 fixed CPU teacher tokens, two sequence warmups, four measured repeats",
+  "confirmation": "freeze candidate and policy before programming768; native brackets and reverse order; negative candidates retained",
+  "memory": "CPU routed references original immutable file pages; full shared replicas are a screening upper bound (~446MiB), not a 200MB design",
+  "source_sha256": {
+    "tests/fullmodel-oracle.cpp": "93893c5c265359ec80bf0e6794bda91b906498e617f47db8ca47df2c08ef67ba",
+    "tests/expert-routing-probe.cpp": "0ab6b01da7082ef51dea651a29a3fa6eb76e58a022eb76a97600b57e3f5b274e",
+    "tests/run-fullmodel-oracle.py": "5749f79c03c3b396482167b16c15e0d49e0100d2561e227bc25247a4cade8617",
+    "tests/run-moe-decode-study.py": "5233a02d35cf47207e59c5104385943b47827d94722a2589c76f710594d193b1",
+    "tests/moe-decode-branch.h": "a228ba39ea423877b240d87318c4d30e9adff31dcb026ee918139251ad345be7"
+  },
+  "revision": "v4: selective dense CPU_REPACK override; native nt1 CPU routed graph; persistent early shared launch; v3 global extras causes unused full Expert duplicate and swap, aborted further v3 testing"
+}
