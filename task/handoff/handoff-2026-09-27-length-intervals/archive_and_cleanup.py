@@ -12,6 +12,9 @@ spec = importlib.util.spec_from_file_location("audit", TASK / "audit_results.py"
 a = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(a)
 s = a.s
+odd_spec = importlib.util.spec_from_file_location("odd_check", TASK / "check_odd_length.py")
+odd = importlib.util.module_from_spec(odd_spec)
+odd_spec.loader.exec_module(odd)
 
 
 def adb(command, check=True):
@@ -30,15 +33,17 @@ def audit_device():
     assert adb(f"test -d {s.REMOTE} && test ! -L {s.REMOTE}", False).returncode == 0
     assert adb(f"stat -c '%u:%g' {s.REMOTE}").stdout.strip() == "2000:2000"
     a.main()
+    odd.audit()
     identity = s.e.read(TASK / "model-identity.json")
     assert adb(f"stat -c '%n %s %Y' {identity['path']}").stdout.strip() == identity["stat"]
     assert adb(f"sha256sum {identity['path']}").stdout.split()[0] == identity["sha256"]
     known = {p.name: p for p in s.EV.iterdir() if p.is_file()}
+    known.update({p.name: p for p in (TASK / "odd-evidence").iterdir() if p.is_file()})
     protocol = s.e.read(TASK / "protocol.json")
     for path in protocol["inputs"]:
         if path.startswith("build-android-opencl-hexagon/"):
             known[pathlib.Path(path).name] = ROOT / path
-    known.update({"prompt.txt": s.PROMPTS["archive"], "offline-plan.json": s.EV / "archive-300-plan.json",
+    known.update({"prompt.txt": s.PROMPTS["harbor"], "offline-plan.json": TASK / "odd-evidence/harbor-301-plan.json",
                   "cost-model.json": s.MODEL, "test-moe-execution-model": s.BUILD / "bin/test-moe-execution-model"})
     records = []
     for line in adb(f"sha256sum {s.REMOTE}/*").stdout.splitlines():
@@ -50,7 +55,7 @@ def audit_device():
         records.append({"remote": remote, "source": str(source.relative_to(ROOT)), "sha256": digest})
     assert records
     assert set(adb(f"find {s.REMOTE} -mindepth 1").stdout.splitlines()) == {r["remote"] for r in records}, "unverified hidden files or subdirectories"
-    result = {"files": records, "model": identity, "successful_processes": 82, "cleaned": False}
+    result = {"files": records, "model": identity, "successful_processes": 82, "odd_smoke_processes": 4, "cleaned": False}
     s.write(TASK / "device-cleanup-audit.json", result)
     print("Verified remote files", len(records), "and full model SHA256", flush=True)
     return result
@@ -59,7 +64,7 @@ def audit_device():
 def archive():
     assert not (TASK / "archive-manifest.json").exists(), "one-shot archival already completed"
     packed_records, captures = [], []
-    paths = sorted(set(list(s.EV.iterdir()) + list(TASK.glob("*-routes.json")) + list(TASK.glob("*-plan.json")) + list(TASK.glob("*.log"))))
+    paths = sorted(set(list(s.EV.iterdir()) + list((TASK / "odd-evidence").iterdir()) + list(TASK.glob("*-routes.json")) + list(TASK.glob("*-plan.json")) + list(TASK.glob("*.log"))))
     for path in paths:
         if not path.is_file() or path.suffix == ".gz" or path.name.endswith(".run.json"):
             continue
@@ -100,6 +105,7 @@ def main():
         s.write(TASK / "device-cleanup-audit.json", result)
         print("Cleaned owned test directory; original model retained", flush=True)
     a.main()
+    odd.audit()
 
 
 if __name__ == "__main__":
