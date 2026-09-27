@@ -102,6 +102,50 @@ def main():
     # Real frozen v2/route parity also exercises the unguarded compatibility path.
     previous=ROOT/"task/handoff/handoff-2026-09-26-execution-model"
     cases.append((e.read(previous/"execution-model.json"),e.read(previous/"technical-128-cpu-plan.json"),True))
+    # Explicit interval opt-in: no new exact300 anchor and no GPU placeholder use.
+    interval = copy.deepcopy(guarded)
+    g = interval["calibration_guard"]
+    g["native"].append({**g["native"][0], "tokens":1024})
+    g["profiles"].append({**g["profiles"][0], "id":"cpu2", "tokens":1024,"tails":[2]*23,"bias_us":300.,"uncertainty_us":2000.})
+    g["intervals"] = {"version":1,"regions":[{"id":"128-1024","lower_tokens":128,"upper_tokens":1024,
+        "native_bias_us":10000.,"native_uncertainty_us":3000.,"profiles":[{"id":"interpolated-cpu","lower_profile":"cpu8","upper_profile":"cpu2","bias_us":1000.,"uncertainty_us":4000.}]}]}
+    def fixture(nt, scarce=False):
+        counts = ([4*nt]+[0]*59) if scarce else [4*nt//60 + (i<4*nt%60) for i in range(60)]
+        return {"tokens":nt,"token_ids":list(range(nt)),"layers":[{"layer":i,"tokens":nt if i<23 else 1,"counts":counts if i<23 else [1]*4+[0]*56} for i in range(24)]}
+    assert e.make_plan(interval,routes,routes["layers"]) == e.make_plan(guarded,routes,routes["layers"])
+    for nt in (127,128,129,299,300,301,576,1023,1024,1025):
+        r=fixture(nt); plan=e.make_plan(interval,r,r["layers"])
+        if 128<nt<1024:
+            assert plan["path_decision"]["reason"]=="calibrated_interval_error_guard" and plan["execution_mode"]=="custom"
+            assert plan["selected_profile"]=="interpolated-cpu"
+            expected_tail=(2*((1024-nt)*8+(nt-128)*2)+896)//1792
+            assert all(l["selected"]["owner"].count(0)==expected_tail for l in plan["layers"][:23])
+            assert plan["path_decision"]["custom_uncertainty_us"]==4000.
+            assert e.make_plan(interval,r,r["layers"],1e9)["execution_mode"]=="npu"
+        elif nt not in (128,1024):
+            assert plan["execution_mode"]=="npu" and not plan["custom_candidates"]
+        cases.append((interval,r,True))
+    a, p, info=e.resolve_guard(g,576)
+    assert p[0]["tails"]==[5]*23 and p[0]["bias_us"]==1100. and a[0]["native_us"]==1e8+10000.
+    r=fixture(300,True)
+    assert e.make_plan(interval,r,r["layers"])["execution_mode"]=="npu"
+    cases.append((interval,r,True))
+    expensive=copy.deepcopy(interval); expensive["calibration_guard"]["intervals"]["regions"][0]["profiles"][0]["uncertainty_us"]=1e9
+    r=fixture(300)
+    assert e.make_plan(expensive,r,r["layers"])["execution_mode"]=="npu"
+    cases.append((expensive,r,True))
+    for key,value in (("lower_tokens",127),("upper_tokens",128),("native_bias_us",None),("native_uncertainty_us",-1),("profiles",[])):
+        bad=copy.deepcopy(interval); bad["calibration_guard"]["intervals"]["regions"][0][key]=value
+        cases.append((bad,r,False))
+    for key,value in (("lower_profile","missing"),("upper_profile","cpu8"),("bias_us",None),("uncertainty_us",-1),("id","cpu8")):
+        bad=copy.deepcopy(interval); bad["calibration_guard"]["intervals"]["regions"][0]["profiles"][0][key]=value
+        cases.append((bad,r,False))
+    for mutation in ("duplicate", "skip_anchor", "policy"):
+        bad=copy.deepcopy(interval); bg=bad["calibration_guard"]
+        if mutation=="duplicate": bg["intervals"]["regions"]*=2
+        if mutation=="skip_anchor": bg["native"].append({**bg["native"][0],"tokens":512})
+        if mutation=="policy": bg["profiles"][1]["policy"]="barrier"
+        cases.append((bad,r,False))
     remote = "/data/local/tmp/llama-fullmodel-oracle"
     def adb(*args):
         return subprocess.run(["adb","-s","fd8657d6",*args],capture_output=True,text=True)
@@ -123,6 +167,12 @@ def main():
             if valid:
                 device = json.loads(result.stdout)
                 assert device["execution_policy"]==plan["execution_policy"] and device["execution_mode"]==plan["execution_mode"]
+                assert device.get("interpolation")==plan.get("interpolation")
+                assert device.get("selected_profile")==plan.get("selected_profile")
+                for a,b in zip(device["custom_candidates"],plan["custom_candidates"]):
+                    assert set(a)==set(b)
+                    for key,value in a.items():
+                        assert abs(value-b[key])<1e-6 if isinstance(value,(int,float)) else value==b[key]
                 for a,b in zip(device["layers"],plan["layers"]):
                     assert a["selected"]==b["selected"]
                     if "prediction" in a:

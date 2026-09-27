@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include "moe-context-model.h"
 
 // Resident, pre-load planning only. No weight migration is hidden in this cost.
@@ -55,6 +56,31 @@ struct fullmodel_execution_model {
                 for(const auto & t:p.at("tails")) { require(t.is_number_integer() && (f=="branch"?t==0:t.get<int>()>=1 && t.get<int>()<60),"invalid guard bank sizes"); }
                 require(p.at("bias_us").is_number() && std::isfinite(p.at("bias_us").get<double>()),"invalid guard bias"); coefficient(p.at("uncertainty_us"),true);
             }
+            if(guard.contains("intervals")) {
+                const auto & extension=guard.at("intervals");
+                require(extension.at("version")==1 && !extension.at("regions").empty(),"invalid interval guard");
+                std::map<std::string,const json *> by_id;
+                for(const auto & p:guard.at("profiles")) { by_id[p.at("id").get<std::string>()]=&p; }
+                int last=nodes.front().at("tokens"); std::vector<std::string> region_ids;
+                for(const auto & region:extension.at("regions")) {
+                    require(region.at("lower_tokens").is_number_integer() && region.at("upper_tokens").is_number_integer(),"invalid interval bounds");
+                    int lo=region.at("lower_tokens"),hi=region.at("upper_tokens");
+                    require(lo<hi && lo>=last && std::find(lengths.begin(),lengths.end(),lo)!=lengths.end() && std::find(lengths.begin(),lengths.end(),hi)!=lengths.end(),"invalid interval bounds");
+                    for(int t:lengths) { require(t<=lo || t>=hi,"interval skips exact anchor"); } last=hi;
+                    std::string id=region.at("id");
+                    require(!id.empty() && std::find(region_ids.begin(),region_ids.end(),id)==region_ids.end() && !region.at("profiles").empty(),"invalid interval identity"); region_ids.push_back(id);
+                    require(region.at("native_bias_us").is_number() && std::isfinite(region.at("native_bias_us").get<double>()),"invalid interval native bias");
+                    coefficient(region.at("native_uncertainty_us"),true);
+                    for(const auto & p:region.at("profiles")) {
+                        std::string pid=p.at("id"),aid=p.at("lower_profile"),bid=p.at("upper_profile");
+                        require(!pid.empty() && std::find(ids.begin(),ids.end(),pid)==ids.end(),"invalid interval profile id"); ids.push_back(pid);
+                        require(by_id.count(aid) && by_id.count(bid),"unknown interval endpoint profile");
+                        const auto & a=*by_id.at(aid); const auto & b=*by_id.at(bid);
+                        require(a.at("tokens")==lo && b.at("tokens")==hi && a.at("family")==b.at("family") && a.at("policy")==b.at("policy"),"incompatible interval profiles");
+                        require(p.at("bias_us").is_number() && std::isfinite(p.at("bias_us").get<double>()),"invalid interval bias"); coefficient(p.at("uncertainty_us"),true);
+                    }
+                }
+            }
         }
         require(!guard.is_null() || (nt>=nodes.front().at("tokens").get<int>() && nt<=nodes.back().at("tokens").get<int>()),"length outside calibrated execution range");
         for(size_t i=1;i<nodes.size();++i) {
@@ -104,9 +130,43 @@ struct fullmodel_execution_model {
         d["execution_mode"]=!d["custom_upper_us"].is_null() && d["custom_upper_us"].get<double>()<d.at("native_lower_us").get<double>()?"custom":"npu";
         report["execution_mode"]=d["execution_mode"];
     }
+    json resolve_interval(int nt) const {
+        if(!guard.contains("intervals")) { return nullptr; }
+        for(const auto & region:guard.at("intervals").at("regions")) {
+            int lo=region.at("lower_tokens"),hi=region.at("upper_tokens");
+            if(nt<=lo || nt>=hi) { continue; }
+            double w=double(nt-lo)/(hi-lo),curvature=4*w*(1-w);
+            auto blend=[&](double a,double b) { return (1-w)*a+w*b; };
+            const json * a=nullptr,*b=nullptr;
+            for(const auto & n:guard.at("native")) { if(n.at("tokens")==lo) { a=&n; } if(n.at("tokens")==hi) { b=&n; } }
+            json native={{"tokens",nt},{"native_us",blend(a->at("native_us"),b->at("native_us"))+curvature*region.at("native_bias_us").get<double>()},
+                {"native_base_compute_us",blend(a->at("native_base_compute_us"),b->at("native_base_compute_us"))},
+                {"uncertainty_us",std::max({a->at("uncertainty_us").get<double>(),b->at("uncertainty_us").get<double>(),region.at("native_uncertainty_us").get<double>()})}};
+            std::map<std::string,const json *> by_id; for(const auto & p:guard.at("profiles")) { by_id[p.at("id").get<std::string>()]=&p; }
+            json profiles=json::array();
+            for(const auto & p:region.at("profiles")) {
+                const auto & x=*by_id.at(p.at("lower_profile").get<std::string>()); const auto & y=*by_id.at(p.at("upper_profile").get<std::string>());
+                std::vector<int> tails;
+                for(int il=0;il<23;++il) {
+                    int64_t numerator=int64_t(hi-nt)*x.at("tails").at(il).get<int>()+int64_t(nt-lo)*y.at("tails").at(il).get<int>();
+                    tails.push_back(int((2*numerator+(hi-lo))/(2*int64_t(hi-lo))));
+                }
+                profiles.push_back({{"id",p.at("id")},{"tokens",nt},{"family",x.at("family")},{"policy",x.at("policy")},{"tails",tails},
+                    {"bias_us",blend(x.at("bias_us"),y.at("bias_us"))+curvature*p.at("bias_us").get<double>()},
+                    {"uncertainty_us",std::max({x.at("uncertainty_us").get<double>(),y.at("uncertainty_us").get<double>(),p.at("uncertainty_us").get<double>()})}});
+            }
+            return {{"native",native},{"profiles",profiles},{"interpolation",{{"id",region.at("id")},{"lower_tokens",lo},{"upper_tokens",hi},{"weight",w},{"curvature_weight",curvature}}}};
+        }
+        return nullptr;
+    }
     json guarded_plan(const json & capture,const json & layers) const {
         int nt=capture.at("tokens"); const json * anchor=nullptr;
         for(const auto & n:guard.at("native")) { if(n.at("tokens")==nt) { anchor=&n; break; } }
+        json interval; const json * available=&guard.at("profiles");
+        if(!anchor) {
+            interval=resolve_interval(nt);
+            if(!interval.is_null()) { anchor=&interval.at("native"); available=&interval.at("profiles"); }
+        }
         json report={{"tokens",nt},{"token_ids",capture.at("token_ids")},{"model_type","branch_critical_path"},
             {"execution_policy",{{"family","native"},{"overlap_gather",false},{"activation_lifetimes",true}}},
             {"layers",layers},{"custom_candidates",json::array()},
@@ -114,7 +174,11 @@ struct fullmodel_execution_model {
             {"path_decision",{{"custom_predicted_us",nullptr},{"custom_uncertainty_us",nullptr},{"native_predicted_us",nullptr},
                 {"native_uncertainty_us",nullptr},{"native_lower_us",nullptr},{"reason","unsupported_length_or_schedule"}}}};
         for(auto & l:report["layers"]) { l["selected"]={{"name","npu_shared_npu"},{"owner",std::vector<int>(60,1)},{"shared",1}}; }
-        std::vector<const json *> profiles; for(const auto & p:guard.at("profiles")) {
+        if(!interval.is_null()) {
+            report["interpolation"]=interval.at("interpolation");
+            report["scope"]="offline interval-interpolated request templates; empirical error envelope; no migration";
+        }
+        std::vector<const json *> profiles; for(const auto & p:*available) {
             if(p.at("tokens")!=nt) { continue; } bool feasible=true;
             for(int il=0;il<23;++il) { int active=0; for(const auto & c:layers[il].at("counts")) { active+=c.get<int>()>0; }
                 int tail=p.at("tails").at(il); if(tail && tail>=active) { feasible=false; break; } }
@@ -156,7 +220,7 @@ struct fullmodel_execution_model {
         report["selected_profile"]=best.at("id"); report["native_base_compute_us"]=native_base;
         report["execution_policy"]={{"family",best.at("family")},{"overlap_gather",best.at("policy")=="overlap"},{"activation_lifetimes",true}};
         report["path_decision"]={{"custom_predicted_us",best.at("predicted_us")},{"custom_uncertainty_us",best.at("uncertainty_us")},
-            {"native_predicted_us",native},{"native_uncertainty_us",anchor->at("uncertainty_us")},{"native_lower_us",native-anchor->at("uncertainty_us").get<double>()},{"reason","calibrated_template_error_guard"}};
+            {"native_predicted_us",native},{"native_uncertainty_us",anchor->at("uncertainty_us")},{"native_lower_us",native-anchor->at("uncertainty_us").get<double>()},{"reason",interval.is_null()?"calibrated_template_error_guard":"calibrated_interval_error_guard"}};
         finalize(report,0); return report;
     }
     json plan(const json & capture,const json & layers) const {

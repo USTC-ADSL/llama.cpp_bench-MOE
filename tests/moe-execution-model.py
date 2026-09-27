@@ -118,6 +118,66 @@ def validate(model):
             if not isinstance(p["bias_us"], (float, int)) or not math.isfinite(p["bias_us"]):
                 raise ValueError("invalid guard bias")
             positive(p["uncertainty_us"], True)
+        if "intervals" in g:
+            extension = g["intervals"]
+            if extension["version"] != 1 or not extension["regions"]:
+                raise ValueError("invalid interval guard")
+            by_id = {p["id"]: p for p in g["profiles"]}
+            previous = nodes[0]["tokens"]
+            region_ids = set()
+            for region in extension["regions"]:
+                lo, hi = region["lower_tokens"], region["upper_tokens"]
+                if type(lo) is not int or type(hi) is not int or lo not in lengths or hi not in lengths or lo >= hi or lo < previous or any(lo < t < hi for t in lengths):
+                    raise ValueError("invalid interval bounds")
+                previous = hi
+                if not isinstance(region["id"], str) or not region["id"] or region["id"] in region_ids or not region["profiles"]:
+                    raise ValueError("invalid interval identity")
+                region_ids.add(region["id"])
+                positive(region["native_uncertainty_us"], True)
+                if not isinstance(region["native_bias_us"], (int, float)) or not math.isfinite(region["native_bias_us"]):
+                    raise ValueError("invalid interval native bias")
+                for p in region["profiles"]:
+                    if not isinstance(p["id"], str) or not p["id"] or p["id"] in ids:
+                        raise ValueError("invalid interval profile id")
+                    ids.add(p["id"])
+                    a, b = by_id[p["lower_profile"]], by_id[p["upper_profile"]]
+                    if a["tokens"] != lo or b["tokens"] != hi or a["family"] != b["family"] or a["policy"] != b["policy"]:
+                        raise ValueError("incompatible interval profiles")
+                    if not isinstance(p["bias_us"], (int, float)) or not math.isfinite(p["bias_us"]):
+                        raise ValueError("invalid interval bias")
+                    positive(p["uncertainty_us"], True)
+
+
+def resolve_guard(g, nt):
+    """Exact anchors win; interpolate only explicitly enabled adjacent regions."""
+    anchors = [n for n in g["native"] if n["tokens"] == nt]
+    profiles = [p for p in g["profiles"] if p["tokens"] == nt]
+    if anchors:
+        return anchors, profiles, None
+    for region in g.get("intervals", {}).get("regions", []):
+        lo, hi = region["lower_tokens"], region["upper_tokens"]
+        if not lo < nt < hi:
+            continue
+        w = (nt - lo) / (hi - lo)
+        curvature = 4 * w * (1 - w)
+        def blend(a, b):
+            return (1 - w) * a + w * b
+        native = {n["tokens"]: n for n in g["native"]}
+        a, b = native[lo], native[hi]
+        anchor = {"tokens": nt,
+                  "native_us": blend(a["native_us"], b["native_us"]) + curvature * region["native_bias_us"],
+                  "native_base_compute_us": blend(a["native_base_compute_us"], b["native_base_compute_us"]),
+                  "uncertainty_us": max(a["uncertainty_us"], b["uncertainty_us"], region["native_uncertainty_us"])}
+        by_id = {p["id"]: p for p in g["profiles"]}
+        for p in region["profiles"]:
+            a, b = by_id[p["lower_profile"]], by_id[p["upper_profile"]]
+            # Integer half-up rounding is identical in Python and C++.
+            tails = [(2*((hi-nt)*x+(nt-lo)*y)+(hi-lo))//(2*(hi-lo)) for x,y in zip(a["tails"], b["tails"])]
+            profiles.append({"id": p["id"], "tokens": nt, "family": a["family"], "policy": a["policy"], "tails": tails,
+                             "bias_us": blend(a["bias_us"], b["bias_us"]) + curvature * p["bias_us"],
+                             "uncertainty_us": max(a["uncertainty_us"], b["uncertainty_us"], p["uncertainty_us"])})
+        return [anchor], profiles, {"id": region["id"], "lower_tokens": lo, "upper_tokens": hi, "weight": w, "curvature_weight": curvature}
+    return [], [], None
 
 
 def validate_routes(capture, layers):
@@ -167,8 +227,8 @@ def finalize(report, model, observed_us):
 def guarded_plan(model, capture, layers, observed_us):
     nt = capture["tokens"]
     g = model["calibration_guard"]
-    anchors = [n for n in g["native"] if n["tokens"] == nt]
-    profiles = [p for p in g["profiles"] if p["tokens"] == nt and all(t == 0 or t < sum(c > 0 for c in l["counts"]) for t,l in zip(p["tails"], layers[:23]))]
+    anchors, profiles, interval = resolve_guard(g, nt)
+    profiles = [p for p in profiles if all(t == 0 or t < sum(c > 0 for c in l["counts"]) for t,l in zip(p["tails"], layers[:23]))]
     report = {"tokens": nt, "token_ids": capture["token_ids"], "model_type": model["model_type"],
               "execution_policy": {"family": "native", "overlap_gather": False, "activation_lifetimes": True},
               "layers": [{**l, "selected": {"name": "npu_shared_npu", "owner": [1]*60, "shared": 1}} for l in layers],
@@ -176,6 +236,9 @@ def guarded_plan(model, capture, layers, observed_us):
     d = {"custom_predicted_us": None, "custom_uncertainty_us": None, "native_predicted_us": None,
          "native_uncertainty_us": None, "native_lower_us": None, "reason": "unsupported_length_or_schedule"}
     report["path_decision"] = d
+    if interval is not None:
+        report["interpolation"] = interval
+        report["scope"] = "offline interval-interpolated request templates; empirical error envelope; no migration"
     if not anchors or not profiles:
         return finalize(report, model, observed_us)
     node = interpolate(model, nt)
@@ -193,7 +256,8 @@ def guarded_plan(model, capture, layers, observed_us):
                   custom_candidates=[{k:v for k,v in r.items() if k != "layers"} for r in options],
                   execution_policy={"family": winner["family"], "overlap_gather": winner["policy"] == "overlap", "activation_lifetimes": True})
     d.update(custom_predicted_us=winner["predicted_us"], custom_uncertainty_us=winner["uncertainty_us"], native_predicted_us=native,
-             native_uncertainty_us=anchor["uncertainty_us"], native_lower_us=native-anchor["uncertainty_us"], reason="calibrated_template_error_guard")
+             native_uncertainty_us=anchor["uncertainty_us"], native_lower_us=native-anchor["uncertainty_us"],
+             reason="calibrated_interval_error_guard" if interval is not None else "calibrated_template_error_guard")
     return finalize(report, model, observed_us)
 
 
