@@ -62,6 +62,20 @@ def main():
                            phase_sum_median_ms=[statistics.median(v[b] for v in phase_sums)/1000 for b in range(3)],
                            last_backend_counts=last, allocations_stable=True,
                            all_round_logits_bitwise_equal=d["all_round_logits_bitwise_equal"])
+                row["policy_means_ms"] = {}
+                for policy, overlap in (("barrier", False), ("overlap", True)):
+                    samples = [v for v in d["samples"] if v["overlap_gather"] == overlap]
+                    if not samples:
+                        continue
+                    def mean(fn):
+                        return statistics.mean(fn(v) for v in samples)/1000
+                    row["policy_means_ms"][policy] = {
+                        "total": mean(lambda v: v["total_us"]),
+                        "gather": mean(lambda v: sum(l["gather_us"] for l in v["layers"])),
+                        "expert_wall": mean(lambda v: sum(l["expert_wall_us"] for l in v["layers"])),
+                        "combine": mean(lambda v: sum(l["combine_us"] for l in v["layers"])),
+                        "outside_ffn": mean(lambda v: v["total_us"]-sum(l["gather_us"]+l["expert_wall_us"]+l["combine_us"] for l in v["layers"])),
+                        "sum_layer_max_compute": mean(lambda v: sum(max(b[1] for b in l["backend_phases_us"]) for l in v["layers"]))}
         records.append(row)
         return d
 
@@ -121,6 +135,12 @@ def main():
                 same = bool(e.np.array_equal(x, y))
                 assert cell["same_native_logits"] == same and cell["same_top1"] == bool(x.argmax() == y.argmax())
                 assert abs(cell["logit_nrmse_vs_native"] - float(e.np.linalg.norm(x-y)/e.np.linalg.norm(y))) < 1e-12
+                cpu = e.np.frombuffer(e.raw(s.EV / f"{name}-{nt}-capture.json.logits.bin"), dtype=e.np.float32).astype(e.np.float64)
+                assert cpu.shape == x.shape and e.np.isfinite(cpu).all()
+                records[-1]["cpu_reference_comparison"] = {
+                    "auto_top1": int(x.argmax()), "native_top1": int(y.argmax()), "cpu_top1": int(cpu.argmax()),
+                    "auto_nrmse_vs_cpu": float(e.np.linalg.norm(x-cpu)/e.np.linalg.norm(cpu)),
+                    "native_nrmse_vs_cpu": float(e.np.linalg.norm(y-cpu)/e.np.linalg.norm(cpu))}
                 if a["mode"] == "npu":
                     assert same
     assert len(records) == 86
