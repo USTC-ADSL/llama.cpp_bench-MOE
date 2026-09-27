@@ -1,0 +1,29 @@
+{
+  "device": "fd8657d6",
+  "model_sha256": "4173a04aa14d93b6e7db1557de68522911cb9eb4fc1826641ad333a44bec6bb9",
+  "binary_sha256": "a512c09b1b40640ed15a3b654286c3895aea90695ecfaae290028ed9d840dd74",
+  "cases": [
+    {
+      "case": "synthetic300",
+      "mode": "npu",
+      "command": "LD_LIBRARY_PATH=/data/local/tmp/llama-fullmodel-oracle /data/local/tmp/llama-fullmodel-oracle/test-moe-execution-model /data/local/tmp/llama-fullmodel-oracle/contract-model.json /data/local/tmp/llama-fullmodel-oracle/contract-routes.json 3",
+      "routes_sha256": "32d11cd5545c07eccaeef9ce14e627fe64796b42c990d8bfede8f2d3fad67777",
+      "output_sha256": "d514f8d43ee3cef88a642a2a59acaf05ea2a20fc38cdde2072d9d10435147393"
+    },
+    {
+      "case": "reservoir",
+      "mode": "custom",
+      "command": "LD_LIBRARY_PATH=/data/local/tmp/llama-fullmodel-oracle /data/local/tmp/llama-fullmodel-oracle/test-moe-execution-model /data/local/tmp/llama-fullmodel-oracle/contract-model.json /data/local/tmp/llama-fullmodel-oracle/contract-routes.json 3",
+      "routes_sha256": "ef41a802ec94ec6b05ae94ce7a38c418d84ebb7fdcc42626f25396db0813f7e4",
+      "output_sha256": "6d5e8fe9269fa5bdb2c086f0e84ddfb0666eed48c35b9df693064daae84198ea"
+    },
+    {
+      "case": "textile",
+      "mode": "custom",
+      "command": "LD_LIBRARY_PATH=/data/local/tmp/llama-fullmodel-oracle /data/local/tmp/llama-fullmodel-oracle/test-moe-execution-model /data/local/tmp/llama-fullmodel-oracle/contract-model.json /data/local/tmp/llama-fullmodel-oracle/contract-routes.json 3",
+      "routes_sha256": "9c9a5e5a72b5ce0ac8e7f2112a9be4de887740d683becf84e56c2b099098769a",
+      "output_sha256": "da39b82b7c229bcc3c3a8655526247b270d311e5652ad20967f473f159eba889"
+    }
+  ],
+  "synthetic300_scope": "planner fallback contract only; no measured inference throughput"
+}

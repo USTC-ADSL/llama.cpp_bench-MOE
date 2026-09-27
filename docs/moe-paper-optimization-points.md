@@ -38,3 +38,5 @@
 后续动机证据：[HTP窗口与GPU频率诊断](../task/handoff/handoff-2026-09-27-device-timing/results.md)。固定分配下GPU频率均约967MHz，但shared GPU在768-token的345/368个普通层实例中最后完成，128为0/368，说明需要随长度重新平衡shared/routed关键路径；这是一条瓶颈证据，尚非新增优化收益。固定HTP性能请求下，原生耗时差异仍主要出现在DSP执行窗口，不能统归host或调频。
 
 最终封板证据：[联合候选与两份独立prompt确认](../task/handoff/handoff-2026-09-27-final-placement/results.md)。44.8KB模型保留128规则，补齐256/512/768候选；768换成GPU尾组/shared NPU虽缩短计算窗口，却因聚合及非FFN残差增加而更慢。64因覆盖不足回退原生，跨进程变化−3.58%～+4.02%不是异构收益；本轮结束模型优化，仍不主张在线迁移或跨后端质量等价。
+
+用户追加的[64-token校准验证](../task/handoff/handoff-2026-09-27-calibrate64/results.md)：补齐小请求的实测代价与误差余量，按每层负载选择CPU尾组32、剩余routed在NPU、shared在GPU；两份新prompt的完整模型吞吐较原生提高50.1%–63.5%（含决策），而仅将shared移至GPU没有收益。这是64覆盖的新增证据，不是新算法或全长度保证；GPU routed候选因logits稳定性检查失败被排除，300等未验证长度仍回退原生。
