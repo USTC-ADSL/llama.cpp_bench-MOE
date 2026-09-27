@@ -6,6 +6,7 @@ import hashlib
 import importlib.util
 import json
 import pathlib
+import shlex
 import statistics
 import subprocess
 import sys
@@ -61,6 +62,15 @@ def run(name,nt,tag,mode,plan_path=None,live=False,deploy=False):
     if manifest.exists():
         d=e.read(manifest);assert d["exit"]==0 and (EV/f"{tag}.json").exists()
         assert f"{sha(BIN)}  /data/local/tmp/llama-fullmodel-oracle/fullmodel-oracle" in d["hashes"]
+        assert f"{sha(PROMPTS[name])}  /data/local/tmp/llama-fullmodel-oracle/prompt.txt" in d["hashes"]
+        command=shlex.split(d["command"])
+        assert command[-5]==str(nt) and command[-3]==mode and command[-2]=="8"
+        actual=e.read(EV/f"{tag}.json")
+        assert actual["tokens"]==nt and actual["requested_mode"]==mode
+        if mode!="capture":assert len(actual["samples"])==8 and "runtime_state" in actual
+        if mode=="custom":assert all(actual[k] for k in ("shared_activations","direct_callback_io","activation_arena","activation_lifetimes","fused_host_reduce","overlap_gather"))
+        if plan_path:assert d["reference_hash"].split()[0]==sha(plan_path)
+        if live:assert d["runtime_state_model_sha256"]==sha(TASK/"runtime-model.json") and "runtime_decision" in actual
         print("REUSE",tag,flush=True);return
     args=[sys.executable,str(ROOT/"tests/run-fullmodel-oracle.py"),"--mode",mode,"--tokens",str(nt),"--reps","8", "--tag",tag,
           "--output-dir",str(EV),"--prompt-file",str(PROMPTS[name])]

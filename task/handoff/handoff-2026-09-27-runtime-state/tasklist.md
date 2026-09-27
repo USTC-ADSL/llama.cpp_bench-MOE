@@ -2,7 +2,7 @@
 
 - [x] Inspect previous drift evidence and decision/timing hooks; check accessible device state.
 - [x] Add opt-in causal state telemetry with measured overhead and useful timing attribution; build and device smoke (logits invariant).
-- [ ] Freeze collection protocol, gather technical training/calibration cohorts and test whether state features predict timing.
+- [x] Freeze collection protocol, gather 28 technical training/calibration processes and test state features: native bias retained, custom state selected (B MAPE 2.267% to 1.681%).
 - [ ] Implement compact state correction/decision interface only using pre-decision information; device parity/functional checks (implemented,13 new +23 old contracts pass; live auto pending).
 - [ ] Freeze model and validate fresh prompt(s), retaining 128-token gain and testing 768-token decisions without hindsight.
 - [ ] Report supported result/limitations, update paper points if warranted, archive evidence/clean device, Git checkpoints.

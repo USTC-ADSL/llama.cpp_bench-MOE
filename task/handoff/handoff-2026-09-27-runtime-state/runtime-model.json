@@ -1,0 +1,808 @@
+{
+  "version": 2,
+  "model_type": "branch_critical_path",
+  "base": {
+    "backends": [
+      [
+        2692.5043754910803,
+        35285.14978135769,
+        -20857.618874724543,
+        23948.975525425638,
+        7524.529618208202,
+        7280.724502047177,
+        57331.35697333124,
+        -4784.978097371613,
+        -6618.972037610989,
+        1799.5906732973806,
+        226.174702474432,
+        94655.50392007927,
+        -2755.060968006841,
+        30246.0048788847,
+        29192.45414874334,
+        1652.7388648825242,
+        -8805.685444807616,
+        0.0,
+        0.0,
+        0.0,
+        -2078.2687218678884,
+        -3411.722326003986,
+        4032.5821444672724,
+        -826.5220044084656,
+        -5847.790794613944,
+        5218.0081578471145
+      ],
+      [
+        1413.0557380737243,
+        675.3148753069705,
+        11496.37357572398,
+        995.5450879839606,
+        1835.720168371073,
+        -260.83484256864506,
+        1097.3888877158565,
+        -779.5829411425136,
+        -820.4974101127062,
+        603.9577671297588,
+        -1410.8689930945952,
+        1980.2827957343084,
+        -16.08745809929714,
+        2421.78479450248,
+        -248.38423695363832,
+        828.9699955122251,
+        436.1194199720309,
+        -252.43308229974997,
+        456.21989649844767,
+        -1532.43129216404,
+        0.0,
+        0.0,
+        0.0,
+        -201.64396632340475,
+        977.998485808506,
+        -121.58016619675765
+      ],
+      [
+        536.1855763018978,
+        13328.745538557632,
+        2582.0814448899837,
+        11051.441758746001,
+        3931.0835424171173,
+        737.0569796119473,
+        237.38059727529406,
+        -694.2392099688185,
+        -9714.987359006947,
+        520.9157571329832,
+        -1039.0456930791627,
+        30188.837251200668,
+        812.6560379078783,
+        9718.504925911804,
+        6468.05720802086,
+        276.76625780308103,
+        -1536.1855243360421,
+        -465.04247663910945,
+        2463.5091309678837,
+        -2172.8671980535714,
+        906.5244235183749,
+        1177.883008213352,
+        -1798.751398224204,
+        0.0,
+        0.0,
+        0.0
+      ]
+    ],
+    "host": [
+      819.7357146072449,
+      1566.335436666167,
+      -211.16995256725053,
+      -1819.6200455930616,
+      -1040.3146932925151,
+      101.63845172108488,
+      1581.1960073176317,
+      -340.2756242003805
+    ],
+    "version": 1,
+    "alpha": 1.0,
+    "cross_validation": [
+      {
+        "alpha": 0.01,
+        "mean_absolute_relative_error": 0.587265058454274
+      },
+      {
+        "alpha": 0.1,
+        "mean_absolute_relative_error": 0.4329726464492847
+      },
+      {
+        "alpha": 1.0,
+        "mean_absolute_relative_error": 0.4282480501363226
+      },
+      {
+        "alpha": 10.0,
+        "mean_absolute_relative_error": 0.5435429499465848
+      }
+    ],
+    "training_rows": 435,
+    "training_files": {
+      "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-placement-model/evidence/technical-128-profile-v2.json": "d467548b72e2808183c8a59e7828016a9d770bfb763b8b9c04d0372b3a8cdd52",
+      "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-placement-model/evidence/technical-256-profile-v2.json": "2c0ff045782841d509f4057ffa29ece0f4e30ed7060aa85ca96df8804b84c9b2",
+      "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-placement-model/evidence/technical-512-profile-v2.json": "974c63c52fe27a02deafdd9a4ddfecf0bf9705d62b4329d1309354bbb9e0d5cc"
+    },
+    "contract": "Qwen1.5-MoE Q4_0, fd8657d6, compact resident banks, shared arenas, fused host reduction; offline placement before weight preparation",
+    "training_tokens": [
+      1,
+      128,
+      256,
+      512
+    ],
+    "training_layers": [
+      0,
+      3,
+      11,
+      19,
+      23
+    ]
+  },
+  "base_sha256": "cc07b31f227ef35d4d35dd9fe19b7beb504bd9a67a3e1c04bea2d35747ca66fb",
+  "decision_budget_us": 2000.0,
+  "training_files": {
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-128-native-a.json": "dae87398b7083c3f305f46c2ccdfe4f0f6105b0ef11e35ec62418e117c8f3d3b",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-128-native-b.json": "7748748e6dd661c14b9f9a2a350d64949c2271f6d1e57c5f2845d1dd3d5e9484",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/technical-128-cpu-plan.json": "88d809bbdc50a35d5c7adfb8e2c6048639dcdf53c1bc9f9602b3d4a884150783",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-128-cpu.json": "cb7a25ef72199164e11a67e85c3f9ca2e4486107273370dfa97e4eac3a1b686a",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-128-gpu.json": "44f39f0b6cca6668fe30d41a36292759472601da4f29cec50afb1a55798e93c9",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-128-branch.json": "8953c25dcc921c898026cb6a059be2b89265cff1db3f1313b2aa89cd3277696e",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-512-native-a.json": "f93ae4e8e72adeb8d91d9276b24c8d3eb9227c9aecf7a90427c688927aa0099f",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-512-native-b.json": "5d03300b160e8f34449c9ddf37c11d5634f04517d83b3fc7a960be59e3183f6a",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/technical-512-cpu-plan.json": "1f2d9f9d09f8defe33c558767a29c10b032b3ddaa652ca16e26501040901c95e",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-512-cpu.json": "1411926d586b306e06afaa29678813b8d1445d8a7ce15c18f85ab3fedf0b7df4",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-512-gpu.json": "6ca5812a6ac61c7482d0bbae397370ba5c7d9daee135276947429d95b5f4c131",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-512-branch.json": "20468134c6128568aa863706937bd95561518d4353686074d175e9a6aa4bdd79",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-768-native-a.json": "42eb785f8f3990629617028809e701eaa051f57bf382c4bfde0417824d044c1b",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-768-native-b.json": "6385e43f9093f60238d6c492e8d8eb618d54ba142c66cbd344bd30ab8f0d123d",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/technical-768-cpu-plan.json": "f2b9eb535ff23f8650c7976235588b94c62fc6769228da0fa1ef6a295ffa12d4",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-768-cpu.json": "88bb49be4ce7c65a68095736cee14ae1215f6dc87cf5c69c13f48098b10f32eb",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-768-gpu.json": "923aabcd95acbec7b30b46f7fb450100d9284e87cee2622850b5d40784641ed5",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-768-branch.json": "0feb3170eec11579e3398b7973d46f57769be61039f50ac52614780cfce63b18",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-1024-native-a.json": "2b4e62dfd54586ab56d300425bf08f9062ba34b86a4e7391bcb1b11a08ceeba8",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-1024-native-b.json": "2d7cffae3cdfdc360dda7c7451e78fd1f8259258ce31bd65a0e7f2b3b55625d2",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/technical-1024-cpu-plan.json": "b034bb10cdaa631e690e9d63c752eb593627b2ead28a34ab36bc9a52b9db3b66",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-1024-cpu.json": "cc7f8f53e0ec0e8ff4b84298faab5c8476e35bdd7763d17aa3156eff87cdd13c",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-1024-gpu.json": "51c26085bf9633d900290bd509b80821705c4cd1cbfe6a933ae818a31409964c",
+    "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-26-execution-model/evidence/technical-1024-branch.json": "19a761a365b800ec4a2b374065c6b02b81d46e40f0492426f773113b38bc793e"
+  },
+  "nodes": [
+    {
+      "tokens": 128,
+      "families": {
+        "cpu": {
+          "barrier": {
+            "compute_scales": [
+              1.3389723567839362,
+              1.056288228975403,
+              1.0437801193521947
+            ],
+            "gather_us_per_mib": [
+              45.39211463659952,
+              35.94366038991053,
+              39.32302173913044
+            ],
+            "host_us_per_token": 1.9599629755434784,
+            "outside_us": 105264.06399999995,
+            "uncertainty_us": 11705.625499999995
+          },
+          "overlap": {
+            "compute_scales": [
+              1.3447910710105,
+              1.0551770057880931,
+              1.051867660781729
+            ],
+            "gather_us_per_mib": [
+              75.93190538086611,
+              59.40362116941298,
+              69.71343478260869
+            ],
+            "host_us_per_token": 1.9830859375000005,
+            "outside_us": 115094.76749999999,
+            "uncertainty_us": 9942.890500000009
+          }
+        },
+        "gpu": {
+          "barrier": {
+            "compute_scales": [
+              1.0,
+              1.0846431965869612,
+              0.9918183803393416
+            ],
+            "gather_us_per_mib": [
+              0.0,
+              176.21592477464753,
+              183.33772417196013
+            ],
+            "host_us_per_token": 7.142881623641305,
+            "outside_us": 163284.406,
+            "uncertainty_us": 8861.978999999963
+          },
+          "overlap": {
+            "compute_scales": [
+              1.0,
+              1.0827205739689076,
+              0.9911224079145797
+            ],
+            "gather_us_per_mib": [
+              0.0,
+              177.76421799978746,
+              185.14822880233515
+            ],
+            "host_us_per_token": 7.474700577445653,
+            "outside_us": 155565.936,
+            "uncertainty_us": 8800.208000000013
+          }
+        },
+        "branch": {
+          "barrier": {
+            "compute_scales": [
+              1.0,
+              0.9893889787789409,
+              0.9984868162034893
+            ],
+            "gather_us_per_mib": [
+              0.0,
+              212.03152809560132,
+              206.63721739130438
+            ],
+            "host_us_per_token": 8.49861616847826,
+            "outside_us": 155867.20949999997,
+            "uncertainty_us": 9851.01549999998
+          },
+          "overlap": {
+            "compute_scales": [
+              1.0,
+              0.9882756140454949,
+              1.0000970477155906
+            ],
+            "gather_us_per_mib": [
+              0.0,
+              224.30820239003305,
+              210.51860869565218
+            ],
+            "host_us_per_token": 8.44479789402174,
+            "outside_us": 155842.13749999998,
+            "uncertainty_us": 6485.780999999959
+          }
+        }
+      },
+      "native_us": 543760.2345,
+      "native_uncertainty_us": 7282.556800000032,
+      "native_base_compute_us": 425386.09705288644
+    },
+    {
+      "tokens": 512,
+      "families": {
+        "cpu": {
+          "barrier": {
+            "compute_scales": [
+              1.1036457527704409,
+              1.0321706455483703,
+              0.9813740198757912
+            ],
+            "gather_us_per_mib": [
+              72.36160450884444,
+              46.03999380083954,
+              57.970717391304355
+            ],
+            "host_us_per_token": 1.7501698369565233,
+            "outside_us": 258000.07749999998,
+            "uncertainty_us": 18271.848999999987
+          },
+          "overlap": {
+            "compute_scales": [
+              1.1406625629311469,
+              1.0362179022236915,
+              0.9903584011883861
+            ],
+            "gather_us_per_mib": [
+              152.08364441703395,
+              71.43604882616383,
+              112.22884239130434
+            ],
+            "host_us_per_token": 1.7366408797554356,
+            "outside_us": 262042.91500000004,
+            "uncertainty_us": 20514.296999999962
+          }
+        },
+        "gpu": {
+          "barrier": {
+            "compute_scales": [
+              1.0,
+              1.0543608186169053,
+              1.0412621779283118
+            ],
+            "gather_us_per_mib": [
+              0.0,
+              174.41809907916866,
+              191.08330328539387
+            ],
+            "host_us_per_token": 6.5357301715353255,
+            "outside_us": 344388.15200000006,
+            "uncertainty_us": 11336.666499999992
+          },
+          "overlap": {
+            "compute_scales": [
+              1.0,
+              1.0490692749430535,
+              1.0466982565868812
+            ],
+            "gather_us_per_mib": [
+              0.0,
+              179.21571736426938,
+              196.06023450835286
+            ],
+            "host_us_per_token": 6.632880604619565,
+            "outside_us": 337486.6665000001,
+            "uncertainty_us": 13796.510499999975
+          }
+        },
+        "branch": {
+          "barrier": {
+            "compute_scales": [
+              1.0,
+              1.016931802398815,
+              0.9885134761735515
+            ],
+            "gather_us_per_mib": [
+              0.0,
+              204.12126044580052,
+              199.6362826086957
+            ],
+            "host_us_per_token": 6.558777895720107,
+            "outside_us": 333620.96350000007,
+            "uncertainty_us": 25612.031000000017
+          },
+          "overlap": {
+            "compute_scales": [
+              1.0,
+              1.0194452916787193,
+              0.9887648815517933
+            ],
+            "gather_us_per_mib": [
+              0.0,
+              208.05519654207984,
+              207.56142391304346
+            ],
+            "host_us_per_token": 6.677323581861412,
+            "outside_us": 337580.208,
+            "uncertainty_us": 11628.750000000058
+          }
+        }
+      },
+      "native_us": 910793.5415,
+      "native_uncertainty_us": 4890.00049999999,
+      "native_base_compute_us": 597239.0867639474
+    },
+    {
+      "tokens": 768,
+      "families": {
+        "cpu": {
+          "barrier": {
+            "compute_scales": [
+              1.2212062887873185,
+              1.0275696851018767,
+              0.9558948937756852
+            ],
+            "gather_us_per_mib": [
+              105.00907347709405,
+              73.12704471755367,
+              97.44941666666666
+            ],
+            "host_us_per_token": 1.7182899116847836,
+            "outside_us": 362072.75999999995,
+            "uncertainty_us": 24798.64599999995
+          },
+          "overlap": {
+            "compute_scales": [
+              1.2366792153769417,
+              1.0140214542875605,
+              0.9599793155983851
+            ],
+            "gather_us_per_mib": [
+              181.12070246880165,
+              79.49486135359464,
+              123.52468478260869
+            ],
+            "host_us_per_token": 1.6713727355072465,
+            "outside_us": 366912.5840000001,
+            "uncertainty_us": 12455.780999999959
+          }
+        },
+        "gpu": {
+          "barrier": {
+            "compute_scales": [
+              1.0,
+              1.0564657674193443,
+              1.0297977628957689
+            ],
+            "gather_us_per_mib": [
+              0.0,
+              174.80374732166968,
+              197.74136995372413
+            ],
+            "host_us_per_token": 5.8237358469202904,
+            "outside_us": 456060.3375000001,
+            "uncertainty_us": 14824.661500000046
+          },
+          "overlap": {
+            "compute_scales": [
+              1.0,
+              1.0510155030542174,
+              1.0344287306822515
+            ],
+            "gather_us_per_mib": [
+              0.0,
+              179.762715060242,
+              198.19334878786836
+            ],
+            "host_us_per_token": 6.034826058650362,
+            "outside_us": 452126.0195,
+            "uncertainty_us": 21885.39049999998
+          }
+        },
+        "branch": {
+          "barrier": {
+            "compute_scales": [
+              1.0,
+              1.0346976417589793,
+              0.9598809761592524
+            ],
+            "gather_us_per_mib": [
+              0.0,
+              214.8255601322146,
+              212.43809782608696
+            ],
+            "host_us_per_token": 5.68831006567029,
+            "outside_us": 459361.0919999999,
+            "uncertainty_us": 334587.6560000001
+          },
+          "overlap": {
+            "compute_scales": [
+              1.0,
+              1.0456906203518193,
+              0.9648033619859184
+            ],
+            "gather_us_per_mib": [
+              0.0,
+              217.0652798824759,
+              211.81234782608695
+            ],
+            "host_us_per_token": 5.726371376811595,
+            "outside_us": 463660.3639999998,
+            "uncertainty_us": 426954.2175
+          }
+        }
+      },
+      "native_us": 1151449.817,
+      "native_uncertainty_us": 5750.5467499999795,
+      "native_base_compute_us": 718765.0467274337
+    },
+    {
+      "tokens": 1024,
+      "families": {
+        "cpu": {
+          "barrier": {
+            "compute_scales": [
+              1.2936640604672132,
+              0.9900918505381536,
+              1.1305982577445857
+            ],
+            "gather_us_per_mib": [
+              192.52550815831793,
+              140.42407550565508,
+              189.7792092391304
+            ],
+            "host_us_per_token": 2.436268172554348,
+            "outside_us": 606738.5145,
+            "uncertainty_us": 133331.53599999996
+          },
+          "overlap": {
+            "compute_scales": [
+              1.2730065813686835,
+              0.9919301939473223,
+              1.1834621641000256
+            ],
+            "gather_us_per_mib": [
+              256.71753488707003,
+              96.21231418426939,
+              168.39050815217388
+            ],
+            "host_us_per_token": 2.4801500721807055,
+            "outside_us": 619254.7150000002,
+            "uncertainty_us": 144685.59849999996
+          }
+        },
+        "gpu": {
+          "barrier": {
+            "compute_scales": [
+              1.0,
+              1.0255061430653152,
+              1.03920323872194
+            ],
+            "gather_us_per_mib": [
+              0.0,
+              195.3725332078472,
+              233.7213577866147
+            ],
+            "host_us_per_token": 7.383298870584238,
+            "outside_us": 844969.8979999999,
+            "uncertainty_us": 254592.91649999982
+          },
+          "overlap": {
+            "compute_scales": [
+              1.0,
+              1.0132266602284314,
+              1.0441130868965376
+            ],
+            "gather_us_per_mib": [
+              0.0,
+              200.375848965059,
+              229.28538881817198
+            ],
+            "host_us_per_token": 7.665010614809784,
+            "outside_us": 847681.352,
+            "uncertainty_us": 244793.61899999995
+          }
+        },
+        "branch": {
+          "barrier": {
+            "compute_scales": [
+              1.0,
+              1.0264661954408811,
+              0.9692795379184942
+            ],
+            "gather_us_per_mib": [
+              0.0,
+              215.18037528604123,
+              217.16316032608694
+            ],
+            "host_us_per_token": 5.877832561990489,
+            "outside_us": 676987.4230000001,
+            "uncertainty_us": 8725.54700000002
+          },
+          "overlap": {
+            "compute_scales": [
+              1.0,
+              1.0357731939184398,
+              0.9689594070244801
+            ],
+            "gather_us_per_mib": [
+              0.0,
+              215.86221476396307,
+              211.50107608695652
+            ],
+            "host_us_per_token": 5.850172129755436,
+            "outside_us": 668911.6690000002,
+            "uncertainty_us": 28713.619999999995
+          }
+        }
+      },
+      "native_us": 1493176.9,
+      "native_uncertainty_us": 23660.41650000005,
+      "native_base_compute_us": 839128.8384576498
+    }
+  ],
+  "calibrated_shared_backend": {
+    "cpu": 2,
+    "gpu": 1,
+    "branch": 2
+  },
+  "scope": "resident branch gather+compute critical path; conversion excluded; whole-request calibrated family/policy",
+  "calibration_guard": {
+    "version": 1,
+    "native": [
+      {
+        "tokens": 128,
+        "native_us": 527266.64,
+        "native_base_compute_us": 425386.09705288644,
+        "uncertainty_us": 42445.17348870414
+      },
+      {
+        "tokens": 768,
+        "native_us": 1125205.5725,
+        "native_base_compute_us": 718765.0467274337,
+        "uncertainty_us": 120688.29573805025
+      }
+    ],
+    "profiles": [
+      {
+        "id": "128-mixed-overlap",
+        "tokens": 128,
+        "family": "cpu",
+        "tails": [
+          24,
+          24,
+          24,
+          24,
+          24,
+          32,
+          24,
+          24,
+          24,
+          24,
+          24,
+          24,
+          24,
+          24,
+          24,
+          24,
+          24,
+          32,
+          24,
+          24,
+          24,
+          24,
+          24
+        ],
+        "policy": "overlap",
+        "bias_us": -22339.82448195014,
+        "uncertainty_us": 48867.81712649262
+      },
+      {
+        "id": "768-tail4-overlap",
+        "tokens": 768,
+        "family": "cpu",
+        "tails": [
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4
+        ],
+        "policy": "overlap",
+        "bias_us": 28629.374328403734,
+        "uncertainty_us": 100513.20614206628
+      }
+    ],
+    "parent_sha256": "17bb46360a79573f3e3009c99cb11c1de8d667e0d34eeda095735f2607079b21",
+    "protocol_sha256": "bdf4bf4c90b5c1cd9accacdcb15004caead930b356788d94f38221b8f73122d4",
+    "sources": {
+      "task/handoff/handoff-2026-09-27-execution-guard/technical-a-128-routes.json": "fee82856aad7f6715ff30a32c819ddc08b18ca2cd96a5c74eed10fb125f43eab",
+      "task/handoff/handoff-2026-09-27-execution-guard/technical-b-128-routes.json": "317de808ea37317f02beb0f679560a8fe0d0671060b04b29af0e4eeceb7ad724",
+      "task/handoff/handoff-2026-09-27-execution-guard/evidence/technical-a-128-native-a.json": "0ef2a7484f2f80886a8a1cfc699eff00f90884d9d7725564bae0c0393c534a5d",
+      "task/handoff/handoff-2026-09-27-execution-guard/evidence/technical-a-128-native-b.json": "0836e21dc5ef0ef0c4f9314a3a81ac56139a24784e4e2a08e3a392c95212a55a",
+      "task/handoff/handoff-2026-09-27-execution-guard/evidence/technical-b-128-native-a.json": "a9593a0592a30a3c517f23af453799eff145c0dbb81f01b616703159adf961b2",
+      "task/handoff/handoff-2026-09-27-execution-guard/evidence/technical-b-128-native-b.json": "ce241955577b1f3ee94d31d129f4ca5e708d65787dad8410b9f8cc7e7548b2e7",
+      "task/handoff/handoff-2026-09-27-execution-guard/evidence/technical-a-128-mixed.json": "5d47a883032e58df484306ccc24fc59834fe022e6b33f74d3c860b90f614407f",
+      "task/handoff/handoff-2026-09-27-execution-guard/evidence/technical-b-128-mixed.json": "a94a7aa1fdd8ffebe04d2607ec4fb26d82d346893cbc3190d129d0c8c41bfad3",
+      "task/handoff/handoff-2026-09-27-execution-guard/technical-a-128-mixed-plan.json": "04e8434a2a973035d14cadc3c983675b0b7d0bcf7f59c8b40187f6fb78ade133",
+      "task/handoff/handoff-2026-09-27-execution-guard/technical-b-128-mixed-plan.json": "01a5f6aba75218c4d071c0874c8148c8935913ad52742b835506c3075fa4eb45",
+      "task/handoff/handoff-2026-09-27-execution-guard/technical-a-384-routes.json": "6e55d3c638b980f25f07099ba1f83b3b0e2cccfd7162369bc06c61d7bfb68377",
+      "task/handoff/handoff-2026-09-27-execution-guard/technical-b-384-routes.json": "d0532008018f40a53976dee5d00abcd2a7ad197f81b2cbeacad80e7d00cd4b1d",
+      "task/handoff/handoff-2026-09-27-execution-guard/evidence/technical-a-384-native-a.json": "4fb891d3737ed1c3765614f5187a4eb971bd3a107e4ce9a3fc967e2245b9824f",
+      "task/handoff/handoff-2026-09-27-execution-guard/evidence/technical-a-384-native-b.json": "4ead7999bbf84ee39b9ae10f9ab858ecdab15a9f94d6022311f5d202c6c39072",
+      "task/handoff/handoff-2026-09-27-execution-guard/evidence/technical-b-384-native-a.json": "402c0df4c18f15cb1eea22354234d724d90eabed89f2609d6a326934705a1b10",
+      "task/handoff/handoff-2026-09-27-execution-guard/evidence/technical-b-384-native-b.json": "5ffcea97fb91df8a01eacf502cbaaad18537888b49ea6a34c918ee3832d39b21",
+      "task/handoff/handoff-2026-09-27-execution-guard/evidence/technical-a-384-tail16.json": "358e6d53a5d5b450cc9c1bb4e276b6c7a2fbe44d47431b9aa9520648728bec3a",
+      "task/handoff/handoff-2026-09-27-execution-guard/evidence/technical-b-384-tail16.json": "4d2c5805ecefa39b16c88784cb3226db6b30049c4a3ad613a9dbe81c6c448981",
+      "task/handoff/handoff-2026-09-27-execution-guard/technical-a-384-tail16-plan.json": "d8fda72f87657b6a6b1aa1080a2aba971aac539b4a1685c022bd06e1892a3e44",
+      "task/handoff/handoff-2026-09-27-execution-guard/technical-b-384-tail16-plan.json": "bbdee5d6b3ac6d198fa796d5010d112dc7e69e9ab7438eda11053abd720cace3",
+      "task/handoff/handoff-2026-09-27-execution-guard/technical-a-768-routes.json": "22decaf1c95f487a46736c5d5d7a34a95da41f1ce035d0f334b73af5bae98023",
+      "task/handoff/handoff-2026-09-27-execution-guard/technical-b-768-routes.json": "71ce14570fc43fb2e9aba5a1a256fffc10479e19c9baea135e50a2c34c75778f",
+      "task/handoff/handoff-2026-09-27-execution-guard/evidence/technical-a-768-native-a.json": "ff0243b0f7f5d7a053ddbfd1b999a5d04ef3069942c36d9711ec322bf1f3977d",
+      "task/handoff/handoff-2026-09-27-execution-guard/evidence/technical-a-768-native-b.json": "0fdd5965af0ce236fff7b5a376f4210e09ee2722c6d3b3c2a4aa713283ec1778",
+      "task/handoff/handoff-2026-09-27-execution-guard/evidence/technical-b-768-native-a.json": "37ff58baf1ff4c1358be5cd55dc3d6013f733f2f71d5059c752a9f73133bad3d",
+      "task/handoff/handoff-2026-09-27-execution-guard/evidence/technical-b-768-native-b.json": "287c88bfcc7f14b62b6528eb5c0514aa20d52fd2980206f5407ca9fad80a61f1",
+      "task/handoff/handoff-2026-09-27-execution-guard/evidence/technical-a-768-tail1.json": "f1cdca5d04c75b622e463e1ecf0fbb8f4d63ee63b9c66ea020556bf5e91232ed",
+      "task/handoff/handoff-2026-09-27-execution-guard/evidence/technical-b-768-tail1.json": "4e6cba70090878b14d808d46e4ad674328e69994bb1d2afc486d4576f64ef0a6",
+      "task/handoff/handoff-2026-09-27-execution-guard/technical-a-768-tail1-plan.json": "decc88441fe3ec444e7ba21b5cb4fb05f9320cb4d7858dfd5c19b554d10539b5",
+      "task/handoff/handoff-2026-09-27-execution-guard/technical-b-768-tail1-plan.json": "39d61631d1d56865df5d043bf11a6233b722e7349f5045eb38ea9a75c939791f",
+      "task/handoff/handoff-2026-09-27-execution-guard/evidence/technical-a-768-tail4.json": "15e191f1f712bc70041b57be38bff12f5780ae8c3c7091febad139efc5f66bc6",
+      "task/handoff/handoff-2026-09-27-execution-guard/evidence/technical-b-768-tail4.json": "2f28744a0b52f43ce26ac61abaa9aafe9e3572b6534b1d4db8cb348daf103dae",
+      "task/handoff/handoff-2026-09-27-execution-guard/technical-a-768-tail4-plan.json": "843a42a8aef48800d2b6e05242186350ffd3b96a441356d121995f67ce01efdc",
+      "task/handoff/handoff-2026-09-27-execution-guard/technical-b-768-tail4-plan.json": "5a0f579331f298fd36ff76359a30b81758da10ca10754dc95321c519b93b57df",
+      "task/handoff/handoff-2026-09-27-execution-guard/evidence/technical-a-768-tail8.json": "a85b2dc619dbf8c205d825e6812713573e9500e0bf42018ca7b2f8a05a6238b5",
+      "task/handoff/handoff-2026-09-27-execution-guard/evidence/technical-b-768-tail8.json": "f57fb173920afb9fdf811ad4e29364c07a3646144e9a0a754a394b209aebeb16",
+      "task/handoff/handoff-2026-09-27-execution-guard/technical-a-768-tail8-plan.json": "b4038227b6ba5e608361bd8f41af9b2e28959dc14d74defa3a3c25edb4f42a80",
+      "task/handoff/handoff-2026-09-27-execution-guard/technical-b-768-tail8-plan.json": "870f246c8d0ba959210bcda6bb40bb264d092f68e4d9dd0678b356165f5a8858",
+      "task/handoff/handoff-2026-09-27-execution-guard/evidence/technical-a-768-tail16.json": "f77222bc2f5d240d93c85c8dffa5f25509ce0c178de4b6f1a9ab1d625bc7f06d",
+      "task/handoff/handoff-2026-09-27-execution-guard/evidence/technical-b-768-tail16.json": "acee8a4f6983db804bf2fee5d29ee5ddd0eaff5ad9a94c1b83b992dfc39e4135",
+      "task/handoff/handoff-2026-09-27-execution-guard/technical-a-768-tail16-plan.json": "711e2d6ef39a096fd2d34b6c1ae0899eac2191dd56b163ed8b9c8056697ff31e",
+      "task/handoff/handoff-2026-09-27-execution-guard/technical-b-768-tail16-plan.json": "9469f6c51a64a4083a5052c73b4d1a3c6f4e48af9bd203253c89f38b37ff76b2"
+    },
+    "scope": "technical A fitting, independent technical B empirical residual envelope; not a confidence guarantee"
+  },
+  "runtime_state_correction": {
+    "version": 1,
+    "observation_point": "preload",
+    "lengths": [
+      128,
+      768
+    ],
+    "profiles": [
+      "128-mixed-overlap",
+      "768-tail4-overlap"
+    ],
+    "max_age_us": 1000000.0,
+    "bounds": [
+      [
+        -1.1997,
+        0.6359999999999999
+      ],
+      [
+        0.12282608695652183,
+        0.5945652173913044
+      ],
+      [
+        0.6644444444444445,
+        0.8644444444444445
+      ]
+    ],
+    "models": {
+      "native": {
+        "kind": "bias",
+        "coefficients": [
+          -0.015921595907457342,
+          0.00338720851688961,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "relative_error": 0.08819167453065879
+      },
+      "custom": {
+        "kind": "state",
+        "coefficients": [
+          0.042919766326410355,
+          -0.03209603988715228,
+          0.023697329837564663,
+          -0.018561084395376588,
+          -4.669926113555465e-17
+        ],
+        "relative_error": 0.04365588690997679
+      }
+    },
+    "sources": {
+      "task/handoff/handoff-2026-09-27-runtime-state/evidence/a-0-128-npu.json": "f410461f26b1d3c313ad35c334f38a0fff0c4d587d8d2aede418c069c2cc4fd5",
+      "task/handoff/handoff-2026-09-27-runtime-state/evidence/a-0-128-custom.json": "12686140693c1e2d9e90f4cf6bbf83d65f2a2552b9cc5a3c1c42ace561fec19a",
+      "task/handoff/handoff-2026-09-27-runtime-state/evidence/a-0-768-custom.json": "e2ee0f7bbec65326910c6cceaa6494ad148286fe373ca22bd6f1dc53e081e752",
+      "task/handoff/handoff-2026-09-27-runtime-state/evidence/a-0-768-npu.json": "0aa0ff83c70826a4d5476053816170bc63def8db82338c6ffa6e72f3b7e76b46",
+      "task/handoff/handoff-2026-09-27-runtime-state/evidence/a-1-128-npu.json": "2e9728dc3d4aafd76637bb8b636fc46b047bdff7a25f3f082b124a31633a1092",
+      "task/handoff/handoff-2026-09-27-runtime-state/evidence/a-1-128-custom.json": "ecbd013eceda261f72abbe2bafd0c24496b8b61f50a6eb04e0abc5981faa848b",
+      "task/handoff/handoff-2026-09-27-runtime-state/evidence/a-1-768-custom.json": "8d91619d05a76f7834c2e4b6fe2a85653451bd2d1f1da7ca586642e50ca1855c",
+      "task/handoff/handoff-2026-09-27-runtime-state/evidence/a-1-768-npu.json": "c6d9b8d2879300fb2f6516c3c6d9de6d77c90d845aaf7d8f1e0417846127d2aa",
+      "task/handoff/handoff-2026-09-27-runtime-state/evidence/a-2-128-npu.json": "4aa984fbaa80e8c88db1480b4046a0324c4fbf5eb121ee5716dc788fd10fab4a",
+      "task/handoff/handoff-2026-09-27-runtime-state/evidence/a-2-128-custom.json": "4093e95b0ee8cd130b2fd81e1ba133d86ac3cbe49089c2864c8fad148486ca91",
+      "task/handoff/handoff-2026-09-27-runtime-state/evidence/a-2-768-custom.json": "6efb8ea1a3399a9f2a5fb006e9b284a4ee4cfb24cfb4a873eb5d7259a393b365",
+      "task/handoff/handoff-2026-09-27-runtime-state/evidence/a-2-768-npu.json": "4869526dbf9564f663ccd483574e11c0cf3c151539361b2dbefa90a37af66d9e",
+      "task/handoff/handoff-2026-09-27-runtime-state/evidence/a-3-128-npu.json": "e28c774722486dbebd90f26b2d4ccbfce6b390a5ca112d93fad897887e218b26",
+      "task/handoff/handoff-2026-09-27-runtime-state/evidence/a-3-128-custom.json": "5952ea1c16f5f3da77463236f4f9f5345150de26d67739e0da5412205c8d8811",
+      "task/handoff/handoff-2026-09-27-runtime-state/evidence/a-3-768-custom.json": "35962cfb688de10559ecc091227dfbe30583cdc599b8ae936db788ccb2def671",
+      "task/handoff/handoff-2026-09-27-runtime-state/evidence/a-3-768-npu.json": "32a37797371213ca0d5bc3a31da6c312e32f88e681106f0c90e52aec71ff145b",
+      "task/handoff/handoff-2026-09-27-runtime-state/evidence/b-0-128-npu.json": "a87f06933db77f6429d0590ebe1856cf5e5dd8857faf15d727f6a07df1900c94",
+      "task/handoff/handoff-2026-09-27-runtime-state/evidence/b-0-128-custom.json": "b659f08e988f40453a3ec6c2c3f8b30f862f94bab0cb8a085e0848754ac67c41",
+      "task/handoff/handoff-2026-09-27-runtime-state/evidence/b-0-768-custom.json": "d65ae8cd5772f22f819b6d2e1755d65870b940ad2bd778a2484dec49975ce391",
+      "task/handoff/handoff-2026-09-27-runtime-state/evidence/b-0-768-npu.json": "e78c3acb162a1890b1c173ecdab2fb67d6ddb2643b05509b3af20034640810a9",
+      "task/handoff/handoff-2026-09-27-runtime-state/evidence/b-1-128-npu.json": "5ff2e450d6f90cd1b6c442e3b99f35d30b038cc8d27703f85c05d6a2ef2ec7c4",
+      "task/handoff/handoff-2026-09-27-runtime-state/evidence/b-1-128-custom.json": "c2757677d1bd9f59b4b5b69e9926083d2ba18894e0a6e8662ea63dfe74a1e73e",
+      "task/handoff/handoff-2026-09-27-runtime-state/evidence/b-1-768-custom.json": "b715fe5791fcf6985b42a18a8f013c526e24273fe63ca57a0d22e36698bff0b6",
+      "task/handoff/handoff-2026-09-27-runtime-state/evidence/b-1-768-npu.json": "6177f4dc65a3c9c2fb5aff41f2d6f71b5a95293d878f3a2ef6932fc67eb1826b",
+      "task/handoff/handoff-2026-09-27-runtime-state/evidence/b-2-128-npu.json": "d7d57de0175f9d456299f6cc550bb136cda5b23b3c092ad982e478c61ea39ebe",
+      "task/handoff/handoff-2026-09-27-runtime-state/evidence/b-2-128-custom.json": "a4b3eb0ff9ae87267bc013131146f1595266e4b9fa1b3ffa72285fe9e757a9e9",
+      "task/handoff/handoff-2026-09-27-runtime-state/evidence/b-2-768-custom.json": "b302b58b2c6f23c68eef3bfeba65c40650d157a28e38af8217e7c0d8a6750c45",
+      "task/handoff/handoff-2026-09-27-runtime-state/evidence/b-2-768-npu.json": "c5dd904d46a842cb2d047cac2f9402c0e2d877a3a36a2eb5bbf5217a288ad799"
+    },
+    "protocol_sha256": "0dcd46acdd31908249df3ee21f3112ac24dae48f32bf629c0fe029a3aa767c56"
+  }
+}
