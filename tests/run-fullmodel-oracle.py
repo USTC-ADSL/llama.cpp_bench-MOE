@@ -24,6 +24,8 @@ def main():
     p.add_argument("--mode", required=True, choices=["capture", "search", "profile", "predict", "auto", "cpu", "gpu", "npu", "custom", "branch", "custom-npu"])
     p.add_argument("--cost-model", type=pathlib.Path)
     p.add_argument("--feedback-model", type=pathlib.Path, help="Causal shadow cost updates; does not move weights or change ownership")
+    p.add_argument("--runtime-state", action="store_true", help="Read-only pre-load and per-request state/CPU-time telemetry; reports observation overhead")
+    p.add_argument("--runtime-state-model", type=pathlib.Path, help="Auto: sample live state and choose before loading; plan-file supplies offline routes")
     p.add_argument("--profile-layers", help="Comma-separated layer indices for optimized compact candidate profiling")
     p.add_argument("--tokens", type=int, default=128)
     p.add_argument("--tag", required=True)
@@ -54,8 +56,8 @@ def main():
         opener = gzip.open if args.plan_file.suffix == ".gz" else open
         with opener(args.plan_file, "rt") as source:
             auto_plan = json.load(source)
-            resolved_mode = auto_plan["execution_mode"]
-        assert resolved_mode in ("custom", "npu")
+            resolved_mode = "runtime" if args.runtime_state_model else auto_plan["execution_mode"]
+        assert resolved_mode in ("custom", "npu", "runtime")
         assert not any((args.shared_activations, args.direct_callback_io, args.activation_arena,
                         args.fused_host_reduce, args.alternate_callback_io, args.alternate_host_reduce,
                         args.activation_lifetimes, args.overlap_gather, args.alternate_overlap_gather,
@@ -106,6 +108,16 @@ def main():
     if args.plan_file:
         record["plan_source"] = str(args.plan_file.resolve())
     env = ["env", f"LD_LIBRARY_PATH={REMOTE}", f"ADSP_LIBRARY_PATH={REMOTE}", "GGML_HEXAGON_DEVICES=1", "GGML_HEXAGON_NHMX=1", "GGML_HEXAGON_MM_SELECT=3", "GGML_HEXAGON_PROFILE=0"]
+    if args.runtime_state:
+        assert args.mode not in ("search","profile")
+        env.append("MOE_RUNTIME_STATE=1")
+    if args.runtime_state_model:
+        assert args.mode == "auto" and not args.cost_model and not args.feedback_model and not args.quality_steps
+        adb("push", str(args.runtime_state_model), f"{REMOTE}/runtime-state-model.json")
+        digest = hashlib.sha256(args.runtime_state_model.read_bytes()).hexdigest()
+        assert adb("shell", f"sha256sum {REMOTE}/runtime-state-model.json").stdout.split()[0] == digest
+        record["runtime_state_model_sha256"] = digest
+        env.append(f"MOE_RUNTIME_STATE_MODEL={REMOTE}/runtime-state-model.json")
     assert 0 <= args.quality_steps <= 64
     if args.quality_steps:
         assert resolved_mode in ("cpu", "gpu", "npu", "custom", "custom-npu", "branch")
@@ -179,6 +191,7 @@ def main():
     argv = [f"{REMOTE}/fullmodel-oracle", MODEL, f"{REMOTE}/prompt.txt", str(args.tokens), f"{REMOTE}/{args.tag}.json", args.mode, str(args.reps), reference]
     command = f"cd {shlex.quote(REMOTE)} && exec " + shlex.join(env + argv)
     record["command"] = command
+    record["host_start_unix_ns"] = time.time_ns()
     manifest = output / f"{args.tag}.run.json"
     manifest.write_text(json.dumps(record, indent=2))
     with (output / f"{args.tag}.log").open("w") as log:
@@ -190,10 +203,13 @@ def main():
             except subprocess.TimeoutExpired:
                 print(f"{args.tag}: {time.monotonic()-start:.0f}s", flush=True)
     record["exit"] = proc.returncode
+    record["host_end_unix_ns"] = time.time_ns()
     record["after_thermal"] = adb("shell", "dumpsys thermalservice").stdout
     manifest.write_text(json.dumps(record, indent=2))
     assert proc.returncode == 0, f"failed; inspect {args.tag}.log"
     filenames = [f"{args.tag}.json"]
+    if args.runtime_state_model:
+        filenames.append(f"{args.tag}.json.plan.json")
     if args.mode == "capture":
         filenames += [f"{args.tag}.json.layer{i}.bin" for i in range(24)]
     if args.mode not in ("search", "profile", "predict"):
@@ -204,6 +220,9 @@ def main():
         adb("pull", f"{REMOTE}/{name}", str(output / name))
         assert adb("shell", f"sha256sum {REMOTE}/{name}").stdout.split()[0] == hashlib.sha256((output / name).read_bytes()).hexdigest()
     report = json.loads((output / f"{args.tag}.json").read_text())
+    if args.runtime_state_model:
+        record["resolved_mode"] = report["mode"]
+        manifest.write_text(json.dumps(record, indent=2))
     print(report.get("timing", {"layers": len(report.get("layers", []))}), flush=True)
 
 if __name__ == "__main__":

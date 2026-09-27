@@ -16,6 +16,7 @@ static void require(bool yes,const char * message) { if(!yes) { throw std::runti
 #define MOE_EXECUTION_MODEL_HEADER "moe-execution-model.h"
 #endif
 #include MOE_EXECUTION_MODEL_HEADER
+#include "moe-state-correction.h"
 int main(int argc,char ** argv) {
     try {
         require(argc==3 || argc==4,"usage: execution-model-test MODEL ROUTES [REPETITIONS]");
@@ -28,6 +29,9 @@ int main(int argc,char ** argv) {
             auto start=std::chrono::steady_clock::now();
             fullmodel_execution_model execution(model,routes.at("tokens"));
             plan=execution.plan(routes,routes.at("layers"));
+            if(model.contains("runtime_state_correction")) {
+                apply_moe_state_correction(plan,model.at("runtime_state_correction"),routes.value("decision_state",json()),routes.value("decision_now_us",0.));
+            }
             execution.finalize(plan,0);
             samples.push_back(std::chrono::duration<double,std::micro>(std::chrono::steady_clock::now()-start).count());
         }

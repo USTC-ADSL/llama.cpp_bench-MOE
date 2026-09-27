@@ -5,6 +5,8 @@
 #include "moe-context-model.h"
 #include "moe-execution-model.h"
 #include "moe-token-workers.h"
+#include "moe-runtime-state.h"
+#include "moe-state-correction.h"
 
 #include <iomanip>
 #include <sys/resource.h>
@@ -355,7 +357,7 @@ static int search_all(const char * model_path,const std::string & capture_path,c
     return 0;
 }
 
-static int predict_all(const std::string & capture_path,const char * output) {
+static int predict_all(const std::string & capture_path,const char * output,const json & preload_state=json(),double acquisition_us=0) {
     require(std::getenv("MOE_PLACEMENT_MODEL"),"prediction requires MOE_PLACEMENT_MODEL");
     std::ifstream model_file(std::getenv("MOE_PLACEMENT_MODEL")); json coefficients; model_file>>coefficients;
     bool contextual=coefficients.contains("base");
@@ -376,10 +378,15 @@ static int predict_all(const std::string & capture_path,const char * output) {
             layers.push_back({{"layer",il},{"tokens",nt},{"counts",counts},{"ids",ids}});
         }
         auto start=timer::now(); fullmodel_execution_model execution(coefficients,capture.at("tokens"));
-        auto report=execution.plan(capture,layers); double observed=elapsed(start);
+        auto report=execution.plan(capture,layers);
+        if(coefficients.contains("runtime_state_correction")) {
+            apply_moe_state_correction(report,coefficients.at("runtime_state_correction"),preload_state,moe_runtime_state::now_us());
+            report["preload_state"]=preload_state; report["state_acquisition_us"]=acquisition_us;
+        }
+        double observed=elapsed(start)+acquisition_us;
         execution.finalize(report,observed);
-        report["decision_device_total_us"]=elapsed(start);
-        report["decision_timing_scope"]="validation, candidate evaluation and plan construction; excludes route/model file IO and output serialization";
+        report["decision_device_total_us"]=elapsed(start)+acquisition_us;
+        report["decision_timing_scope"]="state setup/acquisition when enabled, validation, candidate evaluation and plan construction; excludes route/model file IO and output serialization";
         std::ofstream out(output); out<<report.dump(2)<<'\n'; require(out.good(),"execution plan write failed"); return 0;
     }
     std::unique_ptr<fullmodel_context_model> context;
@@ -428,11 +435,22 @@ int main(int argc,char ** argv) {
         ggml_backend_load_all(); llama_backend_init();
         std::string mode=argv[5]; int nt=std::stoi(argv[3]),reps=std::stoi(argv[6]);
         require(nt>0 && reps>0,"tokens and repetitions must be positive");
+        bool state_auto=std::getenv("MOE_RUNTIME_STATE_MODEL")!=nullptr;
+        require(!state_auto || mode=="auto","runtime state model requires auto");
+        moe_runtime_state runtime_state(state_auto || (std::getenv("MOE_RUNTIME_STATE") && std::string(std::getenv("MOE_RUNTIME_STATE"))=="1"));
+        auto preload_state=runtime_state.sample();
+        double acquisition_us=runtime_state.enabled?runtime_state.setup_us+preload_state.at("observation_us").get<double>():0;
         if(mode=="search" || mode=="profile") { return search_all(argv[1],argv[7],argv[4],mode=="profile",reps); }
-        if(mode=="predict") { return predict_all(argv[7],argv[4]); }
+        if(mode=="predict") { return predict_all(argv[7],argv[4],preload_state,acquisition_us); }
         bool automatic=mode=="auto"; json plans;
         if(automatic) {
-            std::ifstream in(argv[7]); in>>plans;
+            std::string plan_path=argv[7];
+            if(state_auto) {
+                setenv("MOE_PLACEMENT_MODEL",std::getenv("MOE_RUNTIME_STATE_MODEL"),1);
+                plan_path=std::string(argv[4])+".plan.json";
+                predict_all(argv[7],plan_path.c_str(),preload_state,acquisition_us);
+            }
+            std::ifstream in(plan_path); in>>plans;
             mode=plans.at("execution_mode").get<std::string>();
             require(mode=="npu" || mode=="custom","invalid pre-load execution mode");
             require(plans.at("tokens").get<int>()==nt && plans.at("layers").size()==24,"automatic plan shape mismatch");
@@ -558,6 +576,10 @@ int main(int argc,char ** argv) {
         report["requested_mode"]=argv[5];
         report["shadow_feedback"]=bool(feedback);
         if(automatic) { report["path_decision"]=plans.at("path_decision"); }
+        if(state_auto) {
+            report["runtime_decision"]={{"state_correction",plans.at("state_correction")},{"decision_device_total_us",plans.at("decision_device_total_us")},
+                {"selected_profile",plans.value("selected_profile",std::string())},{"custom_candidates",plans.at("custom_candidates")}};
+        }
         if(automatic && plans.contains("execution_policy")) { report["planned_execution_policy"]=plans.at("execution_policy"); }
         if(feedback) { report["feedback_history"]=json::array(); }
         if(custom) { report["placement_source_tokens"]=plans["tokens"]; }
@@ -572,6 +594,11 @@ int main(int argc,char ** argv) {
             }
         }
         std::vector<double> times; std::vector<float> logits,paired_reference;
+        if(runtime_state.enabled) {
+            report["runtime_state"]={{"schema_version",1},{"setup_us",runtime_state.setup_us},{"preload",preload_state},
+                {"scope","preload before weight preparation; per-invocation before/after decode; post-state and CPU deltas are diagnostics, not current-decision inputs"},
+                {"warmups",json::array()}};
+        }
         int runs=mode=="capture"?1:reps+2;
         size_t warmed_allocations=0;
         std::array<std::array<double,4>,24> residual;
@@ -616,11 +643,24 @@ int main(int argc,char ** argv) {
             }
             llama_memory_clear(llama_get_memory(ctx.get()),true);
             auto batch=llama_batch_get_one(tokens.data(),nt);
+            auto state_before=runtime_state.sample();
             rusage before{},after{}; getrusage(RUSAGE_SELF,&before);
             auto start=timer::now(); int code=llama_decode(ctx.get(),batch); llama_synchronize(ctx.get());
             auto * output=llama_get_logits_ith(ctx.get(),-1); require(code==0 && output,"native decode failed");
             logits.assign(output,output+nv); double us=elapsed(start);
             getrusage(RUSAGE_SELF,&after);
+            auto state_after=runtime_state.sample();
+            json state_row;
+            if(runtime_state.enabled) {
+                auto cpu_us=[](const timeval & v) { return double(v.tv_sec)*1000000+v.tv_usec; };
+                double overhead=state_before.at("observation_us").get<double>()+state_after.at("observation_us").get<double>();
+                state_row={{"before",state_before},{"after",state_after},{"observation_us",overhead},
+                    {"cpu_user_us",cpu_us(after.ru_utime)-cpu_us(before.ru_utime)},
+                    {"cpu_system_us",cpu_us(after.ru_stime)-cpu_us(before.ru_stime)},
+                    {"voluntary_switches",after.ru_nvcsw-before.ru_nvcsw},{"involuntary_switches",after.ru_nivcsw-before.ru_nivcsw},
+                    {"total_with_observation_us",us+overhead}};
+                if(r<2) { report["runtime_state"]["warmups"].push_back({{"invocation",r},{"total_us",us},{"state",state_row}}); }
+            }
             if(feedback) {
                 // Predict BEFORE this invocation; update only AFTER observing it.
                 // Ownership/banks never change. This is a causal shadow estimator.
@@ -666,6 +706,7 @@ int main(int argc,char ** argv) {
                 row["fused_host_reduce"]=active_reduce;
                 row["host_reduce_threads"]=active_parallel?reduce_threads:1;
                 row["overlap_gather"]=active_overlap;
+                if(runtime_state.enabled) { row["runtime_state"]=state_row; }
                 if(feedback) { row["feedback_compute_us"]=feedback_cost; row["total_with_feedback_us"]=us+feedback_cost; }
                 if(custom) { row["layers"]=json::array(); for(auto & l:engine.layers) { row["layers"].push_back(l->last); } }
                 report["samples"].push_back(row);

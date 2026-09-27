@@ -1,0 +1,42 @@
+{
+  "parent_sha256": "4195eca9b075766cb6641195bc405e142514ddf4e47e520796e6ff97eedb432f",
+  "binary_sha256": "db8c10a0ca0d56a4ffa39bfdac506b70328aee45698703c71afcd59a6485b80f",
+  "design_sha256": "88a2de6e8fe80075a7d4e0ee75a46a1e1a3cd964e65e349ee6eb55bedb54af00",
+  "prompts": {
+    "a": "e1b7817ae17322ca8b45dc5b3bb036a3973a5c70dcdddc72d43be88432f93e30",
+    "b": "f3df0874f451d051c4598545791fd505126a6dd0ffec33c702178b88b1cdd7e2",
+    "c": "cf4dc18de613e534a0ba4d8dc4f579a4978b276ce1c32f213fc166575ccf25e0"
+  },
+  "profiles": [
+    "128-mixed-overlap",
+    "768-tail4-overlap"
+  ],
+  "cycles": {
+    "a": 4,
+    "b": 3
+  },
+  "reps": 8,
+  "ridge": 0.1,
+  "state_mape_ratio_max": 0.9,
+  "state_max_error_ratio_max": 1.25,
+  "base_order": [
+    [
+      128,
+      "npu"
+    ],
+    [
+      128,
+      "custom"
+    ],
+    [
+      768,
+      "custom"
+    ],
+    [
+      768,
+      "npu"
+    ]
+  ],
+  "odd_cycle_idle_seconds": 45,
+  "scope": "fit process medians from preload state only; A fit B select/envelope C frozen confirmation; no same-request hindsight"
+}
