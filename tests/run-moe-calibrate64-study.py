@@ -22,12 +22,12 @@ s.PROMPTS = {k: v for k, v in s.PROMPTS.items() if k.startswith("technical")}
 s.PROMPTS.update({n: s.TASK / "prompts" / (n + ".txt") for n in ("reservoir", "textile")})
 s.REUSE = {}
 TEMPLATES = [{"id": f"64-{f}-tail{t}", "tokens": 64, "family": f, "tails": [t]*23}
-             for f, t in (("cpu",24), ("cpu",32), ("gpu",24), ("branch",0))]
+             for f, t in (("cpu",24), ("cpu",32), ("branch",0))]
 
 
 def prepare():
     inputs = [s.BUILD / "bin" / n for n in ("fullmodel-oracle", "libllama.so", "libggml.so", "libggml-base.so", "libggml-cpu.so", "libggml-opencl.so", "libggml-hexagon.so")]
-    inputs += [s.BUILD / "ggml/src/ggml-hexagon/libggml-htp-v79.so", PARENT, *s.PROMPTS.values(), s.TASK / "design.md", s.TASK / "model-identity.json"]
+    inputs += [s.BUILD / "ggml/src/ggml-hexagon/libggml-htp-v79.so", PARENT, *s.PROMPTS.values(), s.TASK / "design.md", s.TASK / "model-identity.json", s.TASK / "protocol-initial.json", s.TASK / "amendment.md", s.EV / "technical-a-64-gpu-tail24.run.json"]
     inputs += [ROOT / "tests" / n for n in ("run-moe-calibrate64-study.py", "run-moe-final-placement-study.py", "run-fullmodel-oracle.py", "moe-execution-model.py", "moe-context-model.py", "moe-placement-model.py", "moe-execution-model.h", "fullmodel-oracle.cpp")]
     p = {"version": 1, "device": "fd8657d6", "inputs": {str(p.relative_to(ROOT)): s.sha(p) for p in inputs},
          "templates": TEMPLATES, "calibration_lengths": [64], "confirmation_lengths": [64],
@@ -86,6 +86,11 @@ def fit():
     node = {"tokens":64,"native_us":anchor,"native_base_compute_us":ab,"native_uncertainty_us":e.context.noise(natives["technical-a"]),"families":{}}
     docs = {(n,t["id"]):source(s.EV / f'{n}-{t["id"]}.json') for n in captures for t in TEMPLATES}
     for f in e.FAMILIES:
+        if f == "gpu":
+            # Schema compatibility only: no 64 GPU guard/profile is enabled.
+            # Never report these copied coefficients as measured at 64.
+            node["families"][f] = copy.deepcopy(model["nodes"][0]["families"][f])
+            continue
         node["families"][f] = {}
         for policy in e.POLICIES:
             scales, bandwidths = [[] for _ in range(3)], [[] for _ in range(3)]
@@ -113,6 +118,7 @@ def fit():
                     hosts.append(residual/(23*64)); outside.append(v["total_us"]-ffn)
             node["families"][f][policy] = {"compute_scales":[st.median(v) if v else 1. for v in scales],"gather_us_per_mib":[st.median(v) if v else 0. for v in bandwidths],"host_us_per_token":st.median(hosts),"outside_us":st.median(outside),"uncertainty_us":e.context.noise([{"samples":all_samples}])}
     model["nodes"].insert(0,node)
+    model["supplement64_scope"] = "CPU and branch families measured at64; GPU family copied from128 for schema only, disabled by absence of64 GPU guard; no validated64..128 interval"
     predicted = {n:max(1.,anchor+native_base(c)-ab) for n,c in captures.items()}
     residuals = {n:[v["total_us"]-predicted[n] for d in ds for v in d["samples"]] for n,ds in natives.items()}
     allowance = max(1000.,max(abs(x) for vs in residuals.values() for x in vs))
