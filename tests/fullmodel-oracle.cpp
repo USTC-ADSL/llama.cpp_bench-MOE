@@ -13,6 +13,8 @@
 #include <sys/resource.h>
 #include <set>
 #include <unistd.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
 #if defined(__aarch64__)
 #include <arm_neon.h>
 #endif
@@ -204,27 +206,38 @@ struct partitioned_ffn {
     }
 };
 
+#include "moe-decode-branch.h"
+
 struct full_engine {
     std::unique_ptr<moe_token_workers> reduce_workers;
     std::shared_ptr<shared_activation_buffer> arenas[3];
     std::vector<std::unique_ptr<partitioned_ffn>> layers;
+    std::unique_ptr<moe_branch_worker> shared_worker;
+    std::vector<std::unique_ptr<moe_decode_branch>> decode_branches;
     bool record=false;
+    ~full_engine() {
+        // Also drain on exceptions between launch and finish: worker closures
+        // reference decode_branches, whose state must remain alive until join.
+        shared_worker.reset();
+        decode_branches.clear();
+    }
     void prepare_arenas(device * devs[3]) {
         std::array<size_t,3> capacities{};
         for(auto & l:layers) { for(int b=0;b<3;++b) {
             require(l->shared_activations,"arena requires shared layer");
-            if(!l->banks[b]->buf && l->plan.shared!=b) { continue; }
+            bool has_routed=bool(l->banks[b]->buf) || l->banks[b]->mapped_weights;
+            if(!has_routed && l->plan.shared!=b) { continue; }
             // k=1 with all 4*nt routed pairs bounds both split and native k=4 graphs.
             oracle_job layout(*l->banks[b],l->plan.shared==b?l->shared.get():nullptr,
-                              l->banks[b]->buf?4*l->nt:0,1,l->nt,false,b==0,true,{},true);
+                              has_routed?4*l->nt:0,1,l->nt,false,b==0,true,{},true);
             capacities[b]=std::max(capacities[b],shared_activation_buffer::required_size(*devs[b],layout.ctx.get(),l->reuse_lifetimes?layout.graph:nullptr));
             if(l->reuse_lifetimes) {
                 // Reuse the maximum-shape offsets, not a separately packed small
                 // graph: best-fit capacity need not be monotonic in routed rows.
-                l->reservations[b][l->banks[b]->buf?0:2]=std::make_unique<shared_activation_layout::reservation>(
+                l->reservations[b][has_routed?0:2]=std::make_unique<shared_activation_layout::reservation>(
                     shared_activation_layout(*devs[b],layout.ctx.get(),layout.graph).freeze());
             }
-            if(l->reuse_lifetimes && l->banks[b]->buf && l->banks[b]->w[0]->ne[2]>=4) {
+            if(l->reuse_lifetimes && has_routed && l->banks[b]->w[0]->ne[2]>=4) {
                 // Native k=4 has a different dependency graph (shared aliases x).
                 // Reserve it separately rather than assume split liveness bounds it.
                 oracle_job native(*l->banks[b],l->plan.shared==b?l->shared.get():nullptr,
@@ -233,7 +246,7 @@ struct full_engine {
                 l->reservations[b][1]=std::make_unique<shared_activation_layout::reservation>(
                     shared_activation_layout(*devs[b],native.ctx.get(),native.graph).freeze());
             }
-            if(l->reuse_lifetimes && l->banks[b]->buf && l->plan.shared==b) {
+            if(l->reuse_lifetimes && has_routed && l->plan.shared==b) {
                 oracle_job only_shared(*l->banks[b],l->shared.get(),0,1,l->nt,false,b==0,true,{},true);
                 auto reserved=shared_activation_layout(*devs[b],only_shared.ctx.get(),only_shared.graph).freeze();
                 capacities[b]=std::max(capacities[b],reserved.bytes);
@@ -269,6 +282,7 @@ struct full_engine {
     static ggml_tensor * build(ggml_context * ctx,ggml_tensor * input,ggml_tensor * probs,ggml_tensor * ids,int32_t il,void * opaque) {
         auto & engine=*static_cast<full_engine *>(opaque);
         require(il>=0 && size_t(il)<engine.layers.size(),"invalid custom layer");
+        if(!engine.decode_branches.empty() && input->ne[1]==1) { return engine.decode_branches[il]->build(ctx,input,probs,ids); }
         return ggml_map_custom3(ctx,input,probs,ids,compute,1,engine.layers[il].get());
     }
 };
@@ -471,6 +485,8 @@ int main(int argc,char ** argv) {
             setenv("MOE_REDUCE_THREADS","1",1);
         }
         int quality_steps=std::getenv("MOE_QUALITY_STEPS")?std::stoi(std::getenv("MOE_QUALITY_STEPS")):0;
+        int decode_reps=std::getenv("MOE_DECODE_REPS")?std::stoi(std::getenv("MOE_DECODE_REPS")):0;
+        require(decode_reps>=0 && decode_reps<=32 && (!decode_reps || quality_steps>0),"invalid decode repetitions");
         require(quality_steps>=0 && quality_steps<=64 && (!quality_steps || mode!="capture"),"invalid quality steps");
         std::vector<llama_token> forced_tokens;
         if(std::getenv("MOE_QUALITY_TOKENS")) {
@@ -505,6 +521,13 @@ int main(int argc,char ** argv) {
         require(!alternate_callback_io || (custom && shared_activations && !direct_callback_io && reps%4==0),
                 "alternating callback requires shared custom mode, no direct override, and repetitions divisible by four");
         bool accelerator=mode=="npu" || mode=="gpu" || custom;
+        std::string dense_backend=std::getenv("MOE_DENSE_BACKEND")?std::getenv("MOE_DENSE_BACKEND"):(mode=="gpu"?"gpu":accelerator?"npu":"cpu");
+        require(!std::getenv("MOE_DENSE_BACKEND") || (custom && !automatic && dense_backend=="cpu"),"dense override only supports explicit custom CPU");
+        accelerator=dense_backend!="cpu";
+        bool mapped_experts=std::getenv("MOE_CPU_MAPPED_EXPERTS") && std::string(std::getenv("MOE_CPU_MAPPED_EXPERTS"))=="1";
+        require(!mapped_experts || (custom && !automatic && dense_backend=="cpu"),"mapped experts require custom CPU dense");
+        bool native_decode_graph=std::getenv("MOE_NATIVE_DECODE_GRAPH") && std::string(std::getenv("MOE_NATIVE_DECODE_GRAPH"))=="1";
+        require(!native_decode_graph || (mapped_experts && shared_activations && activation_lifetimes),"native decode graph requires mapped CPU/shared lifetime buffers");
         require(custom || mode=="capture" || mode=="cpu" || mode=="npu" || mode=="gpu","invalid mode");
         if(custom && !automatic) { std::ifstream in(argv[7]); in>>plans; require((transfer_placement || plans["tokens"].get<int>()==nt) && plans["layers"].size()==24,"plan shape mismatch"); }
         std::unique_ptr<fullmodel_context_model> feedback;
@@ -520,7 +543,19 @@ int main(int argc,char ** argv) {
         llama_model_tensor_buft_override overrides[]={
             {"blk\\.[0-9]+\\.ffn_(gate|up|down)_exps\\.weight",ggml_backend_dev_buffer_type(ggml_backend_dev_by_name("CPU"))},
             {"blk\\.[0-9]+\\.ffn_(gate|up|down|gate_inp)_shexp\\.weight",ggml_backend_dev_buffer_type(ggml_backend_dev_by_name("CPU"))},
+            {nullptr,nullptr},
             {nullptr,nullptr}};
+        if(custom && dense_backend=="cpu") {
+            // A plain CPU override otherwise re-selects CPU_REPACK globally,
+            // duplicating all unused native Expert tensors. Optimize dense only.
+            auto * cpu=ggml_backend_dev_by_name("CPU");
+            auto extra=reinterpret_cast<ggml_backend_dev_get_extra_bufts_t>(ggml_backend_reg_get_proc_address(ggml_backend_dev_backend_reg(cpu),"ggml_backend_dev_get_extra_bufts"));
+            require(extra!=nullptr,"CPU extra buffers unavailable"); auto types=extra(cpu);
+            for(size_t i=0;types && types[i];++i) { if(std::string(ggml_backend_buft_name(types[i]))=="CPU_REPACK") {
+                overrides[2]={"(blk\\.[0-9]+\\.attn_[qkv]\\.weight|blk\\.[0-9]+\\.attn_output\\.weight|^output\\.weight$)",types[i]}; break;
+            } }
+            require(overrides[2].pattern!=nullptr,"CPU_REPACK unavailable");
+        }
         if(custom) { mp.tensor_buft_overrides=overrides; mp.use_extra_bufts=false; mp.load_mode=LLAMA_LOAD_MODE_MMAP; }
         std::unique_ptr<llama_model,decltype(&llama_model_free)> model(llama_model_load_from_file(argv[1],mp),llama_model_free);
         require(model!=nullptr,"native model load failed");
@@ -530,16 +565,28 @@ int main(int argc,char ** argv) {
         require(count>=nt,"prompt too short"); tokens.resize(nt);
         if(automatic || (custom && !transfer_placement)) { require(tokens==plans["token_ids"].get<std::vector<int32_t>>(),"fixed prompt token mismatch"); }
         std::unique_ptr<device> devices[3];
+        struct mapping {
+            void * data=MAP_FAILED; size_t size=0;
+            ~mapping() { if(data!=MAP_FAILED) { munmap(data,size); } }
+        } weight_mapping;
         full_engine engine;
         if(reduce_threads>1) { engine.reduce_workers=std::make_unique<moe_token_workers>(reduce_threads); }
         if(custom) {
             ggml_context * raw=nullptr; gguf_context_ptr gguf(gguf_init_from_file(argv[1],{true,&raw})); ggml_context_ptr meta(raw);
             std::unique_ptr<FILE,decltype(&fclose)> f(fopen(argv[1],"rb"),fclose); require(gguf && meta && f,"compact model open failed");
             source src{gguf.get(),meta.get(),f.get()};
+            if(mapped_experts) {
+                struct stat st{}; require(fstat(fileno(f.get()),&st)==0 && st.st_size>0,"mapped model stat failed");
+                weight_mapping.size=size_t(st.st_size);
+                weight_mapping.data=mmap(nullptr,weight_mapping.size,PROT_READ,MAP_SHARED,fileno(f.get()),0);
+                require(weight_mapping.data!=MAP_FAILED,"model mmap failed");
+                src.mapped=static_cast<const uint8_t *>(weight_mapping.data); src.mapped_size=weight_mapping.size; src.borrow_cpu_experts=true;
+            }
             const char * names[]={"CPU","HTP0","GPUOpenCL"}; device * devs[3];
             for(int b=0;b<3;++b) { devices[b]=std::make_unique<device>(names[b]); devs[b]=devices[b].get(); }
             for(int il=0;il<24;++il) {
                 placement p=mode=="custom-npu"?placement{"all_npu",std::vector<int>(60,1),1}:parse_plan(plans["layers"][il][mode=="branch"?"branch":"selected"]);
+                if(native_decode_graph) { require(std::all_of(p.owner.begin(),p.owner.end(),[](int owner) { return owner==0; }),"native decode graph requires all routed experts on CPU"); }
                 int layer_tokens=transfer_placement?(il==23?1:nt):plans["layers"][il]["tokens"].get<int>();
                 engine.layers.push_back(std::make_unique<partitioned_ffn>(devs,src,il,layer_tokens,p,true,shared_activations));
                 engine.layers.back()->direct_callback_io=direct_callback_io;
@@ -552,6 +599,10 @@ int main(int argc,char ** argv) {
                 fprintf(stderr,"RESIDENT layer=%d plan=%s\n",il,p.name.c_str());
             }
             if(activation_arena) { engine.prepare_arenas(devs); }
+            if(native_decode_graph) {
+                engine.shared_worker=std::make_unique<moe_branch_worker>();
+                for(auto & l:engine.layers) { engine.decode_branches.push_back(std::make_unique<moe_decode_branch>(*l,*engine.shared_worker)); }
+            }
             require(llama_model_set_moe_graph_callback(model.get(),full_engine::build,&engine),"model rejected FFN callback");
         }
         capture_all capture;
@@ -578,6 +629,10 @@ int main(int argc,char ** argv) {
         report["alternate_overlap_gather"]=alternate_overlap_gather;
         report["transfer_placement"]=transfer_placement;
         report["requested_mode"]=argv[5];
+        report["dense_backend"]=dense_backend;
+        report["cpu_mapped_experts"]=mapped_experts;
+        report["model_extra_bufts"]=mp.use_extra_bufts;
+        report["native_decode_graph"]=native_decode_graph;
         report["shadow_feedback"]=bool(feedback);
         report["process_identity"]={{"pid",getpid()},{"uid",getuid()},{"euid",geteuid()}};
         if(device_timing.read) { report["device_timing_scope"]="process-wide synchronized deltas; DSP batch includes preparation/cache flush; host queue read includes DSP wait; intervals overlap and are not additive; cycles/us is a DSP counter rate, not HMX clock readback"; }
@@ -594,7 +649,7 @@ int main(int argc,char ** argv) {
             for(auto & l:engine.layers) {
                 auto p=plan_json(l->plan); p["layer"]=l->il;
                 std::array<size_t,3> bytes{};
-                for(int b=0;b<3;++b) { if(l->banks[b]->buf) { for(auto * w:l->banks[b]->w) { bytes[b]+=ggml_nbytes(w); } } }
+                for(int b=0;b<3;++b) { if(l->banks[b]->buf || l->banks[b]->mapped_weights) { for(auto * w:l->banks[b]->w) { bytes[b]+=ggml_nbytes(w); } } }
                 for(auto * w:l->shared->w) { bytes[l->plan.shared]+=ggml_nbytes(w); }
                 p["resident_weight_bytes"]=bytes; report["placements"].push_back(p);
             }
@@ -766,6 +821,58 @@ int main(int argc,char ** argv) {
             }
             report["quality"]=quality;
         }
+        if(decode_reps) {
+            // Freeze the initial diagnostic sequence, including for the CPU
+            // teacher. Rebuild identical KV prefixes outside each timed sequence.
+            std::vector<llama_token> teacher;
+            for(int step=0;step<quality_steps;++step) { teacher.push_back(report["quality"]["steps"][step]["next_input_token"]); }
+            json decode={{"teacher_tokens",teacher},{"warmup_sequences",2},{"samples",json::array()},
+                {"scope","complete single-token llama_decode + synchronize; per-step logits copy/check, prefix rebuild and report serialization excluded; resident weights; real routing; no phase migration"}};
+            std::vector<std::vector<float>> reference(quality_steps+1);
+            std::vector<double> sequence_times,token_times;
+            std::ofstream decode_file(std::string(argv[4])+".decode.bin",std::ios::binary);
+            size_t warm_allocations=0;
+            for(int repetition=-2;repetition<decode_reps;++repetition) {
+                llama_memory_clear(llama_get_memory(ctx.get()),true);
+                auto prefix_batch=llama_batch_get_one(tokens.data(),nt);
+                auto prefix_start=timer::now();
+                require(llama_decode(ctx.get(),prefix_batch)==0,"decode benchmark prefix failed"); llama_synchronize(ctx.get());
+                double prefix_us=elapsed(prefix_start);
+                json sequence={{"round",repetition},{"prefix_rebuild_us",prefix_us},{"steps",json::array()}};
+                double total=0;
+                for(int position=0;position<=quality_steps;++position) {
+                    if(position>0) {
+                        llama_token input=teacher[position-1]; auto batch=llama_batch_get_one(&input,1);
+                        rusage before{},after{}; getrusage(RUSAGE_SELF,&before);
+                        auto begin=timer::now(); int code=llama_decode(ctx.get(),batch); llama_synchronize(ctx.get());
+                        double us=elapsed(begin); require(code==0,"decode benchmark failed");
+                        getrusage(RUSAGE_SELF,&after); total+=us;
+                        if(repetition>=0) {
+                            token_times.push_back(us);
+                            json row={{"step",position-1},{"total_us",us},{"minor_faults",after.ru_minflt-before.ru_minflt},{"major_faults",after.ru_majflt-before.ru_majflt}};
+                            if(custom) { row["layers"]=json::array(); for(auto & l:engine.layers) { row["layers"].push_back(l->last); } }
+                            sequence["steps"].push_back(row);
+                        }
+                    }
+                    auto * output=llama_get_logits_ith(ctx.get(),-1); require(output!=nullptr,"missing decode benchmark logits");
+                    for(int i=0;i<nv;++i) { require(std::isfinite(output[i]),"nonfinite decode benchmark logits"); }
+                    if(repetition==0) { reference[position].assign(output,output+nv); binary_write(decode_file,reference[position]); }
+                    else if(repetition>0) { require(std::memcmp(reference[position].data(),output,nv*sizeof(float))==0,"repeated decode logits differ"); }
+                }
+                size_t allocated=0; for(auto & l:engine.layers) { allocated+=l->allocations; }
+                if(repetition==-1) { warm_allocations=allocated; }
+                if(repetition>=0) {
+                    require(allocated==warm_allocations,"decode graph allocated after warmup");
+                    sequence["total_us"]=total; sequence["expert_graph_allocations"]=allocated;
+                    sequence_times.push_back(total); decode["samples"].push_back(sequence);
+                }
+            }
+            decode["sequence_timing"]=stats(sequence_times,quality_steps);
+            decode["token_timing"]=stats(token_times,1);
+            decode["all_repeat_logits_bitwise_equal"]=true;
+            report["decode_benchmark"]=decode;
+            fprintf(stderr,"DECODE_RESULT %s median_sequence_ms=%.3f tokens_s=%.3f\n",mode.c_str(),decode["sequence_timing"]["median_us"].get<double>()/1000,decode["sequence_timing"]["expert_tokens_per_second"].get<double>());
+        }
         if(alternate_callback_io || alternate_host_reduce || alternate_reduce_threads || alternate_overlap_gather || activation_arena) { report["all_round_logits_bitwise_equal"]=true; }
         size_t activation_bytes=0;
         size_t logical_activation_bytes=0;
@@ -785,7 +892,7 @@ int main(int argc,char ** argv) {
         std::ofstream out(argv[4]); out<<report.dump(2)<<'\n'; require(out.good(),"full-model report write failed");
         if(mode!="capture") { fprintf(stderr,"FULL_RESULT %s nt=%d median_ms=%.3f tokens_s=%.3f\n",mode.c_str(),nt,report["timing"]["median_us"].get<double>()/1000,report["timing"]["expert_tokens_per_second"].get<double>()); }
         // Backend-owned banks must be released before the devices themselves.
-        ctx.reset(); engine.layers.clear();
+        ctx.reset(); engine.shared_worker.reset(); engine.decode_branches.clear(); engine.layers.clear();
         return 0;
     } catch(const std::exception & e) { fprintf(stderr,"ERROR: %s\n",e.what()); return 1; }
 }

@@ -54,6 +54,10 @@ def main():
     p.add_argument("--alternate-overlap-gather", action="store_true", help="ABBA barrier/independent branch preparation")
     p.add_argument("--quality-steps", type=int, default=0, help="Diagnostic continuation after timing; resident weights and KV retained")
     p.add_argument("--quality-tokens", type=pathlib.Path, help="JSON token array for equal-prefix teacher forcing")
+    p.add_argument("--decode-reps", type=int, default=0, help="Repeat the quality token sequence after two warmups; time synchronized decode only")
+    p.add_argument("--dense-backend", choices=["cpu"], help="Custom mode: keep non-Expert computation on CPU")
+    p.add_argument("--cpu-mapped-experts", action="store_true", help="Custom CPU dense: identity CPU Expert bank borrows immutable GGUF pages")
+    p.add_argument("--native-decode-graph", action="store_true", help="CPU routed nt1 graph with persistent asynchronous shared branch")
     args = p.parse_args()
     resolved_mode = args.mode
     if args.mode == "auto":
@@ -129,6 +133,18 @@ def main():
         record["runtime_state_model_sha256"] = digest
         env.append(f"MOE_RUNTIME_STATE_MODEL={REMOTE}/runtime-state-model.json")
     assert 0 <= args.quality_steps <= 64
+    assert 0 <= args.decode_reps <= 32 and (not args.decode_reps or args.quality_steps)
+    if args.decode_reps:
+        env.append(f"MOE_DECODE_REPS={args.decode_reps}")
+    if args.dense_backend:
+        assert args.mode == "custom"
+        env.append(f"MOE_DENSE_BACKEND={args.dense_backend}")
+    if args.cpu_mapped_experts:
+        assert args.dense_backend == "cpu"
+        env.append("MOE_CPU_MAPPED_EXPERTS=1")
+    if args.native_decode_graph:
+        assert args.cpu_mapped_experts and args.activation_lifetimes and args.shared_activations
+        env.append("MOE_NATIVE_DECODE_GRAPH=1")
     if args.quality_steps:
         assert resolved_mode in ("cpu", "gpu", "npu", "custom", "custom-npu", "branch")
         env.append(f"MOE_QUALITY_STEPS={args.quality_steps}")
@@ -250,6 +266,8 @@ def main():
         filenames += [f"{args.tag}.json.logits.bin"]
     if args.quality_steps:
         filenames += [f"{args.tag}.json.quality.bin"]
+    if args.decode_reps:
+        filenames += [f"{args.tag}.json.decode.bin"]
     for name in filenames:
         adb("pull", f"{REMOTE}/{name}", str(output / name))
         assert adb("shell", f"sha256sum {REMOTE}/{name}").stdout.split()[0] == hashlib.sha256((output / name).read_bytes()).hexdigest()

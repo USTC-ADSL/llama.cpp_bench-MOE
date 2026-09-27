@@ -12,6 +12,7 @@ struct source {
     FILE * file;
     const uint8_t * mapped = nullptr;
     size_t mapped_size = 0;
+    bool borrow_cpu_experts = false;
     void read_at(size_t offset, void * dst, size_t bytes) {
         if (mapped) {
             require(offset <= mapped_size && bytes <= mapped_size-offset, "weight mapping bounds");
@@ -48,6 +49,8 @@ struct bank {
     device & d;
     ggml_context_ptr ctx = context(3);
     ggml_backend_buffer_ptr buf;
+    std::array<ggml_backend_buffer_ptr, 3> mapped_buffers;
+    bool mapped_weights = false;
     std::array<ggml_tensor *, 3> w;
     bank(device & dev, source & s, int layer, const std::vector<int> * subset = nullptr) : d(dev) {
         const char * parts[] = {"gate", "up", "down"};
@@ -60,6 +63,29 @@ struct bank {
             ggml_set_name(w[i], name.c_str());
         }
         if (subset && subset->empty()) { return; }
+        if (d.name == "CPU" && s.borrow_cpu_experts) {
+            // Identity expert banks may read the immutable GGUF mapping directly.
+            // The caller owns the mapping and must outlive every graph/bank.
+            require(s.mapped != nullptr, "missing CPU weight mapping");
+            for (int i = 0; i < 3; ++i) {
+                auto * original = s.tensor(w[i]->name);
+                if (subset) {
+                    require(subset->size() == size_t(original->ne[2]), "mapped CPU bank requires all experts");
+                    for (size_t e = 0; e < subset->size(); ++e) { require((*subset)[e] == int(e), "mapped CPU bank requires identity order"); }
+                }
+                size_t offset = gguf_get_data_offset(s.gguf) + gguf_get_tensor_offset(s.gguf, gguf_find_tensor(s.gguf,w[i]->name));
+                size_t bytes = ggml_nbytes(w[i]);
+                require(offset <= s.mapped_size && bytes <= s.mapped_size-offset, "mapped CPU bank out of bounds");
+                void * address = const_cast<uint8_t *>(s.mapped+offset);
+                require(reinterpret_cast<uintptr_t>(address)%32==0,"CPU mapped weight alignment must be 32 bytes");
+                mapped_buffers[i].reset(ggml_backend_cpu_buffer_from_ptr(address,bytes));
+                require(mapped_buffers[i] != nullptr, "CPU mapped buffer failed");
+                require(ggml_backend_tensor_alloc(mapped_buffers[i].get(),w[i],address) == GGML_STATUS_SUCCESS, "CPU mapped tensor bind failed");
+                ggml_backend_buffer_set_usage(mapped_buffers[i].get(),GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
+            }
+            mapped_weights = true;
+            return;
+        }
         buf.reset(ggml_backend_alloc_ctx_tensors_from_buft(ctx.get(), d.buft));
         require(buf != nullptr, "resident bank allocation failed");
         ggml_backend_buffer_set_usage(buf.get(), GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
