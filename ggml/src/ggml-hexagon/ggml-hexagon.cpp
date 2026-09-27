@@ -259,6 +259,8 @@ enum ggml_hexagon_tensor_flags {
     GGML_HEXAGON_TENSOR_WEIGHT    = (1 << 1),
     GGML_HEXAGON_TENSOR_FENCE     = (1 << 2),
     GGML_HEXAGON_TENSOR_FUSEABLE  = (1 << 3),
+    GGML_HEXAGON_TENSOR_CANONICAL_Q4_0 = (1 << 4),
+    GGML_HEXAGON_TENSOR_WRITTEN   = (1 << 5),
 };
 
 static inline bool ggml_hexagon_is_repack_type(enum ggml_type type) {
@@ -1270,10 +1272,11 @@ static void ggml_backend_hexagon_buffer_set_tensor(ggml_backend_buffer_t buffer,
     auto extra = (ggml_hexagon_tensor_extra *)  tensor->extra;
     auto sbuf  = (ggml_hexagon_shared_buffer *) buffer->context;
     auto sess  = sbuf->sess;
+    extra->flags |= GGML_HEXAGON_TENSOR_WRITTEN;
 
     if (ggml_backend_buffer_get_usage(buffer) == GGML_BACKEND_BUFFER_USAGE_WEIGHTS) {
         extra->flags |= GGML_HEXAGON_TENSOR_WEIGHT;
-        if (ggml_hexagon_is_repack_type(tensor->type)) {
+        if (ggml_hexagon_is_repack_type(tensor->type) && !(extra->flags & GGML_HEXAGON_TENSOR_CANONICAL_Q4_0)) {
             extra->flags |= GGML_HEXAGON_TENSOR_REPACK;
         }
     }
@@ -1389,10 +1392,11 @@ static void ggml_backend_hexagon_buffer_set_tensor_2d(ggml_backend_buffer_t buff
     auto extra = (ggml_hexagon_tensor_extra *)  tensor->extra;
     auto sbuf  = (ggml_hexagon_shared_buffer *) buffer->context;
     auto sess  = sbuf->sess;
+    extra->flags |= GGML_HEXAGON_TENSOR_WRITTEN;
 
     if (ggml_backend_buffer_get_usage(buffer) == GGML_BACKEND_BUFFER_USAGE_WEIGHTS) {
         extra->flags |= GGML_HEXAGON_TENSOR_WEIGHT;
-        if (ggml_hexagon_is_repack_type(tensor->type)) {
+        if (ggml_hexagon_is_repack_type(tensor->type) && !(extra->flags & GGML_HEXAGON_TENSOR_CANONICAL_Q4_0)) {
             extra->flags |= GGML_HEXAGON_TENSOR_REPACK;
         }
     }
@@ -1811,6 +1815,9 @@ struct ggml_hexagon_opbatch {
         }
         if ((extra->flags & GGML_HEXAGON_TENSOR_FENCE) != 0) {
             h.flags |= HTP_TENSOR_FENCE;
+        }
+        if ((extra->flags & GGML_HEXAGON_TENSOR_CANONICAL_Q4_0) != 0) {
+            h.flags |= HTP_TENSOR_CANONICAL_Q4_0;
         }
 
         HEX_VERBOSE("ggml-hex: %s add-tensor #%u %s : bi %d data %p offset %zu size %zu flags 0x%x : %zu:%zu:%zu:%zu\n", sess->c_name(),
@@ -4321,9 +4328,18 @@ static bool ggml_hexagon_tensor_is_non_host(const struct ggml_hexagon_session * 
     GGML_UNUSED(sess);
 }
 
+static bool ggml_hexagon_tensor_is_canonical_q4_0(const struct ggml_tensor * tensor) {
+    if (tensor && tensor->view_src) { return ggml_hexagon_tensor_is_canonical_q4_0(tensor->view_src); }
+    return tensor && tensor->buffer && tensor->extra &&
+        tensor->buffer->iface.free_buffer == ggml_backend_hexagon_buffer_free_buffer &&
+        (static_cast<const ggml_hexagon_tensor_extra *>(tensor->extra)->flags & GGML_HEXAGON_TENSOR_CANONICAL_Q4_0);
+}
+
 static bool ggml_hexagon_supported_mul_mat(const struct ggml_hexagon_session * sess, const struct ggml_tensor * dst) {
     const struct ggml_tensor * src0 = dst->src[0];
     const struct ggml_tensor * src1 = dst->src[1];
+
+    if (ggml_hexagon_tensor_is_canonical_q4_0(src0)) { return false; }
 
     if (dst->type != GGML_TYPE_F32) {
         return false;
@@ -4418,6 +4434,7 @@ static bool ggml_hexagon_supported_mul_mat_id(const struct ggml_hexagon_session 
 
     struct htp_mm_kernel_params kparams;
     ggml_hexagon_precompute_matmul_params(sess, src0, src1, dst, &kparams);
+    if (ggml_hexagon_tensor_is_canonical_q4_0(src0) && !kparams.n_hmx) { return false; }
     if ((size_t)kparams.vtcm_size > sess->vtcm_size) {
         HEX_VERBOSE("ggml-hex: %s supported MUL_MAT_ID VTCM size needed (%d) > budget (%zu)\n", sess->c_name(), kparams.vtcm_size, sess->vtcm_size);
         return false;
@@ -5572,6 +5589,10 @@ static bool ggml_backend_hexagon_cpy_tensor_async(ggml_backend_t backend_src, gg
         return false;
     }
 
+    // Use canonical get/set semantics; raw async copies must not overwrite the
+    // destination layout flag or leave a packed consumer reading canonical bytes.
+    if (ggml_hexagon_tensor_is_canonical_q4_0(src) || ggml_hexagon_tensor_is_canonical_q4_0(dst)) { return false; }
+
     *(ggml_hexagon_tensor_extra *) dst->extra = *(const ggml_hexagon_tensor_extra *) src->extra;
 
     auto sess_src = static_cast<ggml_hexagon_session *>(backend_src->context);
@@ -5876,6 +5897,14 @@ static bool ggml_hexagon_supported_fill(const struct ggml_hexagon_session * sess
 static bool ggml_backend_hexagon_device_supports_op(ggml_backend_dev_t dev, const struct ggml_tensor * op) {
     auto dev_ctx = static_cast<ggml_backend_hexagon_device_context *>(dev->context);
     auto sess    = dev_ctx->session();
+
+    // Canonical storage is an explicit contract for base HMX ID weights only.
+    // In particular, a view may have its own extra and must not lose this guard.
+    for (int i = 0; i < GGML_MAX_SRC; ++i) {
+        const auto * src = op->src[i];
+        if (ggml_hexagon_tensor_is_canonical_q4_0(src) &&
+            (i != 0 || op->op != GGML_OP_MUL_MAT_ID || src->view_src)) { return false; }
+    }
 
     // reject ops that match the filter
     if (opt_opfilter && std::regex_match(ggml_op_desc(op), *opt_opfilter)) {
@@ -6246,10 +6275,26 @@ bool ggml_backend_hexagon_buffer_export_shared_dma(
     return desc->host_ptr && desc->dma_buf_fd >= 0;
 }
 
+bool ggml_backend_hexagon_tensor_use_canonical_q4_0(ggml_tensor * tensor) {
+    if (!tensor || !tensor->buffer || !tensor->extra || tensor->view_src ||
+        tensor->buffer->iface.free_buffer != ggml_backend_hexagon_buffer_free_buffer ||
+        tensor->type != GGML_TYPE_Q4_0 || !ggml_is_contiguous(tensor) ||
+        tensor->ne[0] % 128 || tensor->ne[1] % 32 || tensor->ne[3] != 1) { return false; }
+    auto * extra = static_cast<ggml_hexagon_tensor_extra *>(tensor->extra);
+    if (!extra->shadow_buf.empty() ||
+        ((extra->flags & GGML_HEXAGON_TENSOR_WRITTEN) && !(extra->flags & GGML_HEXAGON_TENSOR_CANONICAL_Q4_0))) { return false; }
+    extra->flags &= ~GGML_HEXAGON_TENSOR_REPACK;
+    extra->flags |= GGML_HEXAGON_TENSOR_CANONICAL_Q4_0 | GGML_HEXAGON_TENSOR_WEIGHT;
+    return true;
+}
+
 static void * ggml_backend_hexagon_get_proc_address(ggml_backend_reg_t reg, const char * name) {
     GGML_UNUSED(reg);
     if (strcmp(name, "ggml_backend_hexagon_get_timing") == 0) {
         return (void *) ggml_backend_hexagon_get_timing;
+    }
+    if (strcmp(name, "ggml_backend_hexagon_tensor_use_canonical_q4_0") == 0) {
+        return (void *) ggml_backend_hexagon_tensor_use_canonical_q4_0;
     }
     if (strcmp(name, "ggml_backend_hexagon_buffer_export_shared_dma") == 0) {
         return (void *) ggml_backend_hexagon_buffer_export_shared_dma;

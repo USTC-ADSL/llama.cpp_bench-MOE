@@ -1,0 +1,34 @@
+{
+  "serial": "fd8657d6",
+  "command": "cd /data/local/tmp/llama-online-weights && exec env LD_LIBRARY_PATH=/data/local/tmp/llama-online-weights ADSP_LIBRARY_PATH=/data/local/tmp/llama-online-weights GGML_HEXAGON_DEVICES=1 GGML_HEXAGON_NHMX=1 GGML_HEXAGON_MM_SELECT=3 GGML_HEXAGON_PROFILE=0 GGML_OPENCL_FUSED_Q4_PREPARE=1 GGML_OPENCL_LAZY_SCRATCH=1 ./online-moe /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf /data/local/tmp/llama-online-weights/full-online-dev-v3-prompt.txt 128 /data/local/tmp/llama-online-weights/full-online-dev-v3-cost-model.json /data/local/tmp/llama-online-weights/full-online-dev-v3.json online -1",
+  "inputs": {
+    "prompt.txt": {
+      "source": "tests/expert-routing-prompt.txt",
+      "sha256": "032f2734cf2eb67fd730f75210229f36ed1f4a3a5a63242645fdd940997f23eb"
+    },
+    "cost-model.json": {
+      "source": "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-09-27-length-intervals/interval-model.json",
+      "sha256": "838fe622b2147d9266548b6bedf6e2118cea2cfa47302182b385c126b30a9083"
+    }
+  },
+  "artifacts": "16c103cb86aef1d19f17c9102b8d3a75f28f64c0f652905ca00bfaf0af2897e0  /data/local/tmp/llama-online-weights/online-moe\n0a532b9ccd11d0621bbf1fd42800d5715a9a15e0e1f6dac4d1c7c78cada8c2ec  /data/local/tmp/llama-online-weights/libggml-base.so\n06a3fe6b0a27c116bfbcec6ba13353fbcac83c12422d8ec8c284d22e3fb9ed32  /data/local/tmp/llama-online-weights/libggml-cpu.so\na6f8e03bcc1220c91499b860f68b8f3b1c5d5a2096041e1993439c3929504fce  /data/local/tmp/llama-online-weights/libggml-hexagon.so\nf433e064102b1ab4fdc12819d369cd6e95edc9b32acc86b41c6b3dd77c76b733  /data/local/tmp/llama-online-weights/libggml-htp-v79.so\nf052ac88b608661fb51386cfe9da6b49876137bf32875f79541027914b902692  /data/local/tmp/llama-online-weights/libggml-opencl.so\n7c7c7918a1a1d319b44a0ea5824a7c17ba2a7be9f3c66068cf3627c94d91fbdc  /data/local/tmp/llama-online-weights/libggml.so\n51f129016af1dcfa96b773926f97350141b735072eef258ca59aa1faf6d4a8b1  /data/local/tmp/llama-online-weights/libllama.so\n",
+  "model_stat": "/data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf 8149865792 1788789392\n",
+  "before_battery": "Current Battery Service state:\n  AC powered: false\n  USB powered: true\n  Wireless powered: false\n  Dock powered: false\n  Max charging current: 0\n Time when the latest updated value of the Max charging current was sent via battery changed broadcast: +8s373ms\n  Max charging voltage: 0\n  Charge counter: 5155000\n  status: 2\n  health: 2\n  present: true\n  level: 98\n  scale: 100\n  voltage: 4490\n Time when the latest updated value of the voltage was sent via battery changed broadcast: +68d7h8m21s998ms\n The last voltage value sent via the battery changed broadcast: 4486\n  temperature: 209\n  technology: Li-poly\n  Charging state: 0\n  Charging policy: 0\n  Capacity level: 4\nMiuiBatteryService first usage time:\n  mSetBatteryUsageTimeCount=0\n  mNtpTime=-1\n  mParseNtpTime=\n",
+  "sources": {
+    "tests/online-weight-probe.cpp": "1cc0d9e0e113cc7f97ed28f3d52ddffe68a6b4f93f99abb4f84fb4e4bd963e36",
+    "tests/online-moe.cpp": "c500238f4f18847e46527f67d339b679989dba52adb495f4ddda9e8552c3834f",
+    "tests/online-moe-runtime.h": "5aae747fff1583fd3a5ad5ed3fc36766dd43f1804c591e7b235b1f98ef809fc4",
+    "tests/expert-routing-probe.cpp": "196ec9f0ea6b80b3055854a19d97b5375aa8ea09245b6a175298e47d0c16d993",
+    "ggml/src/ggml-hexagon/ggml-hexagon.cpp": "fe5ccfeecc2c26c5f7ca68fcaec22b93783fc54f8bf47164dff0a5ad3fb3c77e",
+    "ggml/src/ggml-opencl/ggml-opencl.cpp": "819100e63ea2bee1ddb409be05ab149913d79c6e8fcf47a5cf261289dc3ea298",
+    "ggml/src/ggml-opencl/kernels/cvt.cl": "616214d36eb4a8c7df556be3e20d150bda984fae172654da1772a93e2f8e8f85",
+    "ggml/src/ggml-hexagon/htp/htp-ops.h": "737b1a88ddf0269b251e330837e0993a75a0ba22a7deb5f85fb00b2e66af73ec",
+    "ggml/src/ggml-hexagon/htp/hmx-mm-kernels-tiled.h": "28f7c07c64e7a98d4c3c4ad37e0d4482ac860a0d4867b5b70d0d4fe338e4ec0b",
+    "ggml/src/ggml-hexagon/htp/matmul-ops.c": "9fc962dc11f838e4e466eac9a0e4ebff904c6baf15637fb811208316ace6521f"
+  },
+  "exit": 0,
+  "elapsed_seconds": 9.629907123744488,
+  "after_battery": "Current Battery Service state:\n  AC powered: false\n  USB powered: true\n  Wireless powered: false\n  Dock powered: false\n  Max charging current: 0\n Time when the latest updated value of the Max charging current was sent via battery changed broadcast: +8s373ms\n  Max charging voltage: 0\n  Charge counter: 5155000\n  status: 2\n  health: 2\n  present: true\n  level: 98\n  scale: 100\n  voltage: 4490\n Time when the latest updated value of the voltage was sent via battery changed broadcast: +68d7h8m21s998ms\n The last voltage value sent via the battery changed broadcast: 4486\n  temperature: 209\n  technology: Li-poly\n  Charging state: 0\n  Charging policy: 0\n  Capacity level: 4\nMiuiBatteryService first usage time:\n  mSetBatteryUsageTimeCount=0\n  mNtpTime=-1\n  mParseNtpTime=\n",
+  "output_sha256": "1b33667f36865b57e13434552a11230a20b70c130657ac17f8e4509016724e9e",
+  "logits_sha256": "57644ed090f6548558f34378d465fd76aa5c0157e64162400653a30884e7c48c"
+}

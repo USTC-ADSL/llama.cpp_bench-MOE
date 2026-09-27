@@ -57,6 +57,30 @@ struct block_q4_0
     uint8_t qs[QK4_0 / 2];
 };
 
+// One work item reads a canonical block; a subgroup writes contiguous HTP
+// output rows. Conversion is lossless and never materializes FP16 weights.
+__kernel void kernel_pack_q4_0_htp(__global const uchar *source, ulong source_offset,
+        __global uchar *target, ulong target_offset, uint width, uint rows, ulong selected) {
+    uint row=get_global_id(0), kt=get_global_id(1), slot=get_global_id(2);
+    if(row>=rows || kt>=width/32) return;
+    ulong remaining=selected;
+    for(uint i=0;i<slot;++i) remaining&=remaining-1;
+    uint expert=63-clz(remaining & -remaining);
+    ulong matrix_bytes=(ulong)rows*(width/32)*18;
+    __global const uchar *block=source+source_offset+expert*matrix_bytes+((ulong)row*(width/32)+kt)*18;
+    __global uchar *tile=target+target_offset+slot*matrix_bytes+((ulong)(row/32)*(width/32)+kt)*576;
+    uint r=row%32;
+    for(uint cp=0;cp<8;++cp) {
+        // Read a pair as an unsigned word and extract all four nibbles explicitly.
+        // Adreno's byte-shift lowering corrupted high nibbles in device tests.
+        uint pair=((__global const ushort *)(block+2))[cp];
+        tile[cp*32+r]=(pair & 15u) | ((pair>>4) & 240u);
+        tile[(cp+8)*32+r]=((pair>>4) & 15u) | ((pair>>8) & 240u);
+    }
+    tile[512+2*r]=block[0];
+    tile[513+2*r]=block[1];
+}
+
 //------------------------------------------------------------------------------
 // block_q4_1
 //------------------------------------------------------------------------------
@@ -273,6 +297,27 @@ kernel void kernel_convert_block_q4_0_noshuffle(
             printf("%04x - %02x\n", *(global ushort*)d, ((x0 & 0xF0) >> 4) | (x1 & 0xF0));
         }
 #endif
+    }
+}
+
+// Canonical Q4_0 -> final transposed dense Adreno layout in a single pass.
+// This replaces unshuffle + two in-place transpose/copy passes, byte for byte.
+kernel void kernel_convert_block_q4_0_dense_transposed(
+    global const struct block_q4_0 * src,
+    global ushort * dst_q,
+    global half * dst_d,
+    uint width, uint rows
+) {
+    const uint r = get_global_id(0), kb = get_global_id(1);
+    if (r >= rows || kb >= width / QK4_0) { return; }
+    global const struct block_q4_0 * b = src + r * (width / QK4_0) + kb;
+    dst_d[kb * rows + r] = b->d;
+    for (uint j = 0; j < 4; ++j) {
+        const uint a = b->qs[4*j], c = b->qs[4*j+1], d = b->qs[4*j+2], e = b->qs[4*j+3];
+        const uint lo = (a & 15U) | ((c & 15U) << 4) | ((d & 15U) << 8) | ((e & 15U) << 12);
+        const uint hi = (a >> 4) | (c & 240U) | ((d & 240U) << 4) | ((e & 240U) << 8);
+        dst_q[(kb*8+j)*rows+r] = (ushort)lo;
+        dst_q[(kb*8+4+j)*rows+r] = (ushort)hi;
     }
 }
 

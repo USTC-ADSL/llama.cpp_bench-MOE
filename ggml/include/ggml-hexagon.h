@@ -18,6 +18,12 @@ GGML_BACKEND_API ggml_backend_reg_t ggml_backend_hexagon_reg(void);
 GGML_BACKEND_API bool ggml_backend_hexagon_buffer_export_shared_dma(
         ggml_backend_buffer_t buffer, struct ggml_backend_shared_dma_buffer_desc * desc);
 
+// Experimental immutable source layout for Q4_0 MUL_MAT_ID on HMX. Call before
+// filling a newly allocated tensor and before building/executing any graph using
+// it. Ordinary set/get then preserve canonical GGUF bytes; no packed copy exists.
+// Contiguous shape: width divisible by 128, height by 32. Unsupported ops reject it.
+GGML_BACKEND_API bool ggml_backend_hexagon_tensor_use_canonical_q4_0(struct ggml_tensor * tensor);
+
 // Optional process-wide monotonic counters, sampled only after all HTP work is
 // synchronized. DSP intervals and host response waits overlap; do not add them.
 enum ggml_hexagon_timing_counter {

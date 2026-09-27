@@ -133,6 +133,69 @@ static void dequantize_tiled_weight_to_fp16_task_q4_0(
     }
 }
 
+// Canonical GGUF blocks are DMA'ed as contiguous rows into the same VTCM
+// staging area as tiled weights. Decode directly into HMX tiles: no full
+// repacked tensor is materialized in DRAM. Each worker owns complete tiles.
+static inline HVX_VectorPair canonical_q4_0_decode_four(const uint8_t *p) {
+    const HVX_Vector mask = Q6_Vb_vsplat_R(15);
+    const HVX_Vector eight = Q6_Vb_vsplat_R(8);
+    typedef unsigned char canonical_bytes128 __attribute__((vector_size(128)));
+    static const uint8_t high_nibbles[128] __attribute__((aligned(VLEN))) = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255 };
+    const HVX_VectorPred high = Q6_Q_vcmp_gt_VubVub(hvx_vmem(high_nibbles), Q6_V_vzero());
+            const canonical_bytes128 raw = (canonical_bytes128) hvx_vmemu(p);
+            const HVX_Vector q = (HVX_Vector)__builtin_shufflevector(raw, raw, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71);
+            const HVX_Vector sc0 = (HVX_Vector)__builtin_shufflevector(raw, raw, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 18, 19, 18, 19, 18, 19, 18, 19, 18, 19, 18, 19, 18, 19, 18, 19, 18, 19, 18, 19, 18, 19, 18, 19, 18, 19, 18, 19, 18, 19, 18, 19, 18, 19, 18, 19, 18, 19, 18, 19, 18, 19, 18, 19, 18, 19, 18, 19, 18, 19, 18, 19, 18, 19, 18, 19, 18, 19, 18, 19, 18, 19, 18, 19);
+            const HVX_Vector sc1 = (HVX_Vector)__builtin_shufflevector(raw, raw, 36, 37, 36, 37, 36, 37, 36, 37, 36, 37, 36, 37, 36, 37, 36, 37, 36, 37, 36, 37, 36, 37, 36, 37, 36, 37, 36, 37, 36, 37, 36, 37, 36, 37, 36, 37, 36, 37, 36, 37, 36, 37, 36, 37, 36, 37, 36, 37, 36, 37, 36, 37, 36, 37, 36, 37, 36, 37, 36, 37, 36, 37, 36, 37, 54, 55, 54, 55, 54, 55, 54, 55, 54, 55, 54, 55, 54, 55, 54, 55, 54, 55, 54, 55, 54, 55, 54, 55, 54, 55, 54, 55, 54, 55, 54, 55, 54, 55, 54, 55, 54, 55, 54, 55, 54, 55, 54, 55, 54, 55, 54, 55, 54, 55, 54, 55, 54, 55, 54, 55, 54, 55, 54, 55, 54, 55, 54, 55);
+            const HVX_Vector lo = Q6_V_vand_VV(q, mask);
+            const HVX_Vector hi = Q6_Vub_vlsr_VubR(q, 4);
+            const HVX_Vector signed_q = Q6_Vb_vsub_VbVb(Q6_V_vmux_QVV(high, hi, lo), eight);
+            const HVX_VectorPair halves = Q6_Wh_vunpack_Vb(signed_q);
+            const HVX_Vector f0 = Q6_Vhf_equals_Vqf16(Q6_Vqf16_vmpy_VhfVhf(
+                Q6_Vhf_equals_Vh(Q6_V_lo_W(halves)), sc0));
+            const HVX_Vector f1 = Q6_Vhf_equals_Vqf16(Q6_Vqf16_vmpy_VhfVhf(
+                Q6_Vhf_equals_Vh(Q6_V_hi_W(halves)), sc1));
+    return Q6_W_vcombine_VV(f1, f0);
+}
+
+static inline void canonical_scatter_four_rows(__fp16 *dst, HVX_Vector offsets,
+        HVX_Vector r0, HVX_Vector r1, HVX_Vector r2, HVX_Vector r3) {
+    HVX_VectorPair a = Q6_W_vshuff_VVR(r1, r0, -4);
+    HVX_VectorPair b = Q6_W_vshuff_VVR(r3, r2, -4);
+    HVX_VectorPair c = Q6_W_vshuff_VVR(Q6_V_lo_W(b), Q6_V_lo_W(a), -8);
+    HVX_VectorPair d = Q6_W_vshuff_VVR(Q6_V_hi_W(b), Q6_V_hi_W(a), -8);
+    Q6_vscatter_RMVwV((size_t)dst, 1023, offsets, Q6_V_lo_W(c));
+    Q6_vscatter_RMVwV((size_t)(dst + 512), 1023, offsets, Q6_V_hi_W(c));
+    Q6_vscatter_RMVwV((size_t)(dst + 1024), 1023, offsets, Q6_V_lo_W(d));
+    Q6_vscatter_RMVwV((size_t)(dst + 1536), 1023, offsets, Q6_V_hi_W(d));
+}
+
+static void dequantize_tiled_weight_to_fp16_task_q4_0_canonical(
+        const tiled_dequantize_state_t *state, uint32_t start_tile, uint32_t end_tile) {
+    // Interleave four output rows before scattering to distribute writes across
+    // VTCM banks. Each 128-byte vector writes eight columns of four rows.
+    static const uint32_t scatter_offsets[32] __attribute__((aligned(VLEN))) = {
+        0,4,8,12,128,132,136,140,256,260,264,268,384,388,392,396,
+        512,516,520,524,640,644,648,652,768,772,776,780,896,900,904,908};
+    const HVX_Vector offsets = hvx_vmem(scatter_offsets);
+    assert(start_tile % 4 == 0 && end_tile % 4 == 0 && state->n_k_tiles % 4 == 0);
+    for (uint32_t t = start_tile; t < end_tile; t += 4) {
+        const uint32_t ct = fastdiv(t, &state->n_k_tiles_div);
+        const uint32_t kt = t - ct * state->n_k_tiles;
+        __fp16 *dst = state->dst + t * HTP_MM_HMX_TILE_N_ELMS;
+        for (uint32_t row = 0; row < 32; row += 4) {
+            const uint8_t *p = state->src + (ct * 32 + row) * state->row_stride + kt * sizeof(block_q4_0);
+            HVX_VectorPair r0 = canonical_q4_0_decode_four(p);
+            HVX_VectorPair r1 = canonical_q4_0_decode_four(p + state->row_stride);
+            HVX_VectorPair r2 = canonical_q4_0_decode_four(p + 2 * state->row_stride);
+            HVX_VectorPair r3 = canonical_q4_0_decode_four(p + 3 * state->row_stride);
+            HVX_Vector off = Q6_Vw_vadd_VwVw(offsets, Q6_V_vsplat_R(row * 4));
+            canonical_scatter_four_rows(dst, off, Q6_V_lo_W(r0), Q6_V_lo_W(r1), Q6_V_lo_W(r2), Q6_V_lo_W(r3));
+            canonical_scatter_four_rows(dst + 2 * HTP_MM_HMX_TILE_N_ELMS, off,
+                Q6_V_hi_W(r0), Q6_V_hi_W(r1), Q6_V_hi_W(r2), Q6_V_hi_W(r3));
+        }
+    }
+}
+
 static void dequantize_tiled_weight_to_fp16_task_q4_1(
         const tiled_dequantize_state_t *state,
         uint32_t start_tile, uint32_t end_tile) {

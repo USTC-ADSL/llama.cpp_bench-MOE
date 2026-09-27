@@ -51,8 +51,9 @@ struct bank {
     ggml_backend_buffer_ptr buf;
     std::array<ggml_backend_buffer_ptr, 3> mapped_buffers;
     bool mapped_weights = false;
+    bool canonical_weights = false;
     std::array<ggml_tensor *, 3> w;
-    bank(device & dev, source & s, int layer, const std::vector<int> * subset = nullptr) : d(dev) {
+    bank(device & dev, source & s, int layer, const std::vector<int> * subset = nullptr, bool canonical_htp = false) : d(dev) {
         const char * parts[] = {"gate", "up", "down"};
         for (int i = 0; i < 3; ++i) {
             std::string name = "blk." + std::to_string(layer) + ".ffn_" + parts[i] + "_exps.weight";
@@ -89,6 +90,20 @@ struct bank {
         buf.reset(ggml_backend_alloc_ctx_tensors_from_buft(ctx.get(), d.buft));
         require(buf != nullptr, "resident bank allocation failed");
         ggml_backend_buffer_set_usage(buf.get(), GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
+        if (canonical_htp) {
+            require(d.name=="HTP0" && !subset && s.mapped,"canonical HTP source requires full mapped identity bank");
+            using mark_fn=bool (*)(ggml_tensor *);
+            auto mark=reinterpret_cast<mark_fn>(ggml_backend_reg_get_proc_address(
+                ggml_backend_dev_backend_reg(d.dev),"ggml_backend_hexagon_tensor_use_canonical_q4_0"));
+            require(mark,"canonical HTP API unavailable");
+            for (auto *t:w) {
+                require(mark(t),"canonical HTP layout rejected");
+                size_t offset=gguf_get_data_offset(s.gguf)+gguf_get_tensor_offset(s.gguf,gguf_find_tensor(s.gguf,t->name));
+                require(offset<=s.mapped_size && ggml_nbytes(t)<=s.mapped_size-offset,"canonical source bounds");
+                ggml_backend_tensor_set(t,s.mapped+offset,0,ggml_nbytes(t));
+            }
+            canonical_weights=true; d.sync(); return;
+        }
         for (auto * t : w) {
             std::vector<uint8_t> raw;
             if (subset) {
@@ -104,6 +119,22 @@ struct bank {
         }
         d.sync();
     }
+    // Borrow the exact same immutable canonical bytes through CPU buffer views.
+    // The HTP source bank must outlive this view and all graphs using it.
+    bank(device & dev, const bank & canonical_source) : d(dev) {
+        require(d.name=="CPU" && canonical_source.d.name=="HTP0" && canonical_source.buf && canonical_source.canonical_weights,
+                "invalid canonical CPU view source");
+        for (int i=0;i<3;++i) {
+            auto *original=canonical_source.w[i];
+            w[i]=ggml_dup_tensor(ctx.get(),original); ggml_set_name(w[i],original->name);
+            void *address=original->data; size_t bytes=ggml_nbytes(original);
+            mapped_buffers[i].reset(ggml_backend_cpu_buffer_from_ptr(address,bytes));
+            require(mapped_buffers[i] && ggml_backend_tensor_alloc(mapped_buffers[i].get(),w[i],address)==GGML_STATUS_SUCCESS,
+                    "canonical CPU view binding failed");
+            ggml_backend_buffer_set_usage(mapped_buffers[i].get(),GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
+        }
+        mapped_weights=true;
+    }
 };
 
 struct shared_bank {
@@ -112,7 +143,7 @@ struct shared_bank {
     ggml_backend_buffer_ptr buf;
     ggml_backend_buffer_ptr scalar_buf;
     std::array<ggml_tensor *, 4> w;
-    shared_bank(device & d, source & s, int il) {
+    shared_bank(device & d, source & s, int il, bool defer_upload = false) {
         const char * parts[] = {"gate", "up", "down", "gate_inp"};
         for (int i = 0; i < 4; ++i) {
             const auto name = "blk." + std::to_string(il) + ".ffn_" + parts[i] + "_shexp.weight";
@@ -126,6 +157,7 @@ struct shared_bank {
             require(scalar_buf != nullptr, "shared scalar weight allocation failed");
         }
         ggml_backend_buffer_set_usage(buf.get(), GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
+        if(defer_upload) { return; }
         for (auto * t : w) {
             auto raw = s.read(t->name);
             ggml_backend_tensor_set(t, raw.data(), 0, raw.size());

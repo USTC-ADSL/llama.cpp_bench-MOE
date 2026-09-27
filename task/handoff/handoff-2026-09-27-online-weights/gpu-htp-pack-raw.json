@@ -1,0 +1,141 @@
+{
+  "scope": "two actual experts; canonical GGUF in shared DMA versus CPU repack to tiled HTP; no prompt or whole-model claim",
+  "reps": 4,
+  "warmups": 2,
+  "cases": [
+    {
+      "matrix": "gate",
+      "tokens": 8,
+      "experts": 2,
+      "canonical_supported": true,
+      "canonical_initial_copy_us": 430.521,
+      "source_bytes": 3244032,
+      "weight_buffer_bytes": 3244032,
+      "versus_packed_nrmse": 0.0,
+      "bitwise_equal": true,
+      "versus_fp64_nrmse": 0.00026588022960197965,
+      "canonical_compute": {
+        "samples_us": [
+          865.0,
+          743.958,
+          826.875,
+          886.198
+        ],
+        "mean_us": 830.50775,
+        "median_us": 845.9375,
+        "p95_us": 886.198,
+        "source_bytes": 3244032,
+        "median_source_GBps": 3.8348364979682303
+      },
+      "packed_compute": {
+        "samples_us": [
+          612.5,
+          623.281,
+          548.021,
+          630.573
+        ],
+        "mean_us": 603.59375,
+        "median_us": 617.8905,
+        "p95_us": 630.573,
+        "source_bytes": 3244032,
+        "median_source_GBps": 5.250172967540366
+      },
+      "host_prepare": {
+        "samples_us": [
+          2738.802,
+          2738.75,
+          2701.303,
+          2698.75
+        ],
+        "mean_us": 2719.40125,
+        "median_us": 2720.0265,
+        "p95_us": 2738.802,
+        "source_bytes": 3244032,
+        "median_source_GBps": 1.1926472039886375
+      },
+      "host_prepare_compute": {
+        "samples_us": [
+          3314.844,
+          3309.74,
+          3319.844,
+          3314.219
+        ],
+        "mean_us": 3314.66175,
+        "median_us": 3314.5315,
+        "p95_us": 3319.844,
+        "source_bytes": 3244032,
+        "median_source_GBps": 0.9787301764970404
+      }
+    },
+    {
+      "matrix": "gate",
+      "tokens": 32,
+      "experts": 2,
+      "canonical_supported": true,
+      "canonical_initial_copy_us": 309.947,
+      "source_bytes": 3244032,
+      "weight_buffer_bytes": 3244032,
+      "versus_packed_nrmse": 0.0,
+      "bitwise_equal": true,
+      "versus_fp64_nrmse": 0.00026842179697163904,
+      "canonical_compute": {
+        "samples_us": [
+          823.593,
+          608.281,
+          585.677,
+          699.896
+        ],
+        "mean_us": 679.36175,
+        "median_us": 654.0885,
+        "p95_us": 823.593,
+        "source_bytes": 3244032,
+        "median_source_GBps": 4.959622436413421
+      },
+      "packed_compute": {
+        "samples_us": [
+          661.563,
+          583.802,
+          444.011,
+          378.854
+        ],
+        "mean_us": 517.0575,
+        "median_us": 513.9065,
+        "p95_us": 661.563,
+        "source_bytes": 3244032,
+        "median_source_GBps": 6.312494588023307
+      },
+      "host_prepare": {
+        "samples_us": [
+          3039.375,
+          3064.844,
+          3026.302,
+          3015.365
+        ],
+        "mean_us": 3036.4715,
+        "median_us": 3032.8385,
+        "p95_us": 3064.844,
+        "source_bytes": 3244032,
+        "median_source_GBps": 1.0696355905532062
+      },
+      "host_prepare_compute": {
+        "samples_us": [
+          3630.521,
+          3584.688,
+          3435.469,
+          3514.688
+        ],
+        "mean_us": 3541.3415,
+        "median_us": 3549.688,
+        "p95_us": 3630.521,
+        "source_bytes": 3244032,
+        "median_source_GBps": 0.9138921505213978
+      }
+    }
+  ],
+  "canonical_contract": {
+    "strided_set_get_exact": true,
+    "cross_layout_async_copy_fallback_exact": true,
+    "written_packed_mark_rejected": true,
+    "unsupported_shape_view_matmul_hvx_rejected": true
+  }
+}

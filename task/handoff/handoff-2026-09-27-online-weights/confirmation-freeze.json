@@ -1,0 +1,46 @@
+{
+  "scope": "128-token complete first prefill; loaded model; empty Expert conversion cache; no prompt prepass",
+  "calibration_sha256": "e36fb56b5be009dc79c03867eed5bad1cac2026825cd876ce4d874a9a2042d75",
+  "model_sha256": "8b704c763230935a096c9c810765c8a5483f1724c83e34e253704138ca040473",
+  "sources": {
+    "tests/online-moe.cpp": "1bb74439f9807b937adb9ebc7efe315843f163735ce1d40a121ec0666ecfcfb0",
+    "tests/online-moe-runtime.h": "230c1f0f9555e87ba0559d179aa25c8fa8249d13d08fc28d11c95b839a08658f",
+    "tests/run-online-weights.py": "32402d9f8364bfdfa6de28f28bc038c9b5eb86a513e46a9b37ac5402ea4ea9d1",
+    "tests/confirm-online-weights.py": "40d5ee4a3b8e34f9df865723319c5e49846092ae59a7c983b7eb90fec55ed686",
+    "tests/calibrate-online-weights.py": "5930057eabe4577e90054cb82e305cb50475d84299986deaf18235f30b2cab1e"
+  },
+  "artifacts": {
+    "online-moe": "63b31a5d3a09ab1988f24d55a94f17b903373ccf8c4f580187cfec54f016a442",
+    "libllama.so": "51f129016af1dcfa96b773926f97350141b735072eef258ca59aa1faf6d4a8b1",
+    "libggml.so": "7c7c7918a1a1d319b44a0ea5824a7c17ba2a7be9f3c66068cf3627c94d91fbdc",
+    "libggml-base.so": "0a532b9ccd11d0621bbf1fd42800d5715a9a15e0e1f6dac4d1c7c78cada8c2ec",
+    "libggml-cpu.so": "06a3fe6b0a27c116bfbcec6ba13353fbcac83c12422d8ec8c284d22e3fb9ed32",
+    "libggml-opencl.so": "15fd7af99e39ddc7cb5aab643ceec0c87265fcf3460c6034de12ae5a51299749",
+    "libggml-hexagon.so": "5cb2f5846a2003343e50762ce7ba888a308146d814e7068eb57692ecef7b3aa7",
+    "libggml-htp-v79.so": "901c9e25ccf1f9f80c6d74a5d9565451f41697766795ce9fa9952a1d60cd3b81"
+  },
+  "prompts": {
+    "weather": "41e5a5bf4720c475340bbcafdd2f5ba1f2e45a6030c8f1910e988ea7b987d095",
+    "workshop": "6fe8bb38febe6500fdc52a833ffcdf0a7431baceface4225fad7b313511c9b74"
+  },
+  "order": [
+    [
+      "weather",
+      [
+        "native",
+        "online",
+        "online",
+        "native"
+      ]
+    ],
+    [
+      "workshop",
+      [
+        "online",
+        "native",
+        "native",
+        "online"
+      ]
+    ]
+  ]
+}

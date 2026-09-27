@@ -120,7 +120,8 @@ enum htp_op_code {
 enum htp_tensor_flags {
     HTP_TENSOR_WEIGHT  = (1U << 0), // Tensor buffer model weight data (not compute)
     HTP_TENSOR_REPACK  = (1U << 1), // Tensor is in repacked tiled format
-    HTP_TENSOR_FENCE   = (1U << 2)  // Tensor is synchronization fence (explicitly managed)
+    HTP_TENSOR_FENCE   = (1U << 2), // Tensor is synchronization fence (explicitly managed)
+    HTP_TENSOR_CANONICAL_Q4_0 = (1U << 3), // Immutable GGUF bytes; HMX tile conversion at use
 };
 
 // Tensor descriptor

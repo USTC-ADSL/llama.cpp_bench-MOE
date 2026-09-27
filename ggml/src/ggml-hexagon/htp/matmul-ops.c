@@ -1668,6 +1668,17 @@ DEQUANTIZE_WORKER_LOOP_IMPL(iq4_nl)
 DEQUANTIZE_WORKER_LOOP_IMPL(mxfp4)
 DEQUANTIZE_WORKER_LOOP_IMPL(q8_0)
 
+static void dequantize_tiled_worker_loop_q4_0_canonical(unsigned int n, unsigned int i, void * data) {
+    tiled_dequantize_state_t *state = data;
+    const uint32_t groups = state->n_tot_tiles / 4;
+    const uint32_t per_thread = (groups + n - 1) / n;
+    const uint32_t first = MIN(i * per_thread, groups) * 4;
+    const uint32_t last = MIN((i + 1) * per_thread, groups) * 4;
+    htp_trace_event_start(&state->traces[i], HTP_TRACE_EVT_HVX_W_DEQUANT, i);
+    dequantize_tiled_weight_to_fp16_task_q4_0_canonical(state, first, last);
+    htp_trace_event_stop(&state->traces[i], HTP_TRACE_EVT_HVX_W_DEQUANT, i);
+}
+
 static void convert_f16_worker_loop(unsigned int n, unsigned int i, void *data) {
     tiled_dequantize_state_t *state = (tiled_dequantize_state_t *)data;
     struct htp_thread_trace * tr = &state->traces[i];
@@ -3216,7 +3227,8 @@ static int hmx_mm_id_2d_f32(struct htp_context *ctx,
                                          int weight_type,
                                          const struct mmid_row_mapping *matrix_rows,
                                          int cur_a,
-                                         int mapping_stride) {
+                                         int mapping_stride,
+                                         bool canonical_q4_0) {
     struct htp_thread_trace * tr = &ctx->trace[0];
     htp_trace_event_start(tr, HTP_TRACE_EVT_INIT, 0);
 
@@ -3225,6 +3237,7 @@ static int hmx_mm_id_2d_f32(struct htp_context *ctx,
 
     if (k % 32 != 0 || n % 32 != 0) { return -1; }
     if (!hex_is_aligned(dst, VLEN) || !hex_is_aligned(activation, VLEN)) { return -1; }
+    if (canonical_q4_0 && (weight_type != HTP_TYPE_Q4_0 || k % 128)) { return -1; }
 
     size_t row_stride = htp_mm_get_tiled_row_stride(weight_type, k);
     if (row_stride == 0) {
@@ -3257,9 +3270,9 @@ static int hmx_mm_id_2d_f32(struct htp_context *ctx,
     int tile_size = htp_mm_get_weight_tile_size(weight_type);
     int aligned_tile_size = htp_mm_get_weight_aligned_tile_size(weight_type);
 
-    const uint32_t dma_dst_stride  = is_quant ? aligned_tile_size : row_stride;
-    const uint32_t dma_src_stride  = is_quant ? tile_size : weight_stride;
-    const uint32_t dma_width_bytes = is_quant ? tile_size : row_stride;
+    const uint32_t dma_dst_stride  = canonical_q4_0 ? weight_stride : is_quant ? aligned_tile_size : row_stride;
+    const uint32_t dma_src_stride  = canonical_q4_0 ? weight_stride : is_quant ? tile_size : weight_stride;
+    const uint32_t dma_width_bytes = canonical_q4_0 ? weight_stride : is_quant ? tile_size : row_stride;
 
     const size_t qweight_row_stride = is_quant ? (size_t)(n_k_tiles * aligned_tile_size) / 32 : 0;
     const size_t weight_row_stride = is_quant ? qweight_row_stride : row_stride;
@@ -3297,6 +3310,14 @@ static int hmx_mm_id_2d_f32(struct htp_context *ctx,
         return -1;
     }
 
+    if (canonical_q4_0) {
+        // hvx_vmemu may read through the final canonical block; keep it entirely
+        // inside the reserved staging region, including vector overread.
+        if (weight_area_size < n_chunk_n_cols * (size_t)weight_stride + VLEN) { return -1; }
+        dequant_worker_fn = dequantize_tiled_worker_loop_q4_0_canonical;
+        row_stride = weight_stride;
+    }
+
     hmx_init_column_scales(vtcm_scales, Q6_V_vsplat_R(0x3c00));
 
     htp_trace_event_stop(tr, HTP_TRACE_EVT_INIT, 0);
@@ -3314,7 +3335,7 @@ static int hmx_mm_id_2d_f32(struct htp_context *ctx,
         // A0: Pre-fetch the first weight chunk (nc = 0)
         if (n > 0) {
             const size_t n_cols = hex_smin((size_t) n, n_chunk_n_cols);
-            const uint32_t height = is_quant ? (n_cols / 32) * n_k_tiles : n_cols;
+            const uint32_t height = canonical_q4_0 ? n_cols : is_quant ? (n_cols / 32) * n_k_tiles : n_cols;
             dma_queue_push(ctx->dma[0], dma_make_ptr(vtcm_weight, weight),
                            dma_dst_stride, dma_src_stride, dma_width_bytes, height);
         }
@@ -3337,7 +3358,7 @@ static int hmx_mm_id_2d_f32(struct htp_context *ctx,
             const size_t nc_next = nc + n_chunk_n_cols;
             if (nc_next < (size_t) n) {
                 const size_t n_cols_next = hex_smin((size_t) n - nc_next, n_chunk_n_cols);
-                const uint32_t height_next = is_quant ? (n_cols_next / 32) * n_k_tiles : n_cols_next;
+                const uint32_t height_next = canonical_q4_0 ? n_cols_next : is_quant ? (n_cols_next / 32) * n_k_tiles : n_cols_next;
                 dma_queue_push(ctx->dma[0], dma_make_ptr(curr_raw, weight + nc_next * weight_stride),
                                dma_dst_stride, dma_src_stride, dma_width_bytes, height_next);
             }
@@ -3471,7 +3492,8 @@ static int hmx_mm_op_matmul_id(
                                    nb11, nb12,
                                    nb1, nb2,
                                    (int) src0->nb[1], (int) src0->type,
-                                   matrix_rows, cur_a, mmctx->mapping_stride);
+                                   matrix_rows, cur_a, mmctx->mapping_stride,
+                                   (src0->flags & HTP_TENSOR_CANONICAL_Q4_0) != 0);
         if (ret != 0) {
             FARF(ERROR, "HMX matmul failed for expert %u, error %d\n", cur_a, ret);
             return HTP_STATUS_NO_SUPPORT;
@@ -3600,7 +3622,8 @@ static int hmx_mm_op_matmul_id_nx(
                                        act->nb[1], act->nb[2],
                                        dst->nb[1], dst->nb[2],
                                        (int) src_w->nb[1], (int) src_w->type,
-                                       matrix_rows, cur_a, mmctx->mapping_stride);
+                                       matrix_rows, cur_a, mmctx->mapping_stride,
+                                       (src_w->flags & HTP_TENSOR_CANONICAL_Q4_0) != 0);
             if (ret != 0) {
                 FARF(ERROR, "HMX matmul ID NX failed for expert %u weight %u, error %d\n", cur_a, p, ret);
                 return HTP_STATUS_NO_SUPPORT;
@@ -3778,6 +3801,7 @@ int op_matmul_id(struct htp_ops_context * octx) {
     mmctx->act = src1;
 
     const struct htp_mm_kernel_params * kparams = (const struct htp_mm_kernel_params *) octx->kernel_params;
+    if ((src0->flags & HTP_TENSOR_CANONICAL_Q4_0) && !kparams->n_hmx) { return HTP_STATUS_NO_SUPPORT; }
 
     const struct htp_tensor * restrict ids = octx->src[2];
 
@@ -3862,6 +3886,9 @@ int op_matmul_id_nx(struct htp_ops_context * octx) {
     htp_trace_event_start(tr, HTP_TRACE_EVT_INIT, 0);
 
     const struct htp_mm_kernel_params * kparams = (const struct htp_mm_kernel_params *) octx->kernel_params;
+    for (uint32_t p = 0; p < kparams->n_weights; ++p) {
+        if ((octx->src[p]->flags & HTP_TENSOR_CANONICAL_Q4_0) && !kparams->n_hmx) { return HTP_STATUS_NO_SUPPORT; }
+    }
     const uint32_t n_weights = kparams->n_weights;
     const struct htp_tensor * restrict src0 = octx->src[0];
     const struct htp_tensor * restrict act  = octx->src[n_weights];

@@ -675,6 +675,7 @@ struct ggml_backend_opencl_context {
     ggml_cl_buffer prealloc_quant_trans;
     ggml_cl_buffer prealloc_scales_trans;
     ggml_cl_buffer prealloc_act_trans;
+    ggml_cl_buffer q4_prepare_staging;
     // q8_1-quantized reordered MoE activations for the dp4a prefill GEMM.
     ggml_cl_buffer prealloc_moe_qa;   // int8 quants  [tok_slots * ne00]
     ggml_cl_buffer prealloc_moe_da;   // per-block d  [tok_slots * ne00/32] (half)
@@ -888,6 +889,8 @@ struct ggml_backend_opencl_context {
     cl_kernel kernel_convert_bf16_to_f16, kernel_convert_f16_to_bf16;
     cl_kernel kernel_mul_mat_q4_0_f32_8x_flat;
     cl_kernel kernel_convert_block_q4_0_noshuffle;
+    cl_kernel kernel_convert_block_q4_0_dense_transposed;
+    cl_kernel kernel_pack_q4_0_htp;
     cl_kernel kernel_restore_block_q4_0_noshuffle;
     cl_kernel kernel_convert_block_q4_1_noshuffle;
     cl_kernel kernel_restore_block_q4_1_noshuffle;
@@ -1580,6 +1583,8 @@ static void load_cl_kernels(ggml_backend_opencl_context *backend_ctx) {
         CL_CHECK((backend_ctx->kernel_convert_block_q1_0  = clCreateKernel(backend_ctx->program_cvt, "kernel_convert_block_q1_0", &err), err));
         CL_CHECK((backend_ctx->kernel_restore_block_q1_0  = clCreateKernel(backend_ctx->program_cvt, "kernel_restore_block_q1_0", &err), err));
         CL_CHECK((backend_ctx->kernel_convert_block_q4_0_noshuffle = clCreateKernel(backend_ctx->program_cvt, "kernel_convert_block_q4_0_noshuffle", &err), err));
+        CL_CHECK((backend_ctx->kernel_convert_block_q4_0_dense_transposed = clCreateKernel(backend_ctx->program_cvt, "kernel_convert_block_q4_0_dense_transposed", &err), err));
+        CL_CHECK((backend_ctx->kernel_pack_q4_0_htp = clCreateKernel(backend_ctx->program_cvt, "kernel_pack_q4_0_htp", &err), err));
         CL_CHECK((backend_ctx->kernel_restore_block_q4_0_noshuffle = clCreateKernel(backend_ctx->program_cvt, "kernel_restore_block_q4_0_noshuffle", &err), err));
         CL_CHECK((backend_ctx->kernel_convert_block_q4_0  = clCreateKernel(backend_ctx->program_cvt, "kernel_convert_block_q4_0", &err), err));
         CL_CHECK((backend_ctx->kernel_restore_block_q4_0  = clCreateKernel(backend_ctx->program_cvt, "kernel_restore_block_q4_0", &err), err));
@@ -6532,9 +6537,13 @@ static ggml_backend_opencl_context * ggml_cl_init(ggml_backend_dev_t dev) {
                       required_B_d_bytes, max_B_d_bytes);
     }
 
-    backend_ctx->prealloc_quant_trans.allocate(context, max_A_q_d_bytes);
-    backend_ctx->prealloc_scales_trans.allocate(context, max_A_s_d_bytes);
-    backend_ctx->prealloc_act_trans.allocate(context, max_B_d_bytes);
+    // Opt-in bounded-working-set execution. All use sites grow activation scratch
+    // to their actual required size; quant/scales buffers have no other use sites.
+    if (!getenv("GGML_OPENCL_LAZY_SCRATCH")) {
+        backend_ctx->prealloc_quant_trans.allocate(context, max_A_q_d_bytes);
+        backend_ctx->prealloc_scales_trans.allocate(context, max_A_s_d_bytes);
+        backend_ctx->prealloc_act_trans.allocate(context, max_B_d_bytes);
+    }
 #endif // GGML_OPENCL_USE_ADRENO_KERNELS
 
     backend_ctx->disable_fusion = getenv("GGML_OPENCL_DISABLE_FUSION") != nullptr;
@@ -9452,12 +9461,65 @@ static void ggml_opencl_set_q4_0_expert_slice(
 }
 #endif
 
+// Reuse both the final dense layout and the canonical upload staging allocation.
+// Caller has synchronized the previous use of this layer-sized working set.
+#if defined(GGML_OPENCL_SOA_Q) && defined(GGML_OPENCL_USE_ADRENO_KERNELS)
+static void ggml_opencl_prepare_dense_q4(ggml_backend_opencl_context * backend, ggml_backend_opencl_buffer_context * ctx,
+        ggml_tensor * tensor, const void * data, size_t size) {
+    const bool profile=getenv("GGML_OPENCL_PROFILE_EXPERT_PREPARE")!=nullptr;
+    const int64_t start=profile?ggml_time_us():0;
+    ggml_tensor_extra_cl_q4_0 * extra;
+    if(ctx->q4_0_soa_tensors.count(tensor)) {
+        extra=static_cast<ggml_tensor_extra_cl_q4_0 *>(tensor->extra);
+    } else {
+        auto * original=static_cast<ggml_tensor_extra_cl *>(tensor->extra);
+        GGML_ASSERT(original);
+        extra=ctx->ggml_opencl_alloc_temp_tensor_extra_q4_0();
+        size_t scales=ggml_nelements(tensor)/32*sizeof(ggml_fp16_t);
+        cl_int error;
+        cl_buffer_region region{align_to(original->offset,backend->alignment),scales};
+        extra->d=clCreateSubBuffer(original->data_device,CL_MEM_READ_WRITE,CL_BUFFER_CREATE_TYPE_REGION,&region,&error); CL_CHECK(error);
+        region.origin=align_to(region.origin+scales,backend->alignment); region.size=ggml_nelements(tensor)/2;
+        extra->q=clCreateSubBuffer(original->data_device,CL_MEM_READ_WRITE,CL_BUFFER_CREATE_TYPE_REGION,&region,&error); CL_CHECK(error);
+        tensor->extra=extra; ctx->q4_0_soa_tensors.insert(tensor);
+    }
+    backend->q4_prepare_staging.allocate(backend->context,size);
+    cl_mem source=backend->q4_prepare_staging.buffer;
+    const int64_t upload_start=profile?ggml_time_us():0;
+    CL_CHECK(clEnqueueWriteBuffer(backend->queue,source,CL_TRUE,0,size,data,0,nullptr,nullptr));
+    const int64_t convert_start=profile?ggml_time_us():0;
+    cl_kernel kernel=backend->kernel_convert_block_q4_0_dense_transposed;
+    cl_uint width=tensor->ne[0],rows=tensor->ne[1];
+    CL_CHECK(clSetKernelArg(kernel,0,sizeof(cl_mem),&source));
+    CL_CHECK(clSetKernelArg(kernel,1,sizeof(cl_mem),&extra->q));
+    CL_CHECK(clSetKernelArg(kernel,2,sizeof(cl_mem),&extra->d));
+    CL_CHECK(clSetKernelArg(kernel,3,sizeof(width),&width));
+    CL_CHECK(clSetKernelArg(kernel,4,sizeof(rows),&rows));
+    size_t global[]={size_t((rows+15)/16)*16,size_t((width/32+3)/4)*4},local[]={16,4};
+    cl_event event;
+    CL_CHECK(clEnqueueNDRangeKernel(backend->queue,kernel,2,nullptr,global,local,0,nullptr,&event));
+    CL_CHECK(clWaitForEvents(1,&event)); CL_CHECK(clReleaseEvent(event));
+    if(profile) { fprintf(stderr,"GPU_DENSE_PREPARE bytes=%zu init_us=%lld upload_us=%lld convert_us=%lld\n",size,
+        (long long)(upload_start-start),(long long)(convert_start-upload_start),(long long)(ggml_time_us()-convert_start)); }
+}
+#endif
+
 static void ggml_backend_opencl_buffer_set_tensor(ggml_backend_buffer_t buffer, ggml_tensor * tensor, const void * data, size_t offset, size_t size) {
     ggml_backend_opencl_device_context * dev_ctx = (ggml_backend_opencl_device_context *) buffer->buft->device->context;
     ggml_backend_opencl_context * backend_ctx = dev_ctx->backend_ctx;
 
     cl_context context = backend_ctx->context;
     cl_command_queue queue = backend_ctx->queue;
+
+#if defined(GGML_OPENCL_SOA_Q) && defined(GGML_OPENCL_USE_ADRENO_KERNELS)
+    if(getenv("GGML_OPENCL_FUSED_Q4_PREPARE") && tensor->type==GGML_TYPE_Q4_0 &&
+       tensor->ne[2]==1 && tensor->ne[3]==1 && !tensor->view_src && ggml_is_contiguous(tensor) &&
+       use_adreno_kernels(backend_ctx,tensor)) {
+        GGML_ASSERT(offset==0 && size==ggml_nbytes(tensor));
+        ggml_opencl_prepare_dense_q4(backend_ctx,static_cast<ggml_backend_opencl_buffer_context *>(buffer->context),tensor,data,size);
+        return;
+    }
+#endif
 
 #ifdef GGML_OPENCL_SOA_Q
     if (tensor->type == GGML_TYPE_Q4_0 && tensor->ne[2] > 1 && tensor->ne[3] == 1 &&
@@ -12595,7 +12657,44 @@ ggml_backend_buffer_t ggml_backend_opencl_import_shared_dma_compute_buffer(
 #endif
 }
 
+bool ggml_backend_opencl_pack_q4_0_htp(ggml_backend_t backend,
+        ggml_backend_buffer_t source, size_t source_offset,
+        ggml_backend_buffer_t target, size_t target_offset,
+        uint32_t width, uint32_t rows, uint32_t experts, uint64_t selected) {
+    if(!backend || !ggml_backend_is_opencl(backend) || !source || !target || source==target ||
+       source->buft->device!=backend->device || target->buft->device!=backend->device ||
+       source_offset%2 || target_offset%2 ||
+       source->iface.free_buffer!=ggml_backend_opencl_buffer_interface.free_buffer ||
+       target->iface.free_buffer!=ggml_backend_opencl_buffer_interface.free_buffer ||
+       !width || width%32 || !rows || rows%32 || !experts || experts>64 || !selected ||
+       (experts<64 && (selected>>experts))) { return false; }
+    auto *src=static_cast<ggml_backend_opencl_buffer_context *>(source->context);
+    auto *dst=static_cast<ggml_backend_opencl_buffer_context *>(target->context);
+    auto *ctx=ggml_cl_init(backend->device);
+    if(!src->shared_host_base || !dst->shared_host_base || src->shared_host_base==dst->shared_host_base) { return false; }
+    const size_t matrix=size_t(width/32)*rows*18, count=__builtin_popcountll(selected);
+    if(source_offset>source->size || matrix>(source->size-source_offset)/experts ||
+       target_offset>target->size || matrix>(target->size-target_offset)/count) { return false; }
+    cl_kernel kernel=ctx->kernel_pack_q4_0_htp;
+    cl_ulong so=source_offset,to=target_offset,mask=selected;
+    CL_CHECK(clSetKernelArg(kernel,0,sizeof(cl_mem),&src->buffer[0]));
+    CL_CHECK(clSetKernelArg(kernel,1,sizeof(so),&so));
+    CL_CHECK(clSetKernelArg(kernel,2,sizeof(cl_mem),&dst->buffer[0]));
+    CL_CHECK(clSetKernelArg(kernel,3,sizeof(to),&to));
+    CL_CHECK(clSetKernelArg(kernel,4,sizeof(width),&width));
+    CL_CHECK(clSetKernelArg(kernel,5,sizeof(rows),&rows));
+    CL_CHECK(clSetKernelArg(kernel,6,sizeof(mask),&mask));
+    size_t global[]={rows,size_t((width/32+1)/2)*2,count},local[]={32,2,1};
+    cl_event event;
+    CL_CHECK(clEnqueueNDRangeKernel(ctx->queue,kernel,3,nullptr,global,local,0,nullptr,&event));
+    CL_CHECK(clWaitForEvents(1,&event)); CL_CHECK(clReleaseEvent(event));
+    return true;
+}
+
 static void * ggml_backend_opencl_get_proc_address(ggml_backend_reg_t, const char * name) {
+    if (strcmp(name, "ggml_backend_opencl_pack_q4_0_htp") == 0) {
+        return (void *) ggml_backend_opencl_pack_q4_0_htp;
+    }
     if (strcmp(name, "ggml_backend_opencl_import_shared_dma_compute_buffer") == 0) {
         return (void *) ggml_backend_opencl_import_shared_dma_compute_buffer;
     }
