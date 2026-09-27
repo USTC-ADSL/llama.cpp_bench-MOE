@@ -377,9 +377,7 @@ static int predict_all(const std::string & capture_path,const char * output) {
         }
         auto start=timer::now(); fullmodel_execution_model execution(coefficients,capture.at("tokens"));
         auto report=execution.plan(capture,layers); double observed=elapsed(start);
-        auto old=report.at("path_decision");
-        report["path_decision"]=execution.decide(old.at("custom_predicted_us"),report.at("native_base_compute_us"),old.at("custom_uncertainty_us"),observed);
-        report["execution_mode"]=report["path_decision"]["execution_mode"];
+        execution.finalize(report,observed);
         report["decision_device_total_us"]=elapsed(start);
         report["decision_timing_scope"]="validation, candidate evaluation and plan construction; excludes route/model file IO and output serialization";
         std::ofstream out(output); out<<report.dump(2)<<'\n'; require(out.good(),"execution plan write failed"); return 0;

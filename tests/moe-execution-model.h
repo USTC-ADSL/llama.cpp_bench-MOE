@@ -5,6 +5,7 @@
 struct fullmodel_execution_model {
     resident_placement_model base;
     json node;
+    json guard;
     double decision_budget;
     static int shared(const std::string & f) { return f=="gpu"?1:2; }
     static void coefficient(const json & v,bool zero=false) {
@@ -38,7 +39,24 @@ struct fullmodel_execution_model {
                 for(const char * k:{"host_us_per_token","outside_us","uncertainty_us"}) { coefficient(c.at(k),true); }
             } }
         }
-        require(nt>=nodes.front().at("tokens").get<int>() && nt<=nodes.back().at("tokens").get<int>(),"length outside calibrated execution range");
+        if(m.contains("calibration_guard")) {
+            guard=m.at("calibration_guard"); require(guard.at("version")==1 && !guard.at("native").empty() && !guard.at("profiles").empty(),"invalid calibration guard");
+            std::vector<int> lengths; std::vector<std::string> ids;
+            for(const auto & n:guard.at("native")) {
+                require(n.at("tokens").is_number_integer(),"invalid guard length"); int t=n.at("tokens");
+                require(t>=nodes.front().at("tokens").get<int>() && t<=nodes.back().at("tokens").get<int>() && std::find(lengths.begin(),lengths.end(),t)==lengths.end(),"invalid guard length"); lengths.push_back(t);
+                coefficient(n.at("native_us")); coefficient(n.at("native_base_compute_us")); coefficient(n.at("uncertainty_us"),true);
+            }
+            for(const auto & p:guard.at("profiles")) {
+                std::string id=p.at("id"),f=p.at("family"),policy=p.at("policy");
+                require(!id.empty() && std::find(ids.begin(),ids.end(),id)==ids.end() && p.at("tokens").is_number_integer(),"invalid guard profile"); ids.push_back(id);
+                require(std::find(lengths.begin(),lengths.end(),p.at("tokens").get<int>())!=lengths.end() && (f=="cpu" || f=="gpu" || f=="branch") && (policy=="barrier" || policy=="overlap"),"invalid guard profile");
+                require(p.at("tails").size()==23,"invalid guard bank sizes");
+                for(const auto & t:p.at("tails")) { require(t.is_number_integer() && (f=="branch"?t==0:t.get<int>()>=1 && t.get<int>()<60),"invalid guard bank sizes"); }
+                require(p.at("bias_us").is_number() && std::isfinite(p.at("bias_us").get<double>()),"invalid guard bias"); coefficient(p.at("uncertainty_us"),true);
+            }
+        }
+        require(!guard.is_null() || (nt>=nodes.front().at("tokens").get<int>() && nt<=nodes.back().at("tokens").get<int>()),"length outside calibrated execution range");
         for(size_t i=1;i<nodes.size();++i) {
             const auto & a=nodes[i-1]; const auto & b=nodes[i]; int lo=a.at("tokens"),hi=b.at("tokens");
             if(nt>=lo && nt<=hi) { node=lerp(a,b,double(nt-lo)/(hi-lo)); break; }
@@ -78,9 +96,79 @@ struct fullmodel_execution_model {
             {"native_uncertainty_us",node.at("native_uncertainty_us")},{"decision_budget_us",budget},
             {"reserved_decision_budget_us",decision_budget},{"observed_planning_us",observed}};
     }
+    void finalize(json & report,double observed) const {
+        require(std::isfinite(observed) && observed>=0,"invalid observed planning time");
+        auto & d=report["path_decision"]; double budget=std::max(decision_budget,observed);
+        d["decision_budget_us"]=budget; d["reserved_decision_budget_us"]=decision_budget; d["observed_planning_us"]=observed;
+        d["custom_upper_us"]=d.at("custom_predicted_us").is_null()?json(nullptr):json(d.at("custom_predicted_us").get<double>()+d.at("custom_uncertainty_us").get<double>()+budget);
+        d["execution_mode"]=!d["custom_upper_us"].is_null() && d["custom_upper_us"].get<double>()<d.at("native_lower_us").get<double>()?"custom":"npu";
+        report["execution_mode"]=d["execution_mode"];
+    }
+    json guarded_plan(const json & capture,const json & layers) const {
+        int nt=capture.at("tokens"); const json * anchor=nullptr;
+        for(const auto & n:guard.at("native")) { if(n.at("tokens")==nt) { anchor=&n; break; } }
+        json report={{"tokens",nt},{"token_ids",capture.at("token_ids")},{"model_type","branch_critical_path"},
+            {"execution_policy",{{"family","native"},{"overlap_gather",false},{"activation_lifetimes",true}}},
+            {"layers",layers},{"custom_candidates",json::array()},
+            {"scope","offline exact-length calibrated request templates; empirical error envelope; no migration"},
+            {"path_decision",{{"custom_predicted_us",nullptr},{"custom_uncertainty_us",nullptr},{"native_predicted_us",nullptr},
+                {"native_uncertainty_us",nullptr},{"native_lower_us",nullptr},{"reason","unsupported_length_or_schedule"}}}};
+        for(auto & l:report["layers"]) { l["selected"]={{"name","npu_shared_npu"},{"owner",std::vector<int>(60,1)},{"shared",1}}; }
+        std::vector<const json *> profiles; for(const auto & p:guard.at("profiles")) {
+            if(p.at("tokens")!=nt) { continue; } bool feasible=true;
+            for(int il=0;il<23;++il) { int active=0; for(const auto & c:layers[il].at("counts")) { active+=c.get<int>()>0; }
+                int tail=p.at("tails").at(il); if(tail && tail>=active) { feasible=false; break; } }
+            if(feasible) { profiles.push_back(&p); }
+        }
+        if(!anchor || profiles.empty()) { finalize(report,0); return report; }
+        std::array<std::vector<int>,24> counts,order;
+        double native_base=0;
+        for(int il=0;il<24;++il) {
+            counts[il]=layers[il].at("counts").get<std::vector<int>>();
+            for(int e=0;e<60;++e) { if(counts[il][e]) { order[il].push_back(e); } }
+            std::sort(order[il].begin(),order[il].end(),[&](int a,int b) { return counts[il][a]!=counts[il][b]?counts[il][a]<counts[il][b]:a<b; });
+            native_base+=base.predict(il==23?1:nt,counts[il],{"npu_shared_npu",std::vector<int>(60,1),1}).backend[1];
+        }
+        placement last; double last_cost=INFINITY;
+        for(const auto & p:model_candidates(counts[23])) { double cost=base.predict(1,counts[23],p).total; if(cost<last_cost) { last=p; last_cost=cost; } }
+        auto placement_for=[&](const json & profile,int il) {
+            if(il==23) { return last; }
+            std::string f=profile.at("family"); int tail=profile.at("tails").at(il);
+            placement p={"guard_"+f+"_tail"+std::to_string(tail),std::vector<int>(60,1),shared(f)};
+            for(int i=0;i<tail;++i) { p.owner[order[il][i]]=f=="cpu"?0:2; } return p;
+        };
+        const json * winner=nullptr; json best; double best_score=INFINITY;
+        for(const json * profile:profiles) {
+            const auto & p=*profile; std::string f=p.at("family"),policy=p.at("policy");
+            double nominal=node.at("families").at(f).at(policy).at("outside_us");
+            for(int il=0;il<24;++il) { nominal+=predict(il==23?1:nt,counts[il],placement_for(p,il),f,policy=="overlap").at("total_us").get<double>(); }
+            double corrected=std::max(1.,nominal+p.at("bias_us").get<double>()),score=corrected+p.at("uncertainty_us").get<double>();
+            json option={{"id",p.at("id")},{"family",f},{"policy",policy},{"nominal_us",nominal},{"predicted_us",corrected},{"bias_us",p.at("bias_us")},{"uncertainty_us",p.at("uncertainty_us")}};
+            report["custom_candidates"].push_back(option);
+            if(score<best_score) { best_score=score; winner=profile; best=option; }
+        }
+        for(int il=0;il<24;++il) {
+            auto p=placement_for(*winner,il); auto & l=report["layers"][il];
+            l["selected"]={{"name",p.name},{"owner",p.owner},{"shared",p.shared}};
+            l["prediction"]=predict(il==23?1:nt,counts[il],p,best.at("family"),best.at("policy")=="overlap");
+        }
+        double native=std::max(1.,anchor->at("native_us").get<double>()+native_base-anchor->at("native_base_compute_us").get<double>());
+        report["selected_profile"]=best.at("id"); report["native_base_compute_us"]=native_base;
+        report["execution_policy"]={{"family",best.at("family")},{"overlap_gather",best.at("policy")=="overlap"},{"activation_lifetimes",true}};
+        report["path_decision"]={{"custom_predicted_us",best.at("predicted_us")},{"custom_uncertainty_us",best.at("uncertainty_us")},
+            {"native_predicted_us",native},{"native_uncertainty_us",anchor->at("uncertainty_us")},{"native_lower_us",native-anchor->at("uncertainty_us").get<double>()},{"reason","calibrated_template_error_guard"}};
+        finalize(report,0); return report;
+    }
     json plan(const json & capture,const json & layers) const {
-        int tokens=capture.at("tokens"); require(capture.at("token_ids").size()==size_t(tokens) && layers.size()==24,"invalid fullmodel route shape");
-        for(int il=0;il<24;++il) { require(layers[il].at("layer")==il && layers[il].at("tokens")== (il==23?1:tokens),"invalid fullmodel layer shape"); }
+        require(capture.at("tokens").is_number_integer(),"invalid fullmodel length");
+        int tokens=capture.at("tokens"); require(tokens>1 && capture.at("token_ids").size()==size_t(tokens) && layers.size()==24,"invalid fullmodel route shape");
+        for(int il=0;il<24;++il) {
+            require(layers[il].at("layer")==il && layers[il].at("tokens")== (il==23?1:tokens),"invalid fullmodel layer shape");
+            const auto & counts=layers[il].at("counts"); require(counts.size()==60,"invalid route counts"); int total=0;
+            for(const auto & c:counts) { require(c.is_number_integer() && c.get<int>()>=0,"invalid route count"); total+=c.get<int>(); }
+            require(total==4*(il==23?1:tokens),"invalid route total");
+        }
+        if(!guard.is_null()) { return guarded_plan(capture,layers); }
         struct candidate {
             placement p;
             std::string family;

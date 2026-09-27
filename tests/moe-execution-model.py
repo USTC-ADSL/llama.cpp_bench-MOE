@@ -96,6 +96,105 @@ def validate(model):
     b = model["base"]
     if b["version"] != 1 or len(b["backends"]) != 3 or any(len(c) != 26 for c in b["backends"]) or len(b["host"]) != 8 or not all(math.isfinite(v) for c in [*b["backends"], b["host"]] for v in c):
         raise ValueError("invalid base coefficients")
+    if "calibration_guard" in model:
+        g = model["calibration_guard"]
+        if g["version"] != 1 or not g["native"] or not g["profiles"]:
+            raise ValueError("invalid calibration guard")
+        lengths, ids = set(), set()
+        for n in g["native"]:
+            nt = n["tokens"]
+            if type(nt) is not int or not nodes[0]["tokens"] <= nt <= nodes[-1]["tokens"] or nt in lengths:
+                raise ValueError("invalid guard length")
+            lengths.add(nt)
+            for k in ("native_us", "native_base_compute_us"):
+                positive(n[k])
+            positive(n["uncertainty_us"], True)
+        for p in g["profiles"]:
+            if not isinstance(p["id"], str) or not p["id"] or p["id"] in ids or type(p["tokens"]) is not int or p["tokens"] not in lengths or p["family"] not in FAMILIES or p["policy"] not in POLICIES:
+                raise ValueError("invalid guard profile")
+            ids.add(p["id"])
+            if len(p["tails"]) != 23 or any(type(t) is not int or (t != 0 if p["family"] == "branch" else not 1 <= t < 60) for t in p["tails"]):
+                raise ValueError("invalid guard bank sizes")
+            if not isinstance(p["bias_us"], (float, int)) or not math.isfinite(p["bias_us"]):
+                raise ValueError("invalid guard bias")
+            positive(p["uncertainty_us"], True)
+
+
+def validate_routes(capture, layers):
+    nt = capture["tokens"]
+    if type(nt) is not int or nt <= 1 or len(capture["token_ids"]) != nt or len(layers) != 24:
+        raise ValueError("invalid fullmodel route shape")
+    for i, l in enumerate(layers):
+        if l["layer"] != i or l["tokens"] != (1 if i == 23 else nt) or len(l["counts"]) != 60 or any(type(c) is not int or c < 0 for c in l["counts"]) or sum(l["counts"]) != 4*l["tokens"]:
+            raise ValueError("invalid fullmodel layer shape/counts")
+
+
+def template_placement(counts, family, tail):
+    owner = [1]*60
+    order = sorted((e for e in range(60) if counts[e]), key=lambda e: (counts[e], e))
+    if tail and tail >= len(order):
+        raise ValueError("insufficient active experts for template")
+    for expert in order[:tail]:
+        owner[expert] = 0 if family == "cpu" else 2
+    return {"name": f"guard_{family}_tail{tail}", "owner": owner, "shared": SHARED[family]}
+
+
+def template_plan(model, node, layers, profile):
+    selected = []
+    for i, l in enumerate(layers):
+        if i < 23:
+            p = template_placement(l["counts"], profile["family"], profile["tails"][i])
+        else:
+            p = min(base.candidates(l["counts"]), key=lambda p: base.predict(model["base"], 1, l["counts"], p)["total_us"])
+        pred = predict(model, node, l["tokens"], l["counts"], p, profile["family"], profile["policy"])
+        selected.append({**l, "selected": p, "prediction": pred})
+    nominal = sum(l["prediction"]["total_us"] for l in selected) + node["families"][profile["family"]][profile["policy"]]["outside_us"]
+    return selected, nominal
+
+
+def finalize(report, model, observed_us):
+    if not math.isfinite(observed_us) or observed_us < 0:
+        raise ValueError("invalid observed planning time")
+    d = report["path_decision"]
+    budget = max(model["decision_budget_us"], observed_us)
+    d.update(decision_budget_us=budget, reserved_decision_budget_us=model["decision_budget_us"], observed_planning_us=observed_us)
+    d["custom_upper_us"] = None if d["custom_predicted_us"] is None else d["custom_predicted_us"] + d["custom_uncertainty_us"] + budget
+    d["execution_mode"] = "custom" if d["custom_upper_us"] is not None and d["custom_upper_us"] < d["native_lower_us"] else "npu"
+    report["execution_mode"] = d["execution_mode"]
+    return report
+
+
+def guarded_plan(model, capture, layers, observed_us):
+    nt = capture["tokens"]
+    g = model["calibration_guard"]
+    anchors = [n for n in g["native"] if n["tokens"] == nt]
+    profiles = [p for p in g["profiles"] if p["tokens"] == nt and all(t == 0 or t < sum(c > 0 for c in l["counts"]) for t,l in zip(p["tails"], layers[:23]))]
+    report = {"tokens": nt, "token_ids": capture["token_ids"], "model_type": model["model_type"],
+              "execution_policy": {"family": "native", "overlap_gather": False, "activation_lifetimes": True},
+              "layers": [{**l, "selected": {"name": "npu_shared_npu", "owner": [1]*60, "shared": 1}} for l in layers],
+              "custom_candidates": [], "scope": "offline exact-length calibrated request templates; empirical error envelope; no migration"}
+    d = {"custom_predicted_us": None, "custom_uncertainty_us": None, "native_predicted_us": None,
+         "native_uncertainty_us": None, "native_lower_us": None, "reason": "unsupported_length_or_schedule"}
+    report["path_decision"] = d
+    if not anchors or not profiles:
+        return finalize(report, model, observed_us)
+    node = interpolate(model, nt)
+    native_base = sum(base.predict(model["base"], l["tokens"], l["counts"], {"owner": [1]*60, "shared": 1})["backend_us"][1] for l in layers)
+    anchor = anchors[0]
+    native = max(1., anchor["native_us"] + native_base - anchor["native_base_compute_us"])
+    options = []
+    for p in profiles:
+        selected, nominal = template_plan(model, node, layers, p)
+        options.append({"id": p["id"], "family": p["family"], "policy": p["policy"], "nominal_us": nominal,
+                        "predicted_us": max(1., nominal+p["bias_us"]), "bias_us": p["bias_us"],
+                        "uncertainty_us": p["uncertainty_us"], "layers": selected})
+    winner = min(options, key=lambda r: r["predicted_us"]+r["uncertainty_us"])
+    report.update(layers=winner["layers"], native_base_compute_us=native_base, selected_profile=winner["id"],
+                  custom_candidates=[{k:v for k,v in r.items() if k != "layers"} for r in options],
+                  execution_policy={"family": winner["family"], "overlap_gather": winner["policy"] == "overlap", "activation_lifetimes": True})
+    d.update(custom_predicted_us=winner["predicted_us"], custom_uncertainty_us=winner["uncertainty_us"], native_predicted_us=native,
+             native_uncertainty_us=anchor["uncertainty_us"], native_lower_us=native-anchor["uncertainty_us"], reason="calibrated_template_error_guard")
+    return finalize(report, model, observed_us)
 
 
 def predict(model, node, nt, counts, placement, family, policy):
@@ -112,6 +211,10 @@ def predict(model, node, nt, counts, placement, family, policy):
 
 
 def make_plan(model, capture, layers, observed_us=0):
+    validate(model)
+    validate_routes(capture, layers)
+    if "calibration_guard" in model:
+        return guarded_plan(model, capture, layers, observed_us)
     node = interpolate(model, capture["tokens"])
     if len(capture["token_ids"]) != capture["tokens"] or len(layers) != 24 or any(l["layer"] != i or l["tokens"] != (1 if i == 23 else capture["tokens"]) for i, l in enumerate(layers)):
         raise ValueError("invalid fullmodel route shape")

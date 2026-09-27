@@ -28,6 +28,7 @@ int main(int argc,char ** argv) {
             auto start=std::chrono::steady_clock::now();
             fullmodel_execution_model execution(model,routes.at("tokens"));
             plan=execution.plan(routes,routes.at("layers"));
+            execution.finalize(plan,0);
             samples.push_back(std::chrono::duration<double,std::micro>(std::chrono::steady_clock::now()-start).count());
         }
         plan["decision_benchmark_us"]=samples;
