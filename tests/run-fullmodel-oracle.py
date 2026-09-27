@@ -9,6 +9,7 @@ import shlex
 import subprocess
 import time
 import tempfile
+from gpu_clock_collector import GpuClockCollector
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 OUT = ROOT / "task/handoff/handoff-2026-09-23-fullmodel-oracle/evidence"
@@ -26,6 +27,10 @@ def main():
     p.add_argument("--feedback-model", type=pathlib.Path, help="Causal shadow cost updates; does not move weights or change ownership")
     p.add_argument("--runtime-state", action="store_true", help="Read-only pre-load and per-request state/CPU-time telemetry; reports observation overhead")
     p.add_argument("--runtime-state-model", type=pathlib.Path, help="Auto: sample live state and choose before loading; plan-file supplies offline routes")
+    p.add_argument("--hexagon-timing", action="store_true", help="Aggregate existing DSP batch counters and host queue intervals; no per-op log output")
+    p.add_argument("--hexagon-op-profile", action="store_true", help="Also enable BASIC DSP op profiling; requires --hexagon-timing")
+    p.add_argument("--gpu-clock-sampling", action="store_true", help="Independent root read-only sysfs observer; inference stays shell uid")
+    p.add_argument("--gpu-sample-period-us", type=int, default=10000)
     p.add_argument("--profile-layers", help="Comma-separated layer indices for optimized compact candidate profiling")
     p.add_argument("--tokens", type=int, default=128)
     p.add_argument("--tag", required=True)
@@ -107,7 +112,12 @@ def main():
         record["reference_hash"] = adb("shell", f"sha256sum {REMOTE}/{args.reference}.json").stdout
     if args.plan_file:
         record["plan_source"] = str(args.plan_file.resolve())
-    env = ["env", f"LD_LIBRARY_PATH={REMOTE}", f"ADSP_LIBRARY_PATH={REMOTE}", "GGML_HEXAGON_DEVICES=1", "GGML_HEXAGON_NHMX=1", "GGML_HEXAGON_MM_SELECT=3", "GGML_HEXAGON_PROFILE=0"]
+    env = ["env", f"LD_LIBRARY_PATH={REMOTE}", f"ADSP_LIBRARY_PATH={REMOTE}", "GGML_HEXAGON_DEVICES=1", "GGML_HEXAGON_NHMX=1", "GGML_HEXAGON_MM_SELECT=3", f"GGML_HEXAGON_PROFILE={int(args.hexagon_op_profile)}"]
+    assert not args.hexagon_op_profile or args.hexagon_timing
+    if args.hexagon_timing:
+        env.append("GGML_HEXAGON_TIMING=1")
+    if args.gpu_clock_sampling:
+        assert args.runtime_state and args.mode in ("npu", "custom", "auto")
     if args.runtime_state:
         assert args.mode not in ("search","profile")
         env.append("MOE_RUNTIME_STATE=1")
@@ -194,14 +204,38 @@ def main():
     record["host_start_unix_ns"] = time.time_ns()
     manifest = output / f"{args.tag}.run.json"
     manifest.write_text(json.dumps(record, indent=2))
-    with (output / f"{args.tag}.log").open("w") as log:
-        proc = subprocess.Popen(["adb", "-s", "fd8657d6", "shell", command], stdout=log, stderr=subprocess.STDOUT)
-        start = time.monotonic()
-        while proc.poll() is None:
-            try:
-                proc.wait(timeout=20)
-            except subprocess.TimeoutExpired:
-                print(f"{args.tag}: {time.monotonic()-start:.0f}s", flush=True)
+    collector = None
+    proc = None
+    try:
+        if args.gpu_clock_sampling:
+            collector = GpuClockCollector(adb, REMOTE, BUILD / "bin/gpu-clock-sampler", output, args.tag, args.gpu_sample_period_us)
+            collector.start()
+        with (output / f"{args.tag}.log").open("w") as log:
+            proc = subprocess.Popen(["adb", "-s", "fd8657d6", "shell", command], stdout=log, stderr=subprocess.STDOUT)
+            start = time.monotonic()
+            while proc.poll() is None:
+                try:
+                    proc.wait(timeout=20)
+                except subprocess.TimeoutExpired:
+                    print(f"{args.tag}: {time.monotonic()-start:.0f}s", flush=True)
+    except BaseException as error:
+        record["runner_error"] = repr(error)
+        raise
+    finally:
+        if proc is not None:
+            record["exit"] = proc.poll()
+        try:
+            if collector is not None:
+                try:
+                    collector.stop()
+                except Exception as error:
+                    record["collector_error"] = repr(error)
+                    if "runner_error" not in record:
+                        raise
+        finally:
+            if collector is not None:
+                record["gpu_collector"] = collector.record
+            manifest.write_text(json.dumps(record, indent=2))
     record["exit"] = proc.returncode
     record["host_end_unix_ns"] = time.time_ns()
     record["after_thermal"] = adb("shell", "dumpsys thermalservice").stdout

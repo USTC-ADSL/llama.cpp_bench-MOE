@@ -1,0 +1,130 @@
+{
+  "inputs": {
+    "build-android-opencl-hexagon/bin/fullmodel-oracle": "ede29eac5f6c2e1d41032778df7d06f7ee4ef1bb836b87a7eb96fd48b412e5d4",
+    "build-android-opencl-hexagon/bin/gpu-clock-sampler": "617f8cf5920d2a0be39c111414e5a2a62a67f777305faf9cfc6558f4a7401b03",
+    "build-android-opencl-hexagon/bin/libllama.so": "51f129016af1dcfa96b773926f97350141b735072eef258ca59aa1faf6d4a8b1",
+    "build-android-opencl-hexagon/bin/libggml.so": "7c7c7918a1a1d319b44a0ea5824a7c17ba2a7be9f3c66068cf3627c94d91fbdc",
+    "build-android-opencl-hexagon/bin/libggml-base.so": "d6161136fbd965120c9c3ac35add908997b6c0607318f2d3f72b17c1ce50fb60",
+    "build-android-opencl-hexagon/bin/libggml-cpu.so": "06a3fe6b0a27c116bfbcec6ba13353fbcac83c12422d8ec8c284d22e3fb9ed32",
+    "build-android-opencl-hexagon/bin/libggml-opencl.so": "0f3686fbad099c79360f32d182b2ad5b41b8236be8a3cb6d0ebeec672c0d120f",
+    "build-android-opencl-hexagon/bin/libggml-hexagon.so": "a9626f75a1ce422e92007776fc496dffaf14ffc26d95038a052ff2d79a394be0",
+    "build-android-opencl-hexagon/ggml/src/ggml-hexagon/libggml-htp-v79.so": "48b3aeb4fa140d8ec0469c60f46ac381811d1a25d8bf6ec4619bba9fcf19900f",
+    "task/handoff/handoff-2026-09-27-runtime-state/prompts/harbor.txt": "cf4dc18de613e534a0ba4d8dc4f579a4978b276ce1c32f213fc166575ccf25e0",
+    "task/handoff/handoff-2026-09-27-runtime-state/c-128-plan.json": "f15ed8b122ad24d84324a7c6dc1eec8c1bc2b6cf27a781d428f2708a04f48831",
+    "task/handoff/handoff-2026-09-27-runtime-state/c-768-plan.json": "f323ffefe7f4be5e5191176e7d730de1df094e33ff7e61e3d977551f6cc8f6df"
+  },
+  "cases": [
+    [
+      128,
+      "npu",
+      "sampled",
+      "a"
+    ],
+    [
+      128,
+      "custom",
+      "control",
+      "a"
+    ],
+    [
+      128,
+      "custom",
+      "timing",
+      "a"
+    ],
+    [
+      128,
+      "custom",
+      "sampled",
+      "a"
+    ],
+    [
+      768,
+      "npu",
+      "control",
+      "a"
+    ],
+    [
+      768,
+      "npu",
+      "timing",
+      "a"
+    ],
+    [
+      768,
+      "npu",
+      "sampled",
+      "a"
+    ],
+    [
+      768,
+      "custom",
+      "sampled",
+      "a"
+    ],
+    [
+      768,
+      "custom",
+      "sampled",
+      "b"
+    ],
+    [
+      768,
+      "npu",
+      "sampled",
+      "b"
+    ],
+    [
+      768,
+      "npu",
+      "timing",
+      "b"
+    ],
+    [
+      768,
+      "npu",
+      "control",
+      "b"
+    ],
+    [
+      128,
+      "custom",
+      "sampled",
+      "b"
+    ],
+    [
+      128,
+      "custom",
+      "timing",
+      "b"
+    ],
+    [
+      128,
+      "custom",
+      "control",
+      "b"
+    ],
+    [
+      128,
+      "npu",
+      "sampled",
+      "b"
+    ],
+    [
+      128,
+      "npu",
+      "op",
+      "a"
+    ],
+    [
+      768,
+      "npu",
+      "op",
+      "a"
+    ]
+  ],
+  "reps": 8,
+  "warmups": 2,
+  "gpu_period_us": 10000,
+  "scope": "harbor already observed; fixed resident plans, diagnostic only; reversed order; control/timing/timing+GPU isolate observation perturbation; op-profile diagnostic separately; inference uid2000"
+}

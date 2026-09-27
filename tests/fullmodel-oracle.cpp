@@ -7,10 +7,12 @@
 #include "moe-token-workers.h"
 #include "moe-runtime-state.h"
 #include "moe-state-correction.h"
+#include "moe-device-timing.h"
 
 #include <iomanip>
 #include <sys/resource.h>
 #include <set>
+#include <unistd.h>
 #if defined(__aarch64__)
 #include <arm_neon.h>
 #endif
@@ -145,6 +147,7 @@ struct partitioned_ffn {
         // a disjoint backend arena and may gather while another backend computes.
         if(!overlap_gather) { for(int b=0;b<3;++b) { if(work[b]) { prepare(b); } } }
         double gather=elapsed(start); start=timer::now();
+        const double branch_origin_us=std::chrono::duration<double,std::micro>(start.time_since_epoch()).count();
         std::array<double,3> phases[3]{}; std::array<double,2> intervals[3]{};
         std::future<void> futures[3]; int inline_b=-1;
         for(int b=0;b<3;++b) { if(work[b]) { inline_b=b; } }
@@ -191,7 +194,7 @@ struct partitioned_ffn {
             std::array<int,60> counts{}; for(auto id:ids) { ++counts[id]; }
             int changed=0; if(expected_ids.size()==ids.size()) { for(size_t i=0;i<ids.size();++i) { changed+=ids[i]!=expected_ids[i]; } }
             last={{"layer",il},{"tokens",nt},{"gather_us",gather},{"expert_wall_us",wall},{"combine_us",elapsed(start)},
-                  {"backend_phases_us",phases},{"intervals_us",intervals},{"pairs",{pairs[0].size(),pairs[1].size(),pairs[2].size()}},
+                  {"backend_phases_us",phases},{"intervals_us",intervals},{"branch_origin_monotonic_us",branch_origin_us},{"pairs",{pairs[0].size(),pairs[1].size(),pairs[2].size()}},
                   {"changed_route_slots",changed},{"route_reference_available",expected_ids.size()==ids.size()},
                   {"reduce_threads",parallel_reduce && reduce_workers && nt>=reduce_workers->count()?reduce_workers->count():1},
                   {"overlap_gather",overlap_gather},{"backend_gather_us",branch_gather},{"expert_wall_includes_gather",overlap_gather},
@@ -433,6 +436,7 @@ int main(int argc,char ** argv) {
     try {
         require(argc==8,"usage: fullmodel-oracle MODEL PROMPT TOKENS OUTPUT MODE REPS PLANS_OR_DASH; modes capture,search,profile,predict,auto,cpu,gpu,npu,custom,branch,custom-npu");
         ggml_backend_load_all(); llama_backend_init();
+        moe_device_timing device_timing(std::getenv("GGML_HEXAGON_TIMING") && std::string(std::getenv("GGML_HEXAGON_TIMING"))=="1");
         std::string mode=argv[5]; int nt=std::stoi(argv[3]),reps=std::stoi(argv[6]);
         require(nt>0 && reps>0,"tokens and repetitions must be positive");
         bool state_auto=std::getenv("MOE_RUNTIME_STATE_MODEL")!=nullptr;
@@ -575,6 +579,8 @@ int main(int argc,char ** argv) {
         report["transfer_placement"]=transfer_placement;
         report["requested_mode"]=argv[5];
         report["shadow_feedback"]=bool(feedback);
+        report["process_identity"]={{"pid",getpid()},{"uid",getuid()},{"euid",geteuid()}};
+        if(device_timing.read) { report["device_timing_scope"]="process-wide synchronized deltas; DSP batch includes preparation/cache flush; host queue read includes DSP wait; intervals overlap and are not additive; cycles/us is a DSP counter rate, not HMX clock readback"; }
         if(automatic) { report["path_decision"]=plans.at("path_decision"); }
         if(state_auto) {
             report["runtime_decision"]={{"state_correction",plans.at("state_correction")},{"decision_device_total_us",plans.at("decision_device_total_us")},
@@ -644,21 +650,27 @@ int main(int argc,char ** argv) {
             llama_memory_clear(llama_get_memory(ctx.get()),true);
             auto batch=llama_batch_get_one(tokens.data(),nt);
             auto state_before=runtime_state.sample();
+            auto htp_before=device_timing.snapshot();
             rusage before{},after{}; getrusage(RUSAGE_SELF,&before);
+            const double request_begin_us=runtime_state.enabled?moe_runtime_state::now_us():0;
             auto start=timer::now(); int code=llama_decode(ctx.get(),batch); llama_synchronize(ctx.get());
             auto * output=llama_get_logits_ith(ctx.get(),-1); require(code==0 && output,"native decode failed");
             logits.assign(output,output+nv); double us=elapsed(start);
+            const double request_end_us=runtime_state.enabled?moe_runtime_state::now_us():0;
             getrusage(RUSAGE_SELF,&after);
+            auto htp_after=device_timing.snapshot();
             auto state_after=runtime_state.sample();
             json state_row;
             if(runtime_state.enabled) {
                 auto cpu_us=[](const timeval & v) { return double(v.tv_sec)*1000000+v.tv_usec; };
                 double overhead=state_before.at("observation_us").get<double>()+state_after.at("observation_us").get<double>();
                 state_row={{"before",state_before},{"after",state_after},{"observation_us",overhead},
+                    {"request_begin_monotonic_us",request_begin_us},{"request_end_monotonic_us",request_end_us},
                     {"cpu_user_us",cpu_us(after.ru_utime)-cpu_us(before.ru_utime)},
                     {"cpu_system_us",cpu_us(after.ru_stime)-cpu_us(before.ru_stime)},
                     {"voluntary_switches",after.ru_nvcsw-before.ru_nvcsw},{"involuntary_switches",after.ru_nivcsw-before.ru_nivcsw},
                     {"total_with_observation_us",us+overhead}};
+                if(device_timing.read) { state_row["htp_timing"]=device_timing.delta(htp_before,htp_after); }
                 if(r<2) { report["runtime_state"]["warmups"].push_back({{"invocation",r},{"total_us",us},{"state",state_row}}); }
             }
             if(feedback) {
@@ -707,6 +719,7 @@ int main(int argc,char ** argv) {
                 row["host_reduce_threads"]=active_parallel?reduce_threads:1;
                 row["overlap_gather"]=active_overlap;
                 if(runtime_state.enabled) { row["runtime_state"]=state_row; }
+                if(device_timing.read) { row["htp_timing"]=device_timing.delta(htp_before,htp_after); }
                 if(feedback) { row["feedback_compute_us"]=feedback_cost; row["total_with_feedback_us"]=us+feedback_cost; }
                 if(custom) { row["layers"]=json::array(); for(auto & l:engine.layers) { row["layers"].push_back(l->last); } }
                 report["samples"].push_back(row);

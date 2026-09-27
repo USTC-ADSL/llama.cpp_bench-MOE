@@ -88,6 +88,22 @@ static int    opt_etm     = 0;
 static int    opt_verbose = 0;
 static int    opt_profile = 0; // profiling mode (0-disabled, 1-basic, 2-pmu)
 static bool   opt_hostbuf = false;
+static bool   opt_timing  = false; // aggregate counters without per-op log output
+static std::atomic<uint64_t> timing_counters[GGML_HEXAGON_TIMING_COUNT] {};
+
+static void timing_add(ggml_hexagon_timing_counter field, uint64_t value) {
+    timing_counters[field].fetch_add(value, std::memory_order_relaxed);
+}
+
+static bool ggml_backend_hexagon_get_timing(ggml_hexagon_timing * out, size_t size) {
+    if (!out || size != sizeof(*out)) { return false; }
+    out->version = 1; out->enabled = opt_timing;
+    out->profile_mode = opt_profile; out->devices = opt_ndev;
+    for (size_t i = 0; i < GGML_HEXAGON_TIMING_COUNT; ++i) {
+        out->counters[i] = timing_counters[i].load(std::memory_order_relaxed);
+    }
+    return true;
+}
 
 static int    opt_mm_select = 3; // 3 = HMX -> Tiled -> Flat -> CPU, 2 = Tiled -> Flat -> CPU, 1 = Flat -> CPU
 static int    opt_fa_select = 2; // 2 = HMX -> HVX -> CPU, 1 = HVX -> CPU, 0 = CPU (unsupported)
@@ -2665,6 +2681,12 @@ struct ggml_hexagon_opqueue {
     void pop(htp_opbatch_rsp rsp, dspqueue_buffer dbuf) {
         GGML_ASSERT(rsp.id < op_cache.size());
 
+        if (opt_timing) {
+            timing_add(GGML_HEXAGON_TIMING_BATCHES, 1);
+            timing_add(GGML_HEXAGON_TIMING_BATCH_US, rsp.usecs);
+            timing_add(GGML_HEXAGON_TIMING_BATCH_CYCLES, rsp.cycles_stop - rsp.cycles_start);
+        }
+
         done.push(rsp.id);
 
         const size_t b_size = sizeof(htp_buf_desc)  * rsp.n_bufs;
@@ -2699,17 +2721,22 @@ struct ggml_hexagon_opqueue {
                 trace_events = (const htp_trace_desc *) (p_ptr + p_size);
             }
 
-            if (opt_profile) {
+            if (opt_profile && !opt_timing) {
                 ggml_hexagon_dump_batch_prof(shm_buf->sess->name, rsp);
             }
 
             for (uint32_t i = 0; i < rsp.n_ops; i++) {
-                if (opt_profile) {
+                if (opt_profile && opt_timing) {
+                    timing_add(GGML_HEXAGON_TIMING_OPS, 1);
+                    timing_add(GGML_HEXAGON_TIMING_OP_US, pd[i].usecs);
+                    timing_add(GGML_HEXAGON_TIMING_OP_CYCLES, uint32_t(pd[i].cycles_stop - pd[i].cycles_start));
+                }
+                if (opt_profile && !opt_timing) {
                     ggml_hexagon_dump_op_prof(shm_buf->sess->name, ops[i], pd[i]);
                 }
             }
 
-            if (opt_profile) {
+            if (opt_profile && !opt_timing) {
                 ggml_hexagon_dump_trace_events(shm_buf->sess->name, rsp, trace_events, n_traces);
             }
         }
@@ -2733,7 +2760,12 @@ void ggml_hexagon_session::flush_pending(bool all) {
         // Read response packet from queue
         const uint32_t timeo = opt_oppoll ? 0 : DSPQUEUE_TIMEOUT;
 
+        const int64_t read_start = opt_timing ? ggml_time_us() : 0;
         int err = dspqueue_read(this->queue, &flags, 1, &n_dbufs, &dbuf, sizeof(rsp), &rsp_size, (uint8_t *) &rsp, timeo);
+        if (opt_timing) {
+            timing_add(GGML_HEXAGON_TIMING_READS, 1);
+            timing_add(GGML_HEXAGON_TIMING_READ_US, ggml_time_us() - read_start);
+        }
         if (err == AEE_EEXPIRED || err == AEE_EWOULDBLOCK) {
             continue;
         }
@@ -2776,7 +2808,12 @@ void ggml_hexagon_session::flush_batch(size_t min_ops) {
 
     HEX_VERBOSE("ggml-hex: %s queue-opbatch: %p size %u\n", this->c_name(), dbuf.ptr, dbuf.size);
 
+    const int64_t write_start = opt_timing ? ggml_time_us() : 0;
     int err = dspqueue_write(this->queue, 0, 1, &dbuf, sizeof(req), (const uint8_t*) &req, DSPQUEUE_TIMEOUT);
+    if (opt_timing) {
+        timing_add(GGML_HEXAGON_TIMING_WRITES, 1);
+        timing_add(GGML_HEXAGON_TIMING_WRITE_US, ggml_time_us() - write_start);
+    }
     if (err != 0) {
         GGML_ABORT("ggml-hex: %s dspqueue_write failed: 0x%08x\n", this->c_name(), (unsigned) err);
     }
@@ -6211,6 +6248,9 @@ bool ggml_backend_hexagon_buffer_export_shared_dma(
 
 static void * ggml_backend_hexagon_get_proc_address(ggml_backend_reg_t reg, const char * name) {
     GGML_UNUSED(reg);
+    if (strcmp(name, "ggml_backend_hexagon_get_timing") == 0) {
+        return (void *) ggml_backend_hexagon_get_timing;
+    }
     if (strcmp(name, "ggml_backend_hexagon_buffer_export_shared_dma") == 0) {
         return (void *) ggml_backend_hexagon_buffer_export_shared_dma;
     }
@@ -6242,7 +6282,7 @@ template<typename T, int BASE=10> std::string vec_to_str(std::vector<T> v) {
     std::stringstream ss;
     ss << std::setbase(BASE) << std::showbase;
     for (auto i : v) { ss << i << ','; }
-    auto str = ss.str(); str.pop_back(); // drop last comma
+    auto str = ss.str(); if (!str.empty()) { str.pop_back(); } // drop last comma, if any
     return str;
 }
 
@@ -6357,6 +6397,7 @@ static void ggml_hexagon_init(ggml_backend_reg * reg) {
     const char * str_mbuf     = getenv("GGML_HEXAGON_MBUF");
     const char * str_optrace  = getenv("GGML_HEXAGON_OPTRACE");
     const char * str_hostbuf  = getenv("GGML_HEXAGON_HOSTBUF");
+    const char * str_timing   = getenv("GGML_HEXAGON_TIMING");
 
     // Init Arch first since it affects other defaults
     if (!str_arch) {
@@ -6404,6 +6445,7 @@ static void ggml_hexagon_init(ggml_backend_reg * reg) {
     opt_mbuf      = str_mbuf     ? strtoul(str_mbuf, NULL, 0) * MiB       : opt_mbuf;
     opt_vmem      = str_vmem     ? strtoul(str_vmem, NULL, 0) * MiB       : opt_vmem;
     opt_hostbuf   = str_hostbuf  ? atoi(str_hostbuf) != 0                 : opt_hostbuf;
+    opt_timing    = str_timing && atoi(str_timing) != 0;
 
     // Parse device configuration
     const char * str_devices  = getenv("GGML_HEXAGON_DEVICES");
