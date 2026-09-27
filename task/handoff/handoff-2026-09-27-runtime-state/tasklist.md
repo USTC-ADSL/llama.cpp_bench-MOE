@@ -3,9 +3,9 @@
 - [x] Inspect previous drift evidence and decision/timing hooks; check accessible device state.
 - [x] Add opt-in causal state telemetry with measured overhead and useful timing attribution; build and device smoke (logits invariant).
 - [x] Freeze collection protocol, gather 28 technical training/calibration processes and test state features: native bias retained, custom state selected (B MAPE 2.267% to 1.681%).
-- [ ] Implement compact state correction/decision interface only using pre-decision information; device parity/functional checks (implemented,13 new +23 old contracts pass; live auto pending).
-- [ ] Freeze model and validate fresh prompt(s), retaining 128-token gain and testing 768-token decisions without hindsight.
-- [ ] Report supported result/limitations, update paper points if warranted, archive evidence/clean device, Git checkpoints.
+- [x] Implement compact state correction/decision interface using preload information;13 new +23 old Android contracts and four actual live-auto host/device parity/logit checks pass.
+- [x] Freeze model and validate fresh harbor prompt:128 throughput +43.16%/+41.29%;768 native fallback, sequential-control differences +2.41%/-0.35%, not heterogeneous acceleration.
+- [x] Report limited predictive benefit and unresolved NPU drift; update paper points, archive197 files, verify152 remote files and clean owned directory while preserving model; implementation/calibration/final evidence checkpoints saved.
 
 Target fd8657d6; keep resident weight preparation outside compute measurements, explicitly charge any decision/probe overhead. Do not reuse ecology confirmation as a fresh holdout. Prior guard frozen at35,235bytes, SHA2564195eca9b075766cb6641195bc405e142514ddf4e47e520796e6ff97eedb432f. Previous same-prompt768 native1052.66→1149.30ms cannot be attributed to faults/configuration differences; causal thermal/DVFS explanation remains unproven.
 
