@@ -88,6 +88,20 @@ def main():
     cases.append((bad,routes,False))
     bad_routes=copy.deepcopy(routes); bad_routes["layers"][0]["counts"][0]-=1
     cases.append((guarded,bad_routes,False))
+    scarce=copy.deepcopy(routes)
+    for l in scarce["layers"][:23]: l["counts"]=[64]*8+[0]*52
+    scarce_plan=e.make_plan(guarded,scarce,scarce["layers"])
+    assert scarce_plan["execution_mode"]=="npu" and scarce_plan["path_decision"]["custom_predicted_us"] is None
+    cases.append((guarded,scarce,True))
+    for family,tail in (("gpu",8),("branch",0)):
+        other=copy.deepcopy(guarded); other["calibration_guard"]["profiles"][0].update(family=family,tails=[tail]*23)
+        cases.append((other,routes,True))
+    costly=copy.deepcopy(guarded); costly["decision_budget_us"]=1e9
+    assert e.make_plan(costly,routes,routes["layers"])["execution_mode"]=="npu"
+    cases.append((costly,routes,True))
+    # Real frozen v2/route parity also exercises the unguarded compatibility path.
+    previous=ROOT/"task/handoff/handoff-2026-09-26-execution-model"
+    cases.append((e.read(previous/"execution-model.json"),e.read(previous/"technical-128-cpu-plan.json"),True))
     remote = "/data/local/tmp/llama-fullmodel-oracle"
     def adb(*args):
         return subprocess.run(["adb","-s","fd8657d6",*args],capture_output=True,text=True)

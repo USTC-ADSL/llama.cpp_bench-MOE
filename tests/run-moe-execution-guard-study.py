@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Fixed technical A/B calibration and fresh C confirmation; fd8657d6 only."""
 import argparse
-import copy
 import hashlib
 import importlib.util
 import json
@@ -166,13 +165,15 @@ def confirm():
         plan=EV/f"{tag}.json"; d=e.read(plan)
         host=e.make_plan(model,capture,capture["layers"],d["path_decision"]["observed_planning_us"])
         assert host["execution_mode"]==d["execution_mode"] and host["execution_policy"]==d["execution_policy"]
-        assert host["selected_profile"]==d["selected_profile"]
+        assert host.get("selected_profile")==d.get("selected_profile")
         for a,b in zip(host["layers"],d["layers"]):
-            assert a["selected"]==b["selected"] and abs(a["prediction"]["total_us"]-b["prediction"]["total_us"])<1e-6
+            assert a["selected"]==b["selected"]
+            if "prediction" in a: assert abs(a["prediction"]["total_us"]-b["prediction"]["total_us"])<1e-6
         for key in ("custom_predicted_us","native_predicted_us","custom_upper_us","native_lower_us"):
-            assert abs(host["path_decision"][key]-d["path_decision"][key])<1e-6
+            a,b=host["path_decision"][key],d["path_decision"][key]
+            assert a==b if a is None else abs(a-b)<1e-6
         write(TASK/f"ecology-{nt}-host-plan.json",host)
-        modes=["npu","auto"]+(["custom"] if d["execution_mode"]=="npu" else [])
+        modes=["npu","auto"]+(["custom"] if d["execution_mode"]=="npu" and d["custom_candidates"] else [])
         for repeat in ("a","b"):
             for mode in modes if repeat=="a" else reversed(modes):
                 run("ecology",nt,f"ecology-{nt}-{mode}-{repeat}",mode,plan if mode!="npu" else None)
@@ -184,17 +185,33 @@ def report():
              "scope":"actual fresh process timing, planning charged once per request; loading/conversion and capture excluded"}
     for nt in (128,384,768):
         plan=e.read(EV/f"ecology-{nt}-plan.json"); decision=plan["decision_device_total_us"]
-        row={"tokens":nt,"selected_profile":plan["selected_profile"],"execution_mode":plan["execution_mode"],"path_decision":plan["path_decision"],"decision_us":decision,"repeats":[]}
+        selected=next((c for c in plan["custom_candidates"] if c["id"]==plan.get("selected_profile")),None)
+        row={"tokens":nt,"selected_profile":plan.get("selected_profile"),"execution_mode":plan["execution_mode"],"path_decision":plan["path_decision"],"decision_us":decision,"custom_nominal_us":selected["nominal_us"] if selected else None,"repeats":[]}
         for repeat in ("a","b"):
             native=e.read(EV/f"ecology-{nt}-npu-{repeat}.json"); auto=e.read(EV/f"ecology-{nt}-auto-{repeat}.json")
             assert native["token_ids"]==auto["token_ids"]==plan["token_ids"] and auto["mode"]==plan["execution_mode"]
             n=native["timing"]["median_us"]; a=auto["timing"]["median_us"]
             entry={"repeat":repeat,"native_ms":n/1000,"auto_compute_ms":a/1000,"auto_including_decision_ms":(a+decision)/1000,
                    "throughput_gain_percent":100*(n/(a+decision)-1),"native_tokens_s":nt*1e6/n,"auto_tokens_s":nt*1e6/(a+decision),
-                   "same_backend_logits_bitwise_equal":e.raw(EV/f"ecology-{nt}-auto-{repeat}.json.logits.bin")==e.raw(EV/f"ecology-{nt}-{'npu' if auto['mode']=='npu' else 'auto'}-a.json.logits.bin")}
+                   "auto_cross_process_logits_equal_to_a":e.raw(EV/f"ecology-{nt}-auto-{repeat}.json.logits.bin")==e.raw(EV/f"ecology-{nt}-auto-a.json.logits.bin"),
+                   "auto_native_same_repeat_logits_bitwise_equal":e.raw(EV/f"ecology-{nt}-auto-{repeat}.json.logits.bin")==e.raw(EV/f"ecology-{nt}-npu-{repeat}.json.logits.bin")}
+            if selected is None:
+                row["repeats"].append(entry); continue
             if auto["mode"]=="npu":
                 forced=e.read(EV/f"ecology-{nt}-custom-{repeat}.json"); f=forced["timing"]["median_us"]
                 entry.update(forced_custom_ms=f/1000,forced_custom_gain_percent=100*(n/f-1))
+            else:
+                forced=auto; f=a
+            entry.update(custom_original_prediction_error_percent=100*(selected["nominal_us"]/f-1),
+                         custom_corrected_prediction_error_percent=100*(selected["predicted_us"]/f-1),
+                         native_prediction_error_percent=100*(plan["path_decision"]["native_predicted_us"]/n-1),
+                         custom_activation_pool_mib=sum(forced["arena_capacity_bytes"])/2**20,
+                         custom_changed_route_slots=statistics.median(sum(l["changed_route_slots"] for l in s["layers"]) for s in forced["samples"]))
+            mode="custom" if auto["mode"]=="npu" else "auto"
+            x=e.np.frombuffer(e.raw(EV/f"ecology-{nt}-{mode}-{repeat}.json.logits.bin"),dtype=e.np.float32).astype(e.np.float64)
+            y=e.np.frombuffer(e.raw(EV/f"ecology-{nt}-npu-{repeat}.json.logits.bin"),dtype=e.np.float32).astype(e.np.float64)
+            assert x.shape==y.shape and e.np.isfinite(x).all() and e.np.isfinite(y).all()
+            entry["custom_vs_native_logits"]={"nrmse":float(e.np.linalg.norm(x-y)/e.np.linalg.norm(y)),"max_abs":float(e.np.max(e.np.abs(x-y))),"same_top1":bool(x.argmax()==y.argmax())}
             row["repeats"].append(entry)
         summary["cases"].append(row)
     write(TASK/"confirmation-report.json",summary)
