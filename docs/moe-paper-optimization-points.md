@@ -34,3 +34,5 @@
 误差保护证据：[独立输入校准与完整模型确认](../task/handoff/handoff-2026-09-27-execution-guard/results.md)。约35KB模型保持原计算系数；同一768-token输入的原生时间波动约9.2%，后续需要运行状态感知，尚无DVFS或温度的因果归因。
 
 状态校正证据：[加载前状态与独立prompt确认](../task/handoff/handoff-2026-09-27-runtime-state/results.md)。约35KB模型只对异构路径启用状态系数；768实际仍为原生路径，+2.41%/−0.35%的顺序对照差异不能视为异构加速。此行是有限预测改进，不是已解决在线迁移或运行状态因果归因。
+
+后续动机证据：[HTP窗口与GPU频率诊断](../task/handoff/handoff-2026-09-27-device-timing/results.md)。固定分配下GPU频率均约967MHz，但shared GPU在768-token的345/368个普通层实例中最后完成，128为0/368，说明需要随长度重新平衡shared/routed关键路径；这是一条瓶颈证据，尚非新增优化收益。固定HTP性能请求下，原生耗时差异仍主要出现在DSP执行窗口，不能统归host或调频。
