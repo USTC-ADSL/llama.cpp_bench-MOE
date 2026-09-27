@@ -3,8 +3,8 @@
 - [x] Implement optional complete-schedule coverage guard, signed bias and empirical error allowance; preserve unguarded v2/v1.
 - [x] Android contract/parity tests and incremental build (23 cases passed, including scarce active experts and real frozen-v2 parity).
 - [x] Collect technical A fitting and independent technical B residual calibration; freeze metadata/model.
-- [ ] Fresh ecology C confirmation at 128/384/768, native/auto A/B and forced custom when rejected.
-- [ ] Audit results/logits/provenance; archive and clean owned device artifacts; Git checkpoints and final handoff.
+- [x] Fresh ecology C confirmation at 128/384/768, native/auto A/B and forced custom when rejected.
+- [x] Audit results/logits/provenance; archive and clean owned device artifacts; Git checkpoints and final handoff.
 
 ## Protocol fixed before new measurements
 
