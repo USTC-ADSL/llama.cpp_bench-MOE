@@ -27,6 +27,8 @@ def idle():
 
 def audit_device():
     idle()
+    assert adb(f"test -d {s.REMOTE} && test ! -L {s.REMOTE}", False).returncode == 0
+    assert adb(f"stat -c '%u:%g' {s.REMOTE}").stdout.strip() == "2000:2000"
     a.main()
     identity = s.e.read(TASK / "model-identity.json")
     assert adb(f"stat -c '%n %s %Y' {identity['path']}").stdout.strip() == identity["stat"]
@@ -46,6 +48,8 @@ def audit_device():
         source = known[base]
         assert s.sha(source) == digest, f"remote mismatch {remote}"
         records.append({"remote": remote, "source": str(source.relative_to(ROOT)), "sha256": digest})
+    assert records
+    assert set(adb(f"find {s.REMOTE} -mindepth 1").stdout.splitlines()) == {r["remote"] for r in records}, "unverified hidden files or subdirectories"
     result = {"files": records, "model": identity, "successful_processes": 86, "cleaned": False}
     s.write(TASK / "device-cleanup-audit.json", result)
     print("Verified remote files", len(records), "and full model SHA256", flush=True)
@@ -85,9 +89,13 @@ def main():
     archive()
     if args.cleanup:
         idle()
+        assert adb(f"test -d {s.REMOTE} && test ! -L {s.REMOTE}", False).returncode == 0
+        assert adb(f"stat -c '%u:%g' {s.REMOTE}").stdout.strip() == "2000:2000"
+        assert set(adb(f"find {s.REMOTE} -mindepth 1").stdout.splitlines()) == {r["remote"] for r in result["files"]}
         adb(f"rm -rf {s.REMOTE}")
         assert adb(f"test -e {s.REMOTE}", False).returncode != 0
         assert adb(f"stat -c '%n %s %Y' {result['model']['path']}").stdout.strip() == result["model"]["stat"]
+        assert adb(f"sha256sum {result['model']['path']}").stdout.split()[0] == result["model"]["sha256"]
         result["cleaned"] = True
         s.write(TASK / "device-cleanup-audit.json", result)
         print("Cleaned owned test directory; original model retained", flush=True)

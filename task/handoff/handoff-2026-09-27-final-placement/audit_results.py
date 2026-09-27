@@ -90,6 +90,11 @@ def main():
             s.parity(s.routes(name, nt), plan)
             case = next(c for c in report["cases"] if (c["prompt"], c["tokens"]) == (name, nt))
             assert case["execution_mode"] == plan["execution_mode"]
+            assert case["decision_us"] == plan["decision_device_total_us"]
+            assert case["path_decision"] == plan["path_decision"]
+            assert case["custom_candidates"] == plan["custom_candidates"]
+            assert case["placements"] == [l["selected"] for l in plan["layers"]]
+            assert case["execution_policy"] == plan["execution_policy"] and case["selected_profile"] == plan.get("selected_profile")
             for repeat in ("a", "b"):
                 n = check(name, nt, f"{name}-{nt}-npu-{repeat}", "npu")
                 a = check(name, nt, f"{name}-{nt}-auto-{repeat}", "auto", plan_path)
@@ -99,6 +104,25 @@ def main():
                 assert abs(cell["native_ms"] - ni/1000) < 1e-9
                 assert abs(cell["auto_inclusive_ms"] - ai/1000) < 1e-9
                 assert abs(cell["throughput_gain_percent"] - 100*(ni/ai-1)) < 1e-9
+                compute = statistics.median(v["total_us"] for v in a["samples"])
+                for key, expected in (("auto_compute_ms", compute/1000), ("native_tokens_s", nt*1e6/ni),
+                                      ("auto_tokens_s", nt*1e6/ai), ("activation_pool_mib", sum(a.get("arena_capacity_bytes", []))/2**20)):
+                    assert abs(cell[key] - expected) < 1e-9, key
+                for key, prediction, actual in (("native_prediction_error_percent", plan["path_decision"]["native_predicted_us"], ni),
+                        ("selected_prediction_error_percent", plan["path_decision"]["custom_predicted_us"] if a["mode"] == "custom" else None, compute)):
+                    expected = None if prediction is None else 100*(prediction/actual-1)
+                    assert cell[key] is None if expected is None else abs(cell[key]-expected) < 1e-9
+                outputs = {}
+                for mode in ("npu", "auto"):
+                    raw = e.raw(s.EV / f"{name}-{nt}-{mode}-{repeat}.json.logits.bin")
+                    assert raw == e.raw(s.EV / f"{name}-{nt}-{mode}-a.json.logits.bin")
+                    outputs[mode] = e.np.frombuffer(raw, dtype=e.np.float32).astype(e.np.float64)
+                x, y = outputs["auto"], outputs["npu"]
+                same = bool(e.np.array_equal(x, y))
+                assert cell["same_native_logits"] == same and cell["same_top1"] == bool(x.argmax() == y.argmax())
+                assert abs(cell["logit_nrmse_vs_native"] - float(e.np.linalg.norm(x-y)/e.np.linalg.norm(y))) < 1e-12
+                if a["mode"] == "npu":
+                    assert same
     assert len(records) == 86
     assert len(list(s.EV.glob("*.run.json"))) == 86
     ordered = sorted(records, key=lambda r: r["start_ns"])
