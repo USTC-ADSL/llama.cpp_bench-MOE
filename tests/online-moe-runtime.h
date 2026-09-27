@@ -7,6 +7,7 @@ struct online_moe_runtime {
     struct layer_weights {
         std::unique_ptr<bank> source_htp;
         std::unique_ptr<bank> cpu_view;
+        std::unique_ptr<shared_bank> shared_source;
     };
     source & src;
     device * devs[3];
@@ -20,6 +21,7 @@ struct online_moe_runtime {
     json records=json::array();
     std::exception_ptr failure;
     size_t canonical_source_bytes=0, activation_bytes=0;
+    size_t canonical_shared_source_bytes=0;
     size_t peak_shared_weights=0, peak_host_staging=0;
     double npu_conversion_us_per_expert;
     int forced_tail;
@@ -52,14 +54,18 @@ struct online_moe_runtime {
         for(int il=0;il<24;++il) {
             auto &l=layers[il]; l.source_htp=std::make_unique<bank>(*devs[1],src,il,nullptr,true);
             l.cpu_view=std::make_unique<bank>(*devs[0],*l.source_htp);
+            if(std::getenv("MOE_RAW_SHARED_SOURCE")) {
+                l.shared_source=std::make_unique<shared_bank>(*devs[1],src,il,false,true);
+                canonical_shared_source_bytes+=ggml_backend_buffer_get_size(l.shared_source->buf.get());
+            }
             canonical_source_bytes+=ggml_backend_buffer_get_size(l.source_htp->buf.get()); bindings[il]={this,il};
             // Source pages are no longer needed for routed weights. This releases
             // this mapping's resident references, not OS page cache or other maps.
-            for(auto *t:l.source_htp->w) {
+            if(!src.release_after_import) { for(auto *t:l.source_htp->w) {
                 size_t off=gguf_get_data_offset(src.gguf)+gguf_get_tensor_offset(src.gguf,gguf_find_tensor(src.gguf,t->name));
                 size_t page=size_t(sysconf(_SC_PAGESIZE)),begin=(off+page-1)/page*page,end=(off+ggml_nbytes(t))/page*page;
                 if(end>begin) { madvise(const_cast<uint8_t *>(src.mapped)+begin,end-begin,MADV_DONTNEED); }
-            }
+            } }
         }
         // Empty activation capacity is independent of Expert routes and weights.
         for(int b=0;b<2;++b) {
@@ -167,7 +173,8 @@ struct online_moe_runtime {
                     require(ggml_are_same_shape(original,target) && original->type==target->type,"shared shape changed");
                     size_t offset=gguf_get_data_offset(src.gguf)+gguf_get_tensor_offset(src.gguf,gguf_find_tensor(src.gguf,name.c_str()));
                     require(offset<=src.mapped_size && ggml_nbytes(original)<=src.mapped_size-offset,"shared source bounds");
-                    ggml_backend_tensor_set(target,src.mapped+offset,0,ggml_nbytes(original));
+                    const void *bytes=layers[il].shared_source?layers[il].shared_source->w[i]->data:src.mapped+offset;
+                    ggml_backend_tensor_set(target,bytes,0,ggml_nbytes(original));
                 }
                 devs[2]->sync();
                 const size_t weight_bytes=ggml_backend_buffer_get_size(shared.buf.get());

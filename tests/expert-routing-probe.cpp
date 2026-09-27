@@ -2,6 +2,7 @@
 #include "../ggml/src/ggml-impl.h"
 
 #include <future>
+#include <functional>
 #include <map>
 
 // Full Qwen2MoE prefill layers, with controlled CPU/NPU expert placement.
@@ -13,6 +14,7 @@ struct source {
     const uint8_t * mapped = nullptr;
     size_t mapped_size = 0;
     bool borrow_cpu_experts = false;
+    std::function<void(size_t,size_t)> release_after_import;
     void read_at(size_t offset, void * dst, size_t bytes) {
         if (mapped) {
             require(offset <= mapped_size && bytes <= mapped_size-offset, "weight mapping bounds");
@@ -101,6 +103,7 @@ struct bank {
                 size_t offset=gguf_get_data_offset(s.gguf)+gguf_get_tensor_offset(s.gguf,gguf_find_tensor(s.gguf,t->name));
                 require(offset<=s.mapped_size && ggml_nbytes(t)<=s.mapped_size-offset,"canonical source bounds");
                 ggml_backend_tensor_set(t,s.mapped+offset,0,ggml_nbytes(t));
+                if(s.release_after_import) { s.release_after_import(offset,ggml_nbytes(t)); }
             }
             canonical_weights=true; d.sync(); return;
         }
@@ -143,7 +146,7 @@ struct shared_bank {
     ggml_backend_buffer_ptr buf;
     ggml_backend_buffer_ptr scalar_buf;
     std::array<ggml_tensor *, 4> w;
-    shared_bank(device & d, source & s, int il, bool defer_upload = false) {
+    shared_bank(device & d, source & s, int il, bool defer_upload = false, bool canonical_htp = false) {
         const char * parts[] = {"gate", "up", "down", "gate_inp"};
         for (int i = 0; i < 4; ++i) {
             const auto name = "blk." + std::to_string(il) + ".ffn_" + parts[i] + "_shexp.weight";
@@ -158,6 +161,21 @@ struct shared_bank {
         }
         ggml_backend_buffer_set_usage(buf.get(), GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
         if(defer_upload) { return; }
+        if(canonical_htp) {
+            require(d.name=="HTP0" && s.mapped,"canonical shared source requires HTP mapped source");
+            using mark_fn=bool (*)(ggml_tensor *);
+            auto mark=reinterpret_cast<mark_fn>(ggml_backend_reg_get_proc_address(
+                ggml_backend_dev_backend_reg(d.dev),"ggml_backend_hexagon_tensor_use_canonical_q4_0"));
+            require(mark,"canonical HTP API unavailable");
+            for(auto *t:w) {
+                require(t->type==GGML_TYPE_F16 || (t->type==GGML_TYPE_Q4_0 && mark(t)),"canonical shared layout rejected");
+                size_t offset=gguf_get_data_offset(s.gguf)+gguf_get_tensor_offset(s.gguf,gguf_find_tensor(s.gguf,t->name));
+                require(offset<=s.mapped_size && ggml_nbytes(t)<=s.mapped_size-offset,"canonical shared source bounds");
+                ggml_backend_tensor_set(t,s.mapped+offset,0,ggml_nbytes(t));
+                if(s.release_after_import) { s.release_after_import(offset,ggml_nbytes(t)); }
+            }
+            d.sync(); return;
+        }
         for (auto * t : w) {
             auto raw = s.read(t->name);
             ggml_backend_tensor_set(t, raw.data(), 0, raw.size());

@@ -1,0 +1,34 @@
+{
+  "serial": "fd8657d6",
+  "command": "cd /data/local/tmp/llama-online-weights && exec env LD_LIBRARY_PATH=/data/local/tmp/llama-online-weights ADSP_LIBRARY_PATH=/data/local/tmp/llama-online-weights GGML_HEXAGON_DEVICES=1 GGML_HEXAGON_NHMX=1 GGML_HEXAGON_MM_SELECT=3 GGML_HEXAGON_PROFILE=0 GGML_OPENCL_FUSED_Q4_PREPARE=1 GGML_OPENCL_LAZY_SCRATCH=1 GGML_ACCEL_BUDGET_MODE=observe GGML_ACCEL_BUDGET_OPENCL_COVERAGE=extra GGML_ACCEL_BUDGET_RPCMEM_COVERAGE=charged MOE_ONLINE_PACKED_HEAD=1 MOE_BOUNDED_SOURCE=1 ./online-moe /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf /data/local/tmp/llama-online-weights/bounded-source-dev-a-prompt.txt 128 /data/local/tmp/llama-online-weights/bounded-source-dev-a-cost-model.json /data/local/tmp/llama-online-weights/bounded-source-dev-a.json online -1",
+  "inputs": {
+    "prompt.txt": {
+      "source": "tests/expert-routing-prompt.txt",
+      "sha256": "032f2734cf2eb67fd730f75210229f36ed1f4a3a5a63242645fdd940997f23eb"
+    },
+    "cost-model.json": {
+      "source": "task/handoff/handoff-2026-09-27-online-weights/online-cost-model.json",
+      "sha256": "e36fb56b5be009dc79c03867eed5bad1cac2026825cd876ce4d874a9a2042d75"
+    }
+  },
+  "artifacts": "5c42f5dbd37bf075c4213b5e8e5dd1ab063eb2f92e4ef058018b0ca8b77d3cd7  /data/local/tmp/llama-online-weights/online-moe\n3959139f4cf8c9efaf7f4f9bb588b68099ebc080fd8c63ecfa53bbed6e43f9f7  /data/local/tmp/llama-online-weights/libggml-base.so\n06a3fe6b0a27c116bfbcec6ba13353fbcac83c12422d8ec8c284d22e3fb9ed32  /data/local/tmp/llama-online-weights/libggml-cpu.so\n5cb2f5846a2003343e50762ce7ba888a308146d814e7068eb57692ecef7b3aa7  /data/local/tmp/llama-online-weights/libggml-hexagon.so\n901c9e25ccf1f9f80c6d74a5d9565451f41697766795ce9fa9952a1d60cd3b81  /data/local/tmp/llama-online-weights/libggml-htp-v79.so\n15fd7af99e39ddc7cb5aab643ceec0c87265fcf3460c6034de12ae5a51299749  /data/local/tmp/llama-online-weights/libggml-opencl.so\n3bd21ae094ad573efcc02510cd2bda36a32f2f0c1c5c461951fca4e37e05cb67  /data/local/tmp/llama-online-weights/libggml.so\na894fc6dd60fa9f47361b0c0418d439b5a8bb56ed04523108dfb3fd6fb9bfa73  /data/local/tmp/llama-online-weights/libllama.so\n",
+  "model_stat": "/data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf 8149865792 1788789392\n",
+  "before_battery": "Current Battery Service state:\n  AC powered: false\n  USB powered: true\n  Wireless powered: false\n  Dock powered: false\n  Max charging current: 0\n Time when the latest updated value of the Max charging current was sent via battery changed broadcast: +8s373ms\n  Max charging voltage: 0\n  Charge counter: 5471000\n  status: 5\n  health: 2\n  present: true\n  level: 100\n  scale: 100\n  voltage: 4389\n Time when the latest updated value of the voltage was sent via battery changed broadcast: +68d8h15m2s366ms\n The last voltage value sent via the battery changed broadcast: 4389\n  temperature: 221\n  technology: Li-poly\n  Charging state: 0\n  Charging policy: 0\n  Capacity level: 5\nMiuiBatteryService first usage time:\n  mSetBatteryUsageTimeCount=0\n  mNtpTime=-1\n  mParseNtpTime=\n",
+  "sources": {
+    "tests/online-weight-probe.cpp": "692577eae50ddfee0e0ae3bd29ccd30881bb76a5c27f2fec6bc9e8d3de2a89ac",
+    "tests/online-moe.cpp": "067bf3412dd32c8a4f50af784450438bbb661f09ddccdd7e09b99bb438368509",
+    "tests/online-moe-runtime.h": "e77999b038b5a402e48b0225508c7f0f0ad93ba338cde48b6cf3d2106c82502d",
+    "tests/expert-routing-probe.cpp": "59d77cec5270c480fd42cde0b42e633cbc0ecaf7ec50c568e426e7537bcecd5f",
+    "ggml/src/ggml-hexagon/ggml-hexagon.cpp": "064bc37d4f24895f64c249854ea1b23f7c3f32e8986be816bf6f3e7ec9c8d0f3",
+    "ggml/src/ggml-opencl/ggml-opencl.cpp": "cb0272c819f875a28bd2eae9316ce909c62644a342e171db199a4517f37b6e56",
+    "ggml/src/ggml-opencl/kernels/cvt.cl": "fb4d61b7b289565aa134ae16ba5c1b5d0febe269f50f7c48a450cf0826126fb1",
+    "ggml/src/ggml-hexagon/htp/htp-ops.h": "737b1a88ddf0269b251e330837e0993a75a0ba22a7deb5f85fb00b2e66af73ec",
+    "ggml/src/ggml-hexagon/htp/hmx-mm-kernels-tiled.h": "fd223d8077c68d8d4feec39f690c5deec921b5566720c84d5d45efdfb892bdab",
+    "ggml/src/ggml-hexagon/htp/matmul-ops.c": "b135e1c5232771e53b913101675f19d5527511fb15bc0ef233890410d29c67de"
+  },
+  "exit": 0,
+  "elapsed_seconds": 5.022435989230871,
+  "after_battery": "Current Battery Service state:\n  AC powered: false\n  USB powered: true\n  Wireless powered: false\n  Dock powered: false\n  Max charging current: 0\n Time when the latest updated value of the Max charging current was sent via battery changed broadcast: +8s373ms\n  Max charging voltage: 0\n  Charge counter: 5469000\n  status: 5\n  health: 2\n  present: true\n  level: 100\n  scale: 100\n  voltage: 4025\n Time when the latest updated value of the voltage was sent via battery changed broadcast: +68d8h17m34s310ms\n The last voltage value sent via the battery changed broadcast: 4025\n  temperature: 218\n  technology: Li-poly\n  Charging state: 0\n  Charging policy: 0\n  Capacity level: 5\nMiuiBatteryService first usage time:\n  mSetBatteryUsageTimeCount=0\n  mNtpTime=-1\n  mParseNtpTime=\n",
+  "output_sha256": "3d56148c9978953655c472b2476f26cec6e6dc1159858700ab88f42dffe1bd52",
+  "logits_sha256": "83f4776e28b707505bbaadfcc0ca4e91d6c43057ac226b6df833d38e51023ee6"
+}

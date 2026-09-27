@@ -32,6 +32,9 @@ def main():
     p.add_argument("--packed-head", action="store_true")
     p.add_argument("--kernel-cache-off", action="store_true")
     p.add_argument("--reference-packed", action="store_true")
+    p.add_argument("--bounded-source", action="store_true")
+    p.add_argument("--resident-shared-source", action="store_true")
+    p.add_argument("--resident-output", action="store_true")
     p.add_argument("--cost-model", type=pathlib.Path, default=ROOT / "task/handoff/handoff-2026-09-27-length-intervals/interval-model.json")
     args = p.parse_args()
     assert re.fullmatch(r"[A-Za-z0-9_-]+", args.tag)
@@ -85,6 +88,13 @@ def main():
         environment.append("GGML_OPENCL_KERNEL_CACHE_DIR=off")
     if args.reference_packed:
         environment.append("MOE_ONLINE_REFERENCE_PACKED=1")
+    if args.bounded_source:
+        environment.append("MOE_BOUNDED_SOURCE=1")
+    if args.resident_shared_source:
+        assert args.bounded_source, "resident canonical shared source requires bounded source mappings"
+        environment.append("MOE_RAW_SHARED_SOURCE=1")
+    if args.resident_output:
+        environment.append("MOE_RESIDENT_OUTPUT=1")
     command = f"cd {REMOTE} && exec " + shlex.join(environment + arguments)
     record = {"serial": "fd8657d6", "command": command, "inputs": inputs,
         "artifacts": shell(f"sha256sum {REMOTE}/{program} {REMOTE}/*.so").stdout,
@@ -93,6 +103,7 @@ def main():
     record["sources"] = {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in [
         ROOT / "tests/online-weight-probe.cpp", ROOT / "tests/online-moe.cpp", ROOT / "tests/online-moe-runtime.h",
         ROOT / "tests/expert-routing-probe.cpp", ROOT / "ggml/src/ggml-hexagon/ggml-hexagon.cpp",
+        ROOT / "src/llama-model.cpp", ROOT / "include/llama.h",
         ROOT / "ggml/src/ggml-opencl/ggml-opencl.cpp", ROOT / "ggml/src/ggml-opencl/kernels/cvt.cl",
         ROOT / "ggml/src/ggml-hexagon/htp/htp-ops.h", ROOT / "ggml/src/ggml-hexagon/htp/hmx-mm-kernels-tiled.h", ROOT / "ggml/src/ggml-hexagon/htp/matmul-ops.c"]}
     start = time.monotonic()

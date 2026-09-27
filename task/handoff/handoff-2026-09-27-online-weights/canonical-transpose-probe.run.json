@@ -1,0 +1,26 @@
+{
+  "serial": "fd8657d6",
+  "command": "cd /data/local/tmp/llama-online-weights && exec env LD_LIBRARY_PATH=/data/local/tmp/llama-online-weights ADSP_LIBRARY_PATH=/data/local/tmp/llama-online-weights GGML_HEXAGON_DEVICES=1 GGML_HEXAGON_NHMX=1 GGML_HEXAGON_MM_SELECT=3 GGML_HEXAGON_PROFILE=0 GGML_OPENCL_FUSED_Q4_PREPARE=1 GGML_OPENCL_LAZY_SCRATCH=1 ./online-weight-probe /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf /data/local/tmp/llama-online-weights/canonical-transpose-probe.json 8",
+  "inputs": {},
+  "artifacts": "6890574428ad2d2a1c51744dc48f7b3a861cf992cdcf1ad7f8995f3163b24896  /data/local/tmp/llama-online-weights/online-weight-probe\n3959139f4cf8c9efaf7f4f9bb588b68099ebc080fd8c63ecfa53bbed6e43f9f7  /data/local/tmp/llama-online-weights/libggml-base.so\n06a3fe6b0a27c116bfbcec6ba13353fbcac83c12422d8ec8c284d22e3fb9ed32  /data/local/tmp/llama-online-weights/libggml-cpu.so\n5cb2f5846a2003343e50762ce7ba888a308146d814e7068eb57692ecef7b3aa7  /data/local/tmp/llama-online-weights/libggml-hexagon.so\n6acc050ff29bb9cdb275382619755f5a387579b3c4d22657b5525d04f1cb8f1a  /data/local/tmp/llama-online-weights/libggml-htp-v79.so\n15fd7af99e39ddc7cb5aab643ceec0c87265fcf3460c6034de12ae5a51299749  /data/local/tmp/llama-online-weights/libggml-opencl.so\n3bd21ae094ad573efcc02510cd2bda36a32f2f0c1c5c461951fca4e37e05cb67  /data/local/tmp/llama-online-weights/libggml.so\na894fc6dd60fa9f47361b0c0418d439b5a8bb56ed04523108dfb3fd6fb9bfa73  /data/local/tmp/llama-online-weights/libllama.so\n",
+  "model_stat": "/data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf 8149865792 1788789392\n",
+  "before_battery": "Current Battery Service state:\n  AC powered: false\n  USB powered: true\n  Wireless powered: false\n  Dock powered: false\n  Max charging current: 0\n Time when the latest updated value of the Max charging current was sent via battery changed broadcast: +8s373ms\n  Max charging voltage: 0\n  Charge counter: 5450000\n  status: 5\n  health: 2\n  present: true\n  level: 100\n  scale: 100\n  voltage: 4384\n Time when the latest updated value of the voltage was sent via battery changed broadcast: +68d8h37m2s365ms\n The last voltage value sent via the battery changed broadcast: 4384\n  temperature: 212\n  technology: Li-poly\n  Charging state: 0\n  Charging policy: 0\n  Capacity level: 5\nMiuiBatteryService first usage time:\n  mSetBatteryUsageTimeCount=0\n  mNtpTime=-1\n  mParseNtpTime=\n",
+  "sources": {
+    "tests/online-weight-probe.cpp": "692577eae50ddfee0e0ae3bd29ccd30881bb76a5c27f2fec6bc9e8d3de2a89ac",
+    "tests/online-moe.cpp": "841041b0578c3d417ff00a5ad31c21df828d2d9a5115860c64d4de365aca2a83",
+    "tests/online-moe-runtime.h": "17b8f8dfb816ab637e995274b45bc2a0360752cbe0b31920d8209f5071137ecd",
+    "tests/expert-routing-probe.cpp": "c3ba5d2f9db0b6e1d7ed0779824da525f50a4b268a77cb1ba8a6abb1315e6c37",
+    "ggml/src/ggml-hexagon/ggml-hexagon.cpp": "064bc37d4f24895f64c249854ea1b23f7c3f32e8986be816bf6f3e7ec9c8d0f3",
+    "src/llama-model.cpp": "2de4036db74b2d571c034161477962199073454b5ea28a385a5413f6c1233806",
+    "include/llama.h": "6515c73afb8d6aa69d1dc99c3053b16e5b90438bfe9457e66b9c5db83d87fa16",
+    "ggml/src/ggml-opencl/ggml-opencl.cpp": "cb0272c819f875a28bd2eae9316ce909c62644a342e171db199a4517f37b6e56",
+    "ggml/src/ggml-opencl/kernels/cvt.cl": "fb4d61b7b289565aa134ae16ba5c1b5d0febe269f50f7c48a450cf0826126fb1",
+    "ggml/src/ggml-hexagon/htp/htp-ops.h": "737b1a88ddf0269b251e330837e0993a75a0ba22a7deb5f85fb00b2e66af73ec",
+    "ggml/src/ggml-hexagon/htp/hmx-mm-kernels-tiled.h": "474974d42eb90eca41bd775fd78721c7e0a23b19d8a8928c31711b0a17e50ef6",
+    "ggml/src/ggml-hexagon/htp/matmul-ops.c": "b135e1c5232771e53b913101675f19d5527511fb15bc0ef233890410d29c67de"
+  },
+  "exit": 0,
+  "elapsed_seconds": 4.922412276268005,
+  "after_battery": "Current Battery Service state:\n  AC powered: false\n  USB powered: true\n  Wireless powered: false\n  Dock powered: false\n  Max charging current: 0\n Time when the latest updated value of the Max charging current was sent via battery changed broadcast: +8s373ms\n  Max charging voltage: 0\n  Charge counter: 5450000\n  status: 5\n  health: 2\n  present: true\n  level: 100\n  scale: 100\n  voltage: 4384\n Time when the latest updated value of the voltage was sent via battery changed broadcast: +68d8h37m2s365ms\n The last voltage value sent via the battery changed broadcast: 4384\n  temperature: 212\n  technology: Li-poly\n  Charging state: 0\n  Charging policy: 0\n  Capacity level: 5\nMiuiBatteryService first usage time:\n  mSetBatteryUsageTimeCount=0\n  mNtpTime=-1\n  mParseNtpTime=\n",
+  "output_sha256": "2d34e2c904a7a4d88a0744971e282119e1608f6fc413a98a74a04d7fd53671b7"
+}
