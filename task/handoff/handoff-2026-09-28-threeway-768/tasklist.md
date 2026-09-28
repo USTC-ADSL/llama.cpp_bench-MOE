@@ -5,10 +5,10 @@ Goal: test the user's proposed shared-on-NPU, low-load-routed-on-CPU, remaining 
 - [x] Confirm clean initial Git state and fd8657d6 availability (base bf03f27ac).
 - [x] Inspect placement interfaces, freeze a bounded candidate portfolio and measurement protocol.
 - [x] Prepare reproducible runner/placements and verify device artifacts.
-- [ ] Run development comparison against native NPU and previous placements; preserve all samples.
+- [x] Run development comparison against native NPU and previous placements; preserve all samples.
 - [ ] Freeze the selected candidate and confirm on independent input(s), including numerical checks.
 - [ ] Audit results, preserve evidence, clean owned device artifacts, update handoff and commit.
 
 No changes to model routing or inference kernels are planned. Scouts are read-only; main agent owns implementation and final validation. Previous completed studies remain unchanged.
 
-Device scheduling: deployment succeeded, but another workspace's `python3 MOE/experiments/run_qwen_expert_ops.py --output-dir MOE/results/tmp/20260928-1253-qwen-expert-ops --remote-dir /data/local/tmp/qwen-expert-ops-20260928` is continuously benchmarking fd8657d6. No measurement in this task has started. Wait for its completion or explicit user coordination; do not kill it or run concurrent inference.
+Device scheduling: waited for another workspace's `run_qwen_expert_ops.py` cohort to finish naturally. Its host PID exited, then `adb devices -l` and device pidof checks confirmed fd8657d6 online with no fullmodel-oracle/online-moe/test-backend-ops/llama-bench process. Development is now running; no external process was killed.

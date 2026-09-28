@@ -1,0 +1,13 @@
+# Development complete; c8-g15 frozen
+
+Preparation checkpoint552176bff. External run_qwen_expert_ops.py ended naturally before any measurement here. User subsequently confirmed waiting was preferred. Device pidof check was empty before starting; no external process was killed.
+
+`python3 tests/run-moe-threeway-study.py develop > task/handoff/handoff-2026-09-28-threeway-768/development.log 2>&1` completed successfully:10 processes,60 formal requests, all samples preserved, same source/artifact hashes, all custom requests have stable repeated logits. Development outputs in development.json, raw JSON/logits and manifests in evidence.
+
+Request medians(ms): native A1126.32, old CPU-tail4/sharedGPU1105.38, old GPU-tail24/sharedNPU1228.83; c4-g15 1122.13, c4-g30 1117.31, c4-g45 1508.08; c8-g15 1056.16, c8-g30 1071.49, c8-g45 1431.75; native B1150.19. freeze.json selects c8-g15 solely by the prespecified development request-median rule. Do not tune any parameters based on subsequent confirmation.
+
+c8-g15 mean branch windows(ms): CPU421.65/NPU614.76/GPU345.58, sum of layer maxima623.40, parallel expert wall666.38, combine25.20, outsideFFN365.15. Ordinary-layer last finisher counts across6 requests: CPU9/NPU129/GPU0. Activation pool210.08MiB (not total memory). Compared with old CPU-tail4, burden moves off GPU, but NPU becomes dominant; actual full-model quality equivalence is not established. Actual router slots differ from CPU capture, as allowed by runtime; expert ownership is fixed but routes are recomputed.
+
+Independent protocol scout found no issue with candidate construction or confirmation data isolation. Two claimed issues were checked directly and do not apply: gather_us is measured before resetting the parallel wall start (fullmodel-oracle.cpp:151), whereas in-branch gather has a separate backend_gather_us field; subtracting pre-wall gather and expert wall does not double-count. develop resumes existing immutable run files rather than remeasuring, so its report is deterministic. Final audit strengthens complete artifact hash coverage and explicitly rechecks frozen report hashes.
+
+Next command: `python3 tests/run-moe-threeway-study.py confirm > task/handoff/handoff-2026-09-28-threeway-768/confirmation.log 2>&1`. Two new inputs wetland/foundry, each capture and8 timing processes (native/oldCPU/oldGPU/selected in forward/reverse order), total16 timing processes plus2 captures. Do not run concurrent device work. Then inspect confirmation.json, run audit_and_archive.py audit, write results/final handoff, archive and clean only this owned remote directory. Audit script is not part of the timed binary or frozen study source; its syntax check passed.
