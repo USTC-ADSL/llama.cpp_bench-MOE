@@ -6,7 +6,7 @@ User authorizes continuing the previous recommendations and disputes the interpr
 - [x] Test GET_ROWS materialization prototype and CPU/GPU/NPU fixed-distribution scaling; no stable768 E2E gain, so continue to fused indexing.
 - [x] Locate practical ways to remove graph/data-movement overhead; choose implementation based on measured evidence.
 - [x] Implement and validate HMX input-index fusion: exact primitive/resident outputs, arbitrary row maps, cache changes, observable-output/unretained/interposed/HVX fallback, NX on/off. Final fullmodel comparison remains below.
-- [ ] Compare original/optimized execution at768 and1536, retain128 regression and a longer held-out case as appropriate; include planning and all samples.
-- [ ] Correct unsupported unit-cost interpretation, report measured limits, archive/clean owned device evidence and commit stage results.
+- [x] Compare original/optimized execution at768 and1536, plus128 regression and2048 held-out case; include planning and all samples. Final code cohort complete; mixed-sign768/1536 gains are reported, not hidden.
+- [x] Correct unsupported unit-cost interpretation, report measured limits, archive268 hash-verified members, clean98 owned device files after local hash checks and commit stage results. Core implementation ffd56a204; final results/checklist saved in the reporting checkpoint.
 
 This is a new execution-path stage, not a retuning of the completed frozen route-scheduler confirmation. Subagents only explore/verify; main owns design/edits/final verification. Read foundational documents personally. After dispatch, wait until relevant agents finish before independent work.

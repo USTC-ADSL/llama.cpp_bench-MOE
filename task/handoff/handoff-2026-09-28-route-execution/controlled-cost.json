@@ -1,0 +1,129 @@
+{
+  "scope": "one resident layer0; same 128-token capture tiled to768/1536; each backend separate process, all sizes within that process; backend compute includes enqueue/synchronization and routed+shared FFN, excludes input preparation/reduction; no intrinsic marginal hardware cost claim",
+  "rows": [
+    {
+      "source": "task/handoff/handoff-2026-09-28-route-execution/evidence/unit.json",
+      "sha256": "ea5952331e563461ede9c45173ad88b380304eaf580de3c78f614c3794cad13c",
+      "backend": "HTP0",
+      "tokens": 128,
+      "effective_pairs": 512,
+      "active_experts": 60,
+      "compute_median_ms": 17.316640500000002,
+      "average_us_per_token": 135.28625390625,
+      "analytical_routed_tile32_rows": 1920,
+      "tile_padding_scope": "analytical minimum rows from per-expert counts for HMX 32-row tiles, not an instruction/operation counter; not a CPU/GPU work estimate",
+      "reference_worst_token_nrmse": 0.00986089611877619
+    },
+    {
+      "source": "task/handoff/handoff-2026-09-28-route-execution/evidence/unit.json",
+      "sha256": "ea5952331e563461ede9c45173ad88b380304eaf580de3c78f614c3794cad13c",
+      "backend": "HTP0",
+      "tokens": 768,
+      "effective_pairs": 3072,
+      "active_experts": 60,
+      "compute_median_ms": 31.513854,
+      "average_us_per_token": 41.0336640625,
+      "analytical_routed_tile32_rows": 4000,
+      "tile_padding_scope": "analytical minimum rows from per-expert counts for HMX 32-row tiles, not an instruction/operation counter; not a CPU/GPU work estimate",
+      "reference_worst_token_nrmse": 0.00986089611877619
+    },
+    {
+      "source": "task/handoff/handoff-2026-09-28-route-execution/evidence/unit.json",
+      "sha256": "ea5952331e563461ede9c45173ad88b380304eaf580de3c78f614c3794cad13c",
+      "backend": "HTP0",
+      "tokens": 1536,
+      "effective_pairs": 6144,
+      "active_experts": 60,
+      "compute_median_ms": 46.535728999999996,
+      "average_us_per_token": 30.296698567708333,
+      "analytical_routed_tile32_rows": 7008,
+      "tile_padding_scope": "analytical minimum rows from per-expert counts for HMX 32-row tiles, not an instruction/operation counter; not a CPU/GPU work estimate",
+      "reference_worst_token_nrmse": 0.00986089611877619
+    },
+    {
+      "source": "task/handoff/handoff-2026-09-28-route-execution/evidence/unit-cpu.json",
+      "sha256": "6462144eb3bc242cca045be8d2f34c8fb9ddfe60a3a7e15dbde9bcdbfac78cc6",
+      "backend": "CPU",
+      "tokens": 128,
+      "effective_pairs": 512,
+      "active_experts": 60,
+      "compute_median_ms": 49.71320299999999,
+      "average_us_per_token": 388.38439843749995,
+      "analytical_routed_tile32_rows": 1920,
+      "tile_padding_scope": "analytical minimum rows from per-expert counts for HMX 32-row tiles, not an instruction/operation counter; not a CPU/GPU work estimate",
+      "reference_worst_token_nrmse": 4.5823443674925744e-08
+    },
+    {
+      "source": "task/handoff/handoff-2026-09-28-route-execution/evidence/unit-cpu.json",
+      "sha256": "6462144eb3bc242cca045be8d2f34c8fb9ddfe60a3a7e15dbde9bcdbfac78cc6",
+      "backend": "CPU",
+      "tokens": 768,
+      "effective_pairs": 3072,
+      "active_experts": 60,
+      "compute_median_ms": 296.557891,
+      "average_us_per_token": 386.14308723958334,
+      "analytical_routed_tile32_rows": 4000,
+      "tile_padding_scope": "analytical minimum rows from per-expert counts for HMX 32-row tiles, not an instruction/operation counter; not a CPU/GPU work estimate",
+      "reference_worst_token_nrmse": 4.5823443674925744e-08
+    },
+    {
+      "source": "task/handoff/handoff-2026-09-28-route-execution/evidence/unit-cpu.json",
+      "sha256": "6462144eb3bc242cca045be8d2f34c8fb9ddfe60a3a7e15dbde9bcdbfac78cc6",
+      "backend": "CPU",
+      "tokens": 1536,
+      "effective_pairs": 6144,
+      "active_experts": 60,
+      "compute_median_ms": 594.8780985000001,
+      "average_us_per_token": 387.29042871093753,
+      "analytical_routed_tile32_rows": 7008,
+      "tile_padding_scope": "analytical minimum rows from per-expert counts for HMX 32-row tiles, not an instruction/operation counter; not a CPU/GPU work estimate",
+      "reference_worst_token_nrmse": 4.5823443674925744e-08
+    },
+    {
+      "source": "task/handoff/handoff-2026-09-28-route-execution/evidence/unit-gpu.json",
+      "sha256": "76f9d31572131d84c4649d350fe909d827d269c59a5b70dffc4ebafa09287492",
+      "backend": "GPUOpenCL",
+      "tokens": 128,
+      "effective_pairs": 512,
+      "active_experts": 60,
+      "compute_median_ms": 31.026979500000003,
+      "average_us_per_token": 242.39827734375,
+      "analytical_routed_tile32_rows": 1920,
+      "tile_padding_scope": "analytical minimum rows from per-expert counts for HMX 32-row tiles, not an instruction/operation counter; not a CPU/GPU work estimate",
+      "reference_worst_token_nrmse": 0.016567813751582113
+    },
+    {
+      "source": "task/handoff/handoff-2026-09-28-route-execution/evidence/unit-gpu.json",
+      "sha256": "76f9d31572131d84c4649d350fe909d827d269c59a5b70dffc4ebafa09287492",
+      "backend": "GPUOpenCL",
+      "tokens": 768,
+      "effective_pairs": 3072,
+      "active_experts": 60,
+      "compute_median_ms": 123.1388025,
+      "average_us_per_token": 160.33698242187498,
+      "analytical_routed_tile32_rows": 4000,
+      "tile_padding_scope": "analytical minimum rows from per-expert counts for HMX 32-row tiles, not an instruction/operation counter; not a CPU/GPU work estimate",
+      "reference_worst_token_nrmse": 0.016567813751582113
+    },
+    {
+      "source": "task/handoff/handoff-2026-09-28-route-execution/evidence/unit-gpu.json",
+      "sha256": "76f9d31572131d84c4649d350fe909d827d269c59a5b70dffc4ebafa09287492",
+      "backend": "GPUOpenCL",
+      "tokens": 1536,
+      "effective_pairs": 6144,
+      "active_experts": 60,
+      "compute_median_ms": 233.445547,
+      "average_us_per_token": 151.98277799479166,
+      "analytical_routed_tile32_rows": 7008,
+      "tile_padding_scope": "analytical minimum rows from per-expert counts for HMX 32-row tiles, not an instruction/operation counter; not a CPU/GPU work estimate",
+      "reference_worst_token_nrmse": 0.016567813751582113
+    }
+  ],
+  "implementation_evidence": {
+    "padded_m": "ggml/src/ggml-hexagon/htp/matmul-ops.c:3236: m_padded = hex_align_up(m, 32)",
+    "row_loop": "ggml/src/ggml-hexagon/htp/matmul-ops.c:3327: loops over m_padded, derives n_row_tiles",
+    "hmx_job": "ggml/src/ggml-hexagon/htp/matmul-ops.c:3374: job uses n_row_tiles",
+    "nx": "ggml/src/ggml-hexagon/htp/matmul-ops.c:3669: NX calls same hmx_mm_id_2d_f32"
+  },
+  "review_note": "A scout mistakenly inferred no M padding from the wrapper passing real cne1. Main checked the called kernel: it explicitly aligns M to32 and sends padded n_row_tiles to HMX. The analytical tile-row count is justified; no claim of measuring hardware instructions or attributing all time reduction to padding."
+}

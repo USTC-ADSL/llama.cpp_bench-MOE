@@ -14,15 +14,16 @@ def read(path):
 def summarize(path):
     d = read(path)
     run = read(path.with_suffix(".run.json"))
-    assert run["exit"] == 0 and d["all_round_logits_bitwise_equal"]
+    assert run["exit"] == 0
     assert len(d["samples"]) == 6
     samples = d["samples"]
     result = {"file": str(path), "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
               "samples_ms": [s["total_us"]/1000 for s in samples],
               "median_ms": st.median(s["total_us"] for s in samples)/1000,
               "major_faults": [s["major_faults"] for s in samples],
-              "repeated_logits_bitwise_equal": True}
+              "repeated_logits_bitwise_equal": d.get("all_round_logits_bitwise_equal")}
     if d["mode"] == "custom":
+        assert d["all_round_logits_bitwise_equal"]
         assert d["current_route_scheduler"]
         assert all(len(s["layers"]) == 24 for s in samples)
         for il in range(24):
