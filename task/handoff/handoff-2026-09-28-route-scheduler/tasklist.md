@@ -8,8 +8,9 @@ Base06ab1165d. Existing untracked TODO.md is user-owned and must not be overwrit
 - [x] Establish backend execution/parallelism and practical resident availability design; audit old model on the expanded placement domain.
 - [x] Implement generalized cost features/search and current-route runtime integration with explicit eligibility/memory accounting.
 - [x] Calibrate on development inputs, verify prediction/ranking and meaningful device correctness contracts; checkpoint.
-- [ ] Validate768-token complete-model execution with planning included against native and fixed three-way/old scheduler controls.
-- [ ] Validate128 regression and representative longer/unseen lengths up to2048 with independent prompts; freeze before confirmation.
+- [x] Validate768-token complete-model execution with planning included against native and fixed three-way/old scheduler controls (museum +13.85%, cooperative +13.09% throughput; 2 process medians each).
+- [x] Validate128 regression and representative longer/unseen lengths up to2048 with independent prompts; frozen confirmation complete (128 +46.71%, 1024 +4.03%, 2048 +2.81%; long-input gains small and process drift material).
+- [ ] Attribute limited E2E gains using native/custom-all-NPU/current-route controls at768/1536; quantify remaining optimization opportunities.
 - [ ] Explain measured gains/bottlenecks, complete requirement-by-requirement audit, archive/clean device evidence and commit final results.
 
 No inference may overlap another device experiment. Subagents explore/verify only; main agent owns design, edits and final verification. Status is active until the full scope above is verified or a genuine external blocker meets the persistent-goal rule.

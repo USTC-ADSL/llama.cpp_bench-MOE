@@ -1,0 +1,69 @@
+{
+  "utc": "2026-09-28T16:23:54.297327+00:00",
+  "code_head": "1507efd24570482e053fdfb02d6362a9307c1955",
+  "sources": {
+    "fullmodel-oracle.cpp": "ab9c40a1774338a978071483536644b38613f4d5c6b1ed3e9711e29b8063ce18",
+    "expert-oracle-probe.cpp": "d6d5eea5f4ee2642e1046e0e5d66f26e27dcd980ae80ce2a4f1e89e6940d8e02",
+    "expert-routing-probe.cpp": "552a6bd38fc8664f2f5439889948753f7ce30b0e5007e897527aa8234cfe70ca",
+    "moe-placement-model.h": "829a5392b01bfc723a3c3da070e2c1a0404e070bd99162e5c8567ca7d6c4718e",
+    "moe-route-scheduler.h": "0cbae1c1ec0872003ea453dab91326f121a3ca00a45dfdb90391798be5f093f9",
+    "moe-route-plan.cpp": "da36270cd8cdc9c8906ea742e4b47f7ef6a72e0cc00f096d97276dc37afa6321",
+    "run-fullmodel-oracle.py": "4c27557d5f67833949bf7e60eedf258ca2a36c1f71f3e4e09f66cb0053a8bc50",
+    "run-moe-route-study.py": "4f152c953b348d1a642937ab364db2b1cc277ce1692f2166fa1a9cc04b08348b"
+  },
+  "binary_sha256": "10e44ea90e413759305506ea6e9f1e63aba262dcc99fd656ae144d259209f127",
+  "planner_sha256": "67e939b7ee3e4641c47a0d4929644c897bddd0da3e3984c3dec92d84741ce954",
+  "model_sha256": "0d5c7d170f1855ad9c522eb5d3a06a84d083b7776b3b1d19d49e13d12e265387",
+  "prompts": {
+    "museum": "d098264157fec18c1881d327292eb211ca52717f59c53d9bf7cb532c7e4febc6",
+    "cooperative": "8a4c2a35b3f9c2c969fe717390f290165ef1b5ac36ff6e5aed370b1a4c670839"
+  },
+  "cases": [
+    [
+      "museum",
+      768
+    ],
+    [
+      "cooperative",
+      768
+    ],
+    [
+      "museum",
+      128
+    ],
+    [
+      "museum",
+      1024
+    ],
+    [
+      "museum",
+      2048
+    ]
+  ],
+  "reps": 6,
+  "warmups": 2,
+  "process_orders": [
+    [
+      "native",
+      "fixed",
+      "old",
+      "route"
+    ],
+    [
+      "route",
+      "old",
+      "fixed",
+      "native"
+    ]
+  ],
+  "scope": "prepared resident union layouts; current actual route search included in full llama_decode; no calibration on confirmation timings",
+  "provision": "frozen search on CPU captured counts, compact best plus six alternative expert layouts; shared variants whose constrained global search score is within20% of best; physical widths re-scored; callback uses only real current counts and explicit availability",
+  "comparators": {
+    "native": "native HTP full model",
+    "fixed": "CPU lowest8 + GPU heaviest prefix nearest15% remaining pairs + NPU rest/shared",
+    "old": "CPU lowest4 + NPU remainder + sharedGPU"
+  },
+  "terminal_controls": "routed NPU/shared CPU",
+  "aspiration": "25% throughput, not a pass threshold",
+  "weights": "Qwen1.5-MoE-A2.7B Q4_0"
+}
