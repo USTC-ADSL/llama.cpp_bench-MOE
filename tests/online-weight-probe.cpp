@@ -132,6 +132,29 @@ static json gpu_htp_pack_probe(online_matrix &canonical,online_matrix &packed,
         {"gpu_prepare",stats(convert,bytes.size())},{"gpu_prepare_npu_compute",stats(combined,bytes.size())}};
 }
 
+static json mixed_matrix_check(online_matrix &canonical, online_matrix &packed) {
+    ggml_context_ptr ctx(ggml_init({2*ggml_tensor_overhead(),nullptr,true}));
+    auto *map=ggml_new_tensor_1d(ctx.get(),GGML_TYPE_I32,2);
+    ggml_backend_buffer_ptr buffer(ggml_backend_alloc_ctx_tensors_from_buft(ctx.get(),canonical.d.buft));
+    require(bool(buffer),"mixed map allocation failed");
+    canonical.compute(); const auto reference=canonical.get();
+    canonical.out->src[3]=packed.w; canonical.out->src[4]=map;
+    require(ggml_backend_supports_op(canonical.d.backend.get(),canonical.out),"mixed matrix unsupported");
+    ggml_graph_clear(canonical.graph); ggml_build_forward_expand(canonical.graph,canonical.out);
+    for (const std::array<int32_t,2> values : {std::array<int32_t,2>{-1,-1}, {-1,1}, {0,-1}, {0,1}}) {
+        ggml_backend_tensor_set(map,values.data(),0,sizeof(values));
+        canonical.compute(); require(canonical.get()==reference,"mixed matrix output differs");
+    }
+    auto *bad=ggml_new_tensor_1d(ctx.get(),GGML_TYPE_F32,2);
+    canonical.out->src[4]=bad;
+    require(!ggml_backend_supports_op(canonical.d.backend.get(),canonical.out),"mixed map type guard failed");
+    canonical.out->src[3]=canonical.w; canonical.out->src[4]=map;
+    require(!ggml_backend_supports_op(canonical.d.backend.get(),canonical.out),"mixed packed layout guard failed");
+    canonical.out->src[3]=canonical.out->src[4]=nullptr;
+    ggml_graph_clear(canonical.graph); ggml_build_forward_expand(canonical.graph,canonical.out);
+    return {{"all_miss_partial_all_hit_exact",true},{"type_and_layout_guards",true}};
+}
+
 int main(int argc,char ** argv) {
     try {
         require(argc==4,"usage: online-weight-probe MODEL OUTPUT REPS");
@@ -191,6 +214,7 @@ int main(int argc,char ** argv) {
                     item["canonical_compute"]=stats(cc,bytes.size()); item["packed_compute"]=stats(pc,bytes.size());
                     item["host_prepare"]=stats(pp,bytes.size()); item["host_prepare_compute"]=stats(total,bytes.size());
                     if(nt==128) { item["gpu_htp_pack"]=gpu_htp_pack_probe(canonical,packed,bytes,reps); }
+                    item["mixed_layout"]=mixed_matrix_check(canonical,packed);
                     fprintf(stderr,"ONLINE_WEIGHT %s nt=%d canonical=%.3f tiled=%.3f prepare_compute=%.3f us nrmse=%.9g\n",part,nt,
                         double(item["canonical_compute"]["median_us"]),double(item["packed_compute"]["median_us"]),double(item["host_prepare_compute"]["median_us"]),nrmse);
                 }

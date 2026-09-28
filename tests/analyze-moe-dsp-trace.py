@@ -36,7 +36,8 @@ def main():
             else:
                 ops.append({"opcode": opcode, "label": label, "usecs": int(us), "cycles": int(cycles),
                     "start": int(start), "phases_us": collections.defaultdict(float),
-                    "worker_sum_us": collections.defaultdict(float), "phase_calls": collections.Counter()})
+                    "worker_sum_us": collections.defaultdict(float), "phase_calls": collections.Counter(),
+                    "phases_by_layout_us": {"canonical": collections.defaultdict(float), "packed": collections.defaultdict(float)}})
             continue
         m = EVENT.search(line)
         if not m:
@@ -57,7 +58,11 @@ def main():
         us = duration * op["usecs"] / op["cycles"]
         if name.startswith("ID_"):
             assert thread == "0"
-            op["representation"] = "canonical" if info == "1" else "packed"
+            assert info in ("0", "1")
+            layout = "canonical" if info == "1" else "packed"
+            previous = op.get("representation", layout)
+            op["representation"] = layout if previous == layout else "mixed"
+            op["phases_by_layout_us"][layout][name] += us
             op["phases_us"][name] += us
             op["phase_calls"][name] += 1
         else:
@@ -65,7 +70,7 @@ def main():
     finish()
     assert not truncation, "trace capacity exhausted"
     summary = {}
-    for mode in ("canonical", "packed"):
+    for mode in ("canonical", "packed", "mixed"):
         subset = [r for r in rows if r.get("representation") == mode]
         if not subset:
             continue

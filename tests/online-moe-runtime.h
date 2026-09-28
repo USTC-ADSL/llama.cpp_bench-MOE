@@ -27,6 +27,7 @@ struct online_moe_runtime {
     double npu_conversion_us_per_expert;
     int forced_tail;
     bool reference_packed=std::getenv("MOE_ONLINE_REFERENCE_PACKED")!=nullptr;
+    bool mixed_graph=std::getenv("MOE_PREFETCH_MIXED_GRAPH")!=nullptr;
     struct binding { online_moe_runtime * self; int layer; };
     std::array<binding,24> bindings;
     std::unique_ptr<online_expert_prefetch> prefetch; // joins before source banks die
@@ -74,6 +75,8 @@ struct online_moe_runtime {
             auto &w=b==0?*layers[0].cpu_view:*layers[0].source_htp;
             oracle_job shape(w,nullptr,nt*4,1,nt,false,false,true,{},true);
             size_t bytes=shared_activation_buffer::required_size(*devs[b],shape.ctx.get(),shape.graph);
+            // Room for the immutable per-op compact map, aligned by the arena.
+            if (b == 1 && mixed_graph) { bytes += 4096; }
             arenas[b]=std::make_shared<shared_activation_buffer>(*devs[b],bytes); activation_bytes+=arenas[b]->desc.size;
         }
         // Initialize backend kernels and EMPTY target capacity as part of model
@@ -161,9 +164,10 @@ struct online_moe_runtime {
                 }
                 double prepare=elapsed(start),compute=0,scatter=0;
                 const double branch_start=prefetch?prefetch->time_us():0;
-                auto execute=[&](bank &w,const std::vector<int> &group,const std::array<int,60> &mapping) {
+                auto execute=[&](bank &w,const std::vector<int> &group,const std::array<int,60> &mapping,
+                                 bank *packed=nullptr,const std::vector<int> *packed_ids=nullptr) {
                     if(group.empty()) { return; } auto setup=timer::now();
-                    oracle_job job(w,nullptr,int(group.size()),1,nt,false,false,true,arenas[b],false,true);
+                    oracle_job job(w,nullptr,int(group.size()),1,nt,false,false,true,arenas[b],false,true,nullptr,packed,packed_ids);
                     for(size_t row=0;row<group.size();++row) {
                         int p=group[row]; std::copy_n(x+(p/4)*2048,2048,job.input_data()+row*2048);
                         job.index_data()[row]=mapping[ids[p]];
@@ -178,9 +182,12 @@ struct online_moe_runtime {
                 if(b==1 && !cache_hits.empty()) {
                     auto &cached=prefetch->slots[il%2]; std::array<int,60> compact; compact.fill(-1);
                     for(size_t j=0;j<cached.ids.size();++j) { compact[cached.ids[j]]=int(j); }
-                    std::vector<int> hits,misses;
-                    for(int p:pairs[b]) { (compact[ids[p]]>=0?hits:misses).push_back(p); }
-                    execute(*cached.weights,hits,compact); execute(*selected,misses,local);
+                    if (mixed_graph) { execute(*selected,pairs[b],local,cached.weights.get(),&cached.ids); }
+                    else {
+                        std::vector<int> hits,misses;
+                        for(int p:pairs[b]) { (compact[ids[p]]>=0?hits:misses).push_back(p); }
+                        execute(*cached.weights,hits,compact); execute(*selected,misses,local);
+                    }
                 } else { execute(*selected,pairs[b],local); }
                 timings[b]={{"prepare_us",prepare},{"compute_us",compute},{"scatter_us",scatter},{"total_us",elapsed(start)},
                     {"start_us",branch_start},{"end_us",prefetch?prefetch->time_us():0}};

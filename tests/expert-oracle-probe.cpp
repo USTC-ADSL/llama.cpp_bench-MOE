@@ -11,14 +11,15 @@ struct oracle_job {
     std::shared_ptr<shared_activation_buffer> shared_buffer;
     bool pooled_activations=false;
     ggml_tensor * x = nullptr, * ids_storage = nullptr, * out = nullptr;
-    ggml_tensor * sx = nullptr, * sout = nullptr;
+    ggml_tensor * sx = nullptr, * sout = nullptr, * packed_map = nullptr;
     ggml_cgraph * graph;
     std::vector<float> input, output, shared_input, shared_output;
     std::vector<int32_t> indices;
     int stride = 0;
     oracle_job(bank & b, shared_bank * sw, int rows, int k, int nt, bool native, bool single_matmul = false, bool shared_activations = false,
                std::shared_ptr<shared_activation_buffer> arena = {}, bool layout_only = false, bool reuse_lifetimes = false,
-               const shared_activation_layout::reservation * reserved = nullptr) : dev(b.d) {
+               const shared_activation_layout::reservation * reserved = nullptr,
+               bank * packed = nullptr, const std::vector<int> * packed_ids = nullptr) : dev(b.d) {
         graph = ggml_new_graph_custom(ctx.get(), 64, false);
         if (rows) {
             x = ggml_new_tensor_3d(ctx.get(), GGML_TYPE_F32, b.w[0]->ne[0], 1, rows);
@@ -35,6 +36,14 @@ struct oracle_job {
                 auto * u = ggml_mul_mat_id(ctx.get(), b.w[1], x, ids);
                 auto * g = ggml_mul_mat_id(ctx.get(), b.w[0], x, ids);
                 out = ggml_mul_mat_id(ctx.get(), b.w[2], ggml_swiglu_split(ctx.get(), g, u), ids);
+                if (packed) {
+                    require(dev.name == "HTP0" && b.canonical_weights && packed_ids && shared_activations,
+                            "mixed Expert graph needs canonical HTP weights and shared activations");
+                    packed_map = ggml_new_tensor_1d(ctx.get(), GGML_TYPE_I32, b.w[0]->ne[2]);
+                    ggml_set_name(packed_map, "packed_expert_map");
+                    ggml_tensor * ops[] = {g, u, out};
+                    for (int i = 0; i < 3; ++i) { ops[i]->src[3] = packed->w[i]; ops[i]->src[4] = packed_map; }
+                }
             }
             ggml_build_forward_expand(graph, out);
             if (!shared_activations) {
@@ -67,6 +76,15 @@ struct oracle_job {
             if(arena) { shared_buffer=std::move(arena); shared_buffer->bind(dev,ctx.get(),reuse_lifetimes?graph:nullptr,reserved); }
             else { shared_buffer=shared_activation_buffer::allocate(dev,ctx.get()); }
             if (ids_storage) { std::memset(ids_storage->data,0,ggml_nbytes(ids_storage)); }
+            if (packed_map) {
+                auto * map = static_cast<int32_t *>(packed_map->data);
+                std::fill_n(map, packed_map->ne[0], -1);
+                require(packed_ids->size() <= size_t(packed->w[0]->ne[2]), "packed map capacity");
+                for (size_t i = 0; i < packed_ids->size(); ++i) {
+                    int e = packed_ids->at(i); require(e >= 0 && e < packed_map->ne[0] && map[e] == -1, "invalid packed expert map");
+                    map[e] = int32_t(i);
+                }
+            }
         } else {
             buf.reset(ggml_backend_alloc_ctx_tensors_from_buft(ctx.get(), ggml_backend_dev_buffer_type(dev.dev)));
             require(buf != nullptr, "oracle activation allocation failed");

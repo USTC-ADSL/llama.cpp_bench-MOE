@@ -2392,6 +2392,56 @@ struct ggml_hexagon_opbatch {
 
         htp_opnode & last_node = ops[n_ops - 1];
 
+        // Mixed-layout ID inputs are [canonical, activation, ids, packed, map].
+        // Preserve gate/up fusion as [canonical0, canonical1, activation, ids,
+        // packed0, packed1, map]. Never interpret a packed alternative as another
+        // output weight or drop the map when extending an ordinary NX fusion.
+        const bool last_mixed = last_node.opcode == HTP_OP_MUL_MAT_ID
+            ? last_node.node->src[3] != nullptr
+            : last_node.opcode == HTP_OP_MUL_MAT_ID_NX && last_node.inputs.size() > last_node.outputs.size() + 2;
+        if (node.node->src[3] || last_mixed) {
+            if (last_node.opcode != HTP_OP_MUL_MAT_ID || !last_mixed || !node.node->src[3] ||
+                last_node.node->src[4] != node.node->src[4] ||
+                !is_mergeable_mul_mat_id_pair(last_node.node, node.node)) { return false; }
+            struct htp_mm_kernel_params kp;
+            ggml_hexagon_precompute_fused_mmidnx_params(sess, last_node.src0(), x_in, d_in, 2, &kp);
+            if (!kp.n_hmx || !is_supported_mul_mat_id_nx_kernel(last_node.src0(), &kp) ||
+                (size_t) kp.vtcm_size > sess->vtcm_size) { return false; }
+            std::vector<const ggml_tensor *> inputs = {last_node.src0(), w_in, x_in, ids_in,
+                last_node.node->src[3], node.node->src[3], node.node->src[4]};
+            size_t extra_bufs = 0, extra_vmem = 0, extra_tens = 0;
+            std::unordered_set<int> new_fds;
+            auto fit_t = [&](const ggml_tensor * t) {
+                if (!t_map.count(t)) {
+                    ++extra_tens;
+                    auto * b = static_cast<ggml_hexagon_shared_buffer *>(t->buffer->context);
+                    if (!b_map.count(b->fd()) && new_fds.insert(b->fd()).second) {
+                        ++extra_bufs; extra_vmem += b->size();
+                    }
+                }
+            };
+            for (auto * t : inputs) { fit_t(t); }
+            fit_t(d_in);
+            if (extra_bufs + n_bufs > n_bufs_max || extra_tens + n_tens > n_tens_max ||
+                extra_vmem + b_vmem > b_vmem_max) { return false; }
+            const auto * d0 = last_node.dst();
+            last_node.opcode = HTP_OP_MUL_MAT_ID_NX;
+            last_node.name = "MUL_MAT_ID_NX_MIXED";
+            last_node.inputs = std::move(inputs);
+            last_node.outputs = {d0, d_in};
+            last_node.fused.push_back(node.node);
+            memcpy(last_node.kernel_params, &kp, sizeof(kp));
+            auto & o = h_ops[n_ops - 1];
+            o.opcode = HTP_OP_MUL_MAT_ID_NX;
+            memcpy(o.kernel_params, &kp, sizeof(kp));
+            for (uint32_t i = 0; i < HTP_OP_MAX_INPUTS; ++i) {
+                o.src[i] = i < last_node.inputs.size() ? add_tensor(last_node.inputs[i]) : 0xffff;
+            }
+            o.dst[0] = add_tensor(d0); o.dst[1] = add_tensor(d_in);
+            for (uint32_t i = 2; i < HTP_OP_MAX_OUTPUTS; ++i) { o.dst[i] = 0xffff; }
+            return true;
+        }
+
         // Case 1: last_node is already MUL_MAT_ID_NX
         if (last_node.opcode == HTP_OP_MUL_MAT_ID_NX) {
             const uint32_t curr_n = (uint32_t) last_node.outputs.size();
@@ -4440,6 +4490,16 @@ static bool ggml_hexagon_supported_mul_mat_id(const struct ggml_hexagon_session 
     struct htp_mm_kernel_params kparams;
     ggml_hexagon_precompute_matmul_params(sess, src0, src1, dst, &kparams);
     if (ggml_hexagon_tensor_is_canonical_q4_0(src0) && !kparams.n_hmx) { return false; }
+    if (op->src[3] || op->src[4]) {
+        const auto * packed = op->src[3]; const auto * map = op->src[4];
+        if (!packed || !map || !kparams.n_hmx || !ggml_hexagon_tensor_is_canonical_q4_0(src0) ||
+            packed->type != GGML_TYPE_Q4_0 || ggml_hexagon_tensor_is_canonical_q4_0(packed) ||
+            packed->view_src || !ggml_is_contiguous(packed) ||
+            packed->ne[0] != src0->ne[0] || packed->ne[1] != src0->ne[1] ||
+            packed->ne[2] > src0->ne[2] || packed->ne[3] != 1 ||
+            map->type != GGML_TYPE_I32 || !ggml_is_contiguous(map) ||
+            ggml_nelements(map) != src0->ne[2]) { return false; }
+    }
     if ((size_t)kparams.vtcm_size > sess->vtcm_size) {
         HEX_VERBOSE("ggml-hex: %s supported MUL_MAT_ID VTCM size needed (%d) > budget (%zu)\n", sess->c_name(), kparams.vtcm_size, sess->vtcm_size);
         return false;

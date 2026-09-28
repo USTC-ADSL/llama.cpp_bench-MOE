@@ -3479,6 +3479,45 @@ int op_matmul(struct htp_ops_context * octx) {
     return hvx_mm_matmul(octx);
 }
 
+// Optional inputs after [weights..., act, ids] are [packed_weights..., map].
+// The map is immutable for the op: -1 means canonical, otherwise a compact slot.
+static bool valid_mixed_id_weights(const struct htp_ops_context * octx, uint32_t n_weights) {
+    if (!octx->src[n_weights + 2]) { return true; }
+    if (2 * n_weights + 2 >= HTP_OP_MAX_INPUTS) { return false; }
+    const struct htp_mm_kernel_params * kp = (const struct htp_mm_kernel_params *) octx->kernel_params;
+    const struct htp_tensor * map = octx->src[2 * n_weights + 2];
+    const uint32_t n = octx->src[0]->ne[2];
+    if (!kp->n_hmx || !map || map->type != HTP_TYPE_I32 || map->nb[0] != sizeof(int32_t) ||
+        map->ne[0] != n || map->ne[1] != 1 || map->ne[2] != 1 || map->ne[3] != 1 ||
+        map->size < n * sizeof(int32_t)) { return false; }
+    for (uint32_t p = 0; p < n_weights; ++p) {
+        const struct htp_tensor * src = octx->src[p];
+        const struct htp_tensor * packed = octx->src[n_weights + 2 + p];
+        if (!packed || src->type != HTP_TYPE_Q4_0 || !(src->flags & HTP_TENSOR_CANONICAL_Q4_0) ||
+            packed->type != HTP_TYPE_Q4_0 || (packed->flags & HTP_TENSOR_CANONICAL_Q4_0) ||
+            packed->ne[0] != src->ne[0] || packed->ne[1] != src->ne[1] || packed->ne[3] != 1 ||
+            packed->nb[1] != src->nb[1] || packed->nb[2] != src->nb[2] ||
+            (uint64_t) packed->nb[2] * packed->ne[2] > packed->size) { return false; }
+        const int32_t * slots = (const int32_t *) map->data;
+        for (uint32_t e = 0; e < n; ++e) {
+            if (slots[e] < -1 || (slots[e] >= 0 && (uint32_t) slots[e] >= packed->ne[2])) { return false; }
+        }
+    }
+    return true;
+}
+
+static const struct htp_tensor * mixed_id_weight(const struct htp_ops_context * octx,
+                                                uint32_t n_weights, uint32_t p, uint32_t * expert) {
+    if (octx->src[n_weights + 2]) {
+        const int32_t * slots = (const int32_t *) octx->src[2 * n_weights + 2]->data;
+        if (slots[*expert] >= 0) {
+            *expert = (uint32_t) slots[*expert];
+            return octx->src[n_weights + 2 + p];
+        }
+    }
+    return octx->src[p];
+}
+
 static int hmx_mm_op_matmul_id(
     struct htp_ops_context * octx,
     struct htp_mm_context * mmctx
@@ -3494,16 +3533,18 @@ static int hmx_mm_op_matmul_id(
         const int32_t cne1 = matrix_row_counts[cur_a];
         if (cne1 == 0) continue;
 
+        uint32_t weight_expert = cur_a;
+        const struct htp_tensor * weight = mixed_id_weight(octx, 1, 0, &weight_expert);
         int ret = hmx_mm_id_2d_f32(octx->ctx, (float*) dst->data, (float*) src1->data,
-                                   (const uint8_t *) src0->data + cur_a * nb02,
+                                   (const uint8_t *) weight->data + weight_expert * weight->nb[2],
                                    cne1, ne00, ne01,
                                    ne10,
                                    ne11,
                                    nb11, nb12,
                                    nb1, nb2,
-                                   (int) src0->nb[1], (int) src0->type,
+                                   (int) weight->nb[1], (int) weight->type,
                                    matrix_rows, cur_a, mmctx->mapping_stride,
-                                   (src0->flags & HTP_TENSOR_CANONICAL_Q4_0) != 0);
+                                   (weight->flags & HTP_TENSOR_CANONICAL_Q4_0) != 0);
         if (ret != 0) {
             FARF(ERROR, "HMX matmul failed for expert %u, error %d\n", cur_a, ret);
             return HTP_STATUS_NO_SUPPORT;
@@ -3620,12 +3661,13 @@ static int hmx_mm_op_matmul_id_nx(
         if (cne1 == 0) continue;
 
         for (uint32_t p = 0; p < n_weights; ++p) {
-            const struct htp_tensor * restrict src_w = octx->src[p];
+            uint32_t weight_expert = cur_a;
+            const struct htp_tensor * restrict src_w = mixed_id_weight(octx, n_weights, p, &weight_expert);
             const struct htp_tensor * restrict dst   = octx->dsts[p];
             if (!src_w || !dst) continue;
 
             int ret = hmx_mm_id_2d_f32(octx->ctx, (float*) dst->data, (float*) act->data,
-                                       (const uint8_t *) src_w->data + cur_a * src_w->nb[2],
+                                       (const uint8_t *) src_w->data + weight_expert * src_w->nb[2],
                                        cne1, src_w->ne[0], src_w->ne[1],
                                        act->ne[0],
                                        act->ne[1],
@@ -3800,6 +3842,7 @@ static inline void scan_expert_ids(
 }
 
 int op_matmul_id(struct htp_ops_context * octx) {
+    if (!valid_mixed_id_weights(octx, 1)) { return HTP_STATUS_NO_SUPPORT; }
     htp_matmul_tensors_preamble;
 
     struct htp_thread_trace * tr = &octx->ctx->trace[0];
@@ -3896,6 +3939,7 @@ int op_matmul_id_nx(struct htp_ops_context * octx) {
     htp_trace_event_start(tr, HTP_TRACE_EVT_INIT, 0);
 
     const struct htp_mm_kernel_params * kparams = (const struct htp_mm_kernel_params *) octx->kernel_params;
+    if (!valid_mixed_id_weights(octx, kparams->n_weights)) { return HTP_STATUS_NO_SUPPORT; }
     for (uint32_t p = 0; p < kparams->n_weights; ++p) {
         if ((octx->src[p]->flags & HTP_TENSOR_CANONICAL_Q4_0) && !kparams->n_hmx) { return HTP_STATUS_NO_SUPPORT; }
     }

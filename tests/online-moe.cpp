@@ -149,6 +149,7 @@ int main(int argc,char **argv) {
                 const auto &p=*runtime->prefetch;
                 require(!p.pending.valid(),"prefetch work left after terminal layer");
                 report["prefetch"]={{"capacity",p.capacity},{"method",p.predictor.at("method")},
+                    {"mixed_graph",runtime->mixed_graph},
                     {"target_bytes",p.target_bytes},{"source_import_alias_peak_bytes",p.source_import_peak},
                     {"preparations",p.records},{"initial_prepared_experts",0}};
                 if(budget.mode==1) {

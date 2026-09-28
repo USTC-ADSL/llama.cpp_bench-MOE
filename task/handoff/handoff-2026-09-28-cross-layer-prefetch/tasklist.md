@@ -10,3 +10,11 @@ Parent checkpoint3351efecc, clean tree; fd8657d6 confirmed online, other device 
 - [x] Save positive/negative evidence, results and handoff; archive92 raw/binary files with read-back hashes, remove167 verified tagged remote artifacts, and seal the implementation stage in Git. Reusable binaries, previous evidence, model and global OpenCL cache retained.
 
 Key distinction: expert indices are layer-local. Need predict useful target-backend Expert sets, not merely count activated IDs. Prefill often activates most Experts, so union-set hit rate alone is insufficient. Predictions may use current-layer observed router counts, never future hidden state or future true routes. Shared next-layer Expert is always needed and provides a prediction-free control for overlap.
+
+## Follow-up: mixed-layout execution and conversion alternatives (parent601304fe3)
+
+- [x] Locate mixed canonical/packed dispatch and conversion alternatives; design.md records optional tensors, preserved NX fusion, batch submission and import-lifetime alternatives.
+- [x] Implement mixed-layout HMX execution and preserved gate/up fusion; 12 matrix cases/all-miss/partial/all-hit and complete-model logits pass on fd8657d6. Trace shows46 ID ops (44 mixed+2 canonical), versus90 in split prefetch.
+- [ ] Measure fixed-placement benefit versus split-graph prefetch and unprefetched online; use development evidence to choose any additional conversion/scheduling change.
+- [ ] Freeze selected configuration and confirm first-prefill results on new prompts versus native NPU, documenting memory and numerical limits.
+- [ ] Update paper point/results, archive evidence, clean owned device artifacts and commit stage checkpoints.

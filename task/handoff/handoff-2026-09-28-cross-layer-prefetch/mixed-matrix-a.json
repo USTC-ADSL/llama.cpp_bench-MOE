@@ -1,0 +1,1077 @@
+{
+  "scope": "two actual experts; canonical GGUF in shared DMA versus CPU repack to tiled HTP; no prompt or whole-model claim",
+  "reps": 4,
+  "warmups": 2,
+  "cases": [
+    {
+      "matrix": "gate",
+      "tokens": 8,
+      "experts": 2,
+      "canonical_supported": true,
+      "canonical_initial_copy_us": 964.218,
+      "source_bytes": 3244032,
+      "weight_buffer_bytes": 3244032,
+      "versus_packed_nrmse": 0.0,
+      "bitwise_equal": true,
+      "versus_fp64_nrmse": 0.00026588022960197965,
+      "canonical_compute": {
+        "samples_us": [
+          936.979,
+          972.605,
+          932.5,
+          951.77
+        ],
+        "mean_us": 948.4635,
+        "median_us": 944.3745,
+        "p95_us": 972.605,
+        "source_bytes": 3244032,
+        "median_source_GBps": 3.435111812104202
+      },
+      "packed_compute": {
+        "samples_us": [
+          742.969,
+          765.469,
+          740.781,
+          720.0
+        ],
+        "mean_us": 742.30475,
+        "median_us": 741.875,
+        "p95_us": 765.469,
+        "source_bytes": 3244032,
+        "median_source_GBps": 4.372747430497051
+      },
+      "host_prepare": {
+        "samples_us": [
+          4693.125,
+          4692.656,
+          4692.5,
+          4707.5
+        ],
+        "mean_us": 4696.44525,
+        "median_us": 4692.8904999999995,
+        "p95_us": 4707.5,
+        "source_bytes": 3244032,
+        "median_source_GBps": 0.6912652234267985
+      },
+      "host_prepare_compute": {
+        "samples_us": [
+          5541.771,
+          5429.427,
+          5351.458,
+          5457.552
+        ],
+        "mean_us": 5445.052,
+        "median_us": 5443.4895,
+        "p95_us": 5541.771,
+        "source_bytes": 3244032,
+        "median_source_GBps": 0.5959471401570628
+      },
+      "mixed_layout": {
+        "all_miss_partial_all_hit_exact": true,
+        "type_and_layout_guards": true
+      }
+    },
+    {
+      "matrix": "gate",
+      "tokens": 32,
+      "experts": 2,
+      "canonical_supported": true,
+      "canonical_initial_copy_us": 538.542,
+      "source_bytes": 3244032,
+      "weight_buffer_bytes": 3244032,
+      "versus_packed_nrmse": 0.0,
+      "bitwise_equal": true,
+      "versus_fp64_nrmse": 0.00026842179697163904,
+      "canonical_compute": {
+        "samples_us": [
+          664.844,
+          646.562,
+          676.563,
+          667.709
+        ],
+        "mean_us": 663.9195,
+        "median_us": 666.2764999999999,
+        "p95_us": 676.563,
+        "source_bytes": 3244032,
+        "median_source_GBps": 4.868897522274913
+      },
+      "packed_compute": {
+        "samples_us": [
+          444.636,
+          404.115,
+          440.625,
+          452.031
+        ],
+        "mean_us": 435.35175,
+        "median_us": 442.6305,
+        "p95_us": 452.031,
+        "source_bytes": 3244032,
+        "median_source_GBps": 7.328984333433869
+      },
+      "host_prepare": {
+        "samples_us": [
+          3985.677,
+          3977.761,
+          3962.552,
+          4692.083
+        ],
+        "mean_us": 4154.51825,
+        "median_us": 3981.719,
+        "p95_us": 4692.083,
+        "source_bytes": 3244032,
+        "median_source_GBps": 0.8147315267601757
+      },
+      "host_prepare_compute": {
+        "samples_us": [
+          4510.885,
+          4444.583,
+          4465.157,
+          5177.344
+        ],
+        "mean_us": 4649.49225,
+        "median_us": 4488.021000000001,
+        "p95_us": 5177.344,
+        "source_bytes": 3244032,
+        "median_source_GBps": 0.7228201472319313
+      },
+      "mixed_layout": {
+        "all_miss_partial_all_hit_exact": true,
+        "type_and_layout_guards": true
+      }
+    },
+    {
+      "matrix": "gate",
+      "tokens": 128,
+      "experts": 2,
+      "canonical_supported": true,
+      "canonical_initial_copy_us": 542.031,
+      "source_bytes": 3244032,
+      "weight_buffer_bytes": 3244032,
+      "versus_packed_nrmse": 0.0,
+      "bitwise_equal": true,
+      "versus_fp64_nrmse": 0.0002665907367476629,
+      "canonical_compute": {
+        "samples_us": [
+          694.27,
+          786.51,
+          732.969,
+          1366.094
+        ],
+        "mean_us": 894.96075,
+        "median_us": 759.7395,
+        "p95_us": 1366.094,
+        "source_bytes": 3244032,
+        "median_source_GBps": 4.269926731465192
+      },
+      "packed_compute": {
+        "samples_us": [
+          541.614,
+          486.407,
+          532.448,
+          488.02
+        ],
+        "mean_us": 512.12225,
+        "median_us": 510.234,
+        "p95_us": 541.614,
+        "source_bytes": 3244032,
+        "median_source_GBps": 6.357929890991192
+      },
+      "host_prepare": {
+        "samples_us": [
+          3964.323,
+          3953.385,
+          3961.927,
+          4065.781
+        ],
+        "mean_us": 3986.3540000000003,
+        "median_us": 3963.125,
+        "p95_us": 4065.781,
+        "source_bytes": 3244032,
+        "median_source_GBps": 0.8185540451032961
+      },
+      "host_prepare_compute": {
+        "samples_us": [
+          4542.761,
+          4527.5,
+          4533.75,
+          4639.739
+        ],
+        "mean_us": 4560.9375,
+        "median_us": 4538.2555,
+        "p95_us": 4639.739,
+        "source_bytes": 3244032,
+        "median_source_GBps": 0.7148191634428691
+      },
+      "gpu_htp_pack": {
+        "sparse_mapping_and_roundtrip_exact": true,
+        "compute_bitwise_equal": true,
+        "gpu_prepare": {
+          "samples_us": [
+            1005.625,
+            971.094,
+            949.844,
+            935.469
+          ],
+          "mean_us": 965.508,
+          "median_us": 960.469,
+          "p95_us": 1005.625,
+          "source_bytes": 3244032,
+          "median_source_GBps": 3.3775499261298387
+        },
+        "gpu_prepare_npu_compute": {
+          "samples_us": [
+            1564.479,
+            1430.156,
+            1432.969,
+            1434.375
+          ],
+          "mean_us": 1465.49475,
+          "median_us": 1433.672,
+          "p95_us": 1564.479,
+          "source_bytes": 3244032,
+          "median_source_GBps": 2.2627435006054384
+        }
+      },
+      "mixed_layout": {
+        "all_miss_partial_all_hit_exact": true,
+        "type_and_layout_guards": true
+      }
+    },
+    {
+      "matrix": "gate",
+      "tokens": 256,
+      "experts": 2,
+      "canonical_supported": true,
+      "canonical_initial_copy_us": 448.177,
+      "source_bytes": 3244032,
+      "weight_buffer_bytes": 3244032,
+      "versus_packed_nrmse": 0.0,
+      "bitwise_equal": true,
+      "versus_fp64_nrmse": 0.0002633666856534072,
+      "canonical_compute": {
+        "samples_us": [
+          870.365,
+          884.114,
+          856.094,
+          869.323
+        ],
+        "mean_us": 869.974,
+        "median_us": 869.844,
+        "p95_us": 884.114,
+        "source_bytes": 3244032,
+        "median_source_GBps": 3.729441141170141
+      },
+      "packed_compute": {
+        "samples_us": [
+          654.063,
+          659.792,
+          660.938,
+          643.229
+        ],
+        "mean_us": 654.5055,
+        "median_us": 656.9275,
+        "p95_us": 660.938,
+        "source_bytes": 3244032,
+        "median_source_GBps": 4.938188765122483
+      },
+      "host_prepare": {
+        "samples_us": [
+          3980.573,
+          4430.99,
+          4712.76,
+          4750.469
+        ],
+        "mean_us": 4468.698,
+        "median_us": 4571.875,
+        "p95_us": 4750.469,
+        "source_bytes": 3244032,
+        "median_source_GBps": 0.7095627067669172
+      },
+      "host_prepare_compute": {
+        "samples_us": [
+          4644.01,
+          5042.813,
+          5986.927,
+          5440.625
+        ],
+        "mean_us": 5278.59375,
+        "median_us": 5241.719,
+        "p95_us": 5986.927,
+        "source_bytes": 3244032,
+        "median_source_GBps": 0.6188870483137306
+      },
+      "mixed_layout": {
+        "all_miss_partial_all_hit_exact": true,
+        "type_and_layout_guards": true
+      }
+    },
+    {
+      "matrix": "up",
+      "tokens": 8,
+      "experts": 2,
+      "canonical_supported": true,
+      "canonical_initial_copy_us": 715.834,
+      "source_bytes": 3244032,
+      "weight_buffer_bytes": 3244032,
+      "versus_packed_nrmse": 0.0,
+      "bitwise_equal": true,
+      "versus_fp64_nrmse": 0.00026702386834631566,
+      "canonical_compute": {
+        "samples_us": [
+          2007.917,
+          668.75,
+          634.687,
+          661.198
+        ],
+        "mean_us": 993.1379999999999,
+        "median_us": 664.9739999999999,
+        "p95_us": 2007.917,
+        "source_bytes": 3244032,
+        "median_source_GBps": 4.878434344801452
+      },
+      "packed_compute": {
+        "samples_us": [
+          450.469,
+          416.719,
+          477.812,
+          514.844
+        ],
+        "mean_us": 464.961,
+        "median_us": 464.1405,
+        "p95_us": 514.844,
+        "source_bytes": 3244032,
+        "median_source_GBps": 6.98933189411396
+      },
+      "host_prepare": {
+        "samples_us": [
+          3966.562,
+          3985.469,
+          5665.0,
+          5650.313
+        ],
+        "mean_us": 4816.835999999999,
+        "median_us": 4817.891,
+        "p95_us": 5665.0,
+        "source_bytes": 3244032,
+        "median_source_GBps": 0.6733303015780142
+      },
+      "host_prepare_compute": {
+        "samples_us": [
+          4455.364,
+          4457.968,
+          6189.792,
+          6110.0
+        ],
+        "mean_us": 5303.281,
+        "median_us": 5283.984,
+        "p95_us": 6189.792,
+        "source_bytes": 3244032,
+        "median_source_GBps": 0.61393675681077
+      },
+      "mixed_layout": {
+        "all_miss_partial_all_hit_exact": true,
+        "type_and_layout_guards": true
+      }
+    },
+    {
+      "matrix": "up",
+      "tokens": 32,
+      "experts": 2,
+      "canonical_supported": true,
+      "canonical_initial_copy_us": 546.719,
+      "source_bytes": 3244032,
+      "weight_buffer_bytes": 3244032,
+      "versus_packed_nrmse": 0.0,
+      "bitwise_equal": true,
+      "versus_fp64_nrmse": 0.00025948997868195997,
+      "canonical_compute": {
+        "samples_us": [
+          705.261,
+          650.156,
+          705.364,
+          672.813
+        ],
+        "mean_us": 683.3985,
+        "median_us": 689.037,
+        "p95_us": 705.364,
+        "source_bytes": 3244032,
+        "median_source_GBps": 4.708066475385212
+      },
+      "packed_compute": {
+        "samples_us": [
+          448.75,
+          467.448,
+          454.063,
+          469.271
+        ],
+        "mean_us": 459.883,
+        "median_us": 460.7555,
+        "p95_us": 469.271,
+        "source_bytes": 3244032,
+        "median_source_GBps": 7.040679926772443
+      },
+      "host_prepare": {
+        "samples_us": [
+          3964.219,
+          3981.302,
+          3960.469,
+          3967.657
+        ],
+        "mean_us": 3968.41175,
+        "median_us": 3965.938,
+        "p95_us": 3981.302,
+        "source_bytes": 3244032,
+        "median_source_GBps": 0.8179734529384978
+      },
+      "host_prepare_compute": {
+        "samples_us": [
+          4475.156,
+          4500.781,
+          4469.636,
+          4472.917
+        ],
+        "mean_us": 4479.6225,
+        "median_us": 4474.0365,
+        "p95_us": 4500.781,
+        "source_bytes": 3244032,
+        "median_source_GBps": 0.7250794668304561
+      },
+      "mixed_layout": {
+        "all_miss_partial_all_hit_exact": true,
+        "type_and_layout_guards": true
+      }
+    },
+    {
+      "matrix": "up",
+      "tokens": 128,
+      "experts": 2,
+      "canonical_supported": true,
+      "canonical_initial_copy_us": 539.219,
+      "source_bytes": 3244032,
+      "weight_buffer_bytes": 3244032,
+      "versus_packed_nrmse": 0.0,
+      "bitwise_equal": true,
+      "versus_fp64_nrmse": 0.0002636829685378594,
+      "canonical_compute": {
+        "samples_us": [
+          704.583,
+          755.73,
+          759.792,
+          773.958
+        ],
+        "mean_us": 748.51575,
+        "median_us": 757.761,
+        "p95_us": 773.958,
+        "source_bytes": 3244032,
+        "median_source_GBps": 4.2810754314355055
+      },
+      "packed_compute": {
+        "samples_us": [
+          542.292,
+          527.239,
+          538.437,
+          529.844
+        ],
+        "mean_us": 534.453,
+        "median_us": 534.1405,
+        "p95_us": 542.292,
+        "source_bytes": 3244032,
+        "median_source_GBps": 6.073368336608065
+      },
+      "host_prepare": {
+        "samples_us": [
+          4712.031,
+          4710.833,
+          4746.614,
+          4688.542
+        ],
+        "mean_us": 4714.505,
+        "median_us": 4711.432,
+        "p95_us": 4746.614,
+        "source_bytes": 3244032,
+        "median_source_GBps": 0.6885447991183997
+      },
+      "host_prepare_compute": {
+        "samples_us": [
+          5253.125,
+          5251.198,
+          5245.313,
+          5255.781
+        ],
+        "mean_us": 5251.35425,
+        "median_us": 5252.1615,
+        "p95_us": 5255.781,
+        "source_bytes": 3244032,
+        "median_source_GBps": 0.6176565591138049
+      },
+      "gpu_htp_pack": {
+        "sparse_mapping_and_roundtrip_exact": true,
+        "compute_bitwise_equal": true,
+        "gpu_prepare": {
+          "samples_us": [
+            1152.188,
+            1104.896,
+            1108.021,
+            1064.218
+          ],
+          "mean_us": 1107.3307499999999,
+          "median_us": 1106.4585,
+          "p95_us": 1152.188,
+          "source_bytes": 3244032,
+          "median_source_GBps": 2.9319057153973693
+        },
+        "gpu_prepare_npu_compute": {
+          "samples_us": [
+            1643.594,
+            1638.646,
+            1635.313,
+            1639.895
+          ],
+          "mean_us": 1639.362,
+          "median_us": 1639.2705,
+          "p95_us": 1643.594,
+          "source_bytes": 3244032,
+          "median_source_GBps": 1.9789485627905827
+        }
+      },
+      "mixed_layout": {
+        "all_miss_partial_all_hit_exact": true,
+        "type_and_layout_guards": true
+      }
+    },
+    {
+      "matrix": "up",
+      "tokens": 256,
+      "experts": 2,
+      "canonical_supported": true,
+      "canonical_initial_copy_us": 542.708,
+      "source_bytes": 3244032,
+      "weight_buffer_bytes": 3244032,
+      "versus_packed_nrmse": 0.0,
+      "bitwise_equal": true,
+      "versus_fp64_nrmse": 0.0002624405753044882,
+      "canonical_compute": {
+        "samples_us": [
+          880.364,
+          852.865,
+          883.333,
+          922.24
+        ],
+        "mean_us": 884.7004999999999,
+        "median_us": 881.8485000000001,
+        "p95_us": 922.24,
+        "source_bytes": 3244032,
+        "median_source_GBps": 3.678672697180978
+      },
+      "packed_compute": {
+        "samples_us": [
+          654.375,
+          604.218,
+          645.208,
+          641.667
+        ],
+        "mean_us": 636.367,
+        "median_us": 643.4375,
+        "p95_us": 654.375,
+        "source_bytes": 3244032,
+        "median_source_GBps": 5.041720446818844
+      },
+      "host_prepare": {
+        "samples_us": [
+          3984.479,
+          4002.864,
+          4708.334,
+          4715.469
+        ],
+        "mean_us": 4352.7865,
+        "median_us": 4355.599,
+        "p95_us": 4715.469,
+        "source_bytes": 3244032,
+        "median_source_GBps": 0.7447958363476528
+      },
+      "host_prepare_compute": {
+        "samples_us": [
+          4688.646,
+          4679.687,
+          5368.281,
+          5353.75
+        ],
+        "mean_us": 5022.590999999999,
+        "median_us": 5021.198,
+        "p95_us": 5368.281,
+        "source_bytes": 3244032,
+        "median_source_GBps": 0.6460673329352875
+      },
+      "mixed_layout": {
+        "all_miss_partial_all_hit_exact": true,
+        "type_and_layout_guards": true
+      }
+    },
+    {
+      "matrix": "down",
+      "tokens": 8,
+      "experts": 2,
+      "canonical_supported": true,
+      "canonical_initial_copy_us": 681.771,
+      "source_bytes": 3244032,
+      "weight_buffer_bytes": 3244032,
+      "versus_packed_nrmse": 0.0,
+      "bitwise_equal": true,
+      "versus_fp64_nrmse": 0.0002603560100376937,
+      "canonical_compute": {
+        "samples_us": [
+          604.896,
+          661.407,
+          607.239,
+          645.885
+        ],
+        "mean_us": 629.8567499999999,
+        "median_us": 626.562,
+        "p95_us": 661.407,
+        "source_bytes": 3244032,
+        "median_source_GBps": 5.177511563101497
+      },
+      "packed_compute": {
+        "samples_us": [
+          459.479,
+          500.625,
+          435.677,
+          503.75
+        ],
+        "mean_us": 474.88275,
+        "median_us": 480.052,
+        "p95_us": 503.75,
+        "source_bytes": 3244032,
+        "median_source_GBps": 6.757667919308741
+      },
+      "host_prepare": {
+        "samples_us": [
+          4709.844,
+          4709.115,
+          4678.49,
+          4697.031
+        ],
+        "mean_us": 4698.62,
+        "median_us": 4703.073,
+        "p95_us": 4709.844,
+        "source_bytes": 3244032,
+        "median_source_GBps": 0.6897685832220762
+      },
+      "host_prepare_compute": {
+        "samples_us": [
+          5154.636,
+          5177.656,
+          5177.604,
+          5172.656
+        ],
+        "mean_us": 5170.638,
+        "median_us": 5175.13,
+        "p95_us": 5177.656,
+        "source_bytes": 3244032,
+        "median_source_GBps": 0.6268503399914591
+      },
+      "mixed_layout": {
+        "all_miss_partial_all_hit_exact": true,
+        "type_and_layout_guards": true
+      }
+    },
+    {
+      "matrix": "down",
+      "tokens": 32,
+      "experts": 2,
+      "canonical_supported": true,
+      "canonical_initial_copy_us": 548.438,
+      "source_bytes": 3244032,
+      "weight_buffer_bytes": 3244032,
+      "versus_packed_nrmse": 0.0,
+      "bitwise_equal": true,
+      "versus_fp64_nrmse": 0.0002603719308692283,
+      "canonical_compute": {
+        "samples_us": [
+          626.198,
+          657.708,
+          625.469,
+          652.396
+        ],
+        "mean_us": 640.4427499999999,
+        "median_us": 639.297,
+        "p95_us": 657.708,
+        "source_bytes": 3244032,
+        "median_source_GBps": 5.074373882561627
+      },
+      "packed_compute": {
+        "samples_us": [
+          462.031,
+          420.625,
+          438.177,
+          443.438
+        ],
+        "mean_us": 441.06775000000005,
+        "median_us": 440.8075,
+        "p95_us": 462.031,
+        "source_bytes": 3244032,
+        "median_source_GBps": 7.359294022901153
+      },
+      "host_prepare": {
+        "samples_us": [
+          3970.625,
+          4009.843,
+          3955.938,
+          3981.875
+        ],
+        "mean_us": 3979.5702499999998,
+        "median_us": 3976.25,
+        "p95_us": 4009.843,
+        "source_bytes": 3244032,
+        "median_source_GBps": 0.815852121974222
+      },
+      "host_prepare_compute": {
+        "samples_us": [
+          4429.063,
+          4445.678,
+          4355.834,
+          4444.688
+        ],
+        "mean_us": 4418.81575,
+        "median_us": 4436.8755,
+        "p95_us": 4445.678,
+        "source_bytes": 3244032,
+        "median_source_GBps": 0.7311523616112284
+      },
+      "mixed_layout": {
+        "all_miss_partial_all_hit_exact": true,
+        "type_and_layout_guards": true
+      }
+    },
+    {
+      "matrix": "down",
+      "tokens": 128,
+      "experts": 2,
+      "canonical_supported": true,
+      "canonical_initial_copy_us": 383.698,
+      "source_bytes": 3244032,
+      "weight_buffer_bytes": 3244032,
+      "versus_packed_nrmse": 0.0,
+      "bitwise_equal": true,
+      "versus_fp64_nrmse": 0.000262881580823664,
+      "canonical_compute": {
+        "samples_us": [
+          707.188,
+          752.864,
+          748.021,
+          735.625
+        ],
+        "mean_us": 735.9245000000001,
+        "median_us": 741.823,
+        "p95_us": 752.864,
+        "source_bytes": 3244032,
+        "median_source_GBps": 4.373053949527043
+      },
+      "packed_compute": {
+        "samples_us": [
+          512.031,
+          527.344,
+          511.094,
+          530.416
+        ],
+        "mean_us": 520.22125,
+        "median_us": 519.6875,
+        "p95_us": 530.416,
+        "source_bytes": 3244032,
+        "median_source_GBps": 6.242274443776307
+      },
+      "host_prepare": {
+        "samples_us": [
+          4238.125,
+          4705.885,
+          4710.313,
+          4696.875
+        ],
+        "mean_us": 4587.7995,
+        "median_us": 4701.38,
+        "p95_us": 4710.313,
+        "source_bytes": 3244032,
+        "median_source_GBps": 0.6900169737396253
+      },
+      "host_prepare_compute": {
+        "samples_us": [
+          4726.719,
+          5231.407,
+          5225.834,
+          5228.125
+        ],
+        "mean_us": 5103.02125,
+        "median_us": 5226.9794999999995,
+        "p95_us": 5231.407,
+        "source_bytes": 3244032,
+        "median_source_GBps": 0.6206322408572676
+      },
+      "gpu_htp_pack": {
+        "sparse_mapping_and_roundtrip_exact": true,
+        "compute_bitwise_equal": true,
+        "gpu_prepare": {
+          "samples_us": [
+            1186.875,
+            1095.261,
+            1107.865,
+            1122.604
+          ],
+          "mean_us": 1128.1512500000001,
+          "median_us": 1115.2345,
+          "p95_us": 1186.875,
+          "source_bytes": 3244032,
+          "median_source_GBps": 2.908833971689362
+        },
+        "gpu_prepare_npu_compute": {
+          "samples_us": [
+            1734.688,
+            1584.375,
+            1615.782,
+            1626.562
+          ],
+          "mean_us": 1640.35175,
+          "median_us": 1621.172,
+          "p95_us": 1734.688,
+          "source_bytes": 3244032,
+          "median_source_GBps": 2.0010412220294946
+        }
+      },
+      "mixed_layout": {
+        "all_miss_partial_all_hit_exact": true,
+        "type_and_layout_guards": true
+      }
+    },
+    {
+      "matrix": "down",
+      "tokens": 256,
+      "experts": 2,
+      "canonical_supported": true,
+      "canonical_initial_copy_us": 539.062,
+      "source_bytes": 3244032,
+      "weight_buffer_bytes": 3244032,
+      "versus_packed_nrmse": 0.0,
+      "bitwise_equal": true,
+      "versus_fp64_nrmse": 0.00026370693955100443,
+      "canonical_compute": {
+        "samples_us": [
+          866.927,
+          856.875,
+          853.125,
+          858.021
+        ],
+        "mean_us": 858.7370000000001,
+        "median_us": 857.448,
+        "p95_us": 866.927,
+        "source_bytes": 3244032,
+        "median_source_GBps": 3.7833571248635485
+      },
+      "packed_compute": {
+        "samples_us": [
+          632.24,
+          579.062,
+          639.583,
+          615.625
+        ],
+        "mean_us": 616.6275,
+        "median_us": 623.9325,
+        "p95_us": 639.583,
+        "source_bytes": 3244032,
+        "median_source_GBps": 5.199331658472672
+      },
+      "host_prepare": {
+        "samples_us": [
+          3962.083,
+          3951.718,
+          3964.531,
+          3955.573
+        ],
+        "mean_us": 3958.4762499999997,
+        "median_us": 3958.828,
+        "p95_us": 3964.531,
+        "source_bytes": 3244032,
+        "median_source_GBps": 0.819442521877687
+      },
+      "host_prepare_compute": {
+        "samples_us": [
+          4620.312,
+          4612.291,
+          4624.739,
+          4615.781
+        ],
+        "mean_us": 4618.28075,
+        "median_us": 4618.0465,
+        "p95_us": 4624.739,
+        "source_bytes": 3244032,
+        "median_source_GBps": 0.7024684571712303
+      },
+      "mixed_layout": {
+        "all_miss_partial_all_hit_exact": true,
+        "type_and_layout_guards": true
+      }
+    }
+  ],
+  "canonical_contract": {
+    "strided_set_get_exact": true,
+    "cross_layout_async_copy_fallback_exact": true,
+    "written_packed_mark_rejected": true,
+    "unsupported_shape_view_matmul_hvx_rejected": true
+  },
+  "gpu_shared": [
+    {
+      "matrix": "gate",
+      "old_prepare": {
+        "samples_us": [
+          12317.864,
+          9178.229,
+          9284.792,
+          10142.395
+        ],
+        "mean_us": 10230.82,
+        "median_us": 9713.593499999999,
+        "p95_us": 12317.864,
+        "source_bytes": 6488064,
+        "median_source_GBps": 0.667936536565999
+      },
+      "fused_prepare": {
+        "samples_us": [
+          7388.594,
+          1891.094,
+          1935.312,
+          1933.177
+        ],
+        "mean_us": 3287.04425,
+        "median_us": 1934.2444999999998,
+        "p95_us": 7388.594,
+        "source_bytes": 6488064,
+        "median_source_GBps": 3.3543143072140054
+      },
+      "reused_fused_prepare": {
+        "samples_us": [
+          2071.354,
+          1947.031,
+          2044.062,
+          2163.958
+        ],
+        "mean_us": 2056.60125,
+        "median_us": 2057.7079999999996,
+        "p95_us": 2163.958,
+        "source_bytes": 6488064,
+        "median_source_GBps": 3.153053786057109
+      },
+      "old_validation": {
+        "nrmse": 4.082816085565259e-07,
+        "max_abs": 1.2934280473331228e-06,
+        "threshold_nrmse": 0.02
+      },
+      "fused_validation": {
+        "nrmse": 4.082816085565259e-07,
+        "max_abs": 1.2934280473331228e-06,
+        "threshold_nrmse": 0.02
+      }
+    },
+    {
+      "matrix": "up",
+      "old_prepare": {
+        "samples_us": [
+          9464.375,
+          9325.0,
+          8989.583,
+          10380.208
+        ],
+        "mean_us": 9539.7915,
+        "median_us": 9394.6875,
+        "p95_us": 10380.208,
+        "source_bytes": 6488064,
+        "median_source_GBps": 0.6906098792535675
+      },
+      "fused_prepare": {
+        "samples_us": [
+          1882.031,
+          1922.813,
+          1870.99,
+          1895.313
+        ],
+        "mean_us": 1892.78675,
+        "median_us": 1888.672,
+        "p95_us": 1922.813,
+        "source_bytes": 6488064,
+        "median_source_GBps": 3.4352518595076327
+      },
+      "reused_fused_prepare": {
+        "samples_us": [
+          2028.698,
+          2550.312,
+          1879.271,
+          2625.312
+        ],
+        "mean_us": 2270.89825,
+        "median_us": 2289.505,
+        "p95_us": 2625.312,
+        "source_bytes": 6488064,
+        "median_source_GBps": 2.833828272923623
+      },
+      "old_validation": {
+        "nrmse": 3.8925102123486494e-07,
+        "max_abs": 1.2502403325953537e-06,
+        "threshold_nrmse": 0.02
+      },
+      "fused_validation": {
+        "nrmse": 3.8925102123486494e-07,
+        "max_abs": 1.2502403325953537e-06,
+        "threshold_nrmse": 0.02
+      }
+    },
+    {
+      "matrix": "down",
+      "old_prepare": {
+        "samples_us": [
+          14287.187,
+          13224.635,
+          12957.344,
+          21779.219
+        ],
+        "mean_us": 15562.096249999999,
+        "median_us": 13755.911,
+        "p95_us": 21779.219,
+        "source_bytes": 6488064,
+        "median_source_GBps": 0.47165643918458033
+      },
+      "fused_prepare": {
+        "samples_us": [
+          1752.917,
+          1739.375,
+          2108.906,
+          2089.531
+        ],
+        "mean_us": 1922.68225,
+        "median_us": 1921.224,
+        "p95_us": 2108.906,
+        "source_bytes": 6488064,
+        "median_source_GBps": 3.377047132453061
+      },
+      "reused_fused_prepare": {
+        "samples_us": [
+          2433.437,
+          1915.833,
+          1725.0,
+          1751.406
+        ],
+        "mean_us": 1956.419,
+        "median_us": 1833.6195,
+        "p95_us": 2433.437,
+        "source_bytes": 6488064,
+        "median_source_GBps": 3.5383916892245093
+      },
+      "old_validation": {
+        "nrmse": 6.283661449397391e-07,
+        "max_abs": 3.790393748204224e-06,
+        "threshold_nrmse": 0.02
+      },
+      "fused_validation": {
+        "nrmse": 6.283661449397391e-07,
+        "max_abs": 3.790393748204224e-06,
+        "threshold_nrmse": 0.02
+      }
+    }
+  ]
+}
