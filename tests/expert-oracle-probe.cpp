@@ -11,7 +11,7 @@ struct oracle_job {
     std::shared_ptr<shared_activation_buffer> shared_buffer;
     bool pooled_activations=false;
     ggml_tensor * x = nullptr, * ids_storage = nullptr, * out = nullptr;
-    ggml_tensor * sx = nullptr, * sout = nullptr, * packed_map = nullptr;
+    ggml_tensor * sx = nullptr, * sout = nullptr, * packed_map = nullptr, * input_rows = nullptr;
     ggml_cgraph * graph;
     std::vector<float> input, output, shared_input, shared_output;
     std::vector<int32_t> indices;
@@ -19,22 +19,30 @@ struct oracle_job {
     oracle_job(bank & b, shared_bank * sw, int rows, int k, int nt, bool native, bool single_matmul = false, bool shared_activations = false,
                std::shared_ptr<shared_activation_buffer> arena = {}, bool layout_only = false, bool reuse_lifetimes = false,
                const shared_activation_layout::reservation * reserved = nullptr,
-               bank * packed = nullptr, const std::vector<int> * packed_ids = nullptr) : dev(b.d) {
+               bank * packed = nullptr, const std::vector<int> * packed_ids = nullptr, bool device_gather = false) : dev(b.d) {
+        require(!device_gather || (dev.name=="HTP0" && shared_activations && rows>0 && k==1 && !native),
+                "device gather requires split HTP shared activations");
         graph = ggml_new_graph_custom(ctx.get(), 64, false);
         if (rows) {
-            x = ggml_new_tensor_3d(ctx.get(), GGML_TYPE_F32, b.w[0]->ne[0], 1, rows);
+            x = ggml_new_tensor_3d(ctx.get(), GGML_TYPE_F32, b.w[0]->ne[0], 1, device_gather?nt:rows);
+            auto * routed_input=x;
+            if(device_gather) {
+                input_rows=ggml_new_tensor_1d(ctx.get(),GGML_TYPE_I32,rows);
+                auto * gathered=ggml_get_rows(ctx.get(),ggml_reshape_2d(ctx.get(),x,x->ne[0],nt),input_rows);
+                routed_input=ggml_reshape_3d(ctx.get(),gathered,x->ne[0],1,rows);
+            }
             stride = dev.name == "GPUOpenCL" ? int(b.w[0]->ne[2]) : k;
             ids_storage = ggml_new_tensor_2d(ctx.get(), GGML_TYPE_I32, stride, rows);
             auto * ids = ggml_view_2d(ctx.get(), ids_storage, k, rows, ids_storage->nb[1], 0);
             if (single_matmul && b.w[0]->ne[2] == 1) {
                 require(k == 1, "single Expert requires one route per gathered row");
-                auto * matrix = ggml_reshape_2d(ctx.get(), x, x->ne[0], rows);
+                auto * matrix = ggml_reshape_2d(ctx.get(), routed_input, x->ne[0], rows);
                 auto * u = ggml_mul_mat(ctx.get(), b.w[1], matrix);
                 auto * g = ggml_mul_mat(ctx.get(), b.w[0], matrix);
                 out = ggml_mul_mat(ctx.get(), b.w[2], ggml_swiglu_split(ctx.get(), g, u));
             } else {
-                auto * u = ggml_mul_mat_id(ctx.get(), b.w[1], x, ids);
-                auto * g = ggml_mul_mat_id(ctx.get(), b.w[0], x, ids);
+                auto * u = ggml_mul_mat_id(ctx.get(), b.w[1], routed_input, ids);
+                auto * g = ggml_mul_mat_id(ctx.get(), b.w[0], routed_input, ids);
                 out = ggml_mul_mat_id(ctx.get(), b.w[2], ggml_swiglu_split(ctx.get(), g, u), ids);
                 if (packed) {
                     require(dev.name == "HTP0" && b.canonical_weights && packed_ids && shared_activations,
@@ -52,7 +60,7 @@ struct oracle_job {
             }
         }
         if (sw) {
-            sx = native && x ? ggml_reshape_2d(ctx.get(), x, x->ne[0], nt) :
+            sx = (native || device_gather) && x ? ggml_reshape_2d(ctx.get(), x, x->ne[0], nt) :
                 ggml_new_tensor_2d(ctx.get(), GGML_TYPE_F32, b.w[0]->ne[0], nt);
             auto * u = ggml_mul_mat(ctx.get(), sw->w[1], sx);
             auto * g = ggml_mul_mat(ctx.get(), sw->w[0], sx);

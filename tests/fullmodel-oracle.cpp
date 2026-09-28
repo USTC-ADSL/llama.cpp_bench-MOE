@@ -89,6 +89,8 @@ struct partitioned_ffn {
     moe_token_workers * reduce_workers=nullptr;
     bool parallel_reduce=false;
     bool overlap_gather=false;
+    // Fixed before arena preparation; never toggled within a warmed cohort.
+    bool npu_device_gather=false;
     std::shared_ptr<shared_activation_buffer> arenas[3];
     // Separate contracts for split routed, native top-k, and shared-only graphs.
     std::unique_ptr<shared_activation_layout::reservation> reservations[3][2][3];
@@ -154,22 +156,34 @@ struct partitioned_ffn {
             if(!ptr) {
                 auto * reserved=reservations[b][has_shared][!rows?2:native?1:0].get();
                 require(!reuse_lifetimes || reserved,"missing activation layout reservation");
-                ptr=std::make_unique<oracle_job>(*banks[b],has_shared?shared_for(b):nullptr,rows,k,nt,native,b==0,shared_activations,arenas[b],false,reuse_lifetimes,reserved);
+                ptr=std::make_unique<oracle_job>(*banks[b],has_shared?shared_for(b):nullptr,rows,k,nt,native,b==0,shared_activations,arenas[b],false,reuse_lifetimes,reserved,
+                                               nullptr,nullptr,npu_device_gather && b==1 && rows>0 && !native);
                 ++allocations;
             }
             work[b]=ptr.get();
         }
         std::array<double,3> branch_gather{};
+        std::array<size_t,3> input_copy_bytes{};
         auto prepare=[&](int b) {
             auto begin=timer::now(); auto & j=*work[b];
             j.reset_index_padding(); j.set_shared_input(x,elements);
-            if(native && j.x) {
+            if(j.sx && !j.sx->view_src) { input_copy_bytes[b]+=elements*sizeof(float); }
+            if(j.input_rows) {
+                std::copy_n(x,elements,j.input_data()); input_copy_bytes[b]+=elements*sizeof(float);
+                auto * row_ids=static_cast<int32_t *>(j.input_rows->data);
+                for(size_t i=0;i<pairs[b].size();++i) {
+                    int p=pairs[b][i]; require(local[b][ids[p]]>=0,"expert not resident");
+                    row_ids[i]=p/4; j.index_data()[i*j.stride]=local[b][ids[p]];
+                }
+            } else if(native && j.x) {
                 std::copy_n(x,elements,j.input_data());
+                input_copy_bytes[b]+=elements*sizeof(float);
                 for(int t=0;t<nt;++t) { for(int kk=0;kk<4;++kk) {
                     require(local[b][ids[t*4+kk]]>=0,"native expert not resident");
                     j.index_data()[t*j.stride+kk]=local[b][ids[t*4+kk]];
                 } }
             } else {
+                input_copy_bytes[b]+=pairs[b].size()*2048*sizeof(float);
                 for(size_t i=0;i<pairs[b].size();++i) {
                     int p=pairs[b][i]; require(local[b][ids[p]]>=0,"expert not resident");
                     std::copy_n(x+(p/4)*2048,2048,j.input_data()+i*2048); j.index_data()[i*j.stride]=local[b][ids[p]];
@@ -232,6 +246,7 @@ struct partitioned_ffn {
                   {"changed_route_slots",changed},{"route_reference_available",expected_ids.size()==ids.size()},
                   {"reduce_threads",parallel_reduce && reduce_workers && nt>=reduce_workers->count()?reduce_workers->count():1},
                   {"overlap_gather",overlap_gather},{"backend_gather_us",branch_gather},{"expert_wall_includes_gather",overlap_gather},
+                  {"npu_device_gather",npu_device_gather},{"backend_input_host_copy_bytes",input_copy_bytes},
                   {"expert_token_counts",counts},{"allocations",allocations}};
             if(scheduler) {
                 last["scheduling"]={{"decision_us",decision_us},{"included_in_gather",true},
@@ -271,7 +286,8 @@ struct full_engine {
             if(!l->scheduler && has_shared && l->plan.shared!=b) { continue; }
             // k=1 with all 4*nt routed pairs bounds both split and native k=4 graphs.
             oracle_job layout(*l->banks[b],has_shared?l->shared_for(b):nullptr,
-                              has_routed?4*l->nt:0,1,l->nt,false,b==0,true,{},true);
+                              has_routed?4*l->nt:0,1,l->nt,false,b==0,true,{},true,false,nullptr,
+                              nullptr,nullptr,l->npu_device_gather && b==1 && has_routed);
             capacities[b]=std::max(capacities[b],shared_activation_buffer::required_size(*devs[b],layout.ctx.get(),l->reuse_lifetimes?layout.graph:nullptr));
             if(l->reuse_lifetimes) {
                 // Reuse the maximum-shape offsets, not a separately packed small
@@ -584,6 +600,8 @@ int main(int argc,char ** argv) {
         require(reduce_threads>=1 && reduce_threads<=8 && (reduce_threads==1 || (custom && fused_host_reduce)),"parallel reduce requires fused custom path and 1..8 threads");
         require(!alternate_reduce_threads || (reduce_threads>1 && reps%4==0 && !alternate_callback_io && !alternate_host_reduce && !quality_steps),"invalid parallel reduce alternation");
         bool overlap_gather=std::getenv("MOE_OVERLAP_GATHER") && std::string(std::getenv("MOE_OVERLAP_GATHER"))=="1";
+        bool npu_device_gather=std::getenv("MOE_NPU_DEVICE_GATHER") && std::string(std::getenv("MOE_NPU_DEVICE_GATHER"))=="1";
+        require(!npu_device_gather || (custom && shared_activations && !quality_steps),"NPU device gather requires shared custom prefill");
         bool alternate_overlap_gather=std::getenv("MOE_ALTERNATE_OVERLAP_GATHER") && std::string(std::getenv("MOE_ALTERNATE_OVERLAP_GATHER"))=="1";
         require(!(overlap_gather || alternate_overlap_gather) || (custom && shared_activations),"gather overlap requires shared custom mode");
         require(!alternate_overlap_gather || (!overlap_gather && reps%4==0 && !alternate_reduce_threads && !alternate_callback_io && !alternate_host_reduce && !quality_steps),"invalid gather overlap alternation");
@@ -676,6 +694,7 @@ int main(int argc,char ** argv) {
                 engine.layers.back()->reduce_workers=engine.reduce_workers.get();
                 engine.layers.back()->parallel_reduce=reduce_threads>1;
                 engine.layers.back()->overlap_gather=overlap_gather;
+                engine.layers.back()->npu_device_gather=npu_device_gather;
                 if(!transfer_placement) { engine.layers.back()->expected_ids=plans["layers"][il]["ids"].get<std::vector<int32_t>>(); }
                 fprintf(stderr,"RESIDENT layer=%d plan=%s\n",il,p.name.c_str());
             }

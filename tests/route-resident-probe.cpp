@@ -21,6 +21,7 @@ int main(int argc,char ** argv) {
         placement initial{"native",std::vector<int>(60,1),1};
         full_engine engine; engine.layers.push_back(std::make_unique<partitioned_ffn>(devs,src,0,nt,initial,true,true,&all));
         auto & union_ff=*engine.layers[0]; union_ff.reuse_lifetimes=true; union_ff.fused_host_reduce=true; union_ff.overlap_gather=true;
+        union_ff.npu_device_gather=std::getenv("MOE_NPU_DEVICE_GATHER") && std::string(std::getenv("MOE_NPU_DEVICE_GATHER"))=="1";
         union_ff.scheduler=&search; engine.prepare_arenas(devs); union_ff.scheduler=nullptr;
         std::vector<placement> cases;
         for(int b=0;b<3;++b) { for(int s=0;s<3;++s) { cases.push_back({"native",std::vector<int>(60,b),s}); } }
@@ -28,7 +29,7 @@ int main(int argc,char ** argv) {
             placement p{"threeway",std::vector<int>(60),s}; for(int e=0;e<60;++e) { p.owner[e]=e%3; } cases.push_back(p);
         }
         std::vector<std::vector<float>> references;
-        json report={{"tokens",nt},{"cases",json::array()}};
+        json report={{"tokens",nt},{"npu_device_gather",union_ff.npu_device_gather},{"cases",json::array()}};
         for(const auto & p:cases) {
             full_engine compact; compact.layers.push_back(std::make_unique<partitioned_ffn>(devs,src,0,nt,p,true,true));
             auto & ff=*compact.layers[0]; ff.reuse_lifetimes=true; ff.fused_host_reduce=true; ff.overlap_gather=true; compact.prepare_arenas(devs);

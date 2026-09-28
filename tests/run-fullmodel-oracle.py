@@ -30,6 +30,7 @@ def main():
     p.add_argument("--runtime-state", action="store_true", help="Read-only pre-load and per-request state/CPU-time telemetry; reports observation overhead")
     p.add_argument("--runtime-state-model", type=pathlib.Path, help="Auto: sample live state and choose before loading; plan-file supplies offline routes")
     p.add_argument("--hexagon-timing", action="store_true", help="Aggregate existing DSP batch counters and host queue intervals; no per-op log output")
+    p.add_argument("--npu-device-gather", action="store_true", help="Prepare split NPU activations using GET_ROWS inside the branch graph")
     p.add_argument("--hexagon-op-profile", action="store_true", help="Also enable BASIC DSP op profiling; requires --hexagon-timing")
     p.add_argument("--gpu-clock-sampling", action="store_true", help="Independent root read-only sysfs observer; inference stays shell uid")
     p.add_argument("--gpu-sample-period-us", type=int, default=10000)
@@ -195,6 +196,9 @@ def main():
     if args.shared_activations:
         assert resolved_mode in ("custom", "branch", "custom-npu")
         env.append("MOE_SHARED_ACTIVATIONS=1")
+    if args.npu_device_gather:
+        assert resolved_mode == "custom" and args.shared_activations and not args.quality_steps
+        env.append("MOE_NPU_DEVICE_GATHER=1")
     if args.direct_callback_io:
         assert resolved_mode in ("custom", "branch", "custom-npu")
         env.append("MOE_DIRECT_CALLBACK_IO=1")
