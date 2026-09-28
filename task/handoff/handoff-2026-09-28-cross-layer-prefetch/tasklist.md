@@ -5,8 +5,8 @@ Parent checkpoint3351efecc, clean tree; fd8657d6 confirmed online, other device 
 - [x] Locate DSP timing hooks and bounded asynchronous preparation APIs; establish measurement and predictor design (design.md).
 - [x] Measure canonical/packed DMA, conversion and HMX intervals on device; weight phase230.73→45.40ms with identical routes/logits, profiling only.
 - [x] Evaluate cross-layer route/placement prediction with six fit/two validation prompts: layer prior wins training LOO; validation precision@4 98.86%, same-ID40.91–50%; no evidence for same-ID adjacent similarity.
-- [ ] Implement a bounded next-layer preparation prototype if measured preparation bandwidth and available overlap justify it; preserve exact miss fallback and synchronization.
-- [ ] Validate logits, actual overlap, contention and memory; compare first-pass complete-model latency with unprefetched online and resident native controls.
-- [ ] Save positive/negative evidence, handoff and Git checkpoint; clean owned remote artifacts.
+- [x] Implement two-slot GPU next-layer packing with exact miss fallback, serialized GPU calls and bounded packed targets; device K4/K8/K12 logits/routes/placement exactly match unprefetched online.
+- [x] Validate exact logits/routes/placement, actual wall overlap and contention; two independent prompts × three fresh-process rotated rounds: +3.50%/+4.94% throughput versus unprefetched, −2.19%/−0.63% versus resident native. K8 packed slots74.25MiB; scoped adjusted allowance146.01MiB, total physical cap remains uncertified.
+- [x] Save positive/negative evidence, results and handoff; archive92 raw/binary files with read-back hashes, remove167 verified tagged remote artifacts, and seal the implementation stage in Git. Reusable binaries, previous evidence, model and global OpenCL cache retained.
 
 Key distinction: expert indices are layer-local. Need predict useful target-backend Expert sets, not merely count activated IDs. Prefill often activates most Experts, so union-set hit rate alone is insufficient. Predictions may use current-layer observed router counts, never future hidden state or future true routes. Shared next-layer Expert is always needed and provides a prediction-free control for overlap.

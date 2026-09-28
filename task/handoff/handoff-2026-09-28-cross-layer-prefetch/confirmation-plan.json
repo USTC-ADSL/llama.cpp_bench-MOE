@@ -1,0 +1,34 @@
+{
+  "frozen_at_utc": "2026-09-28T03:54:37.710302+00:00",
+  "capacity": 8,
+  "reason": "K8 development logits exact; repeated development latency better than unprefetched; K12 readiness collapse and exposed GPU wait. No confirmation prompt has executed.",
+  "prompts": [
+    "lighthouse",
+    "textiles"
+  ],
+  "round_orders": [
+    [
+      "native",
+      "online",
+      "prefetch"
+    ],
+    [
+      "prefetch",
+      "native",
+      "online"
+    ],
+    [
+      "online",
+      "prefetch",
+      "native"
+    ]
+  ],
+  "tokens": 128,
+  "process": "fresh process and empty converted expert targets for each measurement; model loaded and output head restored; no trace",
+  "hashes": {
+    "task/handoff/handoff-2026-09-28-cross-layer-prefetch/prefetch-predictor.json": "043a576c483d1e12f5221225a7073864c75df111a43a8356b9a3f6b083677a98",
+    "task/handoff/handoff-2026-09-28-cross-layer-prefetch/prompt-lighthouse.txt": "d84d880a7ad37aaf3cc352e9c9533dd07f716131565d16862af08b01fc5105f6",
+    "task/handoff/handoff-2026-09-28-cross-layer-prefetch/prompt-textiles.txt": "012b2f668c3516fcac0c905f93398e7cd13fc36d43646694b2b519d36702ef1d",
+    "build-android-opencl-hexagon/bin/online-moe": "8c9d5c25bba40d93fd71c7a6d55978b13fe886def1309c76d6cc4c4a086acaef"
+  }
+}

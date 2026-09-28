@@ -22,6 +22,7 @@
 | 单份源权重与片上按需转换 | 未知路由若在计算前物化后端布局，会付出转换延迟及副本内存。 | CPU 直接别名 canonical DMA 源权重，NPU 在 HMX 算子内仅将所需块转换到现有 VTCM 暂存。 | 两 Expert、128-token 单矩阵中，融合计算约0.75ms，低于CPU准备再计算约4.5–5.3ms，且与常驻packed NPU结果逐位一致；尚未证明完整首次prefill加速。 |
 | 融合 GPU 布局转换与有界工作集复用 | shared Expert 跨层更换时，多次转置、临时分配和全尺寸预留侵蚀并行收益。 | 将 canonical→最终 GPU 布局融合为一次 kernel，复用层大小权重及上传缓冲，按实际需求申请 scratch。 | 实机shared up矩阵准备约9.27→1.89ms，布局复用及更换权重校验通过；这是准备成本优化，不能替代未知prompt的端到端收益证明。 |
 | 源权重导入后的驻留生命周期控制 | canonical DMA 源已导入后，GGUF 全量预取仍使源文件重复驻留，挤出真正参与计算的权重。 | 按矩阵导入并释放源页引用，关闭未使用 mmap 区域的整体预取，分别统计源表示、转换工作集和输出层恢复驻留成本。 | 开发输入的进程峰值 RSS 由约3.8GiB降至约0.83GiB，logits逐位不变；RSS不含全部DMA，且驻留控制后的整模型首次prefill尚未超过原生NPU。 |
+| 有界跨层权重预转换 | 未知prompt首次执行时，NPU内权重重排占据关键路径；转换太多又会阻塞下一层。 | GPU在当前shared完成后，按独立输入训练的逐层先验预转换下一层少量Expert，通过共享DMA双槽交给NPU，未及时命中则按真实路由精确回退。 | 两份新128-token输入各三次首次prefill，较未预取在线异构中位吞吐提高3.50%/4.94%，logits逐字节一致；新增packed容量74.25MiB，但较常驻原生NPU仍为−2.19%/−0.63%。 |
 
 证据：[常驻与共享激活](../task/handoff/handoff-2026-09-24-offline-shared-activation/results.md)、[256-token 消融](../task/handoff/handoff-2026-09-24-shared256/results.md)、[激活池与聚合](../task/handoff/handoff-2026-09-25-activation-arena/results.md)。上述内存数字不是总物理内存上限，固定 prompt 的数值验证也不等于通用模型质量评估。
 
@@ -48,3 +49,5 @@
 连续长度证据：[区间插值与独立长度验证](../task/handoff/handoff-2026-09-27-length-intervals/results.md)。66.8KB模型支持64–768所有整数长度的候选生成；96/192/320/448/640校准，80/224/300/480/704独立验证，未为300单独拟合。插值本身不单独构成创新性结论，价值在于路由负载、整组并行关键路径和误差保护的联合设计；仍为离线路由驱动的加载前常驻计算。
 
 Decode边界证据：[完整模型分支并行与反向放置](../task/handoff/handoff-2026-09-27-decode-parallel/results.md)。将routed留在原生CPU图、用常驻线程提前启动shared并共享激活，确实形成执行重叠，但128前缀下仍慢于CPU；768前缀仅较CPU改善约0.2%–1.2%，GPU单后端复测又有明显波动。此轮不新增成功加速技术点；可作为“分支独立并不保证收益，decode须比较最佳原生路径并考虑KV、内核与状态”的动机证据。完整shared副本约446MiB，尚非200MB内存设计，也未证明跨后端质量等价。
+
+跨层预转换证据：[首次执行、预测与窗口消融](../task/handoff/handoff-2026-09-28-cross-layer-prefetch/results.md)。当前证据支持逐层热点先验，尚不支持相邻层同编号Expert相似；K12因GPU准备超窗退化，K8较未预取有效但未超过原生。146.01MiB是去除已知源别名重复计费后的局部容量账本，尚非完整额外物理内存保证。

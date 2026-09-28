@@ -37,6 +37,8 @@ def main():
     p.add_argument("--resident-output", action="store_true")
     p.add_argument("--dsp-trace", action="store_true")
     p.add_argument("--output-dir", type=pathlib.Path, default=OUT)
+    p.add_argument("--prefetch-model", type=pathlib.Path)
+    p.add_argument("--prefetch-experts", type=int, choices=[4,8,12], default=4)
     p.add_argument("--cost-model", type=pathlib.Path, default=ROOT / "task/handoff/handoff-2026-09-27-length-intervals/interval-model.json")
     args = p.parse_args()
     assert re.fullmatch(r"[A-Za-z0-9_-]+", args.tag)
@@ -101,6 +103,15 @@ def main():
         environment.append("MOE_RESIDENT_OUTPUT=1")
     if args.dsp_trace:
         environment += ["MOE_DSP_TRACE=1", "GGML_HEXAGON_PROFILE=3", "GGML_HEXAGON_TIMING=0", "GGML_HEXAGON_OPTRACE=16384"]
+    if args.prefetch_model:
+        assert args.mode=="online" and not args.reference_packed
+        path=args.prefetch_model; assert path.is_file()
+        destination=f"{REMOTE}/{args.tag}-prefetch-model.json"
+        adb("push",str(path),destination)
+        digest=hashlib.sha256(path.read_bytes()).hexdigest()
+        assert shell(f"sha256sum {destination}").stdout.split()[0]==digest
+        inputs["prefetch-model.json"]={"source":str(path),"sha256":digest}
+        environment += [f"MOE_PREFETCH_MODEL={destination}",f"MOE_PREFETCH_EXPERTS={args.prefetch_experts}"]
     command = f"cd {REMOTE} && exec " + shlex.join(environment + arguments)
     record = {"serial": "fd8657d6", "command": command, "inputs": inputs,
         "artifacts": shell(f"sha256sum {REMOTE}/{program} {REMOTE}/*.so").stdout,
@@ -108,6 +119,7 @@ def main():
         "before_battery": shell("dumpsys battery").stdout}
     record["sources"] = {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in [
         ROOT / "tests/online-weight-probe.cpp", ROOT / "tests/online-moe.cpp", ROOT / "tests/online-moe-runtime.h",
+        ROOT / "tests/online-prefetch.h",
         ROOT / "tests/expert-routing-probe.cpp", ROOT / "ggml/src/ggml-hexagon/ggml-hexagon.cpp",
         ROOT / "src/llama-model.cpp", ROOT / "include/llama.h",
         ROOT / "ggml/src/ggml-opencl/ggml-opencl.cpp", ROOT / "ggml/src/ggml-opencl/kernels/cvt.cl",

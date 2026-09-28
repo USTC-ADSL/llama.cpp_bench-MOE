@@ -55,7 +55,8 @@ struct bank {
     bool mapped_weights = false;
     bool canonical_weights = false;
     std::array<ggml_tensor *, 3> w;
-    bank(device & dev, source & s, int layer, const std::vector<int> * subset = nullptr, bool canonical_htp = false) : d(dev) {
+    bank(device & dev, source & s, int layer, const std::vector<int> * subset = nullptr, bool canonical_htp = false,
+         bool defer_upload = false) : d(dev) {
         const char * parts[] = {"gate", "up", "down"};
         for (int i = 0; i < 3; ++i) {
             std::string name = "blk." + std::to_string(layer) + ".ffn_" + parts[i] + "_exps.weight";
@@ -92,6 +93,11 @@ struct bank {
         buf.reset(ggml_backend_alloc_ctx_tensors_from_buft(ctx.get(), d.buft));
         require(buf != nullptr, "resident bank allocation failed");
         ggml_backend_buffer_set_usage(buf.get(), GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
+        if(defer_upload) {
+            require(d.name=="HTP0" && subset && !subset->empty() && !canonical_htp,
+                    "deferred bank requires an explicit packed HTP capacity");
+            return;
+        }
         if (canonical_htp) {
             require(d.name=="HTP0" && !subset && s.mapped,"canonical HTP source requires full mapped identity bank");
             using mark_fn=bool (*)(ggml_tensor *);

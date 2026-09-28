@@ -1,0 +1,119 @@
+{
+  "runs": [
+    {
+      "file": "task/handoff/handoff-2026-09-28-cross-layer-prefetch/prefetch4-dev-a.json",
+      "mode": "online",
+      "prefill_ms": 600.651302,
+      "tokens_per_second": 213.10201039071416,
+      "restore_plus_prefill_ms": 659.467344,
+      "logits_sha256": "83f4776e28b707505bbaadfcc0ca4e91d6c43057ac226b6df833d38e51023ee6",
+      "maxrss_mib": 717.8984375,
+      "branch_sum_ms": [
+        375.29328200000003,
+        411.194635,
+        292.47297100000003
+      ],
+      "ffn_sum_ms": 466.803017,
+      "outside_ffn_ms": 133.84828499999998,
+      "raw_scoped_extra_mib": 387.32421875,
+      "prefetch": {
+        "capacity": 4,
+        "prepared_experts": 88,
+        "eligible_predictions": 76,
+        "used_experts": 76,
+        "ready_layers": 22,
+        "target_layers": 22,
+        "preparation_ms": 131.3413500000002,
+        "current_routed_wall_overlap_ms": 114.52015100000028,
+        "current_routed_wall_overlap_fraction": 0.8719276221844842,
+        "gpu_join_ms": 0.001929,
+        "target_mib": 37.125,
+        "alias_adjusted_scoped_extra_mib": 108.88671875
+      },
+      "versus_reference": {
+        "file": "task/handoff/handoff-2026-09-28-cross-layer-prefetch/prefetch0-dev-a.json",
+        "throughput_change_pct": 3.3165994868683324,
+        "logits_byte_exact": true,
+        "routes_placement_exact": true,
+        "logits_max_abs": 0.0
+      }
+    },
+    {
+      "file": "task/handoff/handoff-2026-09-28-cross-layer-prefetch/prefetch8-dev-a.json",
+      "mode": "online",
+      "prefill_ms": 574.2733860000001,
+      "tokens_per_second": 222.89035696319033,
+      "restore_plus_prefill_ms": 575.1007300000001,
+      "logits_sha256": "83f4776e28b707505bbaadfcc0ca4e91d6c43057ac226b6df833d38e51023ee6",
+      "maxrss_mib": 834.59765625,
+      "branch_sum_ms": [
+        372.92124800000005,
+        395.269632,
+        306.009947
+      ],
+      "ffn_sum_ms": 443.31588400000004,
+      "outside_ffn_ms": 130.95750200000003,
+      "raw_scoped_extra_mib": 424.44921875,
+      "prefetch": {
+        "capacity": 8,
+        "prepared_experts": 176,
+        "eligible_predictions": 151,
+        "used_experts": 142,
+        "ready_layers": 20,
+        "target_layers": 22,
+        "preparation_ms": 174.473074,
+        "current_routed_wall_overlap_ms": 101.47943000000001,
+        "current_routed_wall_overlap_fraction": 0.5816337597169865,
+        "gpu_join_ms": 3.2151549999999998,
+        "target_mib": 74.25,
+        "alias_adjusted_scoped_extra_mib": 146.01171875
+      },
+      "versus_reference": {
+        "file": "task/handoff/handoff-2026-09-28-cross-layer-prefetch/prefetch0-dev-a.json",
+        "throughput_change_pct": 8.062207848858938,
+        "logits_byte_exact": true,
+        "routes_placement_exact": true,
+        "logits_max_abs": 0.0
+      }
+    },
+    {
+      "file": "task/handoff/handoff-2026-09-28-cross-layer-prefetch/prefetch12-dev-a.json",
+      "mode": "online",
+      "prefill_ms": 643.978073,
+      "tokens_per_second": 198.76453153708545,
+      "restore_plus_prefill_ms": 644.904948,
+      "logits_sha256": "83f4776e28b707505bbaadfcc0ca4e91d6c43057ac226b6df833d38e51023ee6",
+      "maxrss_mib": 834.51953125,
+      "branch_sum_ms": [
+        410.27171899999996,
+        403.347708,
+        403.64166600000004
+      ],
+      "ffn_sum_ms": 509.34457899999995,
+      "outside_ffn_ms": 134.63349400000004,
+      "raw_scoped_extra_mib": 461.57421875,
+      "prefetch": {
+        "capacity": 12,
+        "prepared_experts": 264,
+        "eligible_predictions": 215,
+        "used_experts": 81,
+        "ready_layers": 8,
+        "target_layers": 22,
+        "preparation_ms": 257.33348799999993,
+        "current_routed_wall_overlap_ms": 70.53780899999998,
+        "current_routed_wall_overlap_fraction": 0.27411049198540377,
+        "gpu_join_ms": 76.545993,
+        "target_mib": 111.375,
+        "alias_adjusted_scoped_extra_mib": 183.13671875
+      },
+      "versus_reference": {
+        "file": "task/handoff/handoff-2026-09-28-cross-layer-prefetch/prefetch0-dev-a.json",
+        "throughput_change_pct": -3.6345294942984774,
+        "logits_byte_exact": true,
+        "routes_placement_exact": true,
+        "logits_max_abs": 0.0
+      }
+    }
+  ],
+  "note": "Wall overlap proves concurrency, not isolated kernel utilization or causal speedup. Scoped memory excludes untracked driver/dense/KV allocations."
+}

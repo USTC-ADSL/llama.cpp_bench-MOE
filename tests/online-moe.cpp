@@ -145,6 +145,19 @@ int main(int argc,char **argv) {
             report["empty_shared_weight_capacity_bytes"]=ggml_backend_buffer_get_size(runtime->gpu_shared->buf.get());
             report["initial_converted_shared_layers"]=0;
             report["reference_packed_validation_only"]=runtime->reference_packed;
+            if(runtime->prefetch) {
+                const auto &p=*runtime->prefetch;
+                require(!p.pending.valid(),"prefetch work left after terminal layer");
+                report["prefetch"]={{"capacity",p.capacity},{"method",p.predictor.at("method")},
+                    {"target_bytes",p.target_bytes},{"source_import_alias_peak_bytes",p.source_import_peak},
+                    {"preparations",p.records},{"initial_prepared_experts",0}};
+                if(budget.mode==1) {
+                    size_t raw=report.at("accounted_extra_allowance_bytes");
+                    require(raw>=p.source_import_peak,"import alias budget attribution failed");
+                    report["prefetch"]["allowance_minus_known_source_alias_bytes"]=raw-p.source_import_peak;
+                    report["prefetch"]["accounting_note"]="raw observer counts DMA source import again; subtracted only one overlapping full-layer source import, whose backing is the existing canonical source; target imports remain charged; not a driver/physical-memory guarantee";
+                }
+            }
             report["memory_note"]="canonical DMA routed weights replace the complete expert representation and are aliased by CPU; bounded GPU shared conversion, activation pools and host staging reported separately; dense/KV, mapped-file residency and uninstrumented driver allocation are not an extra-memory guarantee";
         }
         std::ofstream logits_file(std::string(argv[5])+".logits.bin",std::ios::binary); binary_write(logits_file,values);

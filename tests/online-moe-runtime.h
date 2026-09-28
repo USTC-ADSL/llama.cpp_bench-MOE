@@ -1,5 +1,6 @@
 #pragma once
 #include "dynamic-moe-runtime.h"
+#include "online-prefetch.h"
 
 // One immutable canonical routed bank per layer, shared by CPU and HTP. Only
 // actual current-layer route counts enter the policy. No route capture input.
@@ -28,6 +29,7 @@ struct online_moe_runtime {
     bool reference_packed=std::getenv("MOE_ONLINE_REFERENCE_PACKED")!=nullptr;
     struct binding { online_moe_runtime * self; int layer; };
     std::array<binding,24> bindings;
+    std::unique_ptr<online_expert_prefetch> prefetch; // joins before source banks die
 
     online_moe_runtime(source & s,device *devices[3],int nt,const json & calibration,
                        double conversion_us=300,int tail=-1)
@@ -82,6 +84,11 @@ struct online_moe_runtime {
         oracle_job shared_shape(dummy,gpu_shared.get(),0,1,nt,false,false,true,{},true);
         size_t shared_bytes=shared_activation_buffer::required_size(*devs[2],shared_shape.ctx.get(),shared_shape.graph);
         arenas[2]=std::make_shared<shared_activation_buffer>(*devs[2],shared_bytes);
+        if(std::getenv("MOE_PREFETCH_MODEL")) {
+            require(!reference_packed,"prefetch and packed correctness oracle are separate modes");
+            std::array<bank *,24> banks; for(int il=0;il<24;++il) { banks[il]=layers[il].source_htp.get(); }
+            prefetch=std::make_unique<online_expert_prefetch>(*devs[1],*devs[2],src,banks,nt);
+        }
     }
 
     placement choose(int il,int nt,const std::vector<int> &counts,json &decision) {
@@ -126,11 +133,15 @@ struct online_moe_runtime {
     void run(int il,int nt,const float *x,const float *probs,const std::vector<int32_t> &ids,float *result) {
         require(nt>0 && nt<=max_tokens && ids.size()==size_t(nt*4),"online FFN shape mismatch");
         const auto begin=timer::now(); std::vector<int> counts(60),pairs[3];
+        if(prefetch && il==0) { prefetch->begin_request(begin); }
+        const bool cache_ready=prefetch && prefetch->ready(il);
         for(int e:ids) { require(e>=0 && e<60,"invalid online route"); ++counts[e]; }
         json decision; auto plan=choose(il,nt,counts,decision);
         for(int p=0;p<nt*4;++p) { pairs[plan.owner[ids[p]]].push_back(p); }
         std::vector<float> weighted(size_t(nt)*4*2048),shared_result(size_t(nt)*2048);
         std::array<json,3> timings;
+        std::vector<int> cache_hits;
+        if(cache_ready) { for(int e:prefetch->slots[il%2].ids) { if(counts[e] && plan.owner[e]==1) { cache_hits.push_back(e); } } }
         auto branch=[&](int b) {
             const auto start=timer::now();
             if(b<2) {
@@ -148,19 +159,33 @@ struct online_moe_runtime {
                     reference=std::make_unique<bank>(*devs[1],src,il,&subset);
                     selected=reference.get();
                 }
-                auto &w=*selected;
-                oracle_job job(w,nullptr,int(pairs[b].size()),1,nt,false,false,true,arenas[b],false,true);
-                for(size_t row=0;row<pairs[b].size();++row) {
-                    int p=pairs[b][row]; std::copy_n(x+(p/4)*2048,2048,job.input_data()+row*2048);
-                    job.index_data()[row]=local[ids[p]];
-                }
-                double prepare=elapsed(start); auto phases=job.run(); auto reduce_start=timer::now();
-                for(size_t row=0;row<pairs[b].size();++row) {
-                    int p=pairs[b][row]; float weight=probs[(p/4)*60+ids[p]];
-                    for(int c=0;c<2048;++c) { weighted[p*2048+c]=weight*job.output_data()[row*2048+c]; }
-                }
-                timings[b]={{"prepare_us",prepare},{"compute_us",phases[1]},{"scatter_us",elapsed(reduce_start)},{"total_us",elapsed(start)}};
+                double prepare=elapsed(start),compute=0,scatter=0;
+                const double branch_start=prefetch?prefetch->time_us():0;
+                auto execute=[&](bank &w,const std::vector<int> &group,const std::array<int,60> &mapping) {
+                    if(group.empty()) { return; } auto setup=timer::now();
+                    oracle_job job(w,nullptr,int(group.size()),1,nt,false,false,true,arenas[b],false,true);
+                    for(size_t row=0;row<group.size();++row) {
+                        int p=group[row]; std::copy_n(x+(p/4)*2048,2048,job.input_data()+row*2048);
+                        job.index_data()[row]=mapping[ids[p]];
+                    }
+                    prepare+=elapsed(setup); auto phases=job.run(); compute+=phases[1]; auto reduce_start=timer::now();
+                    for(size_t row=0;row<group.size();++row) {
+                        int p=group[row]; float weight=probs[(p/4)*60+ids[p]];
+                        for(int c=0;c<2048;++c) { weighted[p*2048+c]=weight*job.output_data()[row*2048+c]; }
+                    }
+                    scatter+=elapsed(reduce_start);
+                };
+                if(b==1 && !cache_hits.empty()) {
+                    auto &cached=prefetch->slots[il%2]; std::array<int,60> compact; compact.fill(-1);
+                    for(size_t j=0;j<cached.ids.size();++j) { compact[cached.ids[j]]=int(j); }
+                    std::vector<int> hits,misses;
+                    for(int p:pairs[b]) { (compact[ids[p]]>=0?hits:misses).push_back(p); }
+                    execute(*cached.weights,hits,compact); execute(*selected,misses,local);
+                } else { execute(*selected,pairs[b],local); }
+                timings[b]={{"prepare_us",prepare},{"compute_us",compute},{"scatter_us",scatter},{"total_us",elapsed(start)},
+                    {"start_us",branch_start},{"end_us",prefetch?prefetch->time_us():0}};
             } else {
+                const double previous_prefetch_wait=prefetch?prefetch->join_gpu():0;
                 // No retained converted shared layer: each first-pass conversion
                 // and allocation is inside this timed branch, overlapping routed.
                 require(std::getenv("GGML_OPENCL_FUSED_Q4_PREPARE"),"shared weight reuse requires fused GPU preparation");
@@ -190,7 +215,9 @@ struct online_moe_runtime {
                 oracle_job job(dummy,&shared,0,1,nt,false,false,true,arenas[2],false,true);
                 job.set_shared_input(x,size_t(nt)*2048); double prepare=elapsed(start);
                 auto phases=job.run(); std::copy_n(job.shared_output_data(),shared_result.size(),shared_result.data());
-                timings[b]={{"conversion_us",convert},{"prepare_us",prepare},{"compute_us",phases[1]},{"total_us",elapsed(start)}};
+                timings[b]={{"conversion_us",convert},{"prepare_us",prepare},{"compute_us",phases[1]},{"total_us",elapsed(start)},
+                    {"previous_prefetch_wait_us",previous_prefetch_wait},{"end_us",prefetch?prefetch->time_us():0}};
+                if(prefetch) { prefetch->launch_next(il); }
             }
         };
         {
@@ -209,6 +236,7 @@ struct online_moe_runtime {
             (weighted.capacity()+shared_result.capacity())*sizeof(float);
         records.push_back({{"layer",il},{"tokens",nt},{"counts",counts},{"placement",plan_json(plan)},
             {"decision",decision},{"branches",timings},{"combine_us",elapsed(combine)},{"total_us",elapsed(begin)},
+            {"cache_ready",cache_ready},{"npu_cached_experts",cache_hits},
             {"accounted_additional_bytes",additional}});
     }
     static void compute(ggml_tensor *dst,const ggml_tensor *x,const ggml_tensor *p,const ggml_tensor *ids,int ith,int,void *opaque) {
