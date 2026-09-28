@@ -77,7 +77,7 @@ def archive():
     files = [p for p in TASK.rglob('*') if p.is_file() and '__pycache__' not in p.parts]
     files += study.sources() + study.artifacts()
     members = {}
-    with tarfile.open(dest, 'w:gz') as tar:
+    with tarfile.open(dest, 'w:gz', dereference=True) as tar:
         for p in sorted(set(files)):
             name = str(p.relative_to(ROOT))
             members[name] = {'sha256': study.sha(p), 'bytes': p.stat().st_size}
