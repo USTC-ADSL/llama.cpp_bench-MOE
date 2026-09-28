@@ -27,15 +27,22 @@ struct resident_placement_model {
     };
     explicit resident_placement_model(const json & j) {
         require(j.at("version")==1,"unsupported placement model version");
-        for(int b=0;b<3;++b) { coefficients[b]=j.at("backends").at(b).get<std::vector<double>>(); }
+        for(int b=0;b<3;++b) {
+            coefficients[b]=j.at("backends").at(b).get<std::vector<double>>();
+            require(coefficients[b].size()==26,"backend coefficient shape mismatch");
+            for(double w:coefficients[b]) { require(std::isfinite(w),"nonfinite model coefficient"); }
+        }
         host_coefficients=j.at("host").get<std::vector<double>>();
+        require(host_coefficients.size()==8,"host coefficient shape mismatch");
+        for(double w:host_coefficients) { require(std::isfinite(w),"nonfinite model coefficient"); }
     }
-    static double dot(const std::vector<double> & x,const std::vector<double> & w) {
+    template<class Features> static double dot(const Features & x,const std::vector<double> & w) {
         require(x.size()==w.size(),"model coefficient shape mismatch");
-        double sum=0; for(size_t i=0;i<x.size();++i) { require(std::isfinite(w[i]),"nonfinite model coefficient"); sum+=x[i]*w[i]; } return sum;
+        double sum=0; for(size_t i=0;i<x.size();++i) { sum+=x[i]*w[i]; } return sum;
     }
     struct prediction { std::array<double,3> backend{}; double host=0,total=0; };
-    prediction predict(int nt,const std::vector<int> & counts,const placement & p) const {
+    prediction predict(int nt,const std::vector<int> & counts,const placement & p,
+                       const std::array<int,3> * resident_width=nullptr) const {
         require(counts.size()==60 && p.owner.size()==60 && p.shared>=0 && p.shared<3,"invalid model input");
         double pairs[3]{},active_experts[3]{},pad8[3]{},pad32[3]{},max_count[3]{},squares[3]{},bank[3]{};
         bool active[3]{};
@@ -47,23 +54,26 @@ struct resident_placement_model {
                 max_count[b]=std::max(max_count[b],double(n)); squares[b]+=double(n)*n; }
         }
         require(nt>0 && total_pairs==4.0*nt,"invalid top-k load accounting");
+        // A reusable union bank can be wider than the currently assigned group.
+        // OpenCL index padding/reorder uses this physical width, not ownership.
+        if(resident_width) { for(int b=0;b<3;++b) { bank[b]=(*resident_width)[b]; } }
         bool native=*std::max_element(pairs,pairs+3)==total_pairs;
         for(int b=0;b<3;++b) { active[b]=pairs[b]>0 || p.shared==b; }
         prediction out;
         for(int b=0;b<3;++b) { if(active[b]) {
             double shared=p.shared==b,has=bool(pairs[b]),rows=native && has?nt:pairs[b];
-            std::vector<double> x={1,pairs[b]/1024,active_experts[b]/60,pad8[b]/1024,pad32[b]/1024,
+            std::array<double,26> x={1,pairs[b]/1024,active_experts[b]/60,pad8[b]/1024,pad32[b]/1024,
                 max_count[b]/128,squares[b]/std::max(1.,pairs[b])/128,bank[b]/60,rows/2048,double(native)*has,
                 double(rows==1),bank[b]*rows/(60*2048),shared,shared*nt/512,shared*((nt+31)/32)/16,
                 shared*has,shared*pairs[b]/1024};
             for(int other=0;other<3;++other) {
-                x.push_back(other!=b?active[other]:0);
-                x.push_back(other!=b?pairs[other]/1024:0);
-                x.push_back(other!=b && p.shared==other?double(nt)/512:0);
+                x[17+3*other]=other!=b?active[other]:0;
+                x[18+3*other]=other!=b?pairs[other]/1024:0;
+                x[19+3*other]=other!=b && p.shared==other?double(nt)/512:0;
             }
             out.backend[b]=std::max(1.,dot(x,coefficients[b]));
         } }
-        std::vector<double> x={1,double(nt)/512,double(native),double(native)*nt/512,
+        std::array<double,8> x={1,double(nt)/512,double(native),double(native)*nt/512,
             double(active[0]+active[1]+active[2])/3,(active_experts[0]+active_experts[1]+active_experts[2])/60,
             (bank[0]*pairs[0]+bank[1]*pairs[1]+bank[2]*pairs[2])/(60*2048),p.shared==0?double(nt)/512:0};
         out.host=std::max(0.,dot(x,host_coefficients));

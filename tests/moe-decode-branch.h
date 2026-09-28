@@ -57,9 +57,9 @@ struct moe_decode_branch {
         require(ggml_is_contiguous(input) && ggml_nelements(input)==2048,"decode branch shape");
         std::memcpy(dst->data,input->data,2048*sizeof(float));
         if(l.plan.shared!=0) {
-            int b=l.plan.shared; auto & job=l.jobs[b][{0,1,1}];
+            int b=l.plan.shared; auto & job=l.jobs[b][{0,1,1,true}];
             if(!job) {
-                job=std::make_unique<oracle_job>(*l.banks[b],l.shared.get(),0,1,1,false,false,l.shared_activations,l.arenas[b],false,l.reuse_lifetimes,l.reservations[b][2].get());
+                job=std::make_unique<oracle_job>(*l.banks[b],l.shared.get(),0,1,1,false,false,l.shared_activations,l.arenas[b],false,l.reuse_lifetimes,l.reservations[b][1][2].get());
                 ++l.allocations;
             }
             s.shared_job=job.get(); job->set_shared_input(static_cast<const float *>(input->data),2048);

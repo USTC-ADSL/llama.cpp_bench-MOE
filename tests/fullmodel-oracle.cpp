@@ -2,6 +2,7 @@
 #include "expert-oracle-probe.cpp"
 #include "llama.h"
 #include "moe-placement-model.h"
+#include "moe-route-scheduler.h"
 #include "moe-context-model.h"
 #include "moe-execution-model.h"
 #include "moe-token-workers.h"
@@ -71,7 +72,12 @@ struct partitioned_ffn {
     placement plan;
     std::unique_ptr<bank> banks[3];
     std::unique_ptr<shared_bank> shared;
-    std::map<std::tuple<int,int,int>,std::unique_ptr<oracle_job>> jobs[3];
+    int primary_shared;
+    std::unique_ptr<shared_bank> shared_variants[3];
+    const moe_route_scheduler * scheduler=nullptr;
+    resident_placement_model::availability resident;
+    std::array<int,3> resident_width{};
+    std::map<std::tuple<int,int,int,bool>,std::unique_ptr<oracle_job>> jobs[3];
     std::array<std::array<int,60>,3> local{};
     std::vector<int32_t> expected_ids;
     json last;
@@ -85,22 +91,36 @@ struct partitioned_ffn {
     bool overlap_gather=false;
     std::shared_ptr<shared_activation_buffer> arenas[3];
     // Separate contracts for split routed, native top-k, and shared-only graphs.
-    std::unique_ptr<shared_activation_layout::reservation> reservations[3][3];
-    partitioned_ffn(device * devs[3],source & src,int layer,int tokens,const placement & p,bool compact,bool shared_buffers=false) : il(layer),nt(tokens),plan(p),shared_activations(shared_buffers) {
+    std::unique_ptr<shared_activation_layout::reservation> reservations[3][2][3];
+    shared_bank * shared_for(int b) { return b==primary_shared?shared.get():shared_variants[b].get(); }
+    partitioned_ffn(device * devs[3],source & src,int layer,int tokens,const placement & p,bool compact,bool shared_buffers=false,
+                    const resident_placement_model::availability * prepared=nullptr) : il(layer),nt(tokens),plan(p),primary_shared(p.shared),shared_activations(shared_buffers) {
         require(plan.owner.size()==60 && plan.shared>=0 && plan.shared<3,"invalid placement");
         for(int b=0;b<3;++b) {
             local[b].fill(-1); std::vector<int> subset;
             for(int e=0;e<60;++e) {
                 require(plan.owner[e]>=0 && plan.owner[e]<3,"invalid expert owner");
-                if(!compact || plan.owner[e]==b) { local[b][e]=int(subset.size()); subset.push_back(e); }
+                if(prepared?prepared->experts[e][b]:!compact || plan.owner[e]==b) {
+                    local[b][e]=int(subset.size()); subset.push_back(e); resident.experts[e][b]=true;
+                }
             }
-            banks[b]=std::make_unique<bank>(*devs[b],src,il,compact ? &subset : nullptr);
+            resident_width[b]=int(subset.size());
+            banks[b]=std::make_unique<bank>(*devs[b],src,il,(compact || prepared) ? &subset : nullptr);
         }
         shared=std::make_unique<shared_bank>(*devs[plan.shared],src,il);
+        resident.shared[plan.shared]=true;
+        if(prepared) {
+            require(moe_route_scheduler::feasible(plan,*prepared),"initial plan not resident");
+            for(int b=0;b<3;++b) { if(b!=plan.shared && prepared->shared[b]) {
+                shared_variants[b]=std::make_unique<shared_bank>(*devs[b],src,il); resident.shared[b]=true;
+            } }
+        }
     }
     void set_shared(device * devs[3],source & src,int backend) {
         if(backend!=plan.shared) { shared.reset(); shared=std::make_unique<shared_bank>(*devs[backend],src,il); }
         plan.shared=backend;
+        primary_shared=backend;
+        resident.shared.fill(false); resident.shared[backend]=true;
         for(auto & cache:jobs) { cache.clear(); }
     }
     std::vector<float> run(const std::vector<float> & x,const std::vector<float> & probs,const std::vector<int32_t> & ids,bool record) {
@@ -111,6 +131,14 @@ struct partitioned_ffn {
         int nt=int(elements/2048);
         require((nt==this->nt || nt==1) && elements==size_t(2048*nt) && probability_count==size_t(60*nt) && ids.size()==size_t(4*nt),"FFN input shape mismatch");
         auto start=timer::now();
+        double decision_us=0; moe_route_scheduler::result decision;
+        if(scheduler) {
+            std::vector<int> counts(60);
+            for(int id:ids) { require(id>=0 && id<60,"invalid current route ID"); ++counts[id]; }
+            decision=scheduler->choose(nt,counts,resident,&resident_width);
+            plan=decision.selected;
+            decision_us=elapsed(start);
+        }
         std::vector<int> pairs[3];
         for(int p=0;p<4*nt;++p) { require(ids[p]>=0 && ids[p]<60,"invalid route ID"); pairs[plan.owner[ids[p]]].push_back(p); }
         bool native=false; for(auto & ps:pairs) { native|=ps.size()==ids.size(); }
@@ -118,14 +146,15 @@ struct partitioned_ffn {
         for(int b=0;b<3;++b) {
             if(pairs[b].empty() && b!=plan.shared) { continue; }
             int rows=pairs[b].empty()?0:native?nt:int(pairs[b].size()); int k=native?4:1;
-            auto & ptr=jobs[b][{rows,k,nt}];
+            bool has_shared=b==plan.shared;
+            auto & ptr=jobs[b][{rows,k,nt,has_shared}];
             // A compact one-Expert CPU repack tensor is 2D: its backend accepts
             // MUL_MAT, not MUL_MAT_ID. oracle_job uses the equivalent single-bank
             // path only when ne[2]==1 (and asserts k==1).
             if(!ptr) {
-                auto * reserved=reservations[b][!rows?2:native?1:0].get();
+                auto * reserved=reservations[b][has_shared][!rows?2:native?1:0].get();
                 require(!reuse_lifetimes || reserved,"missing activation layout reservation");
-                ptr=std::make_unique<oracle_job>(*banks[b],b==plan.shared?shared.get():nullptr,rows,k,nt,native,b==0,shared_activations,arenas[b],false,reuse_lifetimes,reserved);
+                ptr=std::make_unique<oracle_job>(*banks[b],has_shared?shared_for(b):nullptr,rows,k,nt,native,b==0,shared_activations,arenas[b],false,reuse_lifetimes,reserved);
                 ++allocations;
             }
             work[b]=ptr.get();
@@ -136,7 +165,10 @@ struct partitioned_ffn {
             j.reset_index_padding(); j.set_shared_input(x,elements);
             if(native && j.x) {
                 std::copy_n(x,elements,j.input_data());
-                for(int t=0;t<nt;++t) { for(int kk=0;kk<4;++kk) { j.index_data()[t*j.stride+kk]=local[b][ids[t*4+kk]]; } }
+                for(int t=0;t<nt;++t) { for(int kk=0;kk<4;++kk) {
+                    require(local[b][ids[t*4+kk]]>=0,"native expert not resident");
+                    j.index_data()[t*j.stride+kk]=local[b][ids[t*4+kk]];
+                } }
             } else {
                 for(size_t i=0;i<pairs[b].size();++i) {
                     int p=pairs[b][i]; require(local[b][ids[p]]>=0,"expert not resident");
@@ -201,6 +233,13 @@ struct partitioned_ffn {
                   {"reduce_threads",parallel_reduce && reduce_workers && nt>=reduce_workers->count()?reduce_workers->count():1},
                   {"overlap_gather",overlap_gather},{"backend_gather_us",branch_gather},{"expert_wall_includes_gather",overlap_gather},
                   {"expert_token_counts",counts},{"allocations",allocations}};
+            if(scheduler) {
+                last["scheduling"]={{"decision_us",decision_us},{"included_in_gather",true},
+                    {"evaluations",decision.evaluations},{"seed_us",decision.seed_us},
+                    {"predicted_backend_us",decision.predicted.backend},{"predicted_host_us",decision.predicted.host},
+                    {"predicted_total_us",decision.predicted.total},{"owner",plan.owner},{"shared",plan.shared},
+                    {"resident_width",resident_width}};
+            }
         }
         return owned_result;
     }
@@ -226,31 +265,35 @@ struct full_engine {
         for(auto & l:layers) { for(int b=0;b<3;++b) {
             require(l->shared_activations,"arena requires shared layer");
             bool has_routed=bool(l->banks[b]->buf) || l->banks[b]->mapped_weights;
-            if(!has_routed && l->plan.shared!=b) { continue; }
+            for(int has_shared=0;has_shared<2;++has_shared) {
+            if(has_shared && !l->resident.shared[b]) { continue; }
+            if(!has_shared && (!has_routed || (!l->scheduler && l->plan.shared==b))) { continue; }
+            if(!l->scheduler && has_shared && l->plan.shared!=b) { continue; }
             // k=1 with all 4*nt routed pairs bounds both split and native k=4 graphs.
-            oracle_job layout(*l->banks[b],l->plan.shared==b?l->shared.get():nullptr,
+            oracle_job layout(*l->banks[b],has_shared?l->shared_for(b):nullptr,
                               has_routed?4*l->nt:0,1,l->nt,false,b==0,true,{},true);
             capacities[b]=std::max(capacities[b],shared_activation_buffer::required_size(*devs[b],layout.ctx.get(),l->reuse_lifetimes?layout.graph:nullptr));
             if(l->reuse_lifetimes) {
                 // Reuse the maximum-shape offsets, not a separately packed small
                 // graph: best-fit capacity need not be monotonic in routed rows.
-                l->reservations[b][has_routed?0:2]=std::make_unique<shared_activation_layout::reservation>(
+                l->reservations[b][has_shared][has_routed?0:2]=std::make_unique<shared_activation_layout::reservation>(
                     shared_activation_layout(*devs[b],layout.ctx.get(),layout.graph).freeze());
             }
             if(l->reuse_lifetimes && has_routed && l->banks[b]->w[0]->ne[2]>=4) {
                 // Native k=4 has a different dependency graph (shared aliases x).
                 // Reserve it separately rather than assume split liveness bounds it.
-                oracle_job native(*l->banks[b],l->plan.shared==b?l->shared.get():nullptr,
+                oracle_job native(*l->banks[b],has_shared?l->shared_for(b):nullptr,
                                   l->nt,4,l->nt,true,false,true,{},true);
                 capacities[b]=std::max(capacities[b],shared_activation_buffer::required_size(*devs[b],native.ctx.get(),native.graph));
-                l->reservations[b][1]=std::make_unique<shared_activation_layout::reservation>(
+                l->reservations[b][has_shared][1]=std::make_unique<shared_activation_layout::reservation>(
                     shared_activation_layout(*devs[b],native.ctx.get(),native.graph).freeze());
             }
-            if(l->reuse_lifetimes && has_routed && l->plan.shared==b) {
-                oracle_job only_shared(*l->banks[b],l->shared.get(),0,1,l->nt,false,b==0,true,{},true);
+            if(l->reuse_lifetimes && has_routed && has_shared) {
+                oracle_job only_shared(*l->banks[b],l->shared_for(b),0,1,l->nt,false,b==0,true,{},true);
                 auto reserved=shared_activation_layout(*devs[b],only_shared.ctx.get(),only_shared.graph).freeze();
                 capacities[b]=std::max(capacities[b],reserved.bytes);
-                l->reservations[b][2]=std::make_unique<shared_activation_layout::reservation>(std::move(reserved));
+                l->reservations[b][has_shared][2]=std::make_unique<shared_activation_layout::reservation>(std::move(reserved));
+            }
             }
         } }
         for(int b=0;b<3;++b) {
@@ -289,6 +332,14 @@ struct full_engine {
 
 static placement parse_plan(const json & p) { return {p.at("name"),p.at("owner").get<std::vector<int>>(),p.at("shared")}; }
 static json plan_json(const placement & p) { return {{"name",p.name},{"owner",p.owner},{"shared",p.shared}}; }
+static resident_placement_model::availability parse_resident(const json & j) {
+    resident_placement_model::availability a;
+    a.experts=j.at("experts").get<std::array<std::array<bool,3>,60>>();
+    a.shared=j.at("shared").get<std::array<bool,3>>();
+    for(const auto & row:a.experts) { require(row[0] || row[1] || row[2],"resident manifest omits expert"); }
+    require(a.shared[0] || a.shared[1] || a.shared[2],"resident manifest omits shared");
+    return a;
+}
 
 static int search_all(const char * model_path,const std::string & capture_path,const char * output,bool profile=false,int repetitions=3) {
     std::ifstream in(capture_path); json capture; in>>capture;
@@ -297,7 +348,13 @@ static int search_all(const char * model_path,const std::string & capture_path,c
     source src{gguf.get(),meta.get(),f.get()}; device cpu("CPU"),npu("HTP0"),gpu("GPUOpenCL"); device * devs[]={&cpu,&npu,&gpu};
     json report={{"tokens",capture["tokens"]},{"token_ids",capture["token_ids"]},{"layers",json::array()},{"scope","offline real captured routes; bounded joint routed/shared placement search"}};
     report["optimized_profile"]=profile;
-    if(profile) { report["profile_contract"]="compact banks; shared activation arenas; direct output; fused reduction; two warmups; weight preparation excluded"; }
+    json supplied;
+    if(std::getenv("MOE_PROFILE_CANDIDATES")) {
+        require(profile,"external candidates require profile mode");
+        std::ifstream file(std::getenv("MOE_PROFILE_CANDIDATES")); file>>supplied;
+        require(supplied.at("tokens")==capture.at("tokens"),"profile candidate length mismatch");
+    }
+    if(profile) { report["profile_contract"]="resident banks; shared activation arenas with lifetime reuse; direct output; fused reduction; overlapping gather; two warmups; weight preparation excluded"; }
     std::set<int> profile_layers;
     if(profile && std::getenv("MOE_PROFILE_LAYERS")) {
         std::istringstream list(std::getenv("MOE_PROFILE_LAYERS")); std::string value;
@@ -312,20 +369,30 @@ static int search_all(const char * model_path,const std::string & capture_path,c
         auto ids=binary_read<int32_t>(bin,4*nt); auto reference=binary_read<float>(bin,2048*nt);
         std::vector<int> counts(60); for(auto id:ids) { ++counts[id]; }
         auto candidates=model_candidates(counts);
+        json layer_config;
+        if(!supplied.is_null()) {
+            for(const auto & l:supplied.at("layers")) { if(l.at("layer")==il) { layer_config=l; break; } }
+            require(!layer_config.is_null(),"missing profile candidates for layer");
+            candidates.clear(); for(const auto & p:layer_config.at("candidates")) { candidates.push_back(parse_plan(p)); }
+            require(!candidates.empty(),"empty profile candidate list");
+        }
         if(profile) {
             json result={{"layer",il},{"tokens",nt},{"counts",counts},{"ids",ids},{"candidates",json::array()}};
             for(const auto & p:candidates) {
                 // Use exactly the resident confirmation layout; never time conversion.
                 full_engine engine;
-                engine.layers.push_back(std::make_unique<partitioned_ffn>(devs,src,il,nt,p,true,true));
-                auto & ff=*engine.layers.back(); ff.fused_host_reduce=true;
+                resident_placement_model::availability prepared;
+                bool use_union=layer_config.contains("resident");
+                if(use_union) { prepared=parse_resident(layer_config.at("resident")); }
+                engine.layers.push_back(std::make_unique<partitioned_ffn>(devs,src,il,nt,p,true,true,use_union?&prepared:nullptr));
+                auto & ff=*engine.layers.back(); ff.fused_host_reduce=true; ff.reuse_lifetimes=true; ff.overlap_gather=true;
                 engine.prepare_arenas(devs);
                 std::vector<float> actual(x.size());
                 auto run=[&](bool record) { ff.run_into(x.data(),x.size(),probs.data(),probs.size(),ids,record,actual.data()); };
                 run(false); run(false);
                 auto check=chain_difference(actual,reference,nt);
                 auto warmed=ff.allocations;
-                json item=plan_json(p); item["check"]=check; item["samples"]=json::array();
+                json item=plan_json(p); item["check"]=check; item["samples"]=json::array(); item["resident_width"]=ff.resident_width;
                 std::vector<double> times;
                 for(int r=0;r<repetitions;++r) {
                     rusage before{},after{}; getrusage(RUSAGE_SELF,&before);
@@ -474,6 +541,14 @@ int main(int argc,char ** argv) {
             require(plans.at("tokens").get<int>()==nt && plans.at("layers").size()==24,"automatic plan shape mismatch");
         }
         bool custom=mode=="custom" || mode=="branch" || mode=="custom-npu";
+        std::unique_ptr<resident_placement_model> route_model;
+        std::unique_ptr<moe_route_scheduler> route_scheduler;
+        if(std::getenv("MOE_ROUTE_MODEL")) {
+            require(mode=="custom" && !automatic && !std::getenv("MOE_FEEDBACK_MODEL"),"current-route model requires explicit custom mode");
+            std::ifstream file(std::getenv("MOE_ROUTE_MODEL")); json parameters; file>>parameters;
+            route_model=std::make_unique<resident_placement_model>(parameters);
+            route_scheduler=std::make_unique<moe_route_scheduler>(*route_model,parameters.value("search_budget",2048));
+        }
         if(automatic && plans.value("model_type",std::string())=="branch_critical_path") {
             for(const char * name:{"MOE_ALTERNATE_CALLBACK_IO","MOE_ALTERNATE_HOST_REDUCE","MOE_ALTERNATE_REDUCE_THREADS","MOE_ALTERNATE_OVERLAP_GATHER"}) {
                 require(!std::getenv(name) || std::string(std::getenv(name))!="1","auto execution policy cannot alternate");
@@ -527,6 +602,7 @@ int main(int argc,char ** argv) {
         bool mapped_experts=std::getenv("MOE_CPU_MAPPED_EXPERTS") && std::string(std::getenv("MOE_CPU_MAPPED_EXPERTS"))=="1";
         require(!mapped_experts || (custom && !automatic && dense_backend=="cpu"),"mapped experts require custom CPU dense");
         bool native_decode_graph=std::getenv("MOE_NATIVE_DECODE_GRAPH") && std::string(std::getenv("MOE_NATIVE_DECODE_GRAPH"))=="1";
+        require(!route_scheduler || !native_decode_graph,"current-route search is not supported by fixed native decode branch");
         require(!native_decode_graph || (mapped_experts && shared_activations && activation_lifetimes),"native decode graph requires mapped CPU/shared lifetime buffers");
         require(custom || mode=="capture" || mode=="cpu" || mode=="npu" || mode=="gpu","invalid mode");
         if(custom && !automatic) { std::ifstream in(argv[7]); in>>plans; require((transfer_placement || plans["tokens"].get<int>()==nt) && plans["layers"].size()==24,"plan shape mismatch"); }
@@ -570,8 +646,10 @@ int main(int argc,char ** argv) {
             ~mapping() { if(data!=MAP_FAILED) { munmap(data,size); } }
         } weight_mapping;
         full_engine engine;
+        double resident_preparation_us=0;
         if(reduce_threads>1) { engine.reduce_workers=std::make_unique<moe_token_workers>(reduce_threads); }
         if(custom) {
+            auto preparation_start=timer::now();
             ggml_context * raw=nullptr; gguf_context_ptr gguf(gguf_init_from_file(argv[1],{true,&raw})); ggml_context_ptr meta(raw);
             std::unique_ptr<FILE,decltype(&fclose)> f(fopen(argv[1],"rb"),fclose); require(gguf && meta && f,"compact model open failed");
             source src{gguf.get(),meta.get(),f.get()};
@@ -588,7 +666,10 @@ int main(int argc,char ** argv) {
                 placement p=mode=="custom-npu"?placement{"all_npu",std::vector<int>(60,1),1}:parse_plan(plans["layers"][il][mode=="branch"?"branch":"selected"]);
                 if(native_decode_graph) { require(std::all_of(p.owner.begin(),p.owner.end(),[](int owner) { return owner==0; }),"native decode graph requires all routed experts on CPU"); }
                 int layer_tokens=transfer_placement?(il==23?1:nt):plans["layers"][il]["tokens"].get<int>();
-                engine.layers.push_back(std::make_unique<partitioned_ffn>(devs,src,il,layer_tokens,p,true,shared_activations));
+                resident_placement_model::availability prepared;
+                if(route_scheduler) { prepared=parse_resident(plans.at("layers").at(il).at("resident")); }
+                engine.layers.push_back(std::make_unique<partitioned_ffn>(devs,src,il,layer_tokens,p,true,shared_activations,route_scheduler?&prepared:nullptr));
+                engine.layers.back()->scheduler=route_scheduler.get();
                 engine.layers.back()->direct_callback_io=direct_callback_io;
                 engine.layers.back()->fused_host_reduce=fused_host_reduce;
                 engine.layers.back()->reuse_lifetimes=activation_lifetimes;
@@ -604,6 +685,7 @@ int main(int argc,char ** argv) {
                 for(auto & l:engine.layers) { engine.decode_branches.push_back(std::make_unique<moe_decode_branch>(*l,*engine.shared_worker)); }
             }
             require(llama_model_set_moe_graph_callback(model.get(),full_engine::build,&engine),"model rejected FFN callback");
+            resident_preparation_us=elapsed(preparation_start);
         }
         capture_all capture;
         auto cp=llama_context_default_params(); cp.n_ctx=quality_steps?nt+quality_steps+32:nt; cp.n_batch=nt; cp.n_ubatch=nt;
@@ -634,6 +716,10 @@ int main(int argc,char ** argv) {
         report["model_extra_bufts"]=mp.use_extra_bufts;
         report["native_decode_graph"]=native_decode_graph;
         report["shadow_feedback"]=bool(feedback);
+        report["current_route_scheduler"]=bool(route_scheduler);
+        report["resident_preparation_us"]=resident_preparation_us;
+        report["resident_preparation_scope"]="custom backend initialization, weight bank import/layout conversion and activation arena preparation; outside llama_decode timing";
+        if(route_scheduler) { report["scheduler_contract"]="current actual IDs; immutable explicitly prepared union banks; whole-expert move/swap search; planning included in llama_decode and layer gather; missing layouts ineligible; resident preparation excluded"; }
         report["process_identity"]={{"pid",getpid()},{"uid",getuid()},{"euid",geteuid()}};
         if(device_timing.read) { report["device_timing_scope"]="process-wide synchronized deltas; DSP batch includes preparation/cache flush; host queue read includes DSP wait; intervals overlap and are not additive; cycles/us is a DSP counter rate, not HMX clock readback"; }
         if(automatic) { report["path_decision"]=plans.at("path_decision"); }
@@ -648,10 +734,20 @@ int main(int argc,char ** argv) {
             report["placements"]=json::array();
             for(auto & l:engine.layers) {
                 auto p=plan_json(l->plan); p["layer"]=l->il;
-                std::array<size_t,3> bytes{};
+                std::array<size_t,3> bytes{},allocated_bytes{};
                 for(int b=0;b<3;++b) { if(l->banks[b]->buf || l->banks[b]->mapped_weights) { for(auto * w:l->banks[b]->w) { bytes[b]+=ggml_nbytes(w); } } }
-                for(auto * w:l->shared->w) { bytes[l->plan.shared]+=ggml_nbytes(w); }
-                p["resident_weight_bytes"]=bytes; report["placements"].push_back(p);
+                for(int b=0;b<3;++b) {
+                    if(l->banks[b]->buf) { allocated_bytes[b]+=ggml_backend_buffer_get_size(l->banks[b]->buf.get()); }
+                    if(l->resident.shared[b]) {
+                        auto * s=l->shared_for(b);
+                        for(auto * w:s->w) { bytes[b]+=ggml_nbytes(w); }
+                        allocated_bytes[b]+=ggml_backend_buffer_get_size(s->buf.get());
+                        if(s->scalar_buf) { allocated_bytes[b]+=ggml_backend_buffer_get_size(s->scalar_buf.get()); }
+                    }
+                }
+                p["resident_width"]=l->resident_width;
+                p["resident"]={{"experts",l->resident.experts},{"shared",l->resident.shared}};
+                p["resident_weight_bytes"]=bytes; p["resident_buffer_bytes"]=allocated_bytes; report["placements"].push_back(p);
             }
         }
         std::vector<double> times; std::vector<float> logits,paired_reference;

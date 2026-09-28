@@ -24,6 +24,8 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--mode", required=True, choices=["capture", "search", "profile", "predict", "auto", "cpu", "gpu", "npu", "custom", "branch", "custom-npu"])
     p.add_argument("--cost-model", type=pathlib.Path)
+    p.add_argument("--route-model", type=pathlib.Path, help="Custom: search on each current route within explicit resident union banks")
+    p.add_argument("--profile-candidates", type=pathlib.Path, help="Profile: per-layer arbitrary placements and optional resident unions")
     p.add_argument("--feedback-model", type=pathlib.Path, help="Causal shadow cost updates; does not move weights or change ownership")
     p.add_argument("--runtime-state", action="store_true", help="Read-only pre-load and per-request state/CPU-time telemetry; reports observation overhead")
     p.add_argument("--runtime-state-model", type=pathlib.Path, help="Auto: sample live state and choose before loading; plan-file supplies offline routes")
@@ -162,6 +164,19 @@ def main():
         assert adb("shell", f"sha256sum {REMOTE}/cost-model.json").stdout.split()[0] == digest
         record["cost_model_sha256"] = digest
         env.append(f"MOE_PLACEMENT_MODEL={REMOTE}/cost-model.json")
+    for field, variable, filename, required in (
+            ("route_model", "MOE_ROUTE_MODEL", "route-model.json", "custom"),
+            ("profile_candidates", "MOE_PROFILE_CANDIDATES", "profile-candidates.json", "profile")):
+        path = getattr(args, field)
+        if path:
+            assert args.mode == required
+            data = path.read_bytes()
+            adb("push", str(path), f"{REMOTE}/{filename}")
+            digest = hashlib.sha256(data).hexdigest()
+            assert adb("shell", f"sha256sum {REMOTE}/{filename}").stdout.split()[0] == digest
+            record[field + "_sha256"] = digest
+            record[field + "_source"] = str(path.resolve())
+            env.append(f"{variable}={REMOTE}/{filename}")
     if args.feedback_model:
         assert resolved_mode == "custom" and not args.transfer_placement
         adb("push", str(args.feedback_model), f"{REMOTE}/feedback-model.json")

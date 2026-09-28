@@ -58,7 +58,7 @@ def features(nt, counts, p, b):
     shared = int(p["shared"] == b)
     native = int(max(pairs) == sum(pairs))
     rows = nt if native and pairs[b] else pairs[b]
-    bank = p["owner"].count(b)
+    bank = p.get("resident_width", [p["owner"].count(i) for i in range(3)])[b]
     # All dimensions/formats are fixed; features represent matrix shape, padding,
     # Expert traversal and co-running demand. No layer or Expert identity is fitted.
     values = [1, pairs[b] / 1024, len(g) / 60,
@@ -81,7 +81,7 @@ def host_features(nt, counts, p):
     native = int(max(pairs) == sum(pairs))
     return [1, nt / 512, native, native * nt / 512, sum(active) / 3,
             sum(len(g) for g in groups) / 60,
-            sum(p["owner"].count(b) * pairs[b] for b in range(3)) / (60 * 2048),
+            sum(p.get("resident_width", [p["owner"].count(i) for i in range(3)])[b] * pairs[b] for b in range(3)) / (60 * 2048),
             int(p["shared"] == 0) * nt / 512]
 
 
@@ -155,8 +155,11 @@ def profile_rows(paths):
                 backend = [statistics.median(s["backend_phases_us"][b][1] for s in item["samples"]) for b in range(3)]
                 total = statistics.median(s["total_us"] for s in item["samples"])
                 host = statistics.median(s["total_us"] - max(v[1] for v in s["backend_phases_us"]) for s in item["samples"])
+                plan = {k: item[k] for k in ("name", "owner", "shared")}
+                if "resident_width" in item:
+                    plan["resident_width"] = item["resident_width"]
                 rows.append({"source": str(path), "layer": layer["layer"], "nt": layer["tokens"],
-                             "counts": layer["counts"], "plan": {k: item[k] for k in ("name", "owner", "shared")},
+                             "counts": layer["counts"], "plan": plan,
                              "backend_us": backend, "host_us": host, "total_us": total, "check": item["check"]})
     return rows
 
