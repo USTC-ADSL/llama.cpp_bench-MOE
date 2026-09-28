@@ -1856,6 +1856,7 @@ struct ggml_hexagon_opbatch {
         for (const auto * src : node.get_inputs()) {
             fit_tensor(src);
         }
+        fit_tensor(node.activation_rows);
         for (const auto * output : node.get_outputs()) {
             fit_tensor(output);
         }
@@ -1880,13 +1881,17 @@ struct ggml_hexagon_opbatch {
         memcpy(o.params,        node.node->op_params, sizeof(node.node->op_params));
         memcpy(o.kernel_params, node.kernel_params,   sizeof(o.kernel_params));
         o.opcode = node.opcode;
-        o.flags  = 0;
+        o.flags  = node.activation_rows ? HTP_OPFLAGS_MMID_ROWS : 0;
 
         ggml_hexagon_dump_op_exec(sess->c_name(), ops[n], o.flags);
 
-        auto inputs = node.get_inputs();
+        const auto & inputs = node.inputs;
         for (unsigned int i=0; i < HTP_OP_MAX_INPUTS; i++) {
             o.src[i] = (i < inputs.size() && inputs[i])   ? add_tensor(inputs[i]) : 0xffff;
+        }
+        if (node.activation_rows) {
+            GGML_ASSERT(inputs.size() < 9);
+            o.src[9] = add_tensor(node.activation_rows);
         }
 
         auto outputs = node.get_outputs();
@@ -2393,6 +2398,7 @@ struct ggml_hexagon_opbatch {
         htp_opnode & last_node = ops[n_ops - 1];
 
         // Mixed-layout ID inputs are [canonical, activation, ids, packed, map].
+        if (last_node.activation_rows != node.activation_rows) { return false; }
         // Preserve gate/up fusion as [canonical0, canonical1, activation, ids,
         // packed0, packed1, map]. Never interpret a packed alternative as another
         // output weight or drop the map when extending an ordinary NX fusion.
@@ -2437,6 +2443,7 @@ struct ggml_hexagon_opbatch {
             for (uint32_t i = 0; i < HTP_OP_MAX_INPUTS; ++i) {
                 o.src[i] = i < last_node.inputs.size() ? add_tensor(last_node.inputs[i]) : 0xffff;
             }
+            if (node.activation_rows) { o.src[9] = add_tensor(node.activation_rows); }
             o.dst[0] = add_tensor(d0); o.dst[1] = add_tensor(d_in);
             for (uint32_t i = 2; i < HTP_OP_MAX_OUTPUTS; ++i) { o.dst[i] = 0xffff; }
             return true;
@@ -2445,7 +2452,8 @@ struct ggml_hexagon_opbatch {
         // Case 1: last_node is already MUL_MAT_ID_NX
         if (last_node.opcode == HTP_OP_MUL_MAT_ID_NX) {
             const uint32_t curr_n = (uint32_t) last_node.outputs.size();
-            if (curr_n >= HTP_OP_MAX_OUTPUTS || curr_n + 2 >= HTP_OP_MAX_INPUTS) {
+            if (curr_n >= HTP_OP_MAX_OUTPUTS || curr_n + 2 >= HTP_OP_MAX_INPUTS ||
+                (node.activation_rows && curr_n + 3 >= 9)) {
                 return false;
             }
 
@@ -2462,6 +2470,7 @@ struct ggml_hexagon_opbatch {
 
             struct htp_mm_kernel_params kparams;
             ggml_hexagon_precompute_fused_mmidnx_params(sess, w0, x, d_in, curr_n + 1, &kparams);
+            if (node.activation_rows && !kparams.n_hmx) { return false; }
             if (!is_supported_mul_mat_id_nx_kernel(w0, &kparams)) {
                 return false;
             }
@@ -2505,6 +2514,7 @@ struct ggml_hexagon_opbatch {
             for (uint32_t s = curr_n + 3; s < HTP_OP_MAX_INPUTS; s++) {
                 o.src[s] = 0xffff;
             }
+            if (node.activation_rows) { o.src[9] = add_tensor(node.activation_rows); }
             for (uint32_t d = 0; d <= curr_n; d++) {
                 o.dst[d] = add_tensor(last_node.outputs[d]);
             }
@@ -2530,6 +2540,7 @@ struct ggml_hexagon_opbatch {
 
             struct htp_mm_kernel_params kparams;
             ggml_hexagon_precompute_fused_mmidnx_params(sess, w0, x, node.dst(), 2, &kparams);
+            if (node.activation_rows && !kparams.n_hmx) { return false; }
             if (!is_supported_mul_mat_id_nx_kernel(w0, &kparams)) {
                 return false;
             }
@@ -2584,6 +2595,7 @@ struct ggml_hexagon_opbatch {
             for (uint32_t s = 4; s < HTP_OP_MAX_INPUTS; s++) {
                 o.src[s] = 0xffff;
             }
+            if (node.activation_rows) { o.src[9] = add_tensor(node.activation_rows); }
             o.dst[0] = add_tensor(dst_0);
             o.dst[1] = add_tensor(dst_1);
             for (uint32_t d = 2; d < HTP_OP_MAX_OUTPUTS; d++) {
@@ -2888,6 +2900,11 @@ void ggml_hexagon_session::flush(bool all) {
 }
 
 void ggml_hexagon_session::enqueue_op(const htp_opnode & node) {
+    if (node.activation_rows && node.activation_rows->buffer &&
+        ggml_backend_buffer_is_hexagon(node.activation_rows->buffer) &&
+        ggml_backend_hexagon_buffer_get_sess(node.activation_rows->buffer) != this) {
+        this->clone_buffer(static_cast<const ggml_hexagon_shared_buffer *>(node.activation_rows->buffer->context));
+    }
     for (auto t : node.get_inputs()) {
         if (t && t->buffer && ggml_backend_buffer_is_hexagon(t->buffer)) {
             if (ggml_backend_hexagon_buffer_get_sess(t->buffer) != this) {
@@ -5265,6 +5282,71 @@ static bool is_mergeable_mul_mat_id_pair(const ggml_tensor * n1, const ggml_tens
     return true;
 }
 
+struct ggml_hexagon_gather_fusion {
+    ggml_tensor * gather;
+    ggml_tensor * rows;
+    std::shared_ptr<ggml_tensor> activation;
+};
+
+// Keep the public graph valid on every backend. This internal rewrite is opt-in
+// and requires retained source storage, so allocator reuse cannot invalidate a
+// source after the original GET_ROWS use. Unsupported graphs execute normally.
+static std::unordered_map<ggml_tensor *, ggml_hexagon_gather_fusion> ggml_hexagon_find_gather_fusions(
+        ggml_hexagon_session * sess, ggml_cgraph * graph) {
+    std::unordered_map<ggml_tensor *, ggml_hexagon_gather_fusion> result;
+    const char * enabled = getenv("GGML_HEXAGON_FUSE_MOE_GATHER");
+    if (!enabled || strcmp(enabled, "1") != 0) { return result; }
+    std::unordered_map<ggml_tensor *, std::vector<ggml_tensor *>> users;
+    for (int i = 0; i < graph->n_nodes; ++i) {
+        for (auto * src : graph->nodes[i]->src) {
+            if (src) { users[src].push_back(graph->nodes[i]); }
+        }
+    }
+    auto retained = [](ggml_tensor * t) {
+        while (t->view_src) { t = t->view_src; }
+        return (t->flags & GGML_TENSOR_FLAG_OUTPUT) != 0;
+    };
+    for (int i = 0; i < graph->n_nodes; ++i) {
+        auto * g = graph->nodes[i];
+        if (g->op != GGML_OP_GET_ROWS || (g->flags & GGML_TENSOR_FLAG_OUTPUT) || users[g].size() != 1) { continue; }
+        auto * x = g->src[0]; auto * rows = g->src[1]; auto * view = users[g][0];
+        if (x->type != GGML_TYPE_F32 || rows->type != GGML_TYPE_I32 ||
+            !ggml_is_contiguous(x) || !ggml_is_contiguous(rows) || !ggml_is_contiguous(g) ||
+            x->ne[1] <= HTP_MM_HMX_MIN_NROWS || x->ne[2] != 1 || x->ne[3] != 1 ||
+            rows->ne[1] != 1 || rows->ne[2] != 1 || rows->ne[3] != 1 ||
+            !retained(x) || !retained(rows) ||
+            view->op != GGML_OP_RESHAPE || view->src[0] != g || view->view_offs != 0 ||
+            (view->flags & GGML_TENSOR_FLAG_OUTPUT) || view->ne[0] != x->ne[0] ||
+            view->ne[1] != 1 || view->ne[2] != rows->ne[0] || view->ne[3] != 1 || users[view].empty()) { continue; }
+        auto activation = std::make_shared<ggml_tensor>(*x);
+        activation->ne[1] = 1; activation->ne[2] = x->ne[1];
+        activation->nb[2] = x->nb[1];
+        activation->nb[3] = x->nb[1] * x->ne[1];
+        bool eligible = true;
+        for (auto * mm : users[view]) {
+            if (mm->op != GGML_OP_MUL_MAT_ID || mm->src[1] != view ||
+                mm->src[2]->ne[0] != 1 || mm->src[2]->ne[1] != rows->ne[0]) { eligible = false; break; }
+            struct htp_mm_kernel_params kp;
+            ggml_hexagon_precompute_matmul_params(sess, mm->src[0], activation.get(), mm, &kp);
+            if (!kp.n_hmx) { eligible = false; break; }
+            for (int s = 5; s < GGML_MAX_SRC; ++s) {
+                if (mm->src[s]) { eligible = false; break; }
+            }
+        }
+        // No intervening compute may modify an input through an explicit alias.
+        // Retention protects allocator reuse; adjacency also protects ordering.
+        std::unordered_set<ggml_tensor *> pending(users[view].begin(), users[view].end());
+        for (int j = i + 1; eligible && !pending.empty() && j < graph->n_nodes; ++j) {
+            auto * n = graph->nodes[j];
+            if (op_is_compute(n) && !pending.erase(n)) { eligible = false; }
+        }
+        if (!pending.empty()) { eligible = false; }
+        if (!eligible) { continue; }
+        for (auto * mm : users[view]) { result.emplace(mm, ggml_hexagon_gather_fusion{g, rows, activation}); }
+    }
+    return result;
+}
+
 static ggml_status ggml_backend_hexagon_graph_compute(ggml_backend_t backend, ggml_cgraph * graph) {
     auto sess = static_cast<ggml_hexagon_session *>(backend->context);
 
@@ -5294,15 +5376,29 @@ static ggml_status ggml_backend_hexagon_graph_compute(ggml_backend_t backend, gg
         }
 
         computed_nodes.reserve(graph->n_nodes);
+        const auto gather_fusions = ggml_hexagon_find_gather_fusions(sess, graph);
+        std::unordered_set<ggml_tensor *> skipped_gathers;
+        for (const auto & entry : gather_fusions) { skipped_gathers.insert(entry.second.gather); }
 
         for (int i = 0; i < graph->n_nodes; ++i) {
             ggml_tensor * n = graph->nodes[i];
-            if (!op_is_compute(n)) {
+            if (!op_is_compute(n) || skipped_gathers.count(n)) {
                 continue;
             }
 
             htp_opnode node(HTP_OP_INVALID, n);
             node.opcode = op_remap_to_htp(n);
+            auto fusion = gather_fusions.find(n);
+            if (fusion != gather_fusions.end()) {
+                // Both projections share this descriptor identity, preserving NX.
+                node.dummy.push_back(fusion->second.activation);
+                auto * internal = node.add_dummy(*n);
+                internal->src[1] = fusion->second.activation.get();
+                node.node = internal;
+                node.inputs[1] = internal->src[1];
+                node.activation_rows = fusion->second.rows;
+                node.name += "+INDEXED_ROWS";
+            }
             if (node.opcode == HTP_OP_MUL_MAT || node.opcode == HTP_OP_MUL_MAT_ID) {
                 ggml_hexagon_precompute_matmul_params(sess,
                     node.node->src[0], node.node->src[1], node.node,

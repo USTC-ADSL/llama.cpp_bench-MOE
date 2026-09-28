@@ -3795,7 +3795,7 @@ static inline void scan_expert_ids_n(
             assert(i02 < n_as);
 
             if (matrix_rows) {
-                matrix_rows[i02 * mapping_stride + counts[i02]] = (struct mmid_row_mapping) { id, iid1 };
+                matrix_rows[i02 * mapping_stride + counts[i02]] = (struct mmid_row_mapping) { id, iid1, iid1 };
             }
             counts[i02] += 1;
         }
@@ -3833,10 +3833,41 @@ static inline void scan_expert_ids(
                 assert(i02 < n_as);
 
                 if (matrix_rows) {
-                    matrix_rows[i02 * mapping_stride + counts[i02]] = (struct mmid_row_mapping) { id, iid1 };
+                    matrix_rows[i02 * mapping_stride + counts[i02]] = (struct mmid_row_mapping) { id, iid1, iid1 };
                 }
                 counts[i02] += 1;
             }
+        }
+    }
+}
+
+// Preserve expert/route output positions while composing an optional token map
+// into the activation gather. Only HMX supports this internal fused operation.
+static bool valid_activation_rows(const struct htp_ops_context * octx,
+                                  const struct htp_tensor * act, const struct htp_tensor * ids) {
+    if (!(octx->flags & HTP_OPFLAGS_MMID_ROWS)) { return true; }
+    const struct htp_mm_kernel_params * kp = (const struct htp_mm_kernel_params *) octx->kernel_params;
+    const struct htp_tensor * rows = octx->src[9];
+    if (!kp->n_hmx || !rows || rows->type != HTP_TYPE_I32 || rows->nb[0] != sizeof(int32_t) ||
+        rows->ne[0] != ids->ne[1] || rows->ne[1] != 1 || rows->ne[2] != 1 || rows->ne[3] != 1 ||
+        rows->size < rows->ne[0] * sizeof(int32_t) || act->ne[1] != 1 || act->ne[2] <= 1 ||
+        act->ne[3] != 1 || ids->ne[0] != 1) { return false; }
+    const int32_t * data = (const int32_t *) rows->data;
+    for (uint32_t i = 0; i < rows->ne[0]; ++i) {
+        if (data[i] < 0 || (uint32_t) data[i] >= act->ne[2]) { return false; }
+    }
+    return true;
+}
+
+static void compose_activation_rows(const struct htp_ops_context * octx, uint32_t n_as,
+                                    const uint32_t * counts, struct mmid_row_mapping * mapping,
+                                    uint32_t stride) {
+    if (!(octx->flags & HTP_OPFLAGS_MMID_ROWS)) { return; }
+    const int32_t * rows = (const int32_t *) octx->src[9]->data;
+    for (uint32_t e = 0; e < n_as; ++e) {
+        for (uint32_t r = 0; r < counts[e]; ++r) {
+            struct mmid_row_mapping * m = &mapping[e * stride + r];
+            m->act_row = (uint32_t) rows[m->i2];
         }
     }
 }
@@ -3857,6 +3888,7 @@ int op_matmul_id(struct htp_ops_context * octx) {
     if ((src0->flags & HTP_TENSOR_CANONICAL_Q4_0) && !kparams->n_hmx) { return HTP_STATUS_NO_SUPPORT; }
 
     const struct htp_tensor * restrict ids = octx->src[2];
+    if (!valid_activation_rows(octx, src1, ids)) { return HTP_STATUS_NO_SUPPORT; }
 
     const size_t src0_row_size = nb01;
     const size_t dst_row_size  = nb1;
@@ -3905,6 +3937,7 @@ int op_matmul_id(struct htp_ops_context * octx) {
 
         memset(matrix_row_counts, 0, n_as * sizeof(uint32_t));
         scan_expert_ids(ids, n_ids, n_as, matrix_row_counts, matrix_rows, mapping_stride);
+        compose_activation_rows(octx, n_as, matrix_row_counts, matrix_rows, mapping_stride);
     }
 
     mmctx->matrix_row_counts    = matrix_row_counts;
@@ -3947,6 +3980,7 @@ int op_matmul_id_nx(struct htp_ops_context * octx) {
     const struct htp_tensor * restrict src0 = octx->src[0];
     const struct htp_tensor * restrict act  = octx->src[n_weights];
     const struct htp_tensor * restrict ids  = octx->src[n_weights + 1];
+    if (!valid_activation_rows(octx, act, ids)) { return HTP_STATUS_NO_SUPPORT; }
 
     struct htp_mm_context mmctx_struct = {0};
     struct htp_mm_context * mmctx = &mmctx_struct;
@@ -3997,6 +4031,7 @@ int op_matmul_id_nx(struct htp_ops_context * octx) {
 
         memset(matrix_row_counts, 0, n_as * sizeof(uint32_t));
         scan_expert_ids(ids, n_ids, n_as, matrix_row_counts, matrix_rows, mapping_stride);
+        compose_activation_rows(octx, n_as, matrix_row_counts, matrix_rows, mapping_stride);
     }
 
     mmctx->matrix_row_counts    = matrix_row_counts;

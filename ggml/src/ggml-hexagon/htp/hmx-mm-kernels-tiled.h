@@ -1172,8 +1172,8 @@ static void transfer_activation_chunk_fp32_to_fp16_gathered(
         uint32_t i11_0 = fastmodulo(mapping0.i1, ne11, ne11_div);
         uint32_t i11_1 = fastmodulo(mapping1.i1, ne11, ne11_div);
 
-        const float *row0_ptr = (const float *) ((const uint8_t *) src + i11_0 * nb11 + mapping0.i2 * nb12);
-        const float *row1_ptr = (const float *) ((const uint8_t *) src + i11_1 * nb11 + mapping1.i2 * nb12);
+        const float *row0_ptr = (const float *) ((const uint8_t *) src + i11_0 * nb11 + mapping0.act_row * nb12);
+        const float *row1_ptr = (const float *) ((const uint8_t *) src + i11_1 * nb11 + mapping1.act_row * nb12);
 
         uint32_t c = 0;
         for (; c + 32 <= k_valid; c += 32) {
@@ -1220,12 +1220,12 @@ static void transfer_activation_chunk_fp32_to_fp16_gathered(
         if (row0_valid) {
             struct mmid_row_mapping mapping0 = matrix_rows[cur_a * mapping_stride + (start_row + r + 0)];
             uint32_t i11_0 = fastmodulo(mapping0.i1, ne11, ne11_div);
-            row0_ptr = (const float *) ((const uint8_t *) src + i11_0 * nb11 + mapping0.i2 * nb12);
+            row0_ptr = (const float *) ((const uint8_t *) src + i11_0 * nb11 + mapping0.act_row * nb12);
         }
         if (row1_valid) {
             struct mmid_row_mapping mapping1 = matrix_rows[cur_a * mapping_stride + (start_row + r + 1)];
             uint32_t i11_1 = fastmodulo(mapping1.i1, ne11, ne11_div);
-            row1_ptr = (const float *) ((const uint8_t *) src + i11_1 * nb11 + mapping1.i2 * nb12);
+            row1_ptr = (const float *) ((const uint8_t *) src + i11_1 * nb11 + mapping1.act_row * nb12);
         }
 
         uint32_t c = 0;
@@ -1294,8 +1294,8 @@ static void transfer_activation_chunk_fp32_to_fp16_gathered_flat(
         struct mmid_row_mapping mapping0 = matrix_rows[cur_a * mapping_stride + r_idx0];
         struct mmid_row_mapping mapping1 = matrix_rows[cur_a * mapping_stride + r_idx1];
 
-        const float *row0_ptr = (const float *) ((const uint8_t *) src + mapping0.i2 * nb12);
-        const float *row1_ptr = (const float *) ((const uint8_t *) src + mapping1.i2 * nb12);
+        const float *row0_ptr = (const float *) ((const uint8_t *) src + mapping0.act_row * nb12);
+        const float *row1_ptr = (const float *) ((const uint8_t *) src + mapping1.act_row * nb12);
 
         uint32_t c = 0;
         for (; c + 32 <= k_valid; c += 32) {
@@ -1341,11 +1341,11 @@ static void transfer_activation_chunk_fp32_to_fp16_gathered_flat(
 
         if (row0_valid) {
             struct mmid_row_mapping mapping0 = matrix_rows[cur_a * mapping_stride + (start_row + r + 0)];
-            row0_ptr = (const float *) ((const uint8_t *) src + mapping0.i2 * nb12);
+            row0_ptr = (const float *) ((const uint8_t *) src + mapping0.act_row * nb12);
         }
         if (row1_valid) {
             struct mmid_row_mapping mapping1 = matrix_rows[cur_a * mapping_stride + (start_row + r + 1)];
-            row1_ptr = (const float *) ((const uint8_t *) src + mapping1.i2 * nb12);
+            row1_ptr = (const float *) ((const uint8_t *) src + mapping1.act_row * nb12);
         }
 
         uint32_t c = 0;

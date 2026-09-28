@@ -109,6 +109,7 @@ _Static_assert(sizeof(struct htp_mm_kernel_params) <= 128, "htp_matmul_kernel_pa
 struct mmid_row_mapping {
     uint32_t i1;
     uint32_t i2;
+    uint32_t act_row; // May differ from output row i2 after GET_ROWS fusion.
 };
 
 // Search for optimal (mc, nc) chunk sizes within VTCM budget.

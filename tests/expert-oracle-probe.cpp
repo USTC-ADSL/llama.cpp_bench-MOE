@@ -28,6 +28,9 @@ struct oracle_job {
             auto * routed_input=x;
             if(device_gather) {
                 input_rows=ggml_new_tensor_1d(ctx.get(),GGML_TYPE_I32,rows);
+                // Retain these externally filled buffers across optional backend
+                // gather/MMID fusion, including activation-arena reuse.
+                ggml_set_output(x); ggml_set_output(input_rows);
                 auto * gathered=ggml_get_rows(ctx.get(),ggml_reshape_2d(ctx.get(),x,x->ne[0],nt),input_rows);
                 routed_input=ggml_reshape_3d(ctx.get(),gathered,x->ne[0],1,rows);
             }

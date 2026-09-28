@@ -1,0 +1,9 @@
+# Shared activation arena must retain declared outputs
+
+The custom shared_activation_layout previously retained graph sinks but ignored GGML_TENSOR_FLAG_OUTPUT on tensors with explicit consumers. A backend fusion that moves the last physical read beyond GET_ROWS can therefore observe overwritten original input/index storage even when these tensors are declared outputs. This was identified during fusion implementation, before treating fused measurements as valid.
+
+The allocator now extends each declared output's root storage to the end of the graph, including output views. The NPU gather experiment declares its original input/index outputs; the backend fusion requires retained roots and adjacent eligible HMX consumers. Unsafe patterns execute the original GET_ROWS graph. Output scattering and model math are unchanged.
+
+Validation on Redmi K80 Pro fd8657d6: NDK cross build and incremental ggml-hexagon/htp-v79 build; tests/run-moe-route-execution-study.py regression, regression-no-nx, regression-hvx, unit-fused and resident-fused --cohort final. All passed. Focused regression compares arbitrary duplicate/nonmonotonic row maps and cached input updates bitwise, retains observable gather outputs, and verifies unretained/interposed/HVX fallback with actual backend logs. Resident checks cover12 native/shared/threeway configurations and reverse cache revisits. Final evidence: task/handoff/handoff-2026-09-28-route-execution/evidence/final; deployment and run manifests identify binaries.
+
+Limitation: the new gather fusion is opt-in and supports the validated HMX k1 prefill pattern only. It retains input/index storage and still reserves generic gather storage; this is an execution optimization, not a claim of minimum memory allocation. Flag changes inside a cached graph are not supported. Host/DSP libraries must be deployed together.

@@ -4,8 +4,8 @@ User authorizes continuing the previous recommendations and disputes the interpr
 
 - [x] Audit effective rows, route counts, timing windows and actual backend work in the previous128/768/1536 profiles; establish a controlled within-process length comparison if needed.
 - [x] Test GET_ROWS materialization prototype and CPU/GPU/NPU fixed-distribution scaling; no stable768 E2E gain, so continue to fused indexing.
-- [ ] Locate practical ways to remove graph/data-movement overhead; choose implementation based on measured evidence.
-- [ ] Implement and validate the selected execution improvement, including numerical correctness and actual device work accounting.
+- [x] Locate practical ways to remove graph/data-movement overhead; choose implementation based on measured evidence.
+- [x] Implement and validate HMX input-index fusion: exact primitive/resident outputs, arbitrary row maps, cache changes, observable-output/unretained/interposed/HVX fallback, NX on/off. Final fullmodel comparison remains below.
 - [ ] Compare original/optimized execution at768 and1536, retain128 regression and a longer held-out case as appropriate; include planning and all samples.
 - [ ] Correct unsupported unit-cost interpretation, report measured limits, archive/clean owned device evidence and commit stage results.
 

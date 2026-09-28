@@ -49,6 +49,13 @@ struct shared_activation_layout {
             } }
             if(!consumed.count(t)) { auto it=index.find(root(t)); if(it!=index.end()) { slots[it->second].last=n+1; } }
         }
+        // Backend fusion may retain an externally observable tensor after its
+        // last explicit graph use. Match gallocr's OUTPUT lifetime contract.
+        for(auto * t=ggml_get_first_tensor(ctx);t;t=ggml_get_next_tensor(ctx,t)) {
+            if(t->flags & GGML_TENSOR_FLAG_OUTPUT) {
+                auto it=index.find(root(t)); if(it!=index.end()) { slots[it->second].last=n+1; }
+            }
+        }
         std::vector<size_t> order(slots.size()); std::iota(order.begin(),order.end(),0);
         std::stable_sort(order.begin(),order.end(),[&](size_t a,size_t b) {
             return slots[a].first!=slots[b].first?slots[a].first<slots[b].first:slots[a].bytes>slots[b].bytes;

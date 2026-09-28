@@ -26,6 +26,7 @@ struct htp_opnode {
 
     std::vector<const ggml_tensor *> inputs;
     std::vector<const ggml_tensor *> outputs;
+    const ggml_tensor * activation_rows { nullptr }; // Optional MMID descriptor src[9].
     std::string                      name;
 
     int n_active_src(const ggml_tensor * t) const {
