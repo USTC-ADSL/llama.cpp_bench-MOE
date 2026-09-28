@@ -136,7 +136,9 @@ int main(int argc,char ** argv) {
     try {
         require(argc==4,"usage: online-weight-probe MODEL OUTPUT REPS");
         int reps=std::stoi(argv[3]); require(reps>=4 && reps<=1000,"invalid reps");
-        ggml_log_set([](ggml_log_level l,const char *s,void*) { if(l!=GGML_LOG_LEVEL_DEBUG) { fputs(s,stderr); } },nullptr);
+        ggml_log_set([](ggml_log_level l,const char *s,void*) {
+            if(l!=GGML_LOG_LEVEL_DEBUG || (std::getenv("MOE_DSP_TRACE") && (strstr(s,"profile-op") || strstr(s,"trace-evt")))) { fputs(s,stderr); }
+        },nullptr);
         ggml_context *raw=nullptr; gguf_context_ptr gf(gguf_init_from_file(argv[1],{true,&raw})); ggml_context_ptr meta(raw);
         require(gf && meta,"GGUF metadata failed");
         std::unique_ptr<FILE,decltype(&fclose)> file(fopen(argv[1],"rb"),fclose); require(bool(file),"source open failed");

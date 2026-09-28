@@ -3328,9 +3328,11 @@ static int hmx_mm_id_2d_f32(struct htp_context *ctx,
         const size_t n_rows = hex_smin(m_padded - mr, m_chunk_n_rows);
         const size_t n_row_tiles = hmx_ceil_div(n_rows, HTP_MM_HMX_TILE_N_ROWS);
 
+        htp_trace_event_start(tr, HTP_TRACE_EVT_ID_ACT, canonical_q4_0);
         transfer_activation_chunk_gathered_threaded(
             ctx, vtcm_f16_act, activation, (int) mr, (int) n_rows, k,
             matrix_rows, cur_a, mapping_stride, ne11, act_nb1, act_nb2, cne1, n_threads, k_valid);
+        htp_trace_event_stop(tr, HTP_TRACE_EVT_ID_ACT, canonical_q4_0);
 
         // A0: Pre-fetch the first weight chunk (nc = 0)
         if (n > 0) {
@@ -3345,14 +3347,18 @@ static int hmx_mm_id_2d_f32(struct htp_context *ctx,
             const size_t n_col_tiles = hmx_ceil_div(n_cols, HTP_MM_HMX_TILE_N_COLS);
 
             // A: Wait for weight DMA
+            htp_trace_event_start(tr, HTP_TRACE_EVT_ID_DMA_WAIT, canonical_q4_0);
             void * curr_raw = dma_queue_pop(ctx->dma[0]).dst;
+            htp_trace_event_stop(tr, HTP_TRACE_EVT_ID_DMA_WAIT, canonical_q4_0);
 
             // B: Weight Dequantize (Threaded)
+            htp_trace_event_start(tr, HTP_TRACE_EVT_ID_WEIGHT, canonical_q4_0);
             dequantize_tiled_weight_chunk_to_fp16_tiles(
                 ctx, vtcm_scratch0, curr_raw,
                 n_cols, k, row_stride, weight_type,
                 n_k_tiles, n_k_tiles_div, dequant_worker_fn, n_threads
             );
+            htp_trace_event_stop(tr, HTP_TRACE_EVT_ID_WEIGHT, canonical_q4_0);
 
             // Start weight DMA for the next chunk early
             const size_t nc_next = nc + n_chunk_n_cols;
@@ -3364,14 +3370,18 @@ static int hmx_mm_id_2d_f32(struct htp_context *ctx,
             }
 
             // C: HMX Compute (Queue-based)
+            htp_trace_event_start(tr, HTP_TRACE_EVT_ID_HMX_WAIT, canonical_q4_0);
             hmx_matmul_job_init(&job, vtcm_output, vtcm_f16_act, vtcm_scratch0, vtcm_scales, n_row_tiles, n_col_tiles, k / HTP_MM_HMX_TILE_N_ROWS);
             hmx_queue_push(ctx->hmx_queue, hmx_queue_make_desc(hmx_matmul_worker_fn, &job));
             hmx_queue_pop(ctx->hmx_queue);
+            htp_trace_event_stop(tr, HTP_TRACE_EVT_ID_HMX_WAIT, canonical_q4_0);
 
             // D: Output Store
+            htp_trace_event_start(tr, HTP_TRACE_EVT_ID_OUTPUT, canonical_q4_0);
             transfer_output_chunk_scattered_threaded(
                 ctx, dst + nc, vtcm_output, (int) mr, (int) n_rows, (int) n_cols,
                 matrix_rows, cur_a, mapping_stride, dst_nb1, dst_nb2, cne1, n_threads);
+            htp_trace_event_stop(tr, HTP_TRACE_EVT_ID_OUTPUT, canonical_q4_0);
         }
     }
 

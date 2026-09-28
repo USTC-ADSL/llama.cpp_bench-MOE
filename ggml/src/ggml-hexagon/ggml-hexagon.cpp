@@ -189,6 +189,11 @@ static const char * htp_event_name(uint16_t id) {
         case HTP_TRACE_EVT_HVX_FA_K_PREP:  return "HVX_K_PREP";
         case HTP_TRACE_EVT_HVX_FA_V_PREP:  return "HVX_V_PREP";
         case HTP_TRACE_EVT_HMX_COMP:       return "HMX_COMP";
+        case HTP_TRACE_EVT_ID_ACT:         return "ID_ACT";
+        case HTP_TRACE_EVT_ID_DMA_WAIT:    return "ID_DMA_WAIT";
+        case HTP_TRACE_EVT_ID_WEIGHT:      return "ID_WEIGHT";
+        case HTP_TRACE_EVT_ID_HMX_WAIT:    return "ID_HMX_WAIT";
+        case HTP_TRACE_EVT_ID_OUTPUT:      return "ID_OUTPUT";
         case HTP_TRACE_EVT_L2FLUSH:        return "L2FLUSH";
         case HTP_TRACE_EVT_INIT:           return "INIT";
         case HTP_TRACE_EVT_BUFF:           return "BUFF";

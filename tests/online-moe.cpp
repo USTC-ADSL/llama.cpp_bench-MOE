@@ -34,7 +34,9 @@ int main(int argc,char **argv) {
         int nt=std::stoi(argv[3]),tail=std::stoi(argv[7]); bool online=std::string(argv[6])=="online";
         require(online || std::string(argv[6])=="native","invalid mode");
         require(nt>=64 && nt<=768 && tail>=-1 && tail<=60,"invalid length/tail");
-        ggml_log_set([](ggml_log_level l,const char *s,void*) { if(l!=GGML_LOG_LEVEL_DEBUG) { fputs(s,stderr); } },nullptr);
+        ggml_log_set([](ggml_log_level l,const char *s,void*) {
+            if(l!=GGML_LOG_LEVEL_DEBUG || (std::getenv("MOE_DSP_TRACE") && (strstr(s,"profile-op") || strstr(s,"trace-evt")))) { fputs(s,stderr); }
+        },nullptr);
         const auto init_start=timer::now(); ggml_backend_load_all(); llama_backend_init();
         mapped_model mapping(argv[1]); ggml_context *raw=nullptr;
         gguf_context_ptr gf(gguf_init_from_file(argv[1],{true,&raw})); ggml_context_ptr meta(raw);

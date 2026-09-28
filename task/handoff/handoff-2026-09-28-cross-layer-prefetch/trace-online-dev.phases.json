@@ -1,0 +1,1223 @@
+{
+  "source_log": "task/handoff/handoff-2026-09-28-cross-layer-prefetch/trace-online-dev.log",
+  "scope": "profile-only; main-thread wall spans include worker dispatch/waits; DMA_WAIT excludes overlapped submission lifetime; worker sums overlap and must not be added to wall phases; cycles converted using enclosing op elapsed time",
+  "summary": {
+    "canonical": {
+      "operations": 46,
+      "dsp_op_us": 358920,
+      "phases_us": {
+        "ID_ACT": 28786.946245038474,
+        "ID_DMA_WAIT": 66094.06316468288,
+        "ID_WEIGHT": 230725.5315068932,
+        "ID_HMX_WAIT": 19122.65244778418,
+        "ID_OUTPUT": 4737.817881222994
+      },
+      "other_us": 9452.988754378282,
+      "phase_percent": {
+        "ID_ACT": 8.02043526274336,
+        "ID_DMA_WAIT": 18.414706108515237,
+        "ID_WEIGHT": 64.28327524431438,
+        "ID_HMX_WAIT": 5.327831396351327,
+        "ID_OUTPUT": 1.3200205843148876
+      }
+    }
+  },
+  "operations": [
+    {
+      "opcode": "MUL_MAT_ID_NX",
+      "label": "blk.0.ffn_gate_exps.weight x blk.0.ffn_up_exps.weight x leaf_2 x  (view) -> node_2|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:365:1 x 1:365 -> 1408:1:365:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:2990080 x 4:4 -> 4:5632:5632:2055680|hmx-tiled vtcm 8259584",
+      "usecs": 11149,
+      "cycles": 23547687,
+      "start": 4124848303,
+      "phases_us": {
+        "ID_ACT": 843.5740587175294,
+        "ID_DMA_WAIT": 1773.0251558040507,
+        "ID_WEIGHT": 7532.712611476446,
+        "ID_HMX_WAIT": 589.8693868743882,
+        "ID_OUTPUT": 149.11251839724216
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 44200.35011931316,
+        "HMX_COMP": 553.8557632857953
+      },
+      "phase_calls": {
+        "ID_ACT": 62,
+        "ID_DMA_WAIT": 62,
+        "ID_WEIGHT": 62,
+        "ID_HMX_WAIT": 62,
+        "ID_OUTPUT": 62
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID",
+      "label": "blk.0.ffn_down_exps.weight x node_3 x  (view) -> node_4|1408:2048:60:1 x 1408:1:365:1 x 1:365 -> 2048:1:365:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:5632:2055680 x 4:4 -> 4:8192:8192:2990080|hmx-tiled vtcm 8370176",
+      "usecs": 5584,
+      "cycles": 11794068,
+      "start": 4148723714,
+      "phases_us": {
+        "ID_ACT": 370.39877877590664,
+        "ID_DMA_WAIT": 917.8610386170403,
+        "ID_WEIGHT": 3723.1477003524146,
+        "ID_HMX_WAIT": 323.2342781133702,
+        "ID_OUTPUT": 62.346889639774844
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 21910.534227206437,
+        "HMX_COMP": 302.77898346863856
+      },
+      "phase_calls": {
+        "ID_ACT": 31,
+        "ID_DMA_WAIT": 31,
+        "ID_WEIGHT": 31,
+        "ID_HMX_WAIT": 31,
+        "ID_OUTPUT": 31
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID_NX",
+      "label": "blk.1.ffn_gate_exps.weight x blk.1.ffn_up_exps.weight x leaf_2 x  (view) -> node_2|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:348:1 x 1:348 -> 1408:1:348:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:2850816 x 4:4 -> 4:5632:5632:1959936|hmx-tiled vtcm 8253440",
+      "usecs": 11799,
+      "cycles": 24920879,
+      "start": 4169859900,
+      "phases_us": {
+        "ID_ACT": 946.1739840316228,
+        "ID_DMA_WAIT": 2105.1897804648065,
+        "ID_WEIGHT": 7716.87227629491,
+        "ID_HMX_WAIT": 609.2107856628974,
+        "ID_OUTPUT": 151.74484403218682
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 45463.34056134213,
+        "HMX_COMP": 572.1456197833152
+      },
+      "phase_calls": {
+        "ID_ACT": 64,
+        "ID_DMA_WAIT": 64,
+        "ID_WEIGHT": 64,
+        "ID_HMX_WAIT": 64,
+        "ID_OUTPUT": 64
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID",
+      "label": "blk.1.ffn_down_exps.weight x node_3 x  (view) -> node_4|1408:2048:60:1 x 1408:1:348:1 x 1:348 -> 2048:1:348:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:5632:1959936 x 4:4 -> 4:8192:8192:2850816|hmx-tiled vtcm 8314880",
+      "usecs": 5828,
+      "cycles": 12311264,
+      "start": 4195104543,
+      "phases_us": {
+        "ID_ACT": 384.46649182407265,
+        "ID_DMA_WAIT": 979.1833624882058,
+        "ID_WEIGHT": 3876.4713592365506,
+        "ID_HMX_WAIT": 331.7789227816088,
+        "ID_OUTPUT": 62.578056647960764
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 22847.145662378778,
+        "HMX_COMP": 311.79486428038575
+      },
+      "phase_calls": {
+        "ID_ACT": 32,
+        "ID_DMA_WAIT": 32,
+        "ID_WEIGHT": 32,
+        "ID_HMX_WAIT": 32,
+        "ID_OUTPUT": 32
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID_NX",
+      "label": "blk.2.ffn_gate_exps.weight x blk.2.ffn_up_exps.weight x leaf_2 x  (view) -> node_2|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:355:1 x 1:355 -> 1408:1:355:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:2908160 x 4:4 -> 4:5632:5632:1999360|hmx-tiled vtcm 8259584",
+      "usecs": 10353,
+      "cycles": 21866536,
+      "start": 4216619315,
+      "phases_us": {
+        "ID_ACT": 870.559144118666,
+        "ID_DMA_WAIT": 1819.3178368535366,
+        "ID_WEIGHT": 6754.337876927557,
+        "ID_HMX_WAIT": 533.949065183438,
+        "ID_OUTPUT": 139.17829390078066
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 39756.8148082074,
+        "HMX_COMP": 500.50315161944263
+      },
+      "phase_calls": {
+        "ID_ACT": 56,
+        "ID_DMA_WAIT": 56,
+        "ID_WEIGHT": 56,
+        "ID_HMX_WAIT": 56,
+        "ID_OUTPUT": 56
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID",
+      "label": "blk.2.ffn_down_exps.weight x node_3 x  (view) -> node_4|1408:2048:60:1 x 1408:1:355:1 x 1:355 -> 2048:1:355:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:5632:1999360 x 4:4 -> 4:8192:8192:2908160|hmx-tiled vtcm 8370176",
+      "usecs": 5127,
+      "cycles": 10830180,
+      "start": 4238822500,
+      "phases_us": {
+        "ID_ACT": 339.4117003595508,
+        "ID_DMA_WAIT": 866.0623053356454,
+        "ID_WEIGHT": 3400.6006808751094,
+        "ID_HMX_WAIT": 290.30078004243694,
+        "ID_OUTPUT": 59.03999795017258
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 19986.030367639334,
+        "HMX_COMP": 273.00844916704983
+      },
+      "phase_calls": {
+        "ID_ACT": 28,
+        "ID_DMA_WAIT": 28,
+        "ID_WEIGHT": 28,
+        "ID_HMX_WAIT": 28,
+        "ID_OUTPUT": 28
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID_NX",
+      "label": "blk.3.ffn_gate_exps.weight x blk.3.ffn_up_exps.weight x leaf_2 x  (view) -> node_2|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:345:1 x 1:345 -> 1408:1:345:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:2826240 x 4:4 -> 4:5632:5632:1943040|hmx-tiled vtcm 8253440",
+      "usecs": 9797,
+      "cycles": 20693213,
+      "start": 4263133651,
+      "phases_us": {
+        "ID_ACT": 801.7341402710155,
+        "ID_DMA_WAIT": 1590.0031663038503,
+        "ID_WEIGHT": 6526.388565516626,
+        "ID_HMX_WAIT": 515.5182024657067,
+        "ID_OUTPUT": 130.95594120642357
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 38385.62245442506,
+        "HMX_COMP": 482.9469333737588
+      },
+      "phase_calls": {
+        "ID_ACT": 54,
+        "ID_DMA_WAIT": 54,
+        "ID_WEIGHT": 54,
+        "ID_HMX_WAIT": 54,
+        "ID_OUTPUT": 54
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID",
+      "label": "blk.3.ffn_down_exps.weight x node_3 x  (view) -> node_4|1408:2048:60:1 x 1408:1:345:1 x 1:345 -> 2048:1:345:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:5632:1943040 x 4:4 -> 4:8192:8192:2826240|hmx-tiled vtcm 8314880",
+      "usecs": 5007,
+      "cycles": 10577564,
+      "start": 4284223232,
+      "phases_us": {
+        "ID_ACT": 352.181089521179,
+        "ID_DMA_WAIT": 918.2032162603789,
+        "ID_WEIGHT": 3229.0748789607887,
+        "ID_HMX_WAIT": 280.56592018729447,
+        "ID_OUTPUT": 58.05386703403544
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 18968.02392176497,
+        "HMX_COMP": 262.9857880321027
+      },
+      "phase_calls": {
+        "ID_ACT": 27,
+        "ID_DMA_WAIT": 27,
+        "ID_WEIGHT": 27,
+        "ID_HMX_WAIT": 27,
+        "ID_OUTPUT": 27
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID_NX",
+      "label": "blk.4.ffn_gate_exps.weight x blk.4.ffn_up_exps.weight x leaf_2 x  (view) -> node_2|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:354:1 x 1:354 -> 1408:1:354:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:2899968 x 4:4 -> 4:5632:5632:1993728|hmx-tiled vtcm 8259584",
+      "usecs": 9793,
+      "cycles": 20684859,
+      "start": 13234089,
+      "phases_us": {
+        "ID_ACT": 833.108048452252,
+        "ID_DMA_WAIT": 1663.2523745025283,
+        "ID_WEIGHT": 6418.221610260917,
+        "ID_HMX_WAIT": 514.4984214782417,
+        "ID_OUTPUT": 134.93032720213372
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 37741.67253438854,
+        "HMX_COMP": 482.5593414970824
+      },
+      "phase_calls": {
+        "ID_ACT": 54,
+        "ID_DMA_WAIT": 54,
+        "ID_WEIGHT": 54,
+        "ID_HMX_WAIT": 54,
+        "ID_OUTPUT": 54
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID",
+      "label": "blk.4.ffn_down_exps.weight x node_3 x  (view) -> node_4|1408:2048:60:1 x 1408:1:354:1 x 1:354 -> 2048:1:354:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:5632:1993728 x 4:4 -> 4:8192:8192:2899968|hmx-tiled vtcm 8370176",
+      "usecs": 5002,
+      "cycles": 10565075,
+      "start": 34273992,
+      "phases_us": {
+        "ID_ACT": 350.0982183278397,
+        "ID_DMA_WAIT": 930.4908587965538,
+        "ID_WEIGHT": 3217.9154970504223,
+        "ID_HMX_WAIT": 280.08349850805604,
+        "ID_OUTPUT": 58.287918258980646
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 18886.131565180567,
+        "HMX_COMP": 263.2458397124488
+      },
+      "phase_calls": {
+        "ID_ACT": 27,
+        "ID_DMA_WAIT": 27,
+        "ID_WEIGHT": 27,
+        "ID_HMX_WAIT": 27,
+        "ID_OUTPUT": 27
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID_NX",
+      "label": "blk.5.ffn_gate_exps.weight x blk.5.ffn_up_exps.weight x leaf_2 x  (view) -> node_2|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:357:1 x 1:357 -> 1408:1:357:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:2924544 x 4:4 -> 4:5632:5632:2010624|hmx-tiled vtcm 8259584",
+      "usecs": 9938,
+      "cycles": 20991515,
+      "start": 57119795,
+      "phases_us": {
+        "ID_ACT": 841.74371397205,
+        "ID_DMA_WAIT": 1686.5353663134838,
+        "ID_WEIGHT": 6510.330076890592,
+        "ID_HMX_WAIT": 535.8311634010219,
+        "ID_OUTPUT": 132.8883138734865
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 38297.47296381417,
+        "HMX_COMP": 504.1464284974191
+      },
+      "phase_calls": {
+        "ID_ACT": 54,
+        "ID_DMA_WAIT": 54,
+        "ID_WEIGHT": 54,
+        "ID_HMX_WAIT": 54,
+        "ID_OUTPUT": 54
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID",
+      "label": "blk.5.ffn_down_exps.weight x node_3 x  (view) -> node_4|1408:2048:60:1 x 1408:1:357:1 x 1:357 -> 2048:1:357:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:5632:2010624 x 4:4 -> 4:8192:8192:2924544|hmx-tiled vtcm 8370176",
+      "usecs": 4919,
+      "cycles": 10389861,
+      "start": 78433754,
+      "phases_us": {
+        "ID_ACT": 348.0284036523683,
+        "ID_DMA_WAIT": 848.587616523455,
+        "ID_WEIGHT": 3208.17779179144,
+        "ID_HMX_WAIT": 289.750966928239,
+        "ID_OUTPUT": 59.581770343222104
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 18892.476616000913,
+        "HMX_COMP": 274.3020702586878
+      },
+      "phase_calls": {
+        "ID_ACT": 27,
+        "ID_DMA_WAIT": 27,
+        "ID_WEIGHT": 27,
+        "ID_HMX_WAIT": 27,
+        "ID_OUTPUT": 27
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID_NX",
+      "label": "blk.6.ffn_gate_exps.weight x blk.6.ffn_up_exps.weight x leaf_2 x  (view) -> node_2|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:361:1 x 1:361 -> 1408:1:361:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:2957312 x 4:4 -> 4:5632:5632:2033152|hmx-tiled vtcm 8259584",
+      "usecs": 9430,
+      "cycles": 19919042,
+      "start": 102985179,
+      "phases_us": {
+        "ID_ACT": 777.572612678863,
+        "ID_DMA_WAIT": 1563.346690066721,
+        "ID_WEIGHT": 6213.768440269367,
+        "ID_HMX_WAIT": 518.8879816609655,
+        "ID_OUTPUT": 131.66229229297275
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 36610.98907969568,
+        "HMX_COMP": 487.0578339058676
+      },
+      "phase_calls": {
+        "ID_ACT": 52,
+        "ID_DMA_WAIT": 52,
+        "ID_WEIGHT": 52,
+        "ID_HMX_WAIT": 52,
+        "ID_OUTPUT": 52
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID",
+      "label": "blk.6.ffn_down_exps.weight x node_3 x  (view) -> node_4|1408:2048:60:1 x 1408:1:361:1 x 1:361 -> 2048:1:361:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:5632:2033152 x 4:4 -> 4:8192:8192:2957312|hmx-tiled vtcm 8370176",
+      "usecs": 4870,
+      "cycles": 10287823,
+      "start": 123255793,
+      "phases_us": {
+        "ID_ACT": 353.61456840771854,
+        "ID_DMA_WAIT": 954.7248256506747,
+        "ID_WEIGHT": 3060.358190454871,
+        "ID_HMX_WAIT": 280.4700566874061,
+        "ID_OUTPUT": 60.630839002576145
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 18065.327287415435,
+        "HMX_COMP": 264.48559719583045
+      },
+      "phase_calls": {
+        "ID_ACT": 26,
+        "ID_DMA_WAIT": 26,
+        "ID_WEIGHT": 26,
+        "ID_HMX_WAIT": 26,
+        "ID_OUTPUT": 26
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID_NX",
+      "label": "blk.7.ffn_gate_exps.weight x blk.7.ffn_up_exps.weight x leaf_2 x  (view) -> node_2|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:376:1 x 1:376 -> 1408:1:376:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:3080192 x 4:4 -> 4:5632:5632:2117632|hmx-tiled vtcm 8259584",
+      "usecs": 10827,
+      "cycles": 22867561,
+      "start": 145642172,
+      "phases_us": {
+        "ID_ACT": 978.4902076789037,
+        "ID_DMA_WAIT": 1974.8878255096818,
+        "ID_WEIGHT": 6929.699944913232,
+        "ID_HMX_WAIT": 553.7344120345845,
+        "ID_OUTPUT": 146.12137984457547
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 40772.3027682751,
+        "HMX_COMP": 518.4337752067219
+      },
+      "phase_calls": {
+        "ID_ACT": 58,
+        "ID_DMA_WAIT": 58,
+        "ID_WEIGHT": 58,
+        "ID_HMX_WAIT": 58,
+        "ID_OUTPUT": 58
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID",
+      "label": "blk.7.ffn_down_exps.weight x node_3 x  (view) -> node_4|1408:2048:60:1 x 1408:1:376:1 x 1:376 -> 2048:1:376:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:5632:2117632 x 4:4 -> 4:8192:8192:3080192|hmx-tiled vtcm 8370176",
+      "usecs": 5388,
+      "cycles": 11382445,
+      "start": 168924963,
+      "phases_us": {
+        "ID_ACT": 379.9944117454553,
+        "ID_DMA_WAIT": 1003.6123317969029,
+        "ID_WEIGHT": 3449.2062255517153,
+        "ID_HMX_WAIT": 308.437449774631,
+        "ID_OUTPUT": 62.615655248059625
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 20339.048241744196,
+        "HMX_COMP": 283.8596252386899
+      },
+      "phase_calls": {
+        "ID_ACT": 29,
+        "ID_DMA_WAIT": 29,
+        "ID_WEIGHT": 29,
+        "ID_HMX_WAIT": 29,
+        "ID_OUTPUT": 29
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID_NX",
+      "label": "blk.8.ffn_gate_exps.weight x blk.8.ffn_up_exps.weight x leaf_2 x  (view) -> node_2|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:369:1 x 1:369 -> 1408:1:369:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:3022848 x 4:4 -> 4:5632:5632:2078208|hmx-tiled vtcm 8259584",
+      "usecs": 10099,
+      "cycles": 21330464,
+      "start": 195516961,
+      "phases_us": {
+        "ID_ACT": 897.649949902637,
+        "ID_DMA_WAIT": 1812.7083411312572,
+        "ID_WEIGHT": 6463.195730294475,
+        "ID_HMX_WAIT": 558.4109450221055,
+        "ID_OUTPUT": 134.51878393268893
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 38051.44150033496,
+        "HMX_COMP": 526.623223010995
+      },
+      "phase_calls": {
+        "ID_ACT": 54,
+        "ID_DMA_WAIT": 54,
+        "ID_WEIGHT": 54,
+        "ID_HMX_WAIT": 54,
+        "ID_OUTPUT": 54
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID",
+      "label": "blk.8.ffn_down_exps.weight x node_3 x  (view) -> node_4|1408:2048:60:1 x 1408:1:369:1 x 1:369 -> 2048:1:369:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:5632:2078208 x 4:4 -> 4:8192:8192:3022848|hmx-tiled vtcm 8370176",
+      "usecs": 5134,
+      "cycles": 10844711,
+      "start": 217224445,
+      "phases_us": {
+        "ID_ACT": 403.24727214952986,
+        "ID_DMA_WAIT": 993.1721376438708,
+        "ID_WEIGHT": 3201.0360718695038,
+        "ID_HMX_WAIT": 301.60461869384994,
+        "ID_OUTPUT": 67.9202036826984
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 18867.699522836538,
+        "HMX_COMP": 285.36947918667454
+      },
+      "phase_calls": {
+        "ID_ACT": 27,
+        "ID_DMA_WAIT": 27,
+        "ID_WEIGHT": 27,
+        "ID_HMX_WAIT": 27,
+        "ID_OUTPUT": 27
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID_NX",
+      "label": "blk.9.ffn_gate_exps.weight x blk.9.ffn_up_exps.weight x leaf_2 x  (view) -> node_2|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:377:1 x 1:377 -> 1408:1:377:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:3088384 x 4:4 -> 4:5632:5632:2123264|hmx-tiled vtcm 8259584",
+      "usecs": 9799,
+      "cycles": 20697321,
+      "start": 240432737,
+      "phases_us": {
+        "ID_ACT": 866.8138512708963,
+        "ID_DMA_WAIT": 1805.3500432737164,
+        "ID_WEIGHT": 6251.102589653996,
+        "ID_HMX_WAIT": 517.0867773660175,
+        "ID_OUTPUT": 134.32143647962937
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 36742.27887918441,
+        "HMX_COMP": 486.91568068157227
+      },
+      "phase_calls": {
+        "ID_ACT": 52,
+        "ID_DMA_WAIT": 52,
+        "ID_WEIGHT": 52,
+        "ID_HMX_WAIT": 52,
+        "ID_OUTPUT": 52
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID",
+      "label": "blk.9.ffn_down_exps.weight x node_3 x  (view) -> node_4|1408:2048:60:1 x 1408:1:377:1 x 1:377 -> 2048:1:377:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:5632:2123264 x 4:4 -> 4:8192:8192:3088384|hmx-tiled vtcm 8370176",
+      "usecs": 4998,
+      "cycles": 10557392,
+      "start": 261478843,
+      "phases_us": {
+        "ID_ACT": 371.45307685837554,
+        "ID_DMA_WAIT": 981.2015855809847,
+        "ID_WEIGHT": 3125.9589421326777,
+        "ID_HMX_WAIT": 287.87496286961783,
+        "ID_OUTPUT": 63.689113371938824
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 18399.208804977603,
+        "HMX_COMP": 265.3935560979454
+      },
+      "phase_calls": {
+        "ID_ACT": 26,
+        "ID_DMA_WAIT": 26,
+        "ID_WEIGHT": 26,
+        "ID_HMX_WAIT": 26,
+        "ID_OUTPUT": 26
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID_NX",
+      "label": "blk.10.ffn_gate_exps.weight x blk.10.ffn_up_exps.weight x leaf_2 x  (view) -> node_2|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:357:1 x 1:357 -> 1408:1:357:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:2924544 x 4:4 -> 4:5632:5632:2010624|hmx-tiled vtcm 8259584",
+      "usecs": 9893,
+      "cycles": 20896385,
+      "start": 289024778,
+      "phases_us": {
+        "ID_ACT": 841.6062817563901,
+        "ID_DMA_WAIT": 1791.858862430032,
+        "ID_WEIGHT": 6372.972970444411,
+        "ID_HMX_WAIT": 514.8720206389764,
+        "ID_OUTPUT": 138.1031863166763
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 37531.19019739538,
+        "HMX_COMP": 483.2510793613345
+      },
+      "phase_calls": {
+        "ID_ACT": 54,
+        "ID_DMA_WAIT": 54,
+        "ID_WEIGHT": 54,
+        "ID_HMX_WAIT": 54,
+        "ID_OUTPUT": 54
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID",
+      "label": "blk.10.ffn_down_exps.weight x node_3 x  (view) -> node_4|1408:2048:60:1 x 1408:1:357:1 x 1:357 -> 2048:1:357:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:5632:2010624 x 4:4 -> 4:8192:8192:2924544|hmx-tiled vtcm 8370176",
+      "usecs": 5009,
+      "cycles": 10580547,
+      "start": 310279064,
+      "phases_us": {
+        "ID_ACT": 360.5133680706677,
+        "ID_DMA_WAIT": 916.7203316614915,
+        "ID_WEIGHT": 3223.70763524797,
+        "ID_HMX_WAIT": 279.96542683473734,
+        "ID_OUTPUT": 60.161702414818436
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 18970.699010646615,
+        "HMX_COMP": 262.7880015088067
+      },
+      "phase_calls": {
+        "ID_ACT": 27,
+        "ID_DMA_WAIT": 27,
+        "ID_WEIGHT": 27,
+        "ID_HMX_WAIT": 27,
+        "ID_OUTPUT": 27
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID_NX",
+      "label": "blk.11.ffn_gate_exps.weight x blk.11.ffn_up_exps.weight x leaf_2 x  (view) -> node_2|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:372:1 x 1:372 -> 1408:1:372:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:3047424 x 4:4 -> 4:5632:5632:2095104|hmx-tiled vtcm 8259584",
+      "usecs": 11313,
+      "cycles": 23895541,
+      "start": 344636713,
+      "phases_us": {
+        "ID_ACT": 903.5253469256045,
+        "ID_DMA_WAIT": 2107.2926679082093,
+        "ID_WEIGHT": 7323.532822713657,
+        "ID_HMX_WAIT": 572.1810205510727,
+        "ID_OUTPUT": 149.73016593346853
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 43020.26762294272,
+        "HMX_COMP": 536.5412613591799
+      },
+      "phase_calls": {
+        "ID_ACT": 60,
+        "ID_DMA_WAIT": 60,
+        "ID_WEIGHT": 60,
+        "ID_HMX_WAIT": 60,
+        "ID_OUTPUT": 60
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID",
+      "label": "blk.11.ffn_down_exps.weight x node_3 x  (view) -> node_4|1408:2048:60:1 x 1408:1:372:1 x 1:372 -> 2048:1:372:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:5632:2095104 x 4:4 -> 4:8192:8192:3047424|hmx-tiled vtcm 8370176",
+      "usecs": 5653,
+      "cycles": 11941672,
+      "start": 368902681,
+      "phases_us": {
+        "ID_ACT": 396.5649131042956,
+        "ID_DMA_WAIT": 1031.0740759752907,
+        "ID_WEIGHT": 3658.9595403390745,
+        "ID_HMX_WAIT": 313.9271632146655,
+        "ID_OUTPUT": 68.57823628048067
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 21465.23032855031,
+        "HMX_COMP": 292.5595428345377
+      },
+      "phase_calls": {
+        "ID_ACT": 30,
+        "ID_DMA_WAIT": 30,
+        "ID_WEIGHT": 30,
+        "ID_HMX_WAIT": 30,
+        "ID_OUTPUT": 30
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID_NX",
+      "label": "blk.12.ffn_gate_exps.weight x blk.12.ffn_up_exps.weight x leaf_2 x  (view) -> node_2|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:370:1 x 1:370 -> 1408:1:370:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:3031040 x 4:4 -> 4:5632:5632:2083840|hmx-tiled vtcm 8259584",
+      "usecs": 10336,
+      "cycles": 21832170,
+      "start": 399447837,
+      "phases_us": {
+        "ID_ACT": 842.0280494334736,
+        "ID_DMA_WAIT": 1762.0683356716258,
+        "ID_WEIGHT": 6815.325520825459,
+        "ID_HMX_WAIT": 535.7838250618238,
+        "ID_OUTPUT": 141.7704490208715
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 40089.300705884925,
+        "HMX_COMP": 501.8857775475365
+      },
+      "phase_calls": {
+        "ID_ACT": 56,
+        "ID_DMA_WAIT": 56,
+        "ID_WEIGHT": 56,
+        "ID_HMX_WAIT": 56,
+        "ID_OUTPUT": 56
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID",
+      "label": "blk.12.ffn_down_exps.weight x node_3 x  (view) -> node_4|1408:2048:60:1 x 1408:1:370:1 x 1:370 -> 2048:1:370:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:5632:2083840 x 4:4 -> 4:8192:8192:3031040|hmx-tiled vtcm 8370176",
+      "usecs": 5161,
+      "cycles": 10901960,
+      "start": 421633375,
+      "phases_us": {
+        "ID_ACT": 348.0629610638821,
+        "ID_DMA_WAIT": 879.3681314185706,
+        "ID_WEIGHT": 3408.1689426488447,
+        "ID_HMX_WAIT": 291.3906936000499,
+        "ID_OUTPUT": 62.25319318728008
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 19989.264957402163,
+        "HMX_COMP": 272.89822591534
+      },
+      "phase_calls": {
+        "ID_ACT": 28,
+        "ID_DMA_WAIT": 28,
+        "ID_WEIGHT": 28,
+        "ID_HMX_WAIT": 28,
+        "ID_OUTPUT": 28
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID_NX",
+      "label": "blk.13.ffn_gate_exps.weight x blk.13.ffn_up_exps.weight x leaf_2 x  (view) -> node_2|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:371:1 x 1:371 -> 1408:1:371:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:3039232 x 4:4 -> 4:5632:5632:2089472|hmx-tiled vtcm 8259584",
+      "usecs": 10525,
+      "cycles": 22231252,
+      "start": 453219264,
+      "phases_us": {
+        "ID_ACT": 852.0371693416098,
+        "ID_DMA_WAIT": 1983.8985856487077,
+        "ID_WEIGHT": 6774.784888408445,
+        "ID_HMX_WAIT": 533.8165895919852,
+        "ID_OUTPUT": 141.20412111742513
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 39825.3972122218,
+        "HMX_COMP": 501.1450041140284
+      },
+      "phase_calls": {
+        "ID_ACT": 56,
+        "ID_DMA_WAIT": 56,
+        "ID_WEIGHT": 56,
+        "ID_HMX_WAIT": 56,
+        "ID_OUTPUT": 56
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID",
+      "label": "blk.13.ffn_down_exps.weight x node_3 x  (view) -> node_4|1408:2048:60:1 x 1408:1:371:1 x 1:371 -> 2048:1:371:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:5632:2089472 x 4:4 -> 4:8192:8192:3039232|hmx-tiled vtcm 8370176",
+      "usecs": 5161,
+      "cycles": 10901073,
+      "start": 475783605,
+      "phases_us": {
+        "ID_ACT": 371.2372725143662,
+        "ID_DMA_WAIT": 910.5659726340699,
+        "ID_WEIGHT": 3352.6144699700662,
+        "ID_HMX_WAIT": 293.30721517046993,
+        "ID_OUTPUT": 60.99228103508709
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 19722.638656855146,
+        "HMX_COMP": 274.0017672572232
+      },
+      "phase_calls": {
+        "ID_ACT": 28,
+        "ID_DMA_WAIT": 28,
+        "ID_WEIGHT": 28,
+        "ID_HMX_WAIT": 28,
+        "ID_OUTPUT": 28
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID_NX",
+      "label": "blk.14.ffn_gate_exps.weight x blk.14.ffn_up_exps.weight x leaf_2 x  (view) -> node_2|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:384:1 x 1:384 -> 1408:1:384:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:3145728 x 4:4 -> 4:5632:5632:2162688|hmx-tiled vtcm 8259584",
+      "usecs": 11489,
+      "cycles": 24267970,
+      "start": 498744214,
+      "phases_us": {
+        "ID_ACT": 1001.4814799919402,
+        "ID_DMA_WAIT": 2205.6421801658735,
+        "ID_WEIGHT": 7304.728296515944,
+        "ID_HMX_WAIT": 573.8002277899635,
+        "ID_OUTPUT": 147.94638595646853
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 42875.52203286882,
+        "HMX_COMP": 537.4148777174191
+      },
+      "phase_calls": {
+        "ID_ACT": 60,
+        "ID_DMA_WAIT": 60,
+        "ID_WEIGHT": 60,
+        "ID_HMX_WAIT": 60,
+        "ID_OUTPUT": 60
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID",
+      "label": "blk.14.ffn_down_exps.weight x node_3 x  (view) -> node_4|1408:2048:60:1 x 1408:1:384:1 x 1:384 -> 2048:1:384:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:5632:2162688 x 4:4 -> 4:8192:8192:3145728|hmx-tiled vtcm 8370176",
+      "usecs": 5595,
+      "cycles": 11818505,
+      "start": 523429648,
+      "phases_us": {
+        "ID_ACT": 385.09121035190157,
+        "ID_DMA_WAIT": 996.5226447845985,
+        "ID_WEIGHT": 3638.8693388038505,
+        "ID_HMX_WAIT": 319.00552311819473,
+        "ID_OUTPUT": 66.99132081426542
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 21317.75950765347,
+        "HMX_COMP": 293.0375572037242
+      },
+      "phase_calls": {
+        "ID_ACT": 30,
+        "ID_DMA_WAIT": 30,
+        "ID_WEIGHT": 30,
+        "ID_HMX_WAIT": 30,
+        "ID_OUTPUT": 30
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID_NX",
+      "label": "blk.15.ffn_gate_exps.weight x blk.15.ffn_up_exps.weight x leaf_2 x  (view) -> node_2|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:346:1 x 1:346 -> 1408:1:346:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:2834432 x 4:4 -> 4:5632:5632:1948672|hmx-tiled vtcm 8253440",
+      "usecs": 9657,
+      "cycles": 20398376,
+      "start": 549233723,
+      "phases_us": {
+        "ID_ACT": 801.0645827883552,
+        "ID_DMA_WAIT": 1723.6504090325623,
+        "ID_WEIGHT": 6282.0562275643915,
+        "ID_HMX_WAIT": 497.768507012519,
+        "ID_OUTPUT": 129.84254751456683
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 36921.33968939485,
+        "HMX_COMP": 465.22940076209983
+      },
+      "phase_calls": {
+        "ID_ACT": 52,
+        "ID_DMA_WAIT": 52,
+        "ID_WEIGHT": 52,
+        "ID_HMX_WAIT": 52,
+        "ID_OUTPUT": 52
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID",
+      "label": "blk.15.ffn_down_exps.weight x node_3 x  (view) -> node_4|1408:2048:60:1 x 1408:1:346:1 x 1:346 -> 2048:1:346:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:5632:1948672 x 4:4 -> 4:8192:8192:2834432|hmx-tiled vtcm 8314880",
+      "usecs": 4869,
+      "cycles": 10285463,
+      "start": 569948167,
+      "phases_us": {
+        "ID_ACT": 361.2995143728581,
+        "ID_DMA_WAIT": 889.7778611424685,
+        "ID_WEIGHT": 3132.7179637902545,
+        "ID_HMX_WAIT": 269.81188002912455,
+        "ID_OUTPUT": 56.02245965981308
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 18459.963787920875,
+        "HMX_COMP": 253.59460308203916
+      },
+      "phase_calls": {
+        "ID_ACT": 26,
+        "ID_DMA_WAIT": 26,
+        "ID_WEIGHT": 26,
+        "ID_HMX_WAIT": 26,
+        "ID_OUTPUT": 26
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID_NX",
+      "label": "blk.16.ffn_gate_exps.weight x blk.16.ffn_up_exps.weight x leaf_2 x  (view) -> node_2|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:361:1 x 1:361 -> 1408:1:361:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:2957312 x 4:4 -> 4:5632:5632:2033152|hmx-tiled vtcm 8259584",
+      "usecs": 10118,
+      "cycles": 21370746,
+      "start": 594357643,
+      "phases_us": {
+        "ID_ACT": 816.1494249194672,
+        "ID_DMA_WAIT": 1888.2445397086278,
+        "ID_WEIGHT": 6528.754143070158,
+        "ID_HMX_WAIT": 514.498674122092,
+        "ID_OUTPUT": 137.06547043327362
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 38340.14127387035,
+        "HMX_COMP": 483.03407087426905
+      },
+      "phase_calls": {
+        "ID_ACT": 54,
+        "ID_DMA_WAIT": 54,
+        "ID_WEIGHT": 54,
+        "ID_HMX_WAIT": 54,
+        "ID_OUTPUT": 54
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID",
+      "label": "blk.16.ffn_down_exps.weight x node_3 x  (view) -> node_4|1408:2048:60:1 x 1408:1:361:1 x 1:361 -> 2048:1:361:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:5632:2033152 x 4:4 -> 4:8192:8192:2957312|hmx-tiled vtcm 8370176",
+      "usecs": 5092,
+      "cycles": 10755459,
+      "start": 616071274,
+      "phases_us": {
+        "ID_ACT": 345.3506938197617,
+        "ID_DMA_WAIT": 1002.338846161749,
+        "ID_WEIGHT": 3238.3851556683917,
+        "ID_HMX_WAIT": 281.0043848430829,
+        "ID_OUTPUT": 59.11344295022648
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 19071.060691319643,
+        "HMX_COMP": 264.49384744993216
+      },
+      "phase_calls": {
+        "ID_ACT": 27,
+        "ID_DMA_WAIT": 27,
+        "ID_WEIGHT": 27,
+        "ID_HMX_WAIT": 27,
+        "ID_OUTPUT": 27
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID_NX",
+      "label": "blk.17.ffn_gate_exps.weight x blk.17.ffn_up_exps.weight x leaf_2 x  (view) -> node_2|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:358:1 x 1:358 -> 1408:1:358:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:2932736 x 4:4 -> 4:5632:5632:2016256|hmx-tiled vtcm 8259584",
+      "usecs": 10500,
+      "cycles": 22179162,
+      "start": 638999975,
+      "phases_us": {
+        "ID_ACT": 920.8876331756807,
+        "ID_DMA_WAIT": 1945.5033738425284,
+        "ID_WEIGHT": 6719.60579484473,
+        "ID_HMX_WAIT": 534.3774034384168,
+        "ID_OUTPUT": 138.83626441792524
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 39444.32557911792,
+        "HMX_COMP": 500.92289329957543
+      },
+      "phase_calls": {
+        "ID_ACT": 56,
+        "ID_DMA_WAIT": 56,
+        "ID_WEIGHT": 56,
+        "ID_HMX_WAIT": 56,
+        "ID_OUTPUT": 56
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID",
+      "label": "blk.17.ffn_down_exps.weight x node_3 x  (view) -> node_4|1408:2048:60:1 x 1408:1:358:1 x 1:358 -> 2048:1:358:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:5632:2016256 x 4:4 -> 4:8192:8192:2932736|hmx-tiled vtcm 8370176",
+      "usecs": 5367,
+      "cycles": 11335748,
+      "start": 661546605,
+      "phases_us": {
+        "ID_ACT": 393.61021292992746,
+        "ID_DMA_WAIT": 1069.3080923287994,
+        "ID_WEIGHT": 3378.0542891391024,
+        "ID_HMX_WAIT": 294.1381181903479,
+        "ID_OUTPUT": 59.97102458523249
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 19873.119021700197,
+        "HMX_COMP": 276.2901738817765
+      },
+      "phase_calls": {
+        "ID_ACT": 28,
+        "ID_DMA_WAIT": 28,
+        "ID_WEIGHT": 28,
+        "ID_HMX_WAIT": 28,
+        "ID_OUTPUT": 28
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID_NX",
+      "label": "blk.18.ffn_gate_exps.weight x blk.18.ffn_up_exps.weight x leaf_2 x  (view) -> node_2|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:352:1 x 1:352 -> 1408:1:352:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:2883584 x 4:4 -> 4:5632:5632:1982464|hmx-tiled vtcm 8253440",
+      "usecs": 10180,
+      "cycles": 21501296,
+      "start": 686635614,
+      "phases_us": {
+        "ID_ACT": 887.2201675657133,
+        "ID_DMA_WAIT": 1928.866361357938,
+        "ID_WEIGHT": 6478.673785989456,
+        "ID_HMX_WAIT": 515.1867943216073,
+        "ID_OUTPUT": 135.7698149916172
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 38095.88486201018,
+        "HMX_COMP": 483.5175395938924
+      },
+      "phase_calls": {
+        "ID_ACT": 54,
+        "ID_DMA_WAIT": 54,
+        "ID_WEIGHT": 54,
+        "ID_HMX_WAIT": 54,
+        "ID_OUTPUT": 54
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID",
+      "label": "blk.18.ffn_down_exps.weight x node_3 x  (view) -> node_4|1408:2048:60:1 x 1408:1:352:1 x 1:352 -> 2048:1:352:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:5632:1982464 x 4:4 -> 4:8192:8192:2883584|hmx-tiled vtcm 8314880",
+      "usecs": 5069,
+      "cycles": 10708084,
+      "start": 708476702,
+      "phases_us": {
+        "ID_ACT": 344.82846996717626,
+        "ID_DMA_WAIT": 953.568558109929,
+        "ID_WEIGHT": 3265.360467007916,
+        "ID_HMX_WAIT": 279.61270830523927,
+        "ID_OUTPUT": 59.820642142889426
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 19202.782583513548,
+        "HMX_COMP": 263.08840918692835
+      },
+      "phase_calls": {
+        "ID_ACT": 27,
+        "ID_DMA_WAIT": 27,
+        "ID_WEIGHT": 27,
+        "ID_HMX_WAIT": 27,
+        "ID_OUTPUT": 27
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID_NX",
+      "label": "blk.19.ffn_gate_exps.weight x blk.19.ffn_up_exps.weight x leaf_2 x  (view) -> node_2|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:355:1 x 1:355 -> 1408:1:355:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:2908160 x 4:4 -> 4:5632:5632:1999360|hmx-tiled vtcm 8259584",
+      "usecs": 10108,
+      "cycles": 21349848,
+      "start": 733655630,
+      "phases_us": {
+        "ID_ACT": 863.9773903776739,
+        "ID_DMA_WAIT": 1891.9773045691009,
+        "ID_WEIGHT": 6447.890814210951,
+        "ID_HMX_WAIT": 537.2106469329431,
+        "ID_OUTPUT": 132.3466196105939
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 37934.05396029049,
+        "HMX_COMP": 505.4618320467669
+      },
+      "phase_calls": {
+        "ID_ACT": 54,
+        "ID_DMA_WAIT": 54,
+        "ID_WEIGHT": 54,
+        "ID_HMX_WAIT": 54,
+        "ID_OUTPUT": 54
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID",
+      "label": "blk.19.ffn_down_exps.weight x node_3 x  (view) -> node_4|1408:2048:60:1 x 1408:1:355:1 x 1:355 -> 2048:1:355:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:5632:1999360 x 4:4 -> 4:8192:8192:2908160|hmx-tiled vtcm 8370176",
+      "usecs": 5090,
+      "cycles": 10752318,
+      "start": 755348195,
+      "phases_us": {
+        "ID_ACT": 375.05922908902056,
+        "ID_DMA_WAIT": 975.2207430993019,
+        "ID_WEIGHT": 3220.4375093816984,
+        "ID_HMX_WAIT": 291.66418534124455,
+        "ID_OUTPUT": 60.94469862219478
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 18961.25568551824,
+        "HMX_COMP": 274.31126385956964
+      },
+      "phase_calls": {
+        "ID_ACT": 27,
+        "ID_DMA_WAIT": 27,
+        "ID_WEIGHT": 27,
+        "ID_HMX_WAIT": 27,
+        "ID_OUTPUT": 27
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID_NX",
+      "label": "blk.20.ffn_gate_exps.weight x blk.20.ffn_up_exps.weight x leaf_2 x  (view) -> node_2|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:363:1 x 1:363 -> 1408:1:363:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:2973696 x 4:4 -> 4:5632:5632:2044416|hmx-tiled vtcm 8259584",
+      "usecs": 10031,
+      "cycles": 21186181,
+      "start": 781581538,
+      "phases_us": {
+        "ID_ACT": 838.0027316390813,
+        "ID_DMA_WAIT": 1881.2149782445456,
+        "ID_WEIGHT": 6401.746457797183,
+        "ID_HMX_WAIT": 536.5838417504316,
+        "ID_OUTPUT": 136.31125255656033
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 37756.62420844039,
+        "HMX_COMP": 505.1142509827515
+      },
+      "phase_calls": {
+        "ID_ACT": 54,
+        "ID_DMA_WAIT": 54,
+        "ID_WEIGHT": 54,
+        "ID_HMX_WAIT": 54,
+        "ID_OUTPUT": 54
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID",
+      "label": "blk.20.ffn_down_exps.weight x node_3 x  (view) -> node_4|1408:2048:60:1 x 1408:1:363:1 x 1:363 -> 2048:1:363:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:5632:2044416 x 4:4 -> 4:8192:8192:2973696|hmx-tiled vtcm 8370176",
+      "usecs": 5029,
+      "cycles": 10624145,
+      "start": 803096799,
+      "phases_us": {
+        "ID_ACT": 361.4194134210329,
+        "ID_DMA_WAIT": 974.6536657773404,
+        "ID_WEIGHT": 3171.11612237973,
+        "ID_HMX_WAIT": 292.4339681922639,
+        "ID_OUTPUT": 61.15945480789278
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 18695.490670919877,
+        "HMX_COMP": 274.30586348360265
+      },
+      "phase_calls": {
+        "ID_ACT": 27,
+        "ID_DMA_WAIT": 27,
+        "ID_WEIGHT": 27,
+        "ID_HMX_WAIT": 27,
+        "ID_OUTPUT": 27
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID_NX",
+      "label": "blk.21.ffn_gate_exps.weight x blk.21.ffn_up_exps.weight x leaf_2 x  (view) -> node_2|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:376:1 x 1:376 -> 1408:1:376:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:3080192 x 4:4 -> 4:5632:5632:2117632|hmx-tiled vtcm 8259584",
+      "usecs": 10160,
+      "cycles": 21460716,
+      "start": 828774166,
+      "phases_us": {
+        "ID_ACT": 861.9890072633178,
+        "ID_DMA_WAIT": 1866.5167331788932,
+        "ID_WEIGHT": 6542.625705498362,
+        "ID_HMX_WAIT": 515.4494081185361,
+        "ID_OUTPUT": 137.7367875330907
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 38546.04888671934,
+        "HMX_COMP": 483.05826888534375
+      },
+      "phase_calls": {
+        "ID_ACT": 54,
+        "ID_DMA_WAIT": 54,
+        "ID_WEIGHT": 54,
+        "ID_HMX_WAIT": 54,
+        "ID_OUTPUT": 54
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID",
+      "label": "blk.21.ffn_down_exps.weight x node_3 x  (view) -> node_4|1408:2048:60:1 x 1408:1:376:1 x 1:376 -> 2048:1:376:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:5632:2117632 x 4:4 -> 4:8192:8192:3080192|hmx-tiled vtcm 8370176",
+      "usecs": 5110,
+      "cycles": 10793064,
+      "start": 850593482,
+      "phases_us": {
+        "ID_ACT": 383.19422732969986,
+        "ID_DMA_WAIT": 971.6536601654544,
+        "ID_WEIGHT": 3232.8590463282712,
+        "ID_HMX_WAIT": 286.1710863569419,
+        "ID_OUTPUT": 64.48324405377379
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 19040.510303654268,
+        "HMX_COMP": 263.8601244280586
+      },
+      "phase_calls": {
+        "ID_ACT": 27,
+        "ID_DMA_WAIT": 27,
+        "ID_WEIGHT": 27,
+        "ID_HMX_WAIT": 27,
+        "ID_OUTPUT": 27
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID_NX",
+      "label": "blk.22.ffn_gate_exps.weight x blk.22.ffn_up_exps.weight x leaf_2 x  (view) -> node_2|2048:1408:60:1 x 2048:1408:60:1 x 2048:1:381:1 x 1:381 -> 1408:1:381:1|q4_0 x q4_0 x f32 x i32 -> f32|18:1152:1622016:97320960 x 18:1152:1622016:97320960 x 4:8192:8192:3121152 x 4:4 -> 4:5632:5632:2145792|hmx-tiled vtcm 8259584",
+      "usecs": 10586,
+      "cycles": 22360792,
+      "start": 874416848,
+      "phases_us": {
+        "ID_ACT": 945.3450792798396,
+        "ID_DMA_WAIT": 2027.3701774963965,
+        "ID_WEIGHT": 6692.658234645711,
+        "ID_HMX_WAIT": 533.2333455809617,
+        "ID_OUTPUT": 145.06898476583476
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 39471.40174811341,
+        "HMX_COMP": 500.5121180859783
+      },
+      "phase_calls": {
+        "ID_ACT": 56,
+        "ID_DMA_WAIT": 56,
+        "ID_WEIGHT": 56,
+        "ID_HMX_WAIT": 56,
+        "ID_OUTPUT": 56
+      },
+      "representation": "canonical"
+    },
+    {
+      "opcode": "MUL_MAT_ID",
+      "label": "blk.22.ffn_down_exps.weight x node_3 x  (view) -> node_4|1408:2048:60:1 x 1408:1:381:1 x 1:381 -> 2048:1:381:1|q4_0 x f32 x i32 -> f32|18:792:1622016:97320960 x 4:5632:5632:2145792 x 4:4 -> 4:8192:8192:3121152|hmx-tiled vtcm 8370176",
+      "usecs": 6978,
+      "cycles": 14738517,
+      "start": 897168867,
+      "phases_us": {
+        "ID_ACT": 675.0866918293069,
+        "ID_DMA_WAIT": 2332.470213251441,
+        "ID_WEIGHT": 3310.348302885561,
+        "ID_HMX_WAIT": 294.3591939406116,
+        "ID_OUTPUT": 185.4156881591276
+      },
+      "worker_sum_us": {
+        "HVX_W_DEQUANT": 19528.43399671757,
+        "HMX_COMP": 275.747269959386
+      },
+      "phase_calls": {
+        "ID_ACT": 28,
+        "ID_DMA_WAIT": 28,
+        "ID_WEIGHT": 28,
+        "ID_HMX_WAIT": 28,
+        "ID_OUTPUT": 28
+      },
+      "representation": "canonical"
+    }
+  ]
+}

@@ -35,13 +35,17 @@ def main():
     p.add_argument("--bounded-source", action="store_true")
     p.add_argument("--resident-shared-source", action="store_true")
     p.add_argument("--resident-output", action="store_true")
+    p.add_argument("--dsp-trace", action="store_true")
+    p.add_argument("--output-dir", type=pathlib.Path, default=OUT)
     p.add_argument("--cost-model", type=pathlib.Path, default=ROOT / "task/handoff/handoff-2026-09-27-length-intervals/interval-model.json")
     args = p.parse_args()
     assert re.fullmatch(r"[A-Za-z0-9_-]+", args.tag)
     assert 4 <= args.reps <= 1000
-    prefix = OUT / args.tag
+    out_dir = args.output_dir.resolve()
+    out_dir.mkdir(parents=True, exist_ok=True)
+    prefix = out_dir / args.tag
     program = "online-weight-probe" if args.mode == "probe" else "online-moe"
-    assert not list(OUT.glob(args.tag + ".*")), "use a fresh evidence tag"
+    assert not list(out_dir.glob(args.tag + ".*")), "use a fresh evidence tag"
     def adb(*parts, check=True):
         return subprocess.run(["adb", "-s", "fd8657d6", *parts], check=check, capture_output=True, text=True)
     def shell(command, check=True):
@@ -95,6 +99,8 @@ def main():
         environment.append("MOE_RAW_SHARED_SOURCE=1")
     if args.resident_output:
         environment.append("MOE_RESIDENT_OUTPUT=1")
+    if args.dsp_trace:
+        environment += ["MOE_DSP_TRACE=1", "GGML_HEXAGON_PROFILE=3", "GGML_HEXAGON_TIMING=0", "GGML_HEXAGON_OPTRACE=16384"]
     command = f"cd {REMOTE} && exec " + shlex.join(environment + arguments)
     record = {"serial": "fd8657d6", "command": command, "inputs": inputs,
         "artifacts": shell(f"sha256sum {REMOTE}/{program} {REMOTE}/*.so").stdout,

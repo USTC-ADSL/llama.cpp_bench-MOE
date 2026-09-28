@@ -193,6 +193,13 @@ enum htp_trace_event_id {
     HTP_TRACE_EVT_HVX_FA_V_PREP       = 30,
 
     HTP_TRACE_EVT_HMX_COMP            = 40,
+    // MATMUL_ID main-thread wall intervals (info: 1 canonical, 0 packed).
+    // DMA_WAIT is pop wait only; DMA above is submission-to-consumption lifetime.
+    HTP_TRACE_EVT_ID_ACT              = 50,
+    HTP_TRACE_EVT_ID_DMA_WAIT         = 51,
+    HTP_TRACE_EVT_ID_WEIGHT           = 52,
+    HTP_TRACE_EVT_ID_HMX_WAIT         = 53,
+    HTP_TRACE_EVT_ID_OUTPUT           = 54,
 };
 
 struct htp_trace_desc {
