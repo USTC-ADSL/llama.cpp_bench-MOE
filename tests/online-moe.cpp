@@ -120,6 +120,10 @@ int main(int argc,char **argv) {
             report["reference_placement_validation_only"]=true;
         }
         report["output_residency"]=output_residency;
+        if(std::getenv("MOE_CPU_EXPERT_VALIDATE")) {
+            report["protocol"]="correctness only: compare each CPU branch to canonical-ID on identical actual input/routes; exclude timing";
+            report["cpu_reference_validation_only"]=true;
+        }
         if(bounded_source) { report["source_cache_before"]=source_residency(src,bool(runtime && runtime->canonical_shared_source_bytes)); }
         rusage before{},after{}; getrusage(RUSAGE_SELF,&before);
         auto batch=llama_batch_get_one(tokens.data(),nt); auto start=timer::now();
@@ -145,7 +149,10 @@ int main(int argc,char **argv) {
             report["layers"]=runtime->records; report["canonical_routed_source_bytes"]=runtime->canonical_source_bytes;
             report["canonical_shared_source_bytes"]=runtime->canonical_shared_source_bytes;
             report["cpu_npu_activation_pool_bytes"]=runtime->activation_bytes;
-            report["accounted_extra_allowance_bytes"]=budget.mode==1?json(budget.peak+runtime->activation_bytes+runtime->peak_host_staging+size_t(nt)*5*2048*sizeof(float)):json(nullptr);
+            size_t cpu_bytes=runtime->cpu_experts?runtime->cpu_experts->bytes():0;
+            report["cpu_experts"]={{"mode",runtime->cpu_experts?runtime->cpu_experts->mode:"canonical-id"},
+                {"workspace_bytes",cpu_bytes},{"initial_prepared_experts",0},{"terminal_one_token","canonical-id"}};
+            report["accounted_extra_allowance_bytes"]=budget.mode==1?json(budget.peak+runtime->activation_bytes+runtime->peak_host_staging+size_t(nt)*5*2048*sizeof(float)+cpu_bytes):json(nullptr);
             report["empty_shared_weight_capacity_bytes"]=ggml_backend_buffer_get_size(runtime->gpu_shared->buf.get());
             report["initial_converted_shared_layers"]=0;
             report["reference_packed_validation_only"]=runtime->reference_packed;

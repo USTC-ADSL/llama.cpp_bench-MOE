@@ -1,0 +1,1895 @@
+{
+  "protocol": "synthetic activations, real layer0 experts7/19; resident compute and repack+full-FFN separately; not model throughput",
+  "cpu_buffer": "CPU_REPACK",
+  "threads": 4,
+  "cases": [
+    {
+      "tokens_per_expert": 1,
+      "experts": 2,
+      "modes": {
+        "canonical-id": {
+          "reference_error": {
+            "nrmse": 0.008625380032572287,
+            "worst_token_nrmse": 0.008645397124515956,
+            "max_abs": 0.0001308100763708353,
+            "reference_rms": 0.003962751539816921,
+            "threshold_token_nrmse": 0.04
+          },
+          "online_total": {
+            "samples_us": [
+              757.031,
+              12612.188,
+              750.677,
+              749.688,
+              748.854,
+              750.156,
+              585.677,
+              307.865
+            ],
+            "median_us": 749.922,
+            "mean_us": 2157.7670000000003,
+            "p95_us": 12612.188,
+            "amortized_us_per_token": 374.961,
+            "expert_tokens_per_second": 2666.9440288456667
+          },
+          "conversion": {
+            "samples_us": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "median_us": 0.0,
+            "mean_us": 0.0,
+            "p95_us": 0.0,
+            "amortized_us_per_token": 0.0,
+            "expert_tokens_per_second": null
+          },
+          "compute_in_online": {
+            "samples_us": [
+              738.802,
+              12595.521,
+              737.604,
+              737.032,
+              736.718,
+              737.5,
+              573.594,
+              302.031
+            ],
+            "median_us": 737.2660000000001,
+            "mean_us": 2144.85025,
+            "p95_us": 12595.521,
+            "amortized_us_per_token": 368.63300000000004,
+            "expert_tokens_per_second": 2712.7251222760847
+          },
+          "resident_compute": {
+            "samples_us": [
+              361.407,
+              360.781,
+              360.312,
+              359.948,
+              359.636,
+              358.75,
+              358.854,
+              355.886
+            ],
+            "median_us": 359.79200000000003,
+            "mean_us": 359.44674999999995,
+            "p95_us": 361.407,
+            "amortized_us_per_token": 179.89600000000002,
+            "expert_tokens_per_second": 5558.767287766264
+          }
+        },
+        "repack-id": {
+          "reference_error": {
+            "nrmse": 0.008625380423553666,
+            "worst_token_nrmse": 0.008645395496315267,
+            "max_abs": 0.00013080972712486982,
+            "reference_rms": 0.003962751539816921,
+            "threshold_token_nrmse": 0.04
+          },
+          "online_total": {
+            "samples_us": [
+              9539.219,
+              8619.687,
+              8334.844,
+              11312.605,
+              9822.344,
+              9197.188,
+              9148.125,
+              9144.635
+            ],
+            "median_us": 9172.656500000001,
+            "mean_us": 9389.830874999998,
+            "p95_us": 11312.605,
+            "amortized_us_per_token": 4586.3282500000005,
+            "expert_tokens_per_second": 218.0393433461724
+          },
+          "conversion": {
+            "samples_us": [
+              9238.437,
+              8380.313,
+              8070.625,
+              10994.219,
+              9556.094,
+              8966.875,
+              8908.385,
+              8916.979
+            ],
+            "median_us": 8941.927,
+            "mean_us": 9128.990875,
+            "p95_us": 10994.219,
+            "amortized_us_per_token": 4470.9635,
+            "expert_tokens_per_second": 223.66543587305063
+          },
+          "compute_in_online": {
+            "samples_us": [
+              266.25,
+              218.959,
+              249.218,
+              281.51,
+              252.865,
+              220.313,
+              231.042,
+              218.854
+            ],
+            "median_us": 240.13,
+            "mean_us": 242.37637500000002,
+            "p95_us": 281.51,
+            "amortized_us_per_token": 120.065,
+            "expert_tokens_per_second": 8328.821888143922
+          },
+          "resident_compute": {
+            "samples_us": [
+              164.271,
+              165.416,
+              163.438,
+              162.604,
+              161.25,
+              160.417,
+              160.104,
+              160.156
+            ],
+            "median_us": 161.92700000000002,
+            "mean_us": 162.207,
+            "p95_us": 165.416,
+            "amortized_us_per_token": 80.96350000000001,
+            "expert_tokens_per_second": 12351.244696684307
+          }
+        },
+        "repack-mm": {
+          "reference_error": {
+            "nrmse": 0.008625380423553666,
+            "worst_token_nrmse": 0.008645395496315267,
+            "max_abs": 0.00013080972712486982,
+            "reference_rms": 0.003962751539816921,
+            "threshold_token_nrmse": 0.04
+          },
+          "online_total": {
+            "samples_us": [
+              2098.594,
+              2216.198,
+              2174.427,
+              2158.385,
+              2053.437,
+              1955.313,
+              1940.573,
+              1955.521
+            ],
+            "median_us": 2076.0155,
+            "mean_us": 2069.056,
+            "p95_us": 2216.198,
+            "amortized_us_per_token": 1038.00775,
+            "expert_tokens_per_second": 963.3839439060065
+          },
+          "conversion": {
+            "samples_us": [
+              1911.25,
+              2033.8029999999999,
+              1992.5529999999999,
+              1986.823,
+              1899.635,
+              1800.26,
+              1794.687,
+              1812.0320000000002
+            ],
+            "median_us": 1905.4425,
+            "mean_us": 1903.8803750000002,
+            "p95_us": 2033.8029999999999,
+            "amortized_us_per_token": 952.72125,
+            "expert_tokens_per_second": 1049.624955882951
+          },
+          "compute_in_online": {
+            "samples_us": [
+              176.615,
+              170.05200000000002,
+              169.845,
+              163.59300000000002,
+              145.678,
+              147.656,
+              138.437,
+              136.354
+            ],
+            "median_us": 155.6245,
+            "mean_us": 156.02875000000003,
+            "p95_us": 176.615,
+            "amortized_us_per_token": 77.81225,
+            "expert_tokens_per_second": 12851.446912279236
+          },
+          "resident_compute": {
+            "samples_us": [
+              184.792,
+              277.187,
+              150.313,
+              133.80200000000002,
+              128.334,
+              124.062,
+              123.282,
+              121.875
+            ],
+            "median_us": 131.068,
+            "mean_us": 155.45587500000002,
+            "p95_us": 277.187,
+            "amortized_us_per_token": 65.534,
+            "expert_tokens_per_second": 15259.254737998595
+          }
+        },
+        "canonical-mm": {
+          "reference_error": {
+            "nrmse": 0.008625380032572287,
+            "worst_token_nrmse": 0.008645397124515956,
+            "max_abs": 0.0001308100763708353,
+            "reference_rms": 0.003962751539816921,
+            "threshold_token_nrmse": 0.04
+          },
+          "online_total": {
+            "samples_us": [
+              204.896,
+              210.625,
+              204.063,
+              199.791,
+              268.854,
+              267.031,
+              199.01,
+              199.375
+            ],
+            "median_us": 204.47949999999997,
+            "mean_us": 219.205625,
+            "p95_us": 268.854,
+            "amortized_us_per_token": 102.23974999999999,
+            "expert_tokens_per_second": 9780.931584828799
+          },
+          "conversion": {
+            "samples_us": [
+              0.41700000000000004,
+              0.312,
+              0.312,
+              0.26,
+              0.312,
+              0.26,
+              0.209,
+              0.312
+            ],
+            "median_us": 0.312,
+            "mean_us": 0.29925,
+            "p95_us": 0.41700000000000004,
+            "amortized_us_per_token": 0.156,
+            "expert_tokens_per_second": 6410256.41025641
+          },
+          "compute_in_online": {
+            "samples_us": [
+              192.44799999999998,
+              198.385,
+              192.344,
+              188.073,
+              257.084,
+              199.01,
+              187.5,
+              188.02100000000002
+            ],
+            "median_us": 192.396,
+            "mean_us": 200.35812499999997,
+            "p95_us": 257.084,
+            "amortized_us_per_token": 96.198,
+            "expert_tokens_per_second": 10395.226511985697
+          },
+          "resident_compute": {
+            "samples_us": [
+              185.886,
+              181.562,
+              181.09300000000002,
+              180.05200000000002,
+              181.406,
+              180.15699999999998,
+              180.937,
+              179.94799999999998
+            ],
+            "median_us": 181.01500000000001,
+            "mean_us": 181.38012499999996,
+            "p95_us": 185.886,
+            "amortized_us_per_token": 90.50750000000001,
+            "expert_tokens_per_second": 11048.808109825151
+          }
+        }
+      }
+    },
+    {
+      "tokens_per_expert": 4,
+      "experts": 2,
+      "modes": {
+        "canonical-id": {
+          "reference_error": {
+            "nrmse": 0.008436784440717812,
+            "worst_token_nrmse": 0.008948375467289913,
+            "max_abs": 0.00015487632481381297,
+            "reference_rms": 0.0037541337319520205,
+            "threshold_token_nrmse": 0.04
+          },
+          "online_total": {
+            "samples_us": [
+              1072.5,
+              1071.094,
+              1070.312,
+              1590.052,
+              1259.375,
+              1070.99,
+              1085.0,
+              1023.906
+            ],
+            "median_us": 1071.797,
+            "mean_us": 1155.403625,
+            "p95_us": 1590.052,
+            "amortized_us_per_token": 133.974625,
+            "expert_tokens_per_second": 7464.100011476054
+          },
+          "conversion": {
+            "samples_us": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "median_us": 0.0,
+            "mean_us": 0.0,
+            "p95_us": 0.0,
+            "amortized_us_per_token": 0.0,
+            "expert_tokens_per_second": null
+          },
+          "compute_in_online": {
+            "samples_us": [
+              1059.843,
+              1059.323,
+              1059.531,
+              1579.323,
+              1248.49,
+              1060.364,
+              1074.219,
+              1013.125
+            ],
+            "median_us": 1060.1035000000002,
+            "mean_us": 1144.27725,
+            "p95_us": 1579.323,
+            "amortized_us_per_token": 132.51293750000002,
+            "expert_tokens_per_second": 7546.43296621509
+          },
+          "resident_compute": {
+            "samples_us": [
+              1013.125,
+              1096.666,
+              1012.032,
+              1123.542,
+              886.666,
+              924.219,
+              885.313,
+              885.625
+            ],
+            "median_us": 968.1255000000001,
+            "mean_us": 978.3985,
+            "p95_us": 1123.542,
+            "amortized_us_per_token": 121.01568750000001,
+            "expert_tokens_per_second": 8263.391471456955
+          }
+        },
+        "repack-id": {
+          "reference_error": {
+            "nrmse": 0.00843678424188387,
+            "worst_token_nrmse": 0.008948374352078733,
+            "max_abs": 0.00015487719792872667,
+            "reference_rms": 0.0037541337319520205,
+            "threshold_token_nrmse": 0.04
+          },
+          "online_total": {
+            "samples_us": [
+              11115.312,
+              10509.01,
+              10427.344,
+              10060.417,
+              9784.219,
+              10307.708,
+              9616.25,
+              9468.49
+            ],
+            "median_us": 10184.0625,
+            "mean_us": 10161.09375,
+            "p95_us": 11115.312,
+            "amortized_us_per_token": 1273.0078125,
+            "expert_tokens_per_second": 785.5411335113075
+          },
+          "conversion": {
+            "samples_us": [
+              8304.01,
+              8254.895,
+              8222.5,
+              8156.719,
+              8186.719,
+              8174.636,
+              8204.011,
+              8176.823
+            ],
+            "median_us": 8195.365,
+            "mean_us": 8210.039125,
+            "p95_us": 8304.01,
+            "amortized_us_per_token": 1024.420625,
+            "expert_tokens_per_second": 976.1615254476159
+          },
+          "compute_in_online": {
+            "samples_us": [
+              2796.666,
+              2239.218,
+              2192.344,
+              1890.833,
+              1584.843,
+              2121.146,
+              1399.844,
+              1279.375
+            ],
+            "median_us": 2005.9895000000001,
+            "mean_us": 1938.033625,
+            "p95_us": 2796.666,
+            "amortized_us_per_token": 250.74868750000002,
+            "expert_tokens_per_second": 3988.0567669970355
+          },
+          "resident_compute": {
+            "samples_us": [
+              1131.719,
+              1131.458,
+              1130.312,
+              1013.125,
+              1012.344,
+              1090.156,
+              1051.563,
+              1012.448
+            ],
+            "median_us": 1070.8595,
+            "mean_us": 1071.640625,
+            "p95_us": 1131.719,
+            "amortized_us_per_token": 133.8574375,
+            "expert_tokens_per_second": 7470.63456970779
+          }
+        },
+        "repack-mm": {
+          "reference_error": {
+            "nrmse": 0.00843678424188387,
+            "worst_token_nrmse": 0.008948374352078733,
+            "max_abs": 0.00015487719792872667,
+            "reference_rms": 0.0037541337319520205,
+            "threshold_token_nrmse": 0.04
+          },
+          "online_total": {
+            "samples_us": [
+              2110.521,
+              2122.969,
+              2079.114,
+              2094.167,
+              2050.416,
+              2085.364,
+              2051.407,
+              2050.99
+            ],
+            "median_us": 2082.239,
+            "mean_us": 2080.6184999999996,
+            "p95_us": 2122.969,
+            "amortized_us_per_token": 260.279875,
+            "expert_tokens_per_second": 3842.018135286103
+          },
+          "conversion": {
+            "samples_us": [
+              1869.011,
+              1878.802,
+              1840.313,
+              1865.781,
+              1833.646,
+              1839.896,
+              1835.1039999999998,
+              1835.469
+            ],
+            "median_us": 1840.1045,
+            "mean_us": 1849.75275,
+            "p95_us": 1878.802,
+            "amortized_us_per_token": 230.0130625,
+            "expert_tokens_per_second": 4347.579172813284
+          },
+          "compute_in_online": {
+            "samples_us": [
+              228.125,
+              227.083,
+              227.03199999999998,
+              215.46800000000002,
+              204.79199999999997,
+              234.166,
+              204.94799999999998,
+              204.167
+            ],
+            "median_us": 221.25,
+            "mean_us": 218.222625,
+            "p95_us": 234.166,
+            "amortized_us_per_token": 27.65625,
+            "expert_tokens_per_second": 36158.19209039548
+          },
+          "resident_compute": {
+            "samples_us": [
+              210.05200000000002,
+              206.14600000000002,
+              204.27100000000002,
+              204.844,
+              205.677,
+              205.0,
+              204.428,
+              203.75
+            ],
+            "median_us": 204.922,
+            "mean_us": 205.52100000000002,
+            "p95_us": 210.05200000000002,
+            "amortized_us_per_token": 25.61525,
+            "expert_tokens_per_second": 39039.244200232286
+          }
+        },
+        "canonical-mm": {
+          "reference_error": {
+            "nrmse": 0.00843678424188387,
+            "worst_token_nrmse": 0.008948374352078733,
+            "max_abs": 0.00015487719792872667,
+            "reference_rms": 0.0037541337319520205,
+            "threshold_token_nrmse": 0.04
+          },
+          "online_total": {
+            "samples_us": [
+              448.333,
+              433.021,
+              425.625,
+              423.021,
+              422.917,
+              420.625,
+              418.49,
+              417.604
+            ],
+            "median_us": 422.969,
+            "mean_us": 426.2045,
+            "p95_us": 448.333,
+            "amortized_us_per_token": 52.871125,
+            "expert_tokens_per_second": 18913.915677035435
+          },
+          "conversion": {
+            "samples_us": [
+              0.208,
+              0.365,
+              0.26,
+              0.26,
+              0.313,
+              0.156,
+              0.156,
+              0.208
+            ],
+            "median_us": 0.23399999999999999,
+            "mean_us": 0.24074999999999996,
+            "p95_us": 0.365,
+            "amortized_us_per_token": 0.029249999999999998,
+            "expert_tokens_per_second": 34188034.18803419
+          },
+          "compute_in_online": {
+            "samples_us": [
+              435.83299999999997,
+              420.312,
+              413.751,
+              411.094,
+              411.094,
+              409.16700000000003,
+              406.77,
+              405.98900000000003
+            ],
+            "median_us": 411.094,
+            "mean_us": 414.25124999999997,
+            "p95_us": 435.83299999999997,
+            "amortized_us_per_token": 51.38675,
+            "expert_tokens_per_second": 19460.269427430223
+          },
+          "resident_compute": {
+            "samples_us": [
+              440.36400000000003,
+              440.78200000000004,
+              440.312,
+              440.0,
+              439.375,
+              438.95799999999997,
+              439.584,
+              452.5
+            ],
+            "median_us": 440.156,
+            "mean_us": 441.484375,
+            "p95_us": 452.5,
+            "amortized_us_per_token": 55.0195,
+            "expert_tokens_per_second": 18175.374185516044
+          }
+        }
+      }
+    },
+    {
+      "tokens_per_expert": 8,
+      "experts": 2,
+      "modes": {
+        "canonical-id": {
+          "reference_error": {
+            "nrmse": 0.00843543138633373,
+            "worst_token_nrmse": 0.008948375467289913,
+            "max_abs": 0.00015487632481381297,
+            "reference_rms": 0.0037673391014538104,
+            "threshold_token_nrmse": 0.04
+          },
+          "online_total": {
+            "samples_us": [
+              2120.937,
+              2406.719,
+              2327.344,
+              1985.156,
+              2026.25,
+              2344.896,
+              2026.562,
+              1934.843
+            ],
+            "median_us": 2073.7495,
+            "mean_us": 2146.588375,
+            "p95_us": 2406.719,
+            "amortized_us_per_token": 129.60934375,
+            "expert_tokens_per_second": 7715.493120070674
+          },
+          "conversion": {
+            "samples_us": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "median_us": 0.0,
+            "mean_us": 0.0,
+            "p95_us": 0.0,
+            "amortized_us_per_token": 0.0,
+            "expert_tokens_per_second": null
+          },
+          "compute_in_online": {
+            "samples_us": [
+              2103.958,
+              2390.469,
+              2311.406,
+              1969.427,
+              2010.208,
+              2328.281,
+              2010.313,
+              1918.385
+            ],
+            "median_us": 2057.1355000000003,
+            "mean_us": 2130.305875,
+            "p95_us": 2390.469,
+            "amortized_us_per_token": 128.57096875000002,
+            "expert_tokens_per_second": 7777.805594235284
+          },
+          "resident_compute": {
+            "samples_us": [
+              2088.906,
+              1758.177,
+              1762.656,
+              1819.896,
+              1757.031,
+              1775.573,
+              1757.084,
+              1820.625
+            ],
+            "median_us": 1769.1145000000001,
+            "mean_us": 1817.4935,
+            "p95_us": 2088.906,
+            "amortized_us_per_token": 110.56965625000001,
+            "expert_tokens_per_second": 9044.072613728506
+          }
+        },
+        "repack-id": {
+          "reference_error": {
+            "nrmse": 0.008437532124038579,
+            "worst_token_nrmse": 0.008948374352078733,
+            "max_abs": 0.00015487719792872667,
+            "reference_rms": 0.0037673391014538104,
+            "threshold_token_nrmse": 0.04
+          },
+          "online_total": {
+            "samples_us": [
+              9572.136,
+              9512.761,
+              9550.782,
+              9476.146,
+              9504.635,
+              9507.031,
+              9158.437,
+              9086.875
+            ],
+            "median_us": 9505.833,
+            "mean_us": 9421.100375,
+            "p95_us": 9572.136,
+            "amortized_us_per_token": 594.1145625,
+            "expert_tokens_per_second": 1683.1770556036488
+          },
+          "conversion": {
+            "samples_us": [
+              8270.417,
+              8226.719,
+              8271.927,
+              8173.438,
+              8222.656,
+              8218.438,
+              7933.646,
+              7863.906
+            ],
+            "median_us": 8220.547,
+            "mean_us": 8147.643375000001,
+            "p95_us": 8271.927,
+            "amortized_us_per_token": 513.7841875,
+            "expert_tokens_per_second": 1946.342500079374
+          },
+          "compute_in_online": {
+            "samples_us": [
+              1281.979,
+              1265.157,
+              1260.885,
+              1268.125,
+              1263.542,
+              1270.573,
+              1205.885,
+              1205.625
+            ],
+            "median_us": 1264.3494999999998,
+            "mean_us": 1252.721375,
+            "p95_us": 1281.979,
+            "amortized_us_per_token": 79.02184374999999,
+            "expert_tokens_per_second": 12654.72877554822
+          },
+          "resident_compute": {
+            "samples_us": [
+              1193.072,
+              1149.739,
+              1148.75,
+              1172.968,
+              1157.084,
+              1148.646,
+              1188.854,
+              1149.427
+            ],
+            "median_us": 1153.4115000000002,
+            "mean_us": 1163.5674999999999,
+            "p95_us": 1193.072,
+            "amortized_us_per_token": 72.08821875000001,
+            "expert_tokens_per_second": 13871.892208461592
+          }
+        },
+        "repack-mm": {
+          "reference_error": {
+            "nrmse": 0.008437532124038579,
+            "worst_token_nrmse": 0.008948374352078733,
+            "max_abs": 0.00015487719792872667,
+            "reference_rms": 0.0037673391014538104,
+            "threshold_token_nrmse": 0.04
+          },
+          "online_total": {
+            "samples_us": [
+              2181.093,
+              2206.718,
+              2157.5,
+              2147.657,
+              2232.135,
+              2237.553,
+              2221.25,
+              2230.364
+            ],
+            "median_us": 2213.984,
+            "mean_us": 2201.78375,
+            "p95_us": 2237.553,
+            "amortized_us_per_token": 138.374,
+            "expert_tokens_per_second": 7226.791160189053
+          },
+          "conversion": {
+            "samples_us": [
+              1779.5839999999998,
+              1745.729,
+              1759.5839999999998,
+              1751.6660000000002,
+              1844.478,
+              1852.395,
+              1835.886,
+              1844.739
+            ],
+            "median_us": 1807.735,
+            "mean_us": 1801.7576250000002,
+            "p95_us": 1852.395,
+            "amortized_us_per_token": 112.9834375,
+            "expert_tokens_per_second": 8850.85479896113
+          },
+          "compute_in_online": {
+            "samples_us": [
+              382.448,
+              441.772,
+              380.781,
+              378.95799999999997,
+              370.991,
+              370.0,
+              370.313,
+              370.417
+            ],
+            "median_us": 374.9745,
+            "mean_us": 383.21,
+            "p95_us": 441.772,
+            "amortized_us_per_token": 23.43590625,
+            "expert_tokens_per_second": 42669.568197304085
+          },
+          "resident_compute": {
+            "samples_us": [
+              381.406,
+              376.302,
+              375.313,
+              374.84400000000005,
+              375.052,
+              445.156,
+              374.89599999999996,
+              375.156
+            ],
+            "median_us": 375.2345,
+            "mean_us": 384.765625,
+            "p95_us": 445.156,
+            "amortized_us_per_token": 23.45215625,
+            "expert_tokens_per_second": 42640.00245180014
+          }
+        },
+        "canonical-mm": {
+          "reference_error": {
+            "nrmse": 0.008437532124038579,
+            "worst_token_nrmse": 0.008948374352078733,
+            "max_abs": 0.00015487719792872667,
+            "reference_rms": 0.0037673391014538104,
+            "threshold_token_nrmse": 0.04
+          },
+          "online_total": {
+            "samples_us": [
+              808.75,
+              845.938,
+              822.917,
+              802.5,
+              957.031,
+              799.843,
+              827.969,
+              860.417
+            ],
+            "median_us": 825.443,
+            "mean_us": 840.6706250000001,
+            "p95_us": 957.031,
+            "amortized_us_per_token": 51.5901875,
+            "expert_tokens_per_second": 19383.531025158612
+          },
+          "conversion": {
+            "samples_us": [
+              0.312,
+              0.313,
+              0.208,
+              0.418,
+              0.312,
+              0.41700000000000004,
+              0.41700000000000004,
+              0.26
+            ],
+            "median_us": 0.3125,
+            "mean_us": 0.332125,
+            "p95_us": 0.418,
+            "amortized_us_per_token": 0.01953125,
+            "expert_tokens_per_second": 51200000.0
+          },
+          "compute_in_online": {
+            "samples_us": [
+              784.531,
+              821.6669999999999,
+              799.219,
+              778.75,
+              933.5409999999999,
+              775.989,
+              804.3230000000001,
+              837.187
+            ],
+            "median_us": 801.7710000000001,
+            "mean_us": 816.900875,
+            "p95_us": 933.5409999999999,
+            "amortized_us_per_token": 50.110687500000004,
+            "expert_tokens_per_second": 19955.822797282515
+          },
+          "resident_compute": {
+            "samples_us": [
+              780.729,
+              778.021,
+              986.249,
+              907.917,
+              899.531,
+              806.302,
+              803.5419999999999,
+              801.198
+            ],
+            "median_us": 804.922,
+            "mean_us": 845.436125,
+            "p95_us": 986.249,
+            "amortized_us_per_token": 50.307625,
+            "expert_tokens_per_second": 19877.70243576396
+          }
+        }
+      }
+    },
+    {
+      "tokens_per_expert": 16,
+      "experts": 2,
+      "modes": {
+        "canonical-id": {
+          "reference_error": {
+            "nrmse": 0.008453249050093823,
+            "worst_token_nrmse": 0.008948375467289913,
+            "max_abs": 0.00015487632481381297,
+            "reference_rms": 0.0037334740633352555,
+            "threshold_token_nrmse": 0.04
+          },
+          "online_total": {
+            "samples_us": [
+              3384.01,
+              3364.636,
+              3463.437,
+              3272.292,
+              3105.0,
+              3200.469,
+              3284.948,
+              3290.885
+            ],
+            "median_us": 3287.9165000000003,
+            "mean_us": 3295.7096250000004,
+            "p95_us": 3463.437,
+            "amortized_us_per_token": 102.74739062500001,
+            "expert_tokens_per_second": 9732.60726055543
+          },
+          "conversion": {
+            "samples_us": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "median_us": 0.0,
+            "mean_us": 0.0,
+            "p95_us": 0.0,
+            "amortized_us_per_token": 0.0,
+            "expert_tokens_per_second": null
+          },
+          "compute_in_online": {
+            "samples_us": [
+              3358.75,
+              3341.25,
+              3440.781,
+              3249.792,
+              3082.708,
+              3178.594,
+              3262.344,
+              3268.594
+            ],
+            "median_us": 3265.469,
+            "mean_us": 3272.8516250000002,
+            "p95_us": 3440.781,
+            "amortized_us_per_token": 102.04590625,
+            "expert_tokens_per_second": 9799.511188132547
+          },
+          "resident_compute": {
+            "samples_us": [
+              3220.052,
+              3214.792,
+              3416.407,
+              3219.218,
+              3192.813,
+              3252.5,
+              3244.844,
+              3284.583
+            ],
+            "median_us": 3232.4480000000003,
+            "mean_us": 3255.651125,
+            "p95_us": 3416.407,
+            "amortized_us_per_token": 101.01400000000001,
+            "expert_tokens_per_second": 9899.617874750034
+          }
+        },
+        "repack-id": {
+          "reference_error": {
+            "nrmse": 0.008454493358754662,
+            "worst_token_nrmse": 0.008948374352078733,
+            "max_abs": 0.00015487719792872667,
+            "reference_rms": 0.0037334740633352555,
+            "threshold_token_nrmse": 0.04
+          },
+          "online_total": {
+            "samples_us": [
+              11596.563,
+              11163.282,
+              11078.75,
+              11052.344,
+              11132.812,
+              11261.146,
+              10496.198,
+              10443.438
+            ],
+            "median_us": 11105.780999999999,
+            "mean_us": 11028.066625,
+            "p95_us": 11596.563,
+            "amortized_us_per_token": 347.05565624999997,
+            "expert_tokens_per_second": 2881.382227868531
+          },
+          "conversion": {
+            "samples_us": [
+              8416.198,
+              8400.625,
+              8304.531,
+              8643.125,
+              8513.906,
+              8283.854,
+              8078.542,
+              7980.0
+            ],
+            "median_us": 8352.578000000001,
+            "mean_us": 8327.597625,
+            "p95_us": 8643.125,
+            "amortized_us_per_token": 261.01806250000004,
+            "expert_tokens_per_second": 3831.152489686417
+          },
+          "compute_in_online": {
+            "samples_us": [
+              3147.812,
+              2728.646,
+              2742.344,
+              2377.188,
+              2587.031,
+              2946.354,
+              2387.187,
+              2432.188
+            ],
+            "median_us": 2657.8385,
+            "mean_us": 2668.59375,
+            "p95_us": 3147.812,
+            "amortized_us_per_token": 83.057453125,
+            "expert_tokens_per_second": 12039.85870473319
+          },
+          "resident_compute": {
+            "samples_us": [
+              2310.261,
+              2380.625,
+              2345.781,
+              2310.625,
+              2347.5,
+              2298.698,
+              2326.771,
+              2307.657
+            ],
+            "median_us": 2318.6980000000003,
+            "mean_us": 2328.48975,
+            "p95_us": 2380.625,
+            "amortized_us_per_token": 72.45931250000001,
+            "expert_tokens_per_second": 13800.84857967704
+          }
+        },
+        "repack-mm": {
+          "reference_error": {
+            "nrmse": 0.008454493358754662,
+            "worst_token_nrmse": 0.008948374352078733,
+            "max_abs": 0.00015487719792872667,
+            "reference_rms": 0.0037334740633352555,
+            "threshold_token_nrmse": 0.04
+          },
+          "online_total": {
+            "samples_us": [
+              2416.771,
+              2327.604,
+              2283.385,
+              2301.718,
+              2261.25,
+              2266.927,
+              2258.073,
+              2277.188
+            ],
+            "median_us": 2280.2865,
+            "mean_us": 2299.1144999999997,
+            "p95_us": 2416.771,
+            "amortized_us_per_token": 71.258953125,
+            "expert_tokens_per_second": 14033.32432130787
+          },
+          "conversion": {
+            "samples_us": [
+              1770.6779999999999,
+              1675.313,
+              1641.614,
+              1661.094,
+              1621.355,
+              1617.4479999999999,
+              1620.105,
+              1638.75
+            ],
+            "median_us": 1640.182,
+            "mean_us": 1655.794625,
+            "p95_us": 1770.6779999999999,
+            "amortized_us_per_token": 51.2556875,
+            "expert_tokens_per_second": 19510.029984477333
+          },
+          "compute_in_online": {
+            "samples_us": [
+              605.001,
+              612.657,
+              605.156,
+              605.156,
+              605.885,
+              614.426,
+              605.2080000000001,
+              605.2090000000001
+            ],
+            "median_us": 605.2085000000001,
+            "mean_us": 607.3372499999999,
+            "p95_us": 614.426,
+            "amortized_us_per_token": 18.912765625000002,
+            "expert_tokens_per_second": 52874.34000018175
+          },
+          "resident_compute": {
+            "samples_us": [
+              605.885,
+              755.73,
+              614.062,
+              605.73,
+              605.104,
+              605.4169999999999,
+              604.7909999999999,
+              725.105
+            ],
+            "median_us": 605.8075,
+            "mean_us": 640.2280000000001,
+            "p95_us": 755.73,
+            "amortized_us_per_token": 18.931484375,
+            "expert_tokens_per_second": 52822.05981272929
+          }
+        },
+        "canonical-mm": {
+          "reference_error": {
+            "nrmse": 0.008454493358754662,
+            "worst_token_nrmse": 0.008948374352078733,
+            "max_abs": 0.00015487719792872667,
+            "reference_rms": 0.0037334740633352555,
+            "threshold_token_nrmse": 0.04
+          },
+          "online_total": {
+            "samples_us": [
+              1726.875,
+              1718.073,
+              1709.532,
+              1696.25,
+              1695.052,
+              1732.657,
+              1693.906,
+              1685.938
+            ],
+            "median_us": 1702.891,
+            "mean_us": 1707.2853750000002,
+            "p95_us": 1732.657,
+            "amortized_us_per_token": 53.21534375,
+            "expert_tokens_per_second": 18791.57268433505
+          },
+          "conversion": {
+            "samples_us": [
+              0.573,
+              0.41700000000000004,
+              0.47,
+              0.41600000000000004,
+              0.312,
+              0.469,
+              0.312,
+              0.41800000000000004
+            ],
+            "median_us": 0.41750000000000004,
+            "mean_us": 0.42337499999999995,
+            "p95_us": 0.573,
+            "amortized_us_per_token": 0.013046875000000001,
+            "expert_tokens_per_second": 76646706.58682634
+          },
+          "compute_in_online": {
+            "samples_us": [
+              1687.761,
+              1679.687,
+              1672.551,
+              1659.5320000000002,
+              1658.8020000000001,
+              1696.406,
+              1657.9679999999998,
+              1649.74
+            ],
+            "median_us": 1666.0415,
+            "mean_us": 1670.3058750000002,
+            "p95_us": 1696.406,
+            "amortized_us_per_token": 52.063796875,
+            "expert_tokens_per_second": 19207.204622453883
+          },
+          "resident_compute": {
+            "samples_us": [
+              1620.469,
+              1662.5,
+              1658.489,
+              1675.365,
+              1658.0729999999999,
+              1696.25,
+              1657.3960000000002,
+              1657.344
+            ],
+            "median_us": 1658.281,
+            "mean_us": 1660.7357500000003,
+            "p95_us": 1696.25,
+            "amortized_us_per_token": 51.82128125,
+            "expert_tokens_per_second": 19297.091385597494
+          }
+        }
+      }
+    },
+    {
+      "tokens_per_expert": 32,
+      "experts": 2,
+      "modes": {
+        "canonical-id": {
+          "reference_error": {
+            "nrmse": 0.008415155792051729,
+            "worst_token_nrmse": 0.008970325582469605,
+            "max_abs": 0.0001667221076786518,
+            "reference_rms": 0.003729089144432205,
+            "threshold_token_nrmse": 0.04
+          },
+          "online_total": {
+            "samples_us": [
+              6347.187,
+              6578.75,
+              6820.573,
+              6879.531,
+              6942.656,
+              6313.438,
+              6712.188,
+              6601.094
+            ],
+            "median_us": 6656.641,
+            "mean_us": 6649.427125,
+            "p95_us": 6942.656,
+            "amortized_us_per_token": 104.010015625,
+            "expert_tokens_per_second": 9614.458703721592
+          },
+          "conversion": {
+            "samples_us": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "median_us": 0.0,
+            "mean_us": 0.0,
+            "p95_us": 0.0,
+            "amortized_us_per_token": 0.0,
+            "expert_tokens_per_second": null
+          },
+          "compute_in_online": {
+            "samples_us": [
+              6298.802,
+              6534.792,
+              6775.781,
+              6835.73,
+              6900.573,
+              6270.312,
+              6670.625,
+              6558.073
+            ],
+            "median_us": 6614.349,
+            "mean_us": 6605.585999999999,
+            "p95_us": 6900.573,
+            "amortized_us_per_token": 103.349203125,
+            "expert_tokens_per_second": 9675.933338262012
+          },
+          "resident_compute": {
+            "samples_us": [
+              6412.136,
+              6249.271,
+              6283.125,
+              5964.948,
+              6405.99,
+              6379.271,
+              5694.375,
+              5854.219
+            ],
+            "median_us": 6266.198,
+            "mean_us": 6155.416875,
+            "p95_us": 6412.136,
+            "amortized_us_per_token": 97.90934375,
+            "expert_tokens_per_second": 10213.529799090293
+          }
+        },
+        "repack-id": {
+          "reference_error": {
+            "nrmse": 0.00841580349545259,
+            "worst_token_nrmse": 0.008970325370801642,
+            "max_abs": 0.00016672257333993912,
+            "reference_rms": 0.003729089144432205,
+            "threshold_token_nrmse": 0.04
+          },
+          "online_total": {
+            "samples_us": [
+              13725.157,
+              13519.479,
+              13827.656,
+              14293.438,
+              13794.063,
+              12892.812,
+              12824.531,
+              12906.875
+            ],
+            "median_us": 13622.318,
+            "mean_us": 13473.001375000002,
+            "p95_us": 14293.438,
+            "amortized_us_per_token": 212.84871875,
+            "expert_tokens_per_second": 4698.172513664708
+          },
+          "conversion": {
+            "samples_us": [
+              8667.344,
+              8756.615,
+              9057.344,
+              9238.75,
+              8716.562,
+              8153.698,
+              8100.0,
+              8081.823
+            ],
+            "median_us": 8691.953,
+            "mean_us": 8596.517,
+            "p95_us": 9238.75,
+            "amortized_us_per_token": 135.811765625,
+            "expert_tokens_per_second": 7363.13231330174
+          },
+          "compute_in_online": {
+            "samples_us": [
+              4997.917,
+              4701.094,
+              4710.729,
+              4997.344,
+              5019.219,
+              4680.937,
+              4667.084,
+              4767.344
+            ],
+            "median_us": 4739.0365,
+            "mean_us": 4817.708500000001,
+            "p95_us": 5019.219,
+            "amortized_us_per_token": 74.0474453125,
+            "expert_tokens_per_second": 13504.854837053903
+          },
+          "resident_compute": {
+            "samples_us": [
+              4734.375,
+              4817.969,
+              4639.583,
+              4658.23,
+              4665.885,
+              4605.313,
+              4629.062,
+              4608.229
+            ],
+            "median_us": 4648.906499999999,
+            "mean_us": 4669.83075,
+            "p95_us": 4817.969,
+            "amortized_us_per_token": 72.63916406249999,
+            "expert_tokens_per_second": 13766.678250035791
+          }
+        },
+        "repack-mm": {
+          "reference_error": {
+            "nrmse": 0.00841580349545259,
+            "worst_token_nrmse": 0.008970325370801642,
+            "max_abs": 0.00016672257333993912,
+            "reference_rms": 0.003729089144432205,
+            "threshold_token_nrmse": 0.04
+          },
+          "online_total": {
+            "samples_us": [
+              2932.032,
+              2949.687,
+              2888.645,
+              2896.407,
+              2897.552,
+              2877.656,
+              2885.104,
+              2895.26
+            ],
+            "median_us": 2895.8335,
+            "mean_us": 2902.792875,
+            "p95_us": 2949.687,
+            "amortized_us_per_token": 45.2473984375,
+            "expert_tokens_per_second": 22100.718152476653
+          },
+          "conversion": {
+            "samples_us": [
+              1650.937,
+              1625.5729999999999,
+              1617.8649999999998,
+              1614.896,
+              1629.792,
+              1609.9479999999999,
+              1617.656,
+              1629.011
+            ],
+            "median_us": 1621.7189999999998,
+            "mean_us": 1624.4597500000002,
+            "p95_us": 1650.937,
+            "amortized_us_per_token": 25.339359374999997,
+            "expert_tokens_per_second": 39464.29683564169
+          },
+          "compute_in_online": {
+            "samples_us": [
+              1207.761,
+              1255.4160000000002,
+              1207.082,
+              1219.376,
+              1207.5520000000001,
+              1207.3960000000002,
+              1207.812,
+              1207.708
+            ],
+            "median_us": 1207.7345,
+            "mean_us": 1215.0128750000001,
+            "p95_us": 1255.4160000000002,
+            "amortized_us_per_token": 18.8708515625,
+            "expert_tokens_per_second": 52991.7792362477
+          },
+          "resident_compute": {
+            "samples_us": [
+              1208.646,
+              1228.282,
+              1208.229,
+              1209.688,
+              1216.8229999999999,
+              1209.844,
+              1217.031,
+              1238.6979999999999
+            ],
+            "median_us": 1213.3335,
+            "mean_us": 1217.155125,
+            "p95_us": 1238.6979999999999,
+            "amortized_us_per_token": 18.9583359375,
+            "expert_tokens_per_second": 52747.245501752
+          }
+        },
+        "canonical-mm": {
+          "reference_error": {
+            "nrmse": 0.00841580349545259,
+            "worst_token_nrmse": 0.008970325370801642,
+            "max_abs": 0.00016672257333993912,
+            "reference_rms": 0.003729089144432205,
+            "threshold_token_nrmse": 0.04
+          },
+          "online_total": {
+            "samples_us": [
+              3398.489,
+              3549.844,
+              3547.031,
+              3577.344,
+              3531.51,
+              3567.187,
+              3439.948,
+              3414.636
+            ],
+            "median_us": 3539.2705,
+            "mean_us": 3503.2486249999997,
+            "p95_us": 3577.344,
+            "amortized_us_per_token": 55.3011015625,
+            "expert_tokens_per_second": 18082.822434736197
+          },
+          "conversion": {
+            "samples_us": [
+              0.314,
+              0.521,
+              0.469,
+              0.364,
+              0.41700000000000004,
+              0.314,
+              0.366,
+              0.312
+            ],
+            "median_us": 0.365,
+            "mean_us": 0.384625,
+            "p95_us": 0.521,
+            "amortized_us_per_token": 0.005703125,
+            "expert_tokens_per_second": 175342465.75342467
+          },
+          "compute_in_online": {
+            "samples_us": [
+              3331.3540000000003,
+              3481.7709999999997,
+              3475.5209999999997,
+              3512.344,
+              3467.552,
+              3497.7610000000004,
+              3376.459,
+              3351.8230000000003
+            ],
+            "median_us": 3471.5365,
+            "mean_us": 3436.823125,
+            "p95_us": 3512.344,
+            "amortized_us_per_token": 54.2427578125,
+            "expert_tokens_per_second": 18435.64081783383
+          },
+          "resident_compute": {
+            "samples_us": [
+              3480.416,
+              3436.04,
+              3331.875,
+              3482.656,
+              3463.282,
+              3488.0730000000003,
+              3380.0,
+              3463.5420000000004
+            ],
+            "median_us": 3463.4120000000003,
+            "mean_us": 3440.7355000000002,
+            "p95_us": 3488.0730000000003,
+            "amortized_us_per_token": 54.115812500000004,
+            "expert_tokens_per_second": 18478.887293801603
+          }
+        }
+      }
+    },
+    {
+      "tokens_per_expert": 64,
+      "experts": 2,
+      "modes": {
+        "canonical-id": {
+          "reference_error": {
+            "nrmse": 0.008455899746047988,
+            "worst_token_nrmse": 0.009114581287079204,
+            "max_abs": 0.0001667221076786518,
+            "reference_rms": 0.00372837944265513,
+            "threshold_token_nrmse": 0.04
+          },
+          "online_total": {
+            "samples_us": [
+              10113.281,
+              10822.396,
+              11167.239,
+              10795.625,
+              10705.365,
+              10947.76,
+              11026.562,
+              11067.76
+            ],
+            "median_us": 10885.078000000001,
+            "mean_us": 10830.7485,
+            "p95_us": 11167.239,
+            "amortized_us_per_token": 85.03967187500001,
+            "expert_tokens_per_second": 11759.217526966731
+          },
+          "conversion": {
+            "samples_us": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "median_us": 0.0,
+            "mean_us": 0.0,
+            "p95_us": 0.0,
+            "amortized_us_per_token": 0.0,
+            "expert_tokens_per_second": null
+          },
+          "compute_in_online": {
+            "samples_us": [
+              10022.657,
+              10719.948,
+              11078.438,
+              10707.084,
+              10621.563,
+              10862.291,
+              10942.916,
+              10982.5
+            ],
+            "median_us": 10791.1195,
+            "mean_us": 10742.174625,
+            "p95_us": 11078.438,
+            "amortized_us_per_token": 84.30562109375,
+            "expert_tokens_per_second": 11861.605276449769
+          },
+          "resident_compute": {
+            "samples_us": [
+              10860.469,
+              11016.511,
+              11085.781,
+              11010.365,
+              10924.271,
+              11059.844,
+              11062.812,
+              10898.75
+            ],
+            "median_us": 11013.438,
+            "mean_us": 10989.850375,
+            "p95_us": 11085.781,
+            "amortized_us_per_token": 86.042484375,
+            "expert_tokens_per_second": 11622.16557627146
+          }
+        },
+        "repack-id": {
+          "reference_error": {
+            "nrmse": 0.008456222285932676,
+            "worst_token_nrmse": 0.009114584738247538,
+            "max_abs": 0.00016672257333993912,
+            "reference_rms": 0.00372837944265513,
+            "threshold_token_nrmse": 0.04
+          },
+          "online_total": {
+            "samples_us": [
+              19471.823,
+              19124.271,
+              18882.969,
+              18323.75,
+              17725.99,
+              17669.219,
+              19429.218,
+              18645.781
+            ],
+            "median_us": 18764.375,
+            "mean_us": 18659.127624999997,
+            "p95_us": 19471.823,
+            "amortized_us_per_token": 146.5966796875,
+            "expert_tokens_per_second": 6821.43689837791
+          },
+          "conversion": {
+            "samples_us": [
+              10017.187,
+              9495.833,
+              9414.375,
+              8825.677,
+              8288.333,
+              8252.239,
+              9523.282,
+              9222.917
+            ],
+            "median_us": 9318.646,
+            "mean_us": 9129.980375,
+            "p95_us": 10017.187,
+            "amortized_us_per_token": 72.801921875,
+            "expert_tokens_per_second": 13735.901116964846
+          },
+          "compute_in_online": {
+            "samples_us": [
+              9337.188,
+              9515.677,
+              9359.115,
+              9390.99,
+              9329.948,
+              9306.094,
+              9792.968,
+              9310.573
+            ],
+            "median_us": 9348.1515,
+            "mean_us": 9417.819124999998,
+            "p95_us": 9792.968,
+            "amortized_us_per_token": 73.03243359375,
+            "expert_tokens_per_second": 13692.546595976755
+          },
+          "resident_compute": {
+            "samples_us": [
+              9363.125,
+              9305.469,
+              9247.864,
+              9261.302,
+              9265.937,
+              9250.938,
+              9250.625,
+              9249.531
+            ],
+            "median_us": 9256.119999999999,
+            "mean_us": 9274.348875,
+            "p95_us": 9363.125,
+            "amortized_us_per_token": 72.31343749999999,
+            "expert_tokens_per_second": 13828.688478541766
+          }
+        },
+        "repack-mm": {
+          "reference_error": {
+            "nrmse": 0.008456222285932676,
+            "worst_token_nrmse": 0.009114584738247538,
+            "max_abs": 0.00016672257333993912,
+            "reference_rms": 0.00372837944265513,
+            "threshold_token_nrmse": 0.04
+          },
+          "online_total": {
+            "samples_us": [
+              4286.25,
+              4489.948,
+              4223.645,
+              4409.219,
+              4205.886,
+              4175.0,
+              4350.0,
+              4172.344
+            ],
+            "median_us": 4254.9475,
+            "mean_us": 4289.0365,
+            "p95_us": 4489.948,
+            "amortized_us_per_token": 33.24177734375,
+            "expert_tokens_per_second": 30082.627341465435
+          },
+          "conversion": {
+            "samples_us": [
+              1659.635,
+              1832.344,
+              1626.874,
+              1874.845,
+              1618.282,
+              1618.8029999999999,
+              1702.084,
+              1653.281
+            ],
+            "median_us": 1656.458,
+            "mean_us": 1698.2685000000001,
+            "p95_us": 1874.845,
+            "amortized_us_per_token": 12.941078125,
+            "expert_tokens_per_second": 77273.31450601222
+          },
+          "compute_in_online": {
+            "samples_us": [
+              2492.187,
+              2528.386,
+              2474.166,
+              2417.291,
+              2473.542,
+              2443.906,
+              2535.209,
+              2407.395
+            ],
+            "median_us": 2473.8540000000003,
+            "mean_us": 2471.51025,
+            "p95_us": 2535.209,
+            "amortized_us_per_token": 19.326984375000002,
+            "expert_tokens_per_second": 51741.129428009895
+          },
+          "resident_compute": {
+            "samples_us": [
+              2457.5519999999997,
+              2410.261,
+              2721.3019999999997,
+              2488.281,
+              2410.259,
+              2454.4790000000003,
+              2488.49,
+              2409.9480000000003
+            ],
+            "median_us": 2456.0155,
+            "mean_us": 2480.0715000000005,
+            "p95_us": 2721.3019999999997,
+            "amortized_us_per_token": 19.18762109375,
+            "expert_tokens_per_second": 52116.93492976734
+          }
+        },
+        "canonical-mm": {
+          "reference_error": {
+            "nrmse": 0.008456222285932676,
+            "worst_token_nrmse": 0.009114584738247538,
+            "max_abs": 0.00016672257333993912,
+            "reference_rms": 0.00372837944265513,
+            "threshold_token_nrmse": 0.04
+          },
+          "online_total": {
+            "samples_us": [
+              7089.375,
+              7376.771,
+              7355.469,
+              7185.938,
+              7162.344,
+              7263.541,
+              7604.479,
+              7853.437
+            ],
+            "median_us": 7309.505,
+            "mean_us": 7361.419249999999,
+            "p95_us": 7853.437,
+            "amortized_us_per_token": 57.1055078125,
+            "expert_tokens_per_second": 17511.445713492227
+          },
+          "conversion": {
+            "samples_us": [
+              0.416,
+              0.469,
+              0.469,
+              0.364,
+              0.364,
+              0.41600000000000004,
+              0.41700000000000004,
+              2.866
+            ],
+            "median_us": 0.41650000000000004,
+            "mean_us": 0.7226250000000001,
+            "p95_us": 2.866,
+            "amortized_us_per_token": 0.0032539062500000003,
+            "expert_tokens_per_second": 307322929.17166865
+          },
+          "compute_in_online": {
+            "samples_us": [
+              6964.479,
+              7229.791,
+              7236.51,
+              7067.968,
+              7046.459,
+              7147.968,
+              7244.531000000001,
+              7471.198
+            ],
+            "median_us": 7188.8795,
+            "mean_us": 7176.113000000001,
+            "p95_us": 7471.198,
+            "amortized_us_per_token": 56.16312109375,
+            "expert_tokens_per_second": 17805.278277372712
+          },
+          "resident_compute": {
+            "samples_us": [
+              7191.25,
+              7235.729,
+              7234.844,
+              6909.428,
+              7014.322,
+              7315.624,
+              7235.103999999999,
+              7180.105
+            ],
+            "median_us": 7213.0470000000005,
+            "mean_us": 7164.55075,
+            "p95_us": 7315.624,
+            "amortized_us_per_token": 56.351929687500004,
+            "expert_tokens_per_second": 17745.621233301266
+          }
+        }
+      }
+    }
+  ],
+  "workspace": {
+    "repack_id_bytes": 51904512,
+    "repack_mm_bytes": 4866048
+  }
+}

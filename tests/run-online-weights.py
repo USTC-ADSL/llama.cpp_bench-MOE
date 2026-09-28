@@ -21,7 +21,7 @@ def main():
     p.add_argument("--tag", required=True)
     p.add_argument("--deploy", action="store_true")
     p.add_argument("--reps", type=int, default=8)
-    p.add_argument("--mode", choices=["probe","native","online"], default="probe")
+    p.add_argument("--mode", choices=["probe","cpu-probe","native","online"], default="probe")
     p.add_argument("--prompt", type=pathlib.Path)
     p.add_argument("--tokens", type=int, default=128)
     p.add_argument("--tail", type=int, default=-1)
@@ -43,6 +43,9 @@ def main():
     p.add_argument("--batch-pack", action="store_true")
     p.add_argument("--source-views", action="store_true")
     p.add_argument("--placement-reference", type=pathlib.Path)
+    p.add_argument("--cpu-experts", choices=["repack-id","repack-mm","canonical-mm"])
+    p.add_argument("--cpu-direct-repack", action="store_true")
+    p.add_argument("--cpu-validate", action="store_true")
     p.add_argument("--cost-model", type=pathlib.Path, default=ROOT / "task/handoff/handoff-2026-09-27-length-intervals/interval-model.json")
     args = p.parse_args()
     assert re.fullmatch(r"[A-Za-z0-9_-]+", args.tag)
@@ -50,7 +53,7 @@ def main():
     out_dir = args.output_dir.resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
     prefix = out_dir / args.tag
-    program = "online-weight-probe" if args.mode == "probe" else "online-moe"
+    program = {"probe":"online-weight-probe","cpu-probe":"cpu-expert-probe"}.get(args.mode,"online-moe")
     assert not list(out_dir.glob(args.tag + ".*")), "use a fresh evidence tag"
     def adb(*parts, check=True):
         return subprocess.run(["adb", "-s", "fd8657d6", *parts], check=check, capture_output=True, text=True)
@@ -58,7 +61,7 @@ def main():
         return adb("shell", command, check=check)
     print(subprocess.run(["adb", "devices", "-l"], check=True, capture_output=True, text=True).stdout, flush=True)
     assert adb("get-state").stdout.strip() == "device"
-    assert not shell("pidof online-weight-probe online-moe dynamic-moe fullmodel-oracle", check=False).stdout.strip(), "inference already active"
+    assert not shell("pidof cpu-expert-probe online-weight-probe online-moe dynamic-moe fullmodel-oracle", check=False).stdout.strip(), "inference already active"
     if args.deploy:
         if shell(f"test -d {REMOTE}", check=False).returncode == 0:
             assert shell(f"test -f {REMOTE}/.online-weights-owner", check=False).returncode == 0, "unowned directory"
@@ -72,7 +75,7 @@ def main():
             assert shell(f"sha256sum {REMOTE}/{path.name}").stdout.split()[0] == hashlib.sha256(path.read_bytes()).hexdigest()
     arguments = [f"./{program}", MODEL, f"{REMOTE}/{args.tag}.json", str(args.reps)]
     inputs = {}
-    if args.mode != "probe":
+    if args.mode in ("native","online"):
         assert args.prompt and args.prompt.is_file(), "provide a prompt"
         for path, name in [(args.prompt,"prompt.txt"),(args.cost_model,"cost-model.json")]:
             destination = f"{REMOTE}/{args.tag}-{name}"
@@ -105,6 +108,14 @@ def main():
         environment.append("MOE_RAW_SHARED_SOURCE=1")
     if args.resident_output:
         environment.append("MOE_RESIDENT_OUTPUT=1")
+    if args.cpu_experts:
+        assert args.mode=="online"
+        environment.append(f"MOE_CPU_EXPERT_MODE={args.cpu_experts}")
+    if args.cpu_direct_repack:
+        environment.append("GGML_CPU_REPACK_DIRECT=1")
+    if args.cpu_validate:
+        assert args.cpu_experts
+        environment.append("MOE_CPU_EXPERT_VALIDATE=1")
     if args.dsp_trace:
         environment += ["MOE_DSP_TRACE=1", "GGML_HEXAGON_PROFILE=3", "GGML_HEXAGON_TIMING=0", "GGML_HEXAGON_OPTRACE=16384"]
     if args.prefetch_model:
@@ -138,6 +149,9 @@ def main():
     record["sources"] = {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in [
         ROOT / "tests/online-weight-probe.cpp", ROOT / "tests/online-moe.cpp", ROOT / "tests/online-moe-runtime.h",
         ROOT / "tests/online-prefetch.h",
+        ROOT / "tests/online-cpu-experts.h",
+        ROOT / "tests/cpu-expert-probe.cpp",
+        ROOT / "ggml/src/ggml-cpu/repack.cpp",
         ROOT / "tests/expert-oracle-probe.cpp",
         ROOT / "ggml/include/ggml-shared-dma.h",
         ROOT / "tests/expert-routing-probe.cpp", ROOT / "ggml/src/ggml-hexagon/ggml-hexagon.cpp",

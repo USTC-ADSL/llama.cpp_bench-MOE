@@ -1,6 +1,7 @@
 #pragma once
 #include "dynamic-moe-runtime.h"
 #include "online-prefetch.h"
+#include "online-cpu-experts.h"
 
 // One immutable canonical routed bank per layer, shared by CPU and HTP. Only
 // actual current-layer route counts enter the policy. No route capture input.
@@ -20,6 +21,7 @@ struct online_moe_runtime {
     std::array<layer_weights,24> layers;
     std::shared_ptr<shared_activation_buffer> arenas[3];
     std::unique_ptr<shared_bank> gpu_shared;
+    std::unique_ptr<online_cpu_experts> cpu_experts;
     json records=json::array();
     std::exception_ptr failure;
     size_t canonical_source_bytes=0, activation_bytes=0;
@@ -91,6 +93,9 @@ struct online_moe_runtime {
         // Initialize backend kernels and EMPTY target capacity as part of model
         // setup, just as native context allocation reserves its graph buffers.
         // No shared weight bytes, routes or prompt activations are prepared here.
+        if(const char *mode=std::getenv("MOE_CPU_EXPERT_MODE")) {
+            cpu_experts=std::make_unique<online_cpu_experts>(*devs[0],*layers[0].cpu_view,mode);
+        }
         gpu_shared=std::make_unique<shared_bank>(*devs[2],src,0,true);
         std::vector<int> empty; bank dummy(*devs[2],src,0,&empty);
         oracle_job shared_shape(dummy,gpu_shared.get(),0,1,nt,false,false,true,{},true);
@@ -180,6 +185,33 @@ struct online_moe_runtime {
             const auto start=timer::now();
             if(b<2) {
                 if(pairs[b].empty()) { timings[b]={{"total_us",0}}; return; }
+                if(b==0 && cpu_experts && nt>1) {
+                    timings[b]=cpu_experts->run(*layers[il].cpu_view,x,4,ids,pairs[b],nt,arenas[0],
+                        [&](int p,const float *out) {
+                            float weight=probs[(p/4)*60+ids[p]];
+                            for(int c=0;c<2048;++c) { weighted[p*2048+c]=weight*out[c]; }
+                        });
+                    if(std::getenv("MOE_CPU_EXPERT_VALIDATE")) {
+                        oracle_job ref(*layers[il].cpu_view,nullptr,int(pairs[b].size()),1,nt,false,false,true,arenas[0],false,true);
+                        for(size_t row=0;row<pairs[b].size();++row) {
+                            int p=pairs[b][row]; std::copy_n(x+(p/4)*2048,2048,ref.input_data()+row*2048);
+                            ref.index_data()[row]=ids[p];
+                        }
+                        ref.run(); double e2=0,s2=0,max_abs=0;
+                        for(size_t row=0;row<pairs[b].size();++row) {
+                            int p=pairs[b][row]; float weight=probs[(p/4)*60+ids[p]];
+                            for(int c=0;c<2048;++c) {
+                                double expected=weight*ref.output_data()[row*2048+c];
+                                double delta=weighted[p*2048+c]-expected;
+                                e2+=delta*delta;s2+=expected*expected;max_abs=std::max(max_abs,std::abs(delta));
+                            }
+                        }
+                        double error=std::sqrt(e2/std::max(s2,1e-30));
+                        timings[b]["canonical_reference_error"]={{"relative_l2",error},{"max_abs",max_abs}};
+                        require(std::isfinite(error) && error<0.01,"CPU Expert reference mismatch");
+                    }
+                    return;
+                }
                 bank *selected=b==0?layers[il].cpu_view.get():layers[il].source_htp.get();
                 std::unique_ptr<bank> reference;
                 std::array<int,60> local; std::iota(local.begin(),local.end(),0);
@@ -271,7 +303,7 @@ struct online_moe_runtime {
             result[t*2048+c]=sum+shared_result[t*2048+c];
         } }
         size_t additional=activation_bytes+(arenas[2]?arenas[2]->desc.size:0)+peak_shared_weights+peak_host_staging+
-            (weighted.capacity()+shared_result.capacity())*sizeof(float);
+            (weighted.capacity()+shared_result.capacity())*sizeof(float)+(cpu_experts?cpu_experts->bytes():0);
         records.push_back({{"layer",il},{"tokens",nt},{"counts",counts},{"placement",plan_json(plan)},
             {"decision",decision},{"branches",timings},{"combine_us",elapsed(combine)},{"total_us",elapsed(begin)},
             {"cache_ready",cache_ready},{"npu_cached_experts",cache_hits},

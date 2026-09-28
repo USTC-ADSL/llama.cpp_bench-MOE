@@ -3214,6 +3214,44 @@ static int repack_q4_0_to_q4_0_4_bl(struct ggml_tensor * t, int interleave_block
         return -1;
     }
 
+#if defined(__ARM_NEON)
+    // Optional first-use conversion path: directly interleave four source rows,
+    // avoiding the block copies into dst_tmp and scalar per-subblock shuffling.
+    static const bool direct_repack = std::getenv("GGML_CPU_REPACK_DIRECT") != nullptr;
+    if (direct_repack) {
+        const uint8x16_t sign = vdupq_n_u8(0x88);
+        for (int b = 0; b < nrow; b += nrows_interleaved) {
+            for (int x = 0; x < nblocks; ++x) {
+                uint8x16_t q[4];
+                for (int r = 0; r < 4; ++r) {
+                    const auto * block = src + r*nblocks + x;
+                    dst->d[r] = block->d;
+                    q[r] = veorq_u8(vld1q_u8(block->qs), sign);
+                }
+                auto * out = reinterpret_cast<uint8_t *>(dst->qs);
+                if (interleave_block == 8) {
+                    vst1q_u8(out,      vcombine_u8(vget_low_u8(q[0]), vget_low_u8(q[1])));
+                    vst1q_u8(out + 16, vcombine_u8(vget_low_u8(q[2]), vget_low_u8(q[3])));
+                    vst1q_u8(out + 32, vcombine_u8(vget_high_u8(q[0]), vget_high_u8(q[1])));
+                    vst1q_u8(out + 48, vcombine_u8(vget_high_u8(q[2]), vget_high_u8(q[3])));
+                } else {
+                    auto a = vzipq_u32(vreinterpretq_u32_u8(q[0]), vreinterpretq_u32_u8(q[1]));
+                    auto bq = vzipq_u32(vreinterpretq_u32_u8(q[2]), vreinterpretq_u32_u8(q[3]));
+                    for (int half = 0; half < 2; ++half) {
+                        vst1q_u8(out + half*32, vreinterpretq_u8_u32(
+                                  vcombine_u32(vget_low_u32(a.val[half]), vget_low_u32(bq.val[half]))));
+                        vst1q_u8(out + half*32 + 16, vreinterpretq_u8_u32(
+                                  vcombine_u32(vget_high_u32(a.val[half]), vget_high_u32(bq.val[half]))));
+                    }
+                }
+                ++dst;
+            }
+            src += nrows_interleaved*nblocks;
+        }
+        return 0;
+    }
+#endif
+
     for (int b = 0; b < nrow; b += nrows_interleaved) {
         for (int64_t x = 0; x < nblocks; x++) {
             for (int i = 0; i < nrows_interleaved; i++) {

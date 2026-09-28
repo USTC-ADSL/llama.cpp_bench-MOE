@@ -128,6 +128,20 @@ struct bank {
         }
         d.sync();
     }
+    // Empty reusable CPU_REPACK capacity. No source bytes converted at setup.
+    bank(device & dev, const bank & source_bank, int capacity, bool repack = true) : d(dev) {
+        require(d.name=="CPU" && capacity>=1 && capacity<=8 &&
+                std::string(ggml_backend_buft_name(d.buft))=="CPU_REPACK", "invalid CPU repack workspace");
+        for(int i=0;i<3;++i) {
+            auto *s=source_bank.w[i];
+            require(s->type==GGML_TYPE_Q4_0 && ggml_is_contiguous(s),"CPU repack source shape");
+            w[i]=ggml_new_tensor_3d(ctx.get(),s->type,s->ne[0],s->ne[1],capacity);
+        }
+        if(!repack) { require(capacity==1,"canonical grouped view is one Expert"); return; }
+        buf.reset(ggml_backend_alloc_ctx_tensors_from_buft(ctx.get(),d.buft));
+        require(bool(buf),"CPU repack workspace allocation failed");
+        ggml_backend_buffer_set_usage(buf.get(),GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
+    }
     // Borrow the exact same immutable canonical bytes through CPU buffer views.
     // The HTP source bank must outlive this view and all graphs using it.
     bank(device & dev, const bank & canonical_source) : d(dev) {
