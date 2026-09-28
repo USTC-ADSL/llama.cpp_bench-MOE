@@ -1,0 +1,80 @@
+{
+  "device": "fd8657d6",
+  "tokens": 768,
+  "reps": 6,
+  "warmups": 2,
+  "candidates": [
+    "c4-g15",
+    "c4-g30",
+    "c4-g45",
+    "c8-g15",
+    "c8-g30",
+    "c8-g45"
+  ],
+  "baselines": [
+    "old-cpu4",
+    "old-gpu24"
+  ],
+  "development_order": [
+    "native-a",
+    "old-cpu4",
+    "old-gpu24",
+    "c4-g15",
+    "c4-g30",
+    "c4-g45",
+    "c8-g15",
+    "c8-g30",
+    "c8-g45",
+    "native-b"
+  ],
+  "confirmation_prompts": [
+    "wetland",
+    "foundry"
+  ],
+  "confirmation_order_a": [
+    "native",
+    "old-cpu4",
+    "old-gpu24",
+    "selected"
+  ],
+  "confirmation_order_b": [
+    "selected",
+    "old-gpu24",
+    "old-cpu4",
+    "native"
+  ],
+  "hashes": {
+    "tests/fullmodel-oracle.cpp": "690bd6d4748287b459347a99206d8d5ca3d6c7c231d7842c176c35d90c9395ad",
+    "tests/expert-oracle-probe.cpp": "d6d5eea5f4ee2642e1046e0e5d66f26e27dcd980ae80ce2a4f1e89e6940d8e02",
+    "tests/expert-routing-probe.cpp": "552a6bd38fc8664f2f5439889948753f7ce30b0e5007e897527aa8234cfe70ca",
+    "tests/shared-activation-buffer.h": "9d57d8581462812f0f517330f97359192001629ba2fe609ca753b7904d314e3f",
+    "tests/moe-placement-model.h": "1a00c2e3a624ebc3d8dc4f1cb0a9d2aa20bb68d871bbd6081618380d619ea300",
+    "tests/moe-context-model.h": "ab4d39d57d8cf8bec19ca78f7e6bc89c5a4f43329ccd8ce5ca245d7f12b29293",
+    "tests/moe-execution-model.h": "e3df9f4c5a9a885d9d69001581a451fbaf20eb1b6766ca03e13da859d1956877",
+    "tests/moe-token-workers.h": "1c4b9ad6335e6ebea6c53cc0b4f408365b8760e2c744c2e85d5474e1ca96e671",
+    "tests/moe-runtime-state.h": "06864e0b0981c30eedcdc1a54a8a49be4f1c80d2c507afe5802f034740e7f0a9",
+    "tests/moe-state-correction.h": "d47fd9e7d21a922c9cec015a7549feaa3f8a1af248d1ebd7c3215011ec64345d",
+    "tests/moe-device-timing.h": "c57c268b56c215ecce4bd154f13ee63768f7aa345bce5c854dd83b68b650d9ea",
+    "tests/moe-decode-branch.h": "a228ba39ea423877b240d87318c4d30e9adff31dcb026ee918139251ad345be7",
+    "tests/run-fullmodel-oracle.py": "5749f79c03c3b396482167b16c15e0d49e0100d2561e227bc25247a4cade8617",
+    "tests/gpu_clock_collector.py": "cf57e94739f771418b8002ed7817c4c4191721e702c6c0dd25a4b3344e5b6ce4",
+    "tests/moe-placement-model.py": "df8a8009f31fb2c55e05d0ef3c61b2c9fa04136ea5bbf1b84a471ed9ff5c9e56",
+    "tests/run-moe-threeway-study.py": "7f450b7dca45af3b4024661ca89becd1bc446cc0efe52c62a01b4022061f788e",
+    "build-android-opencl-hexagon/bin/fullmodel-oracle": "d661bc3c5630bc28066836736eab548635e816e5ebc83815102e4129840d207e",
+    "build-android-opencl-hexagon/bin/libllama.so": "a894fc6dd60fa9f47361b0c0418d439b5a8bb56ed04523108dfb3fd6fb9bfa73",
+    "build-android-opencl-hexagon/bin/libggml.so": "3bd21ae094ad573efcc02510cd2bda36a32f2f0c1c5c461951fca4e37e05cb67",
+    "build-android-opencl-hexagon/bin/libggml-base.so": "b5f1b994192b21dde83515283e8a61d41da6e827250af8c85e575024af4d22fc",
+    "build-android-opencl-hexagon/bin/libggml-cpu.so": "27b51cd7db7e26068cef593c05d0e9813aa0b5d43161361c9bbf034e7df830ca",
+    "build-android-opencl-hexagon/bin/libggml-opencl.so": "213c830422166f01c050f0b101346ebbfd08c533df1159ee3e0824becb4a63e2",
+    "build-android-opencl-hexagon/bin/libggml-hexagon.so": "7d0054bbec57bdfc5f58926f0b1d25429f5858f460ed4fb300972913b5f1b136",
+    "build-android-opencl-hexagon/ggml/src/ggml-hexagon/libggml-htp-v79.so": "b86a8ffe4a7c81432d4c0024c5e16daf0d050cc687426a56bbc8415c35c4422a",
+    "build-android-opencl-hexagon/ggml/src/ggml-hexagon/ship/libc++_shared.so": "d523468d62d9b603cb3354294d70d4b2feabf2c3f1e43b0c96c9aabf32813708",
+    "task/handoff/handoff-2026-09-26-model-extension/prompts/technical.txt": "e1b7817ae17322ca8b45dc5b3bb036a3973a5c70dcdddc72d43be88432f93e30",
+    "task/handoff/handoff-2026-09-28-threeway-768/prompts/wetland.txt": "47c93fb18996a7d3518d97623ea13692f722308d918746eb607848155215cf74",
+    "task/handoff/handoff-2026-09-28-threeway-768/prompts/foundry.txt": "6c29d025232ff23bdbbb200ed7b3511110637cc4b792c9de4cf09e5559929fd0",
+    "task/handoff/handoff-2026-09-26-execution-model/planner/technical-768-routes.json.gz": "06a113ed42fae4dd43f5ac8c65ad2ea5eb03019b68d42c3ff0f78427685f11c2",
+    "task/handoff/handoff-2026-09-28-threeway-768/design.md": "535945a1b6578fa9d718dec0183d16baa657c6ba2e8dde89ebc756b7825c0fa7"
+  },
+  "model_stat": "8149865792 1788789392",
+  "scope": "Resident whole-model prefill, offline per-prompt route-conditioned placement; no online weight migration claim."
+}

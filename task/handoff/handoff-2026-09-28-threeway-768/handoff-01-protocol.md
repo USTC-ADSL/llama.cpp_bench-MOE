@@ -1,0 +1,18 @@
+# Three-way 768-token protocol checkpoint
+
+User authorized actual testing of shared-on-NPU, low-load experts on CPU, hot routed experts on GPU with the remainder on NPU. Base commit bf03f27ac; fd8657d6 online; db6c02cf untouched. Read design.md and tasklist.md. No inference/kernel source changes. New runner is tests/run-moe-threeway-study.py.
+
+Six candidates CPU tail4/tail8 x GPU hot-prefix target15/30/45% of remaining token-expert pairs. GPU group boundaries are per-layer, whole-expert and deterministic. Compare old CPU-tail4/sharedGPU, old GPU-tail24/sharedNPU and native NPU. Protocol includes warmup2/reps6, development technical prompt, two newly authored frozen confirmation prompts wetland/foundry, forward/reverse process order, no holdout tuning. Terminal one-token layer is routed NPU/shared CPU in all custom candidates.
+
+Completed:
+- Current runtime/schema explored by read-only scouts; fullmodel-oracle supports arbitrary owner[60]/shared assignments. Actual route IDs are recomputed, not replayed.
+- Incremental build succeeded: `cmake --build build-android-opencl-hexagon --target llama ggml-cpu ggml-opencl ggml-hexagon htp-v79 -j 8`. One pre-existing Hexagon printf pointer-format warning; no build error.
+- Recompiled standalone oracle using `/home/miog/pzw/download/pzw/HeteroCompute/android-ndk-r27d/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android34-clang++ -std=c++17 -O2 -Iggml/include -Iinclude -Ivendor/nlohmann tests/fullmodel-oracle.cpp -Lbuild-android-opencl-hexagon/bin -lllama -lggml -lggml-base -o build-android-opencl-hexagon/bin/fullmodel-oracle`. Log build-oracle.log.
+- Python syntax and git diff whitespace passed. All eight technical plans generated/checked. Layer0 c4-g30 pair split CPU/NPU/GPU=67/2101/904, expert split4/45/11, shared=NPU.
+- `python3 tests/run-moe-threeway-study.py prepare` froze protocol.json with source/artifact/prompt hashes. `deploy` populates the previously absent fixed project directory, includes libc++_shared.so, hashes every deployed artifact and the model. Deployment log deploy.log.
+
+Deployment exited successfully and deployment.json records all artifact hashes plus model SHA256. Before starting development, a continuously running external benchmark was discovered: host process `python3 MOE/experiments/run_qwen_expert_ops.py --output-dir MOE/results/tmp/20260928-1253-qwen-expert-ops --remote-dir /data/local/tmp/qwen-expert-ops-20260928`, using fd8657d6 CPU/NPU in sequential commands. No measurement from this task has started. User has been asked about scheduling; default is to wait for that experiment, without killing it. Brief gaps between its adb calls are not permission to start a competing run.
+
+Next: after device exclusivity is confirmed, run `python3 tests/run-moe-threeway-study.py develop > task/handoff/handoff-2026-09-28-threeway-768/development.log 2>&1`, then inspect development.json/freeze.json and update tasklist. Run confirm only after freeze; command analogous with `confirm` and confirmation.log. No concurrent inference. Runner asserts immutable frozen sources; do not edit it mid-cohort. All raw outputs/logits remain in evidence. Captures may be large and need final archival/owned-file cleanup.
+
+Interpretation: resident offline-route-conditioned pre-load placement. Timings exclude capture/planning/weight setup. Backend cumulative windows overlap. Compare complete-request wall, parallel expert wall, aggregation, and outside-FFN residual. No inference benefit or quality equivalence claimed before results. New online-moe CPU optimization/preconversion pipeline is not modified or evaluated here.
