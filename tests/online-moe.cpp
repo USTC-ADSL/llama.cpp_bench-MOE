@@ -115,6 +115,10 @@ int main(int argc,char **argv) {
             {"before_status",status()},{"forced_tail",tail}};
         report["source_storage"]={{"no_mmap_prefetch",bounded_source},{"release_advice_calls",source_advice_calls},
             {"release_advice_failures",source_advice_failures},{"advised_bytes",source_release_bytes}};
+        if(runtime && !runtime->placement_reference.is_null()) {
+            report["protocol"]="correctness only: frozen per-layer placement; actual online router counts verified; exclude latency from performance results";
+            report["reference_placement_validation_only"]=true;
+        }
         report["output_residency"]=output_residency;
         if(bounded_source) { report["source_cache_before"]=source_residency(src,bool(runtime && runtime->canonical_shared_source_bytes)); }
         rusage before{},after{}; getrusage(RUSAGE_SELF,&before);
@@ -150,13 +154,14 @@ int main(int argc,char **argv) {
                 require(!p.pending.valid(),"prefetch work left after terminal layer");
                 report["prefetch"]={{"capacity",p.capacity},{"method",p.predictor.at("method")},
                     {"mixed_graph",runtime->mixed_graph},
+                    {"batch_pack",p.batch_pack},{"persistent_source_views",p.persistent_views},{"source_view_setup_us",p.source_view_setup_us},
                     {"target_bytes",p.target_bytes},{"source_import_alias_peak_bytes",p.source_import_peak},
                     {"preparations",p.records},{"initial_prepared_experts",0}};
                 if(budget.mode==1) {
                     size_t raw=report.at("accounted_extra_allowance_bytes");
                     require(raw>=p.source_import_peak,"import alias budget attribution failed");
                     report["prefetch"]["allowance_minus_known_source_alias_bytes"]=raw-p.source_import_peak;
-                    report["prefetch"]["accounting_note"]="raw observer counts DMA source import again; subtracted only one overlapping full-layer source import, whose backing is the existing canonical source; target imports remain charged; not a driver/physical-memory guarantee";
+                    report["prefetch"]["accounting_note"]="raw observer counts existing canonical DMA source imports again; subtract peak live source alias capacity (all persistent views or one transient import); target imports remain charged; not a driver/physical-memory guarantee";
                 }
             }
             report["memory_note"]="canonical DMA routed weights replace the complete expert representation and are aliased by CPU; bounded GPU shared conversion, activation pools and host staging reported separately; dense/KV, mapped-file residency and uninstrumented driver allocation are not an extra-memory guarantee";

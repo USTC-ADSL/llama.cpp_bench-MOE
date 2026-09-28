@@ -16,6 +16,7 @@ struct online_moe_runtime {
     fullmodel_execution_model model;
     json profiles=json::array();
     json online_calibration;
+    json placement_reference;
     std::array<layer_weights,24> layers;
     std::shared_ptr<shared_activation_buffer> arenas[3];
     std::unique_ptr<shared_bank> gpu_shared;
@@ -36,11 +37,19 @@ struct online_moe_runtime {
                        double conversion_us=300,int tail=-1)
         :src(s),max_tokens(nt),model(calibration,nt),npu_conversion_us_per_expert(conversion_us),forced_tail(tail) {
         online_calibration=calibration.value("online_weight_calibration",json());
+        if(const char *path=std::getenv("MOE_ONLINE_PLACEMENT_REFERENCE")) {
+            require(!std::getenv("MOE_PREFETCH_MODEL"),"placement reference is a separate correctness-only path");
+            std::ifstream input(path); require(bool(input),"placement reference open failed"); input>>placement_reference;
+            require(placement_reference.at("layers").size()==24,"placement reference layer count");
+        }
         if(!online_calibration.is_null()) {
             require(online_calibration.at("tokens")==nt,"online weight calibration length not validated");
             for(const char *key:{"cpu_scale","cpu_overhead_us","npu_conversion_us_per_expert","npu_overhead_us","gpu_preparation_us"}) {
                 double value=online_calibration.at(key); require(std::isfinite(value) && value>=0,"invalid online cost correction");
             }
+            double saving=online_calibration.value("prefetch_weight_saving_us_per_expert",0.0);
+            require(std::isfinite(saving) && saving>=0 && saving<=online_calibration.at("npu_conversion_us_per_expert").get<double>(),
+                    "invalid cached weight cost correction");
         }
         require(nt>=64 && nt<=768,"online prototype supports prefill lengths 64..768");
         for(int b=0;b<3;++b) { devs[b]=devices[b]; }
@@ -94,8 +103,17 @@ struct online_moe_runtime {
         }
     }
 
-    placement choose(int il,int nt,const std::vector<int> &counts,json &decision) {
+    placement choose(int il,int nt,const std::vector<int> &counts,json &decision,bool cache_ready=false) {
         auto start=timer::now();
+        if(!placement_reference.is_null()) {
+            const auto &r=placement_reference.at("layers").at(il);
+            require(r.at("layer")==il && r.at("tokens")==nt && r.at("counts")==counts,"reference actual route mismatch");
+            const auto &p=r.at("placement"); auto owners=p.at("owner").get<std::vector<int>>();
+            require(owners.size()==60 && p.at("shared")==2,"reference placement shape");
+            for(int b:owners) { require(b==0 || b==1,"reference routed backend"); }
+            decision={{"scope","correctness-only fixed placement; actual routing checked, no timing claim"}};
+            return {p.at("name").get<std::string>(),owners,2};
+        }
         placement best{"online",std::vector<int>(60,1),2};
         if(nt==1) {
             best.owner.assign(60,0); decision={{"reason","terminal one-token FFN on canonical CPU"},{"planning_us",elapsed(start)}}; return best;
@@ -112,6 +130,13 @@ struct online_moe_runtime {
         }
         else { for(const auto &p:profiles) { int k=p.at("tails").at(il); if(k<=int(active.size())) { tails.push_back(k); } } }
         if(tails.empty()) { tails.push_back(0); }
+        if(cache_ready && forced_tail<0 && !online_calibration.is_null() && online_calibration.value("prefetch_refine_tail_grid",false)) {
+            auto coarse=tails; std::sort(coarse.begin(),coarse.end());
+            for(size_t i=1;i<coarse.size();++i) {
+                if(coarse[i]-coarse[i-1]>1) { tails.push_back((coarse[i]+coarse[i-1])/2); }
+            }
+            std::sort(tails.begin(),tails.end()); tails.erase(std::unique(tails.begin(),tails.end()),tails.end());
+        }
         double best_cost=std::numeric_limits<double>::infinity(); json candidates=json::array();
         for(int k:tails) {
             placement p{"online_cpu_tail"+std::to_string(k),std::vector<int>(60,1),2};
@@ -124,8 +149,14 @@ struct online_moe_runtime {
                 costs[1]=active.size()>size_t(k)?costs[1]+online_calibration.at("npu_conversion_us_per_expert").get<double>()*(active.size()-k)+online_calibration.at("npu_overhead_us").get<double>():0;
                 costs[2]+=online_calibration.at("gpu_preparation_us").get<double>();
             }
+            int cached=0; double saving=0;
+            if(cache_ready && !online_calibration.is_null()) {
+                for(int e:prefetch->slots[il%2].ids) { cached+=counts[e]>0 && p.owner[e]==1; }
+                saving=cached*online_calibration.value("prefetch_weight_saving_us_per_expert",0.0);
+                costs[1]=std::max(0.0,costs[1]-saving);
+            }
             double score=*std::max_element(costs.begin(),costs.end())+prediction.at("host_us").get<double>();
-            candidates.push_back({{"tail",k},{"cost_us",score},{"backend_us",costs}});
+            candidates.push_back({{"tail",k},{"cost_us",score},{"backend_us",costs},{"cached_npu_experts",cached},{"cached_weight_saving_us",saving}});
             if(score<best_cost) { best_cost=score; best=p; }
         }
         decision={{"candidates",candidates},{"planning_us",elapsed(start)},
@@ -139,7 +170,7 @@ struct online_moe_runtime {
         if(prefetch && il==0) { prefetch->begin_request(begin); }
         const bool cache_ready=prefetch && prefetch->ready(il);
         for(int e:ids) { require(e>=0 && e<60,"invalid online route"); ++counts[e]; }
-        json decision; auto plan=choose(il,nt,counts,decision);
+        json decision; auto plan=choose(il,nt,counts,decision,cache_ready);
         for(int p=0;p<nt*4;++p) { pairs[plan.owner[ids[p]]].push_back(p); }
         std::vector<float> weighted(size_t(nt)*4*2048),shared_result(size_t(nt)*2048);
         std::array<json,3> timings;

@@ -8,6 +8,7 @@ struct online_expert_prefetch {
     using export_fn=bool (*)(ggml_backend_buffer_t,ggml_backend_shared_dma_buffer_desc *);
     using import_fn=ggml_backend_buffer_t (*)(ggml_backend_t,const ggml_backend_shared_dma_buffer_desc *);
     using pack_fn=bool (*)(ggml_backend_t,ggml_backend_buffer_t,size_t,ggml_backend_buffer_t,size_t,uint32_t,uint32_t,uint32_t,uint64_t);
+    using batch_fn=bool (*)(ggml_backend_t,ggml_backend_buffer_t,ggml_backend_buffer_t,const ggml_backend_q4_0_htp_pack_desc *,size_t);
     struct slot {
         std::unique_ptr<bank> weights;
         ggml_backend_buffer_ptr imported; // destroyed before backing weights
@@ -17,13 +18,18 @@ struct online_expert_prefetch {
     };
     device &gpu;
     std::array<bank *,24> sources;
+    std::array<ggml_backend_buffer_ptr,24> source_views;
     std::array<slot,2> slots;
     export_fn export_dma;
     import_fn import_dma;
     pack_fn pack;
+    batch_fn batch=nullptr;
     json predictor, records=json::array();
     int capacity, pending_layer=-1;
     size_t target_bytes=0, source_import_peak=0;
+    double source_view_setup_us=0;
+    bool batch_pack=std::getenv("MOE_PREFETCH_BATCH_PACK")!=nullptr;
+    bool persistent_views=std::getenv("MOE_PREFETCH_SOURCE_VIEWS")!=nullptr;
     decltype(timer::now()) epoch;
     std::future<json> pending; // joins before any slot/source/backend can die
 
@@ -45,13 +51,26 @@ struct online_expert_prefetch {
         auto reg=ggml_backend_dev_backend_reg(gpu.dev);
         import_dma=reinterpret_cast<import_fn>(ggml_backend_reg_get_proc_address(reg,"ggml_backend_opencl_import_shared_dma_compute_buffer"));
         pack=reinterpret_cast<pack_fn>(ggml_backend_reg_get_proc_address(reg,"ggml_backend_opencl_pack_q4_0_htp"));
+        batch=reinterpret_cast<batch_fn>(ggml_backend_reg_get_proc_address(reg,"ggml_backend_opencl_pack_q4_0_htp_batch"));
         require(export_dma && import_dma && pack,"prefetch shared-DMA APIs unavailable");
+        require(!batch_pack || batch,"prefetch batch API unavailable");
         std::vector<int> ids(capacity); std::iota(ids.begin(),ids.end(),0);
         for(auto &s:slots) {
             s.weights=std::make_unique<bank>(npu,src,0,&ids,false,true);
             require(export_dma(s.weights->buf.get(),&s.desc),"prefetch target DMA export failed");
             s.imported.reset(import_dma(gpu.backend.get(),&s.desc)); require(bool(s.imported),"prefetch target DMA import failed");
             target_bytes+=ggml_backend_buffer_get_size(s.weights->buf.get());
+        }
+        if(persistent_views) {
+            const auto start=timer::now();
+            for(int layer=1;layer<=22;++layer) {
+                ggml_backend_shared_dma_buffer_desc desc{};
+                require(export_dma(sources[layer]->buf.get(),&desc),"source view export failed");
+                source_views[layer].reset(import_dma(gpu.backend.get(),&desc));
+                require(bool(source_views[layer]),"source view import failed");
+                source_import_peak+=desc.size;
+            }
+            source_view_setup_us=elapsed(start);
         }
     }
     void begin_request(decltype(timer::now()) start) { epoch=start; }
@@ -81,17 +100,24 @@ struct online_expert_prefetch {
             const double start=time_us(); auto &dst=slots[target%2]; auto &src=*sources[target];
             ggml_backend_shared_dma_buffer_desc sd{};
             require(export_dma(src.buf.get(),&sd),"prefetch source DMA export failed");
-            ggml_backend_buffer_ptr imported(import_dma(gpu.backend.get(),&sd));
-            require(bool(imported),"prefetch source DMA import failed");
+            ggml_backend_buffer_ptr imported;
+            auto *view=source_views[target].get();
+            if(!view) { imported.reset(import_dma(gpu.backend.get(),&sd)); view=imported.get(); }
+            require(view,"prefetch source DMA import failed");
             uint64_t mask=0; for(int e:ids) { mask|=uint64_t(1)<<e; }
             const double conversion_start=time_us();
+            std::array<ggml_backend_q4_0_htp_pack_desc,3> descs;
             for(int i=0;i<3;++i) {
                 auto *w=src.w[i]; auto *t=dst.weights->w[i];
                 require(w->ne[0]==t->ne[0] && w->ne[1]==t->ne[1] && w->ne[2]==60,"prefetch tensor shape mismatch");
                 size_t so=static_cast<uint8_t *>(w->data)-static_cast<uint8_t *>(sd.host_ptr);
                 size_t to=static_cast<uint8_t *>(t->data)-static_cast<uint8_t *>(dst.desc.host_ptr);
-                require(pack(gpu.backend.get(),imported.get(),so,dst.imported.get(),to,w->ne[0],w->ne[1],60,mask),"GPU prefetch pack rejected");
+                descs[i]={so,to,uint32_t(w->ne[0]),uint32_t(w->ne[1]),60,mask};
             }
+            if(batch_pack) { require(batch(gpu.backend.get(),view,dst.imported.get(),descs.data(),descs.size()),"GPU batch prefetch rejected"); }
+            else { for(const auto &d:descs) {
+                require(pack(gpu.backend.get(),view,d.source_offset,dst.imported.get(),d.target_offset,d.width,d.rows,d.experts,d.selected),"GPU prefetch pack rejected");
+            } }
             // pack waits for every GPU event; publish readiness only after the
             // imported source view is released and all target writes are visible.
             imported.reset(); const double end=time_us();

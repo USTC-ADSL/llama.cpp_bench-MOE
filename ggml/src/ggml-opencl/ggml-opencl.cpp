@@ -12657,41 +12657,61 @@ ggml_backend_buffer_t ggml_backend_opencl_import_shared_dma_compute_buffer(
 #endif
 }
 
-bool ggml_backend_opencl_pack_q4_0_htp(ggml_backend_t backend,
-        ggml_backend_buffer_t source, size_t source_offset,
-        ggml_backend_buffer_t target, size_t target_offset,
-        uint32_t width, uint32_t rows, uint32_t experts, uint64_t selected) {
+bool ggml_backend_opencl_pack_q4_0_htp_batch(ggml_backend_t backend,
+        ggml_backend_buffer_t source, ggml_backend_buffer_t target,
+        const ggml_backend_q4_0_htp_pack_desc * descs, size_t n_descs) {
     if(!backend || !ggml_backend_is_opencl(backend) || !source || !target || source==target ||
+       !descs || !n_descs ||
        source->buft->device!=backend->device || target->buft->device!=backend->device ||
-       source_offset%2 || target_offset%2 ||
        source->iface.free_buffer!=ggml_backend_opencl_buffer_interface.free_buffer ||
-       target->iface.free_buffer!=ggml_backend_opencl_buffer_interface.free_buffer ||
-       !width || width%32 || !rows || rows%32 || !experts || experts>64 || !selected ||
-       (experts<64 && (selected>>experts))) { return false; }
+       target->iface.free_buffer!=ggml_backend_opencl_buffer_interface.free_buffer) { return false; }
     auto *src=static_cast<ggml_backend_opencl_buffer_context *>(source->context);
     auto *dst=static_cast<ggml_backend_opencl_buffer_context *>(target->context);
     auto *ctx=ggml_cl_init(backend->device);
     if(!src->shared_host_base || !dst->shared_host_base || src->shared_host_base==dst->shared_host_base) { return false; }
-    const size_t matrix=size_t(width/32)*rows*18, count=__builtin_popcountll(selected);
-    if(source_offset>source->size || matrix>(source->size-source_offset)/experts ||
-       target_offset>target->size || matrix>(target->size-target_offset)/count) { return false; }
-    cl_kernel kernel=ctx->kernel_pack_q4_0_htp;
-    cl_ulong so=source_offset,to=target_offset,mask=selected;
-    CL_CHECK(clSetKernelArg(kernel,0,sizeof(cl_mem),&src->buffer[0]));
-    CL_CHECK(clSetKernelArg(kernel,1,sizeof(so),&so));
-    CL_CHECK(clSetKernelArg(kernel,2,sizeof(cl_mem),&dst->buffer[0]));
-    CL_CHECK(clSetKernelArg(kernel,3,sizeof(to),&to));
-    CL_CHECK(clSetKernelArg(kernel,4,sizeof(width),&width));
-    CL_CHECK(clSetKernelArg(kernel,5,sizeof(rows),&rows));
-    CL_CHECK(clSetKernelArg(kernel,6,sizeof(mask),&mask));
-    size_t global[]={rows,size_t((width/32+1)/2)*2,count},local[]={32,2,1};
+    // Validate the entire batch before submitting any writes.
+    for(size_t i=0;i<n_descs;++i) {
+        const auto &d=descs[i];
+        if(d.source_offset%2 || d.target_offset%2 || !d.width || d.width%32 || !d.rows || d.rows%32 ||
+           !d.experts || d.experts>64 || !d.selected || (d.experts<64 && (d.selected>>d.experts))) { return false; }
+        const size_t block_rows=size_t(d.width/32)*d.rows;
+        if(block_rows>SIZE_MAX/18) { return false; }
+        const size_t matrix=block_rows*18, count=__builtin_popcountll(d.selected);
+        if(d.source_offset>source->size || matrix>(source->size-d.source_offset)/d.experts ||
+           d.target_offset>target->size || matrix>(target->size-d.target_offset)/count) { return false; }
+    }
     cl_event event;
-    CL_CHECK(clEnqueueNDRangeKernel(ctx->queue,kernel,3,nullptr,global,local,0,nullptr,&event));
+    for(size_t i=0;i<n_descs;++i) {
+        const auto &d=descs[i]; cl_kernel kernel=ctx->kernel_pack_q4_0_htp;
+        cl_ulong so=d.source_offset,to=d.target_offset,mask=d.selected;
+        CL_CHECK(clSetKernelArg(kernel,0,sizeof(cl_mem),&src->buffer[0]));
+        CL_CHECK(clSetKernelArg(kernel,1,sizeof(so),&so));
+        CL_CHECK(clSetKernelArg(kernel,2,sizeof(cl_mem),&dst->buffer[0]));
+        CL_CHECK(clSetKernelArg(kernel,3,sizeof(to),&to));
+        CL_CHECK(clSetKernelArg(kernel,4,sizeof(d.width),&d.width));
+        CL_CHECK(clSetKernelArg(kernel,5,sizeof(d.rows),&d.rows));
+        CL_CHECK(clSetKernelArg(kernel,6,sizeof(mask),&mask));
+        size_t global[]={d.rows,size_t((d.width/32+1)/2)*2,size_t(__builtin_popcountll(d.selected))},local[]={32,2,1};
+        // This backend owns one in-order queue; the final event covers every
+        // preceding kernel without host waits between gate/up/down submissions.
+        CL_CHECK(clEnqueueNDRangeKernel(ctx->queue,kernel,3,nullptr,global,local,0,nullptr,i+1==n_descs?&event:nullptr));
+    }
     CL_CHECK(clWaitForEvents(1,&event)); CL_CHECK(clReleaseEvent(event));
     return true;
 }
 
+bool ggml_backend_opencl_pack_q4_0_htp(ggml_backend_t backend,
+        ggml_backend_buffer_t source, size_t source_offset,
+        ggml_backend_buffer_t target, size_t target_offset,
+        uint32_t width, uint32_t rows, uint32_t experts, uint64_t selected) {
+    const ggml_backend_q4_0_htp_pack_desc desc={source_offset,target_offset,width,rows,experts,selected};
+    return ggml_backend_opencl_pack_q4_0_htp_batch(backend,source,target,&desc,1);
+}
+
 static void * ggml_backend_opencl_get_proc_address(ggml_backend_reg_t, const char * name) {
+    if (strcmp(name, "ggml_backend_opencl_pack_q4_0_htp_batch") == 0) {
+        return (void *) ggml_backend_opencl_pack_q4_0_htp_batch;
+    }
     if (strcmp(name, "ggml_backend_opencl_pack_q4_0_htp") == 0) {
         return (void *) ggml_backend_opencl_pack_q4_0_htp;
     }

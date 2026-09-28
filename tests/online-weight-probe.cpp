@@ -110,6 +110,8 @@ static json gpu_htp_pack_probe(online_matrix &canonical,online_matrix &packed,
     auto reg=ggml_backend_dev_backend_reg(gpu.dev);
     auto import=reinterpret_cast<import_fn>(ggml_backend_reg_get_proc_address(reg,"ggml_backend_opencl_import_shared_dma_compute_buffer"));
     auto pack=reinterpret_cast<pack_fn>(ggml_backend_reg_get_proc_address(reg,"ggml_backend_opencl_pack_q4_0_htp"));
+    using batch_fn=bool (*)(ggml_backend_t,ggml_backend_buffer_t,ggml_backend_buffer_t,const ggml_backend_q4_0_htp_pack_desc *,size_t);
+    auto batch=reinterpret_cast<batch_fn>(ggml_backend_reg_get_proc_address(reg,"ggml_backend_opencl_pack_q4_0_htp_batch"));
     require(export_dma && import && pack,"GPU HTP conversion APIs missing");
     ggml_backend_shared_dma_buffer_desc sd{},td{};
     require(export_dma(canonical.wb.get(),&sd) && export_dma(packed.wb.get(),&td),"conversion DMA export failed");
@@ -122,6 +124,18 @@ static json gpu_htp_pack_probe(online_matrix &canonical,online_matrix &packed,
     run(2); std::vector<uint8_t> restored(bytes.size());
     ggml_backend_tensor_get(packed.w,restored.data(),0,restored.size());
     require(std::equal(bytes.begin()+bytes.size()/2,bytes.end(),restored.begin()),"sparse GPU conversion expert mapping failed");
+    const size_t matrix=bytes.size()/2;
+    std::array<ggml_backend_q4_0_htp_pack_desc,2> descs{{
+        {so,to,uint32_t(canonical.w->ne[0]),uint32_t(canonical.w->ne[1]),1,1},
+        {so+matrix,to+matrix,uint32_t(canonical.w->ne[0]),uint32_t(canonical.w->ne[1]),1,1}}};
+    auto invalid=descs; invalid[1].width=0;
+    require(batch && !batch(gpu.backend.get(),source.get(),target.get(),invalid.data(),invalid.size()),"invalid batch accepted");
+    std::vector<uint8_t> after_invalid(bytes.size());
+    ggml_backend_tensor_get(packed.w,after_invalid.data(),0,after_invalid.size());
+    require(after_invalid==restored,"invalid batch partially wrote target");
+    require(batch(gpu.backend.get(),source.get(),target.get(),descs.data(),descs.size()),"batch conversion rejected");
+    ggml_backend_tensor_get(packed.w,restored.data(),0,restored.size());
+    require(restored==bytes,"batch output or completion fence incorrect");
     run(3); ggml_backend_tensor_get(packed.w,restored.data(),0,restored.size());
     require(restored==bytes,"GPU HTP layout mismatch");
     canonical.compute(); packed.compute(); require(canonical.get()==packed.get(),"GPU HTP converted result differs");
@@ -129,6 +143,7 @@ static json gpu_htp_pack_probe(online_matrix &canonical,online_matrix &packed,
     for(int r=0;r<reps;++r) { auto begin=clock_type::now(); run(3); double us=elapsed(begin);
         packed.compute(); combined.push_back(elapsed(begin)); convert.push_back(us); }
     return {{"sparse_mapping_and_roundtrip_exact",true},{"compute_bitwise_equal",true},
+        {"batch_roundtrip_exact_and_invalid_batch_no_write",true},
         {"gpu_prepare",stats(convert,bytes.size())},{"gpu_prepare_npu_compute",stats(combined,bytes.size())}};
 }
 

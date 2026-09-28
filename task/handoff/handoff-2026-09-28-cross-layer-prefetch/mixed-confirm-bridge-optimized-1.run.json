@@ -1,0 +1,43 @@
+{
+  "serial": "fd8657d6",
+  "command": "cd /data/local/tmp/llama-online-weights && exec env LD_LIBRARY_PATH=/data/local/tmp/llama-online-weights ADSP_LIBRARY_PATH=/data/local/tmp/llama-online-weights GGML_HEXAGON_DEVICES=1 GGML_HEXAGON_NHMX=1 GGML_HEXAGON_MM_SELECT=3 GGML_HEXAGON_PROFILE=0 GGML_OPENCL_FUSED_Q4_PREPARE=1 GGML_OPENCL_LAZY_SCRATCH=1 GGML_ACCEL_BUDGET_MODE=observe GGML_ACCEL_BUDGET_OPENCL_COVERAGE=extra GGML_ACCEL_BUDGET_RPCMEM_COVERAGE=charged MOE_ONLINE_PACKED_HEAD=1 MOE_BOUNDED_SOURCE=1 MOE_RAW_SHARED_SOURCE=1 MOE_RESIDENT_OUTPUT=1 MOE_PREFETCH_MODEL=/data/local/tmp/llama-online-weights/mixed-confirm-bridge-optimized-1-prefetch-model.json MOE_PREFETCH_EXPERTS=8 MOE_PREFETCH_MIXED_GRAPH=1 MOE_PREFETCH_BATCH_PACK=1 MOE_PREFETCH_SOURCE_VIEWS=1 ./online-moe /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf /data/local/tmp/llama-online-weights/mixed-confirm-bridge-optimized-1-prompt.txt 128 /data/local/tmp/llama-online-weights/mixed-confirm-bridge-optimized-1-cost-model.json /data/local/tmp/llama-online-weights/mixed-confirm-bridge-optimized-1.json online -1",
+  "inputs": {
+    "prompt.txt": {
+      "source": "task/handoff/handoff-2026-09-28-cross-layer-prefetch/prompt-bridge.txt",
+      "sha256": "d52232ad569f2883629b744379f2cede74c99dec75be713c2fc6e74e9129ecc9"
+    },
+    "cost-model.json": {
+      "source": "task/handoff/handoff-2026-09-27-online-weights/online-cost-model.json",
+      "sha256": "e36fb56b5be009dc79c03867eed5bad1cac2026825cd876ce4d874a9a2042d75"
+    },
+    "prefetch-model.json": {
+      "source": "task/handoff/handoff-2026-09-28-cross-layer-prefetch/prefetch-predictor.json",
+      "sha256": "043a576c483d1e12f5221225a7073864c75df111a43a8356b9a3f6b083677a98"
+    }
+  },
+  "artifacts": "31e5ad14daa6b75b55f872c2d6840d23b32e18e9c9562fee16606ae25ca2efc1  /data/local/tmp/llama-online-weights/online-moe\n3c917a2d5f8798f492ed87153e14a3955052a30fd34b623f887bba2e1490cfb6  /data/local/tmp/llama-online-weights/libggml-base.so\n06a3fe6b0a27c116bfbcec6ba13353fbcac83c12422d8ec8c284d22e3fb9ed32  /data/local/tmp/llama-online-weights/libggml-cpu.so\nf653cbb41450cdfdc6a7ccb7592d4c3a9f69e96b3a7f405e0cf1d05b4d5fdb5a  /data/local/tmp/llama-online-weights/libggml-hexagon.so\nb86a8ffe4a7c81432d4c0024c5e16daf0d050cc687426a56bbc8415c35c4422a  /data/local/tmp/llama-online-weights/libggml-htp-v79.so\n213c830422166f01c050f0b101346ebbfd08c533df1159ee3e0824becb4a63e2  /data/local/tmp/llama-online-weights/libggml-opencl.so\n3bd21ae094ad573efcc02510cd2bda36a32f2f0c1c5c461951fca4e37e05cb67  /data/local/tmp/llama-online-weights/libggml.so\na894fc6dd60fa9f47361b0c0418d439b5a8bb56ed04523108dfb3fd6fb9bfa73  /data/local/tmp/llama-online-weights/libllama.so\n",
+  "model_stat": "/data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf 8149865792 1788789392\n",
+  "before_battery": "Current Battery Service state:\n  AC powered: false\n  USB powered: true\n  Wireless powered: false\n  Dock powered: false\n  Max charging current: 0\n Time when the latest updated value of the Max charging current was sent via battery changed broadcast: +8s373ms\n  Max charging voltage: 0\n  Charge counter: 5549000\n  status: 5\n  health: 2\n  present: true\n  level: 100\n  scale: 100\n  voltage: 4271\n Time when the latest updated value of the voltage was sent via battery changed broadcast: +68d18h52m2s367ms\n The last voltage value sent via the battery changed broadcast: 4271\n  temperature: 232\n  technology: Li-poly\n  Charging state: 0\n  Charging policy: 0\n  Capacity level: 5\nMiuiBatteryService first usage time:\n  mSetBatteryUsageTimeCount=0\n  mNtpTime=-1\n  mParseNtpTime=\n",
+  "sources": {
+    "tests/online-weight-probe.cpp": "2bcedabca7d254d0f51297f4e65ffe43bfd9cb1e7971ef95929c94bf5a8f9ab4",
+    "tests/online-moe.cpp": "3e41779ec3258a23eed5758dda6a9e9de39accc906ef52d4906961574280447b",
+    "tests/online-moe-runtime.h": "e4fabf492ca796074f8a1846c1e0f504f4dc1ee7e8def93f44596d1859b7245e",
+    "tests/online-prefetch.h": "0f729ca236e8ee8545865d8245830a8748f2b3564f87c7602d86ec105ca8bcba",
+    "tests/expert-oracle-probe.cpp": "d6d5eea5f4ee2642e1046e0e5d66f26e27dcd980ae80ce2a4f1e89e6940d8e02",
+    "ggml/include/ggml-shared-dma.h": "1af51fdef260bab85d609b3b853c660b68a467c1f771a820328894660c31f78e",
+    "tests/expert-routing-probe.cpp": "8b3d0be54f8e00fca5e23c9948c3d9c585c92528e3b45aa5a14d655a16e15647",
+    "ggml/src/ggml-hexagon/ggml-hexagon.cpp": "6263565762335aec80a37abad31b236a95e3ba7511b740f7d80a406c952936c7",
+    "src/llama-model.cpp": "2de4036db74b2d571c034161477962199073454b5ea28a385a5413f6c1233806",
+    "include/llama.h": "6515c73afb8d6aa69d1dc99c3053b16e5b90438bfe9457e66b9c5db83d87fa16",
+    "ggml/src/ggml-opencl/ggml-opencl.cpp": "0514af40cf0a147f4b7ebc4a09ef899f9dc740d45da0abd9c0b10c748f856368",
+    "ggml/src/ggml-opencl/kernels/cvt.cl": "fb4d61b7b289565aa134ae16ba5c1b5d0febe269f50f7c48a450cf0826126fb1",
+    "ggml/src/ggml-hexagon/htp/htp-ops.h": "8a46a1aa78897d93192e5d3f852edf54dcbdafac442eae70e4fabf94c510de72",
+    "ggml/src/ggml-hexagon/htp/hmx-mm-kernels-tiled.h": "fd223d8077c68d8d4feec39f690c5deec921b5566720c84d5d45efdfb892bdab",
+    "ggml/src/ggml-hexagon/htp/matmul-ops.c": "4fbec6e957bb68b1ab92ce12fbcab4201307d05696e2b3439fe6d17eda5064a1"
+  },
+  "exit": 0,
+  "elapsed_seconds": 5.022545889019966,
+  "after_battery": "Current Battery Service state:\n  AC powered: false\n  USB powered: true\n  Wireless powered: false\n  Dock powered: false\n  Max charging current: 0\n Time when the latest updated value of the Max charging current was sent via battery changed broadcast: +8s373ms\n  Max charging voltage: 0\n  Charge counter: 5549000\n  status: 5\n  health: 2\n  present: true\n  level: 100\n  scale: 100\n  voltage: 4271\n Time when the latest updated value of the voltage was sent via battery changed broadcast: +68d18h52m2s367ms\n The last voltage value sent via the battery changed broadcast: 4271\n  temperature: 232\n  technology: Li-poly\n  Charging state: 0\n  Charging policy: 0\n  Capacity level: 5\nMiuiBatteryService first usage time:\n  mSetBatteryUsageTimeCount=0\n  mNtpTime=-1\n  mParseNtpTime=\n",
+  "output_sha256": "725cf67e96ced2d95ee5f71d933c0aad99ad5e6a125ffbbfc140f9e5d8f6b221",
+  "logits_sha256": "9506c81a205aa19496eeb30cb4fc5c92bfef63a0cf5a1d51b8c24fc38b2555a4"
+}

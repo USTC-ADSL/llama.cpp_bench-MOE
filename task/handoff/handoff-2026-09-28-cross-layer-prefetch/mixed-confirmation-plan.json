@@ -1,0 +1,45 @@
+{
+  "frozen_at_utc": "2026-09-28T05:27:17.356503+00:00",
+  "capacity": 8,
+  "optimized_flags": [
+    "--mixed-graph",
+    "--batch-pack",
+    "--source-views"
+  ],
+  "reason": "K8 bounded memory and all22 ready with source aliases; K12 no consistent latency win after GPU waiting removed, CPU now competing critical branch. Freeze before any new prompt execution.",
+  "prompts": [
+    "bridge",
+    "observatory"
+  ],
+  "round_orders": [
+    [
+      "native",
+      "online",
+      "split",
+      "optimized"
+    ],
+    [
+      "optimized",
+      "split",
+      "online",
+      "native"
+    ],
+    [
+      "split",
+      "native",
+      "optimized",
+      "online"
+    ]
+  ],
+  "tokens": 128,
+  "protocol": "fresh process, empty converted cache, restored output head, full first prefill; source views initialized without expert conversion during model loading and timed separately",
+  "hashes": {
+    "task/handoff/handoff-2026-09-28-cross-layer-prefetch/prefetch-predictor.json": "043a576c483d1e12f5221225a7073864c75df111a43a8356b9a3f6b083677a98",
+    "task/handoff/handoff-2026-09-28-cross-layer-prefetch/prompt-bridge.txt": "d52232ad569f2883629b744379f2cede74c99dec75be713c2fc6e74e9129ecc9",
+    "task/handoff/handoff-2026-09-28-cross-layer-prefetch/prompt-observatory.txt": "076ce34f7ed46202bfb6e726c1f0eb433aa3926af11d548e89eb027e9fe1a894",
+    "build-android-opencl-hexagon/bin/online-moe": "31e5ad14daa6b75b55f872c2d6840d23b32e18e9c9562fee16606ae25ca2efc1",
+    "build-android-opencl-hexagon/bin/libggml-opencl.so": "213c830422166f01c050f0b101346ebbfd08c533df1159ee3e0824becb4a63e2",
+    "build-android-opencl-hexagon/bin/libggml-hexagon.so": "f653cbb41450cdfdc6a7ccb7592d4c3a9f69e96b3a7f405e0cf1d05b4d5fdb5a",
+    "build-android-opencl-hexagon/ggml/src/ggml-hexagon/libggml-htp-v79.so": "b86a8ffe4a7c81432d4c0024c5e16daf0d050cc687426a56bbc8415c35c4422a"
+  }
+}

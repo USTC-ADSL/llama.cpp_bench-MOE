@@ -37,6 +37,10 @@ def summarize(path):
                           layers[r['target_layer']]['placement']['owner'][e] == 1 for e in r['ids'])
                        for r in records)
         row['prefetch'] = {'capacity': p['capacity'], 'prepared_experts': sum(len(r['ids']) for r in records),
+            'mixed_graph': p.get('mixed_graph', False), 'batch_pack': p.get('batch_pack', False),
+            'persistent_source_views': p.get('persistent_source_views', False),
+            'source_view_setup_ms': p.get('source_view_setup_us', 0) / 1000,
+            'source_import_ms': sum(r['conversion_start_us'] - r['start_us'] for r in records) / 1000,
             'eligible_predictions': eligible, 'used_experts': useful,
             'ready_layers': sum(l['cache_ready'] for l in layers), 'target_layers': len(records),
             'preparation_ms': prep / 1000, 'current_routed_wall_overlap_ms': overlap / 1000,

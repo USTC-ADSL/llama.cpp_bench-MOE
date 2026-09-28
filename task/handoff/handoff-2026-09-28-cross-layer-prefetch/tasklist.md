@@ -15,6 +15,7 @@ Key distinction: expert indices are layer-local. Need predict useful target-back
 
 - [x] Locate mixed canonical/packed dispatch and conversion alternatives; design.md records optional tensors, preserved NX fusion, batch submission and import-lifetime alternatives.
 - [x] Implement mixed-layout HMX execution and preserved gate/up fusion; 12 matrix cases/all-miss/partial/all-hit and complete-model logits pass on fd8657d6. Trace shows46 ID ops (44 mixed+2 canonical), versus90 in split prefetch.
-- [ ] Measure fixed-placement benefit versus split-graph prefetch and unprefetched online; use development evidence to choose any additional conversion/scheduling change.
-- [ ] Freeze selected configuration and confirm first-prefill results on new prompts versus native NPU, documenting memory and numerical limits.
-- [ ] Update paper point/results, archive evidence, clean owned device artifacts and commit stage checkpoints.
+- [x] Measure fixed-placement split/mixed, batch enqueue and persistent source-view controls; K8 stays selected after K12 preparation becomes timely but latency remains inconsistent.
+- [x] Freeze conversion configuration; two new prompts × four balanced rounds: preparation−44%, added throughput versus prior prefetch−0.14%/+1.21%, versus native−1.36%/+0.17%; exact fixed-placement logits. See mixed-results.md.
+- [x] Validate optional ready-cache correction and midpoint candidates: two new prompts × three rounds, +0.15%/−0.22% versus pipeline, no consistent added gain; development and confirmation fixed-placement canonical references are bit-exact and excluded from timings. Keep model optional.
+- [x] Update paper point/results and final handoff; archive444 evidence/binary members with read-back hashes, remove355 individually verified owned device files, and seal final implementation/evidence checkpoint. See mixed-artifact-manifest.json, mixed-device-cleanup.json and handoff-04-final.md.
