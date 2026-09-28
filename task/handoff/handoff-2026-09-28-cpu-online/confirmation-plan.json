@@ -1,0 +1,57 @@
+{
+  "implementation_commit": "2b4149d550c17b69fe8f47afe9f9e353960b5c42",
+  "device": "fd8657d6",
+  "tokens": 128,
+  "prompts": [
+    "reservoir",
+    "clockwork"
+  ],
+  "modes": [
+    "native",
+    "original",
+    "refit",
+    "grouped"
+  ],
+  "rounds": 4,
+  "orders": [
+    [
+      "native",
+      "original",
+      "refit",
+      "grouped"
+    ],
+    [
+      "original",
+      "refit",
+      "grouped",
+      "native"
+    ],
+    [
+      "refit",
+      "grouped",
+      "native",
+      "original"
+    ],
+    [
+      "grouped",
+      "native",
+      "original",
+      "refit"
+    ]
+  ],
+  "protocol": "fresh process, first prefill, no target prompt replay, no profile, no CPU reference duplicate; all samples retained; each mode occupies each order once",
+  "models": {
+    "original": "task/handoff/handoff-2026-09-27-online-weights/online-cost-model.json",
+    "refit": "task/handoff/handoff-2026-09-28-cpu-online/cost-canonical.json",
+    "grouped": "task/handoff/handoff-2026-09-28-cpu-online/cost-canonical-mm.json"
+  },
+  "grouped_mode": "canonical-mm",
+  "conversion_flag": false,
+  "prefetch": "K8 mixed-graph batch-pack source-views; same for all online modes",
+  "inputs": {
+    "task/handoff/handoff-2026-09-28-cpu-online/prompt-reservoir.txt": "529f59ddf824d3ce7afd573f76fc38841cf6a3a324304da1a16c672bb4cfb7af",
+    "task/handoff/handoff-2026-09-28-cpu-online/prompt-clockwork.txt": "86bff129433a4f924d53d7be2b6be22f7dcc40ae6d931aadd338409ee55e5d05",
+    "task/handoff/handoff-2026-09-28-cpu-online/cost-canonical.json": "dd196147485213e071f954e286cd2ae299f670f9f7988034b2ba11cd1ae07fc7",
+    "task/handoff/handoff-2026-09-28-cpu-online/cost-canonical-mm.json": "f92712bc6bf48fe5c673352bdf4a7d8eae3e243aba13a4f7ba0eaa7d93c3e37c"
+  }
+}

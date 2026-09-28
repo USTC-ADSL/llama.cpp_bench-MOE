@@ -6,7 +6,7 @@ Parent42112a5ed, fd8657d6. Single-request complete128-token prefill, true online
 - [x] Design bounded CPU repack and grouped execution controls; separate pure compute from first-use preparation cost. Added zero-copy canonical grouped-MM control and optional direct NEON repack.
 - [x] Implement and device-validate full-Expert correctness and layout/operator microbenchmarks; three matrix cohorts pass independent reference, direct repack matches scalar4x8 bytes.
 - [x] Integrate CPU controls into complete online prefill; conventional/accelerated repack still lose, zero-copy canonical-MM reduces CPU branch;23 same-input layer references pass. CPU-only refits prepared symmetrically for baseline and grouped control.
-- [ ] Freeze configuration and validate fresh prompts against unchanged canonical pipeline and native NPU, including numerical and memory limits.
-- [ ] Update paper evidence, archive/clean device artifacts, handoff and Git checkpoint.
+- [x] Freeze two fresh prompts × four balanced rounds, plus same-protocol refit baseline. Grouped throughput vs native +3.90%/+7.52%, vs original pipeline +1.57%/+5.01%; all samples retained. Per-layer references on both prompts pass, scoped extra146.52MiB unchanged.
+- [x] Update paper/results and final handoff; archive235 members with read-back hashes, remove220 individually verified owned device files, preserve reusable binaries/model/cache. Implementation checkpoint2b4149d55 plus final evidence checkpoint.
 
 No promise of speedup before measurements. Fixed-route comparisons isolate implementation; no prompt prepass or replay in performance claims. CPU_REPACK may change floating-point accumulation; compare each optimized path to independent reference and report errors, not just top1.
