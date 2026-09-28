@@ -1,0 +1,445 @@
+{
+  "complete": true,
+  "cases": [
+    {
+      "prompt": "museum",
+      "tokens": 768,
+      "policies": {
+        "native": {
+          "process_medians_ms": [
+            1237.8228119999999,
+            1153.7962234999998
+          ],
+          "mean_ms": 1192.9947565833334,
+          "major_faults": [
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0
+          ],
+          "hexagon_mean": {
+            "profile_mode": 0,
+            "devices": 1,
+            "dsp_batches": 25,
+            "dsp_batch_us": 1107665.1666666667,
+            "dsp_batch_cycles": 1950845792.3333333,
+            "dsp_ops": 0,
+            "dsp_op_us": 0,
+            "dsp_op_cycles": 0,
+            "host_queue_writes": 25,
+            "host_queue_write_us": 103,
+            "host_queue_reads": 25,
+            "host_queue_read_us": 1119927.6666666667
+          },
+          "batch_cycles_per_us_by_process": [
+            [
+              1593.6458709389217,
+              1593.6414218641942,
+              1593.6469484032984,
+              1593.6397394458932,
+              1593.6399592457265,
+              1593.6377738645178
+            ],
+            [
+              1939.258276219526,
+              1939.2624497468732,
+              1939.2603769685754,
+              1939.262022018782,
+              1939.2648331794348,
+              1939.2599371908145
+            ]
+          ]
+        },
+        "customnpu": {
+          "process_medians_ms": [
+            1388.9798435,
+            1387.1619525
+          ],
+          "mean_ms": 1388.6734805833335,
+          "major_faults": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "hexagon_mean": {
+            "profile_mode": 0,
+            "devices": 1,
+            "dsp_batches": 73,
+            "dsp_batch_us": 1082284.3333333333,
+            "dsp_batch_cycles": 1849557586.75,
+            "dsp_ops": 0,
+            "dsp_op_us": 0,
+            "dsp_op_cycles": 0,
+            "host_queue_writes": 73,
+            "host_queue_write_us": 290.5,
+            "host_queue_reads": 73,
+            "host_queue_read_us": 1115936.5833333333
+          },
+          "batch_cycles_per_us_by_process": [
+            [
+              1708.9398854732547,
+              1708.93761492971,
+              1708.9309465983583,
+              1708.9337322809636,
+              1708.9475899981123,
+              1708.9411015876594
+            ],
+            [
+              1708.9402130491446,
+              1708.9407895588554,
+              1708.9387822477952,
+              1708.934556438184,
+              1708.9383636247735,
+              1708.940850333658
+            ]
+          ],
+          "gather_mean_ms": 1.192188,
+          "expert_wall_mean_ms": 803.3350700000001,
+          "combine_mean_ms": 96.06354283333334,
+          "ffn_mean_ms": 900.5908008333334,
+          "residual_mean_ms": 488.08267975,
+          "backend_compute_mean_ms": [
+            0.0,
+            774.0570481666666,
+            0.0
+          ],
+          "backend_gather_mean_ms": [
+            0.0,
+            29.248316,
+            0.0
+          ],
+          "planning_mean_ms": 0.0,
+          "logits_relative_l2_vs_native": [
+            0.023355456069111824,
+            0.023355456069111824
+          ],
+          "top1_matches_native": [
+            true,
+            true
+          ]
+        },
+        "route": {
+          "process_medians_ms": [
+            1044.8481505,
+            1055.694687
+          ],
+          "mean_ms": 1050.2472478333334,
+          "major_faults": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "hexagon_mean": {
+            "profile_mode": 0,
+            "devices": 1,
+            "dsp_batches": 73,
+            "dsp_batch_us": 894922.4166666666,
+            "dsp_batch_cycles": 1529376529.1666667,
+            "dsp_ops": 0,
+            "dsp_op_us": 0,
+            "dsp_op_cycles": 0,
+            "host_queue_writes": 73,
+            "host_queue_write_us": 114.75,
+            "host_queue_reads": 73,
+            "host_queue_read_us": 909809.1666666666
+          },
+          "batch_cycles_per_us_by_process": [
+            [
+              1708.9658158772113,
+              1708.9523806329348,
+              1708.939128367475,
+              1708.9481655902755,
+              1708.9508927426396,
+              1708.9498282593033
+            ],
+            [
+              1708.9422378398538,
+              1708.9477866213558,
+              1708.9448996692886,
+              1708.9480409191729,
+              1708.9477968904507,
+              1708.9477593599256
+            ]
+          ],
+          "gather_mean_ms": 12.380403333333334,
+          "expert_wall_mean_ms": 638.387604,
+          "combine_mean_ms": 25.31508241666667,
+          "ffn_mean_ms": 676.08308975,
+          "residual_mean_ms": 374.1641580833334,
+          "backend_compute_mean_ms": [
+            553.20596,
+            582.8959635,
+            493.5671436666667
+          ],
+          "backend_gather_mean_ms": [
+            5.7857209166666665,
+            37.00533791666666,
+            12.068520249999999
+          ],
+          "planning_mean_ms": 11.993776416666668,
+          "logits_relative_l2_vs_native": [
+            0.028577396646142006,
+            0.028577396646142006
+          ],
+          "top1_matches_native": [
+            true,
+            true
+          ]
+        }
+      },
+      "decomposition_ms": {
+        "net_saving": 142.74750874999995,
+        "callback_saving": 224.50771108333345,
+        "residual_saving": 113.9185216666666,
+        "custom_path_penalty": 195.6787240000001
+      }
+    },
+    {
+      "prompt": "technical-extended",
+      "tokens": 1536,
+      "policies": {
+        "native": {
+          "process_medians_ms": [
+            2076.8109365,
+            2074.342395
+          ],
+          "mean_ms": 2177.8191573333334,
+          "major_faults": [
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            1
+          ],
+          "hexagon_mean": {
+            "profile_mode": 0,
+            "devices": 1,
+            "dsp_batches": 25,
+            "dsp_batch_us": 1969533.6666666667,
+            "dsp_batch_cycles": 3819380034.4166665,
+            "dsp_ops": 0,
+            "dsp_op_us": 0,
+            "dsp_op_cycles": 0,
+            "host_queue_writes": 25,
+            "host_queue_write_us": 298,
+            "host_queue_reads": 25,
+            "host_queue_read_us": 1984351.1666666667
+          },
+          "batch_cycles_per_us_by_process": [
+            [
+              1939.2346102575216,
+              1939.2325393251606,
+              1939.2352087046413,
+              1939.2340565277868,
+              1939.2331861986158,
+              1939.2339373753796
+            ],
+            [
+              1939.2284105828794,
+              1939.2271700701783,
+              1939.2284334273088,
+              1939.2281377982442,
+              1939.2250411906632,
+              1939.2268040762972
+            ]
+          ]
+        },
+        "customnpu": {
+          "process_medians_ms": [
+            2483.2239575,
+            2418.2774995
+          ],
+          "mean_ms": 2585.2676555,
+          "major_faults": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "hexagon_mean": {
+            "profile_mode": 0,
+            "devices": 1,
+            "dsp_batches": 73,
+            "dsp_batch_us": 1883911.1666666667,
+            "dsp_batch_cycles": 3653442263.75,
+            "dsp_ops": 0,
+            "dsp_op_us": 0,
+            "dsp_op_cycles": 0,
+            "host_queue_writes": 73,
+            "host_queue_write_us": 1672.5,
+            "host_queue_reads": 73,
+            "host_queue_read_us": 1924999.4166666667
+          },
+          "batch_cycles_per_us_by_process": [
+            [
+              1939.2810197899914,
+              1939.284231601001,
+              1939.2846606086182,
+              1939.2783476229245,
+              1939.2792583892742,
+              1939.2828145424685
+            ],
+            [
+              1939.2913240311725,
+              1939.2925203221787,
+              1939.2878608725214,
+              1939.2920165451603,
+              1939.2865417898283,
+              1939.2896029587798
+            ]
+          ],
+          "gather_mean_ms": 2.4340459166666664,
+          "expert_wall_mean_ms": 1190.144388,
+          "combine_mean_ms": 238.379506,
+          "ffn_mean_ms": 1430.9579399166666,
+          "residual_mean_ms": 1154.3097155833332,
+          "backend_compute_mean_ms": [
+            0.0,
+            1124.3496875,
+            0.0
+          ],
+          "backend_gather_mean_ms": [
+            0.0,
+            65.76140533333333,
+            0.0
+          ],
+          "planning_mean_ms": 0.0,
+          "logits_relative_l2_vs_native": [
+            0.05949852988123894,
+            0.05949852988123894
+          ],
+          "top1_matches_native": [
+            true,
+            true
+          ]
+        },
+        "route": {
+          "process_medians_ms": [
+            1992.951614,
+            1994.995025
+          ],
+          "mean_ms": 2004.5918526666667,
+          "major_faults": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "hexagon_mean": {
+            "profile_mode": 0,
+            "devices": 1,
+            "dsp_batches": 73,
+            "dsp_batch_us": 1648272.8333333333,
+            "dsp_batch_cycles": 3196478172.5833335,
+            "dsp_ops": 0,
+            "dsp_op_us": 0,
+            "dsp_op_cycles": 0,
+            "host_queue_writes": 73,
+            "host_queue_write_us": 294.5,
+            "host_queue_reads": 73,
+            "host_queue_read_us": 1666227.6666666667
+          },
+          "batch_cycles_per_us_by_process": [
+            [
+              1939.2864592771325,
+              1939.2934176769913,
+              1939.2885727027594,
+              1939.2887640497142,
+              1939.2934735884805,
+              1939.2933490531047
+            ],
+            [
+              1939.2883785885047,
+              1939.2861212562586,
+              1939.2898425155488,
+              1939.2881796565582,
+              1939.2904592253676,
+              1939.2867888218427
+            ]
+          ],
+          "gather_mean_ms": 40.86221758333333,
+          "expert_wall_mean_ms": 1028.2305510833332,
+          "combine_mean_ms": 52.943794000000004,
+          "ffn_mean_ms": 1122.0365626666667,
+          "residual_mean_ms": 882.55529,
+          "backend_compute_mean_ms": [
+            745.86265525,
+            906.8007584166667,
+            812.9508422499999
+          ],
+          "backend_gather_mean_ms": [
+            17.406822833333333,
+            101.51398341666668,
+            36.764608583333334
+          ],
+          "planning_mean_ms": 38.827186999999995,
+          "logits_relative_l2_vs_native": [
+            0.060898423194885254,
+            0.060898423194885254
+          ],
+          "top1_matches_native": [
+            true,
+            true
+          ]
+        }
+      },
+      "decomposition_ms": {
+        "net_saving": 173.22730466666667,
+        "callback_saving": 308.92137725,
+        "residual_saving": 271.75442558333316,
+        "custom_path_penalty": 407.44849816666647
+      }
+    }
+  ],
+  "timing": "All three policies enable identical aggregate Hexagon timing; two reversed process orders, 30s idle before each process, 2 warmups +6 measurements/process. Fixed idle is not a thermal-state guarantee. Diagnostic, separate from frozen confirmation.",
+  "decomposition": "native-route = (customnpu_ffn-route_ffn) + (customnpu_residual-route_residual) - (customnpu-native); use means for this additive identity, not medians."
+}
