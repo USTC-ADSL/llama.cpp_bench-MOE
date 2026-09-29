@@ -88,7 +88,7 @@ def regression(kind):
     result = EV / f"{kind}.json"
     assert not result.exists()
     env = ["env", f"LD_LIBRARY_PATH={REMOTE}", f"ADSP_LIBRARY_PATH={REMOTE}", "GGML_HEXAGON_DEVICES=1", "GGML_HEXAGON_NHMX=1", "GGML_HEXAGON_VERBOSE=1",
-           "GGML_HEXAGON_MM_SELECT="+("2" if kind.endswith("hvx") else "3"), "GGML_HEXAGON_OPFUSION="+("0" if kind.endswith("no-nx") else "1")]
+           "GGML_HEXAGON_MM_SELECT="+("1" if kind.endswith("hvx") else "2"), "GGML_HEXAGON_OPFUSION="+("0" if kind.endswith("no-nx") else "1")]
     cmd = shlex.join(env+[REMOTE+"/"+path.name,MODEL,REMOTE+f"/{kind}.json"])
     with (EV/f"{kind}.log").open("w") as log:
         status = subprocess.run(["adb","-s","fd8657d6","shell",cmd],stdout=log,stderr=subprocess.STDOUT).returncode
