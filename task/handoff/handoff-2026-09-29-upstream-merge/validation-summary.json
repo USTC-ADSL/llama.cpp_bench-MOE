@@ -1,0 +1,41 @@
+{
+  "device": "fd8657d6",
+  "upstream": "00af63567a3ac073919be039db8492f229de5ffc",
+  "scope": "Compatibility regression; one process/policy/length, two warmups and four samples; not a controlled old/new performance comparison",
+  "indexed_cases": {
+    "regression": 20,
+    "regression-no-nx": 20,
+    "regression-hvx": 20
+  },
+  "fullmodel": [
+    {
+      "tokens": 128,
+      "median_ms": {
+        "native": 531.1091925,
+        "base": 359.325104,
+        "fused": 362.9117965
+      },
+      "base_fused_logits_bitwise_equal": true,
+      "route_and_allocations_equal": true,
+      "custom_repeat_bitwise_equal": true,
+      "top1": 279,
+      "native_fused_logits_relative_l2": 0.03101264697208717
+    },
+    {
+      "tokens": 768,
+      "median_ms": {
+        "native": 1113.568203,
+        "base": 973.766119,
+        "fused": 965.6181505
+      },
+      "base_fused_logits_bitwise_equal": true,
+      "route_and_allocations_equal": true,
+      "custom_repeat_bitwise_equal": true,
+      "top1": 13,
+      "native_fused_logits_relative_l2": 0.013901255976713975
+    }
+  ],
+  "resident_cases": 12,
+  "canonical_mixed_exact_cases": 12,
+  "gpu_shared_cases": 3
+}
