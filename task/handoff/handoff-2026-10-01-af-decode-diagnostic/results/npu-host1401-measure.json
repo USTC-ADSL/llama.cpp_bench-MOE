@@ -1,0 +1,55 @@
+{
+  "command": "set -e\ntrap 'echo 1017600 > /sys/devices/system/cpu/cpufreq/policy6/scaling_min_freq\necho 4320000 > /sys/devices/system/cpu/cpufreq/policy6/scaling_max_freq\necho 1017600 > /sys/devices/system/cpu/cpufreq/policy6/scaling_min_freq' EXIT\necho 1017600 > /sys/devices/system/cpu/cpufreq/policy6/scaling_min_freq\necho 1401600 > /sys/devices/system/cpu/cpufreq/policy6/scaling_max_freq\necho 1401600 > /sys/devices/system/cpu/cpufreq/policy6/scaling_min_freq\ncd /data/local/tmp/dense-af-decode-diagnostic\nenv LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 GGML_HEXAGON_PROFILE=1 GGML_HEXAGON_TIMING=1 GGML_HEXAGON_POWER=nom GGML_HEXAGON_DCVS=0 timeout 240 taskset c0 ./dense-af-decode -m /data/local/tmp/models/Qwen2.5-3B-2K/ggml/weights.gguf --placement npu --output npu-host1401-measure --prompt 256 --steps 8\ncat /sys/devices/system/cpu/cpufreq/policy6/scaling_min_freq /sys/devices/system/cpu/cpufreq/policy6/scaling_max_freq /sys/devices/system/cpu/cpufreq/policy6/scaling_cur_freq",
+  "returncode": 0,
+  "cpu_khz": 1401600,
+  "before": "Current OPLUS Battery Service state:\n  Charger voltage : 3\n  Battery current : 78\n  ChargerTechnology: 0\n  ChargeFastCharger: false\n  PlugType: 0\n  UpdatesStopped: false\n  UsbHwStatus: 0\n  BatteryHwStatus: -2147483648\n  HwStatusIsSet: 1\n  BatteryIcStatus: -2147483648\n  IcStatusIsSet: 1\n\n  mUsbStatus: 0\n  PhoneTemp: -1023\n  ThermalFeatureOn: false\nCurrent Battery Service state:\n  AC powered: false\n  USB powered: false\n  Wireless powered: false\n  Dock powered: false\n  Max charging current: 0\n  Max charging voltage: 0\n  Charge counter: 2204000\n  status: 3\n  health: 2\n  present: true\n  level: 43\n  scale: 100\n  voltage: 3803\n  temperature: 306\n  technology: Li-ion\n  Charging state: 0\n  Charging policy: 0",
+  "after": "Current OPLUS Battery Service state:\n  Charger voltage : 27\n  Battery current : 546\n  ChargerTechnology: 0\n  ChargeFastCharger: false\n  PlugType: 0\n  UpdatesStopped: false\n  UsbHwStatus: 0\n  BatteryHwStatus: -2147483648\n  HwStatusIsSet: 1\n  BatteryIcStatus: -2147483648\n  IcStatusIsSet: 1\n\n  mUsbStatus: 0\n  PhoneTemp: -1023\n  ThermalFeatureOn: false\nCurrent Battery Service state:\n  AC powered: false\n  USB powered: false\n  Wireless powered: false\n  Dock powered: false\n  Max charging current: 0\n  Max charging voltage: 0\n  Charge counter: 2200000\n  status: 3\n  health: 2\n  present: true\n  level: 43\n  scale: 100\n  voltage: 3762\n  temperature: 305\n  technology: Li-ion\n  Charging state: 0\n  Charging policy: 0",
+  "results": [
+    {
+      "placement": "npu",
+      "prompt_tokens": 256,
+      "decode_steps": 8,
+      "generated_tokens_including_prefill_sample": 9,
+      "prefill_and_first_sample_ms": 248.426979,
+      "decode_and_sample_ms": 484.462396,
+      "tokens_per_second": 16.51315,
+      "ms_per_token": 60.557799,
+      "kv_last_position": 263,
+      "threads": 2,
+      "flash": true,
+      "eog_suppressed": true,
+      "step_ms": [
+        61.863437,
+        60.355781,
+        60.022656,
+        59.814375,
+        61.437292,
+        60.151927,
+        60.29276,
+        60.520885
+      ],
+      "diagnostic": {
+        "profile_mode": 1,
+        "decode_call_ms": 478.450418,
+        "sample_and_wait_ms": 6.004529,
+        "dsp_batches": 8,
+        "dsp_batch_us": 450424,
+        "dsp_batch_cycles": 562141608,
+        "dsp_ops": 4360,
+        "dsp_op_us": 447394,
+        "dsp_op_cycles": 561286403,
+        "host_queue_writes": 8,
+        "host_queue_write_us": 21,
+        "host_queue_reads": 8,
+        "host_queue_read_us": 468068
+      }
+    }
+  ],
+  "host_seconds": 5.547465801239014,
+  "control_readback": [
+    "1401600",
+    "1401600",
+    "1401600"
+  ],
+  "screen_on": true
+}

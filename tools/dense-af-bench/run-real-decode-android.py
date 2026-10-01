@@ -19,6 +19,7 @@ def main():
     p.add_argument('--steps', type=int, default=100)
     p.add_argument('--deploy', action='store_true')
     p.add_argument('--cases', nargs='+', choices=['mixed', 'npu', 'npu-host1401'], default=['mixed', 'npu'])
+    p.add_argument('--htp-diagnostic', action='store_true', help='basic DSP profile and aggregate host queue timing')
     args = p.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
     if (args.output / 'original-state.json').exists():
@@ -66,7 +67,9 @@ def main():
             khz = 2649600 if case == 'npu' else 1401600
             name = case + '-' + args.phase
             env = ['env', 'LD_LIBRARY_PATH=.', 'ADSP_LIBRARY_PATH=.', 'GGML_HEXAGON_DEVICES=1',
-                   'GGML_HEXAGON_PROFILE=0', 'GGML_HEXAGON_POWER=nom', 'GGML_HEXAGON_DCVS=0']
+                   'GGML_HEXAGON_PROFILE=' + ('1' if args.htp_diagnostic else '0'),
+                   'GGML_HEXAGON_TIMING=' + ('1' if args.htp_diagnostic else '0'),
+                   'GGML_HEXAGON_POWER=nom', 'GGML_HEXAGON_DCVS=0']
             options = ['timeout', '240', 'taskset', 'c0', './dense-af-decode', '-m', args.model,
                        '--placement', placement, '--output', name, '--prompt', '256', '--steps', str(args.steps)]
             if args.phase == 'audit':

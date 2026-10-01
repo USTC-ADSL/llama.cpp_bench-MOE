@@ -2,6 +2,7 @@
 #include "llama.h"
 #include "ggml-backend.h"
 #include "ggml-cpu.h"
+#include "ggml-hexagon.h"
 
 #include <algorithm>
 #include <chrono>
@@ -143,6 +144,18 @@ int main(int argc, char ** argv) {
         }
         llama_sampler_chain_add(sampler.get(), llama_sampler_init_logit_bias(llama_vocab_n_tokens(vocab), bias.size(), bias.data()));
         llama_sampler_chain_add(sampler.get(), llama_sampler_init_greedy());
+        ggml_backend_hexagon_get_timing_fn read_timing = nullptr;
+        if (htp) {
+            read_timing = reinterpret_cast<ggml_backend_hexagon_get_timing_fn>(ggml_backend_reg_get_proc_address(
+                    ggml_backend_dev_backend_reg(htp), "ggml_backend_hexagon_get_timing"));
+        }
+        const auto timing_snapshot = [&]() {
+            ggml_hexagon_timing value{};
+            if (read_timing) { require(read_timing(&value, sizeof(value)) && value.version == 1, "timing snapshot failed"); }
+            return value;
+        };
+        double decode_call_ms = 0, sample_call_ms = 0;
+        bool time_calls = false;
         const auto sample = [&]() {
             auto * logits = llama_get_logits_ith(ctx.get(), -1);
             require(logits != nullptr, "missing logits");
@@ -158,8 +171,15 @@ int main(int argc, char ** argv) {
             return sample();
         };
         const auto decode = [&](llama_token token) {
+            const double begin = time_calls ? now_ms() : 0;
             require(llama_decode(ctx.get(), llama_batch_get_one(&token, 1)) == 0, "decode failed");
-            return sample(); // host logits access waits for the full model and output head
+            const double submitted = time_calls ? now_ms() : 0;
+            const auto next = sample(); // host logits access waits for the full model and output head
+            if (time_calls) {
+                decode_call_ms += submitted - begin;
+                sample_call_ms += now_ms() - submitted;
+            }
+            return next;
         };
         auto token = prefill();
         for (int i = 0; i < 4; ++i) { token = decode(token); }
@@ -177,6 +197,8 @@ int main(int argc, char ** argv) {
             std::vector<llama_token> generated{token};
             std::vector<double> times;
             generated.reserve(steps + 1); times.reserve(steps);
+            const auto timing_before = timing_snapshot();
+            time_calls = timing_before.enabled;
             const double start = now_ms();
             for (int i = 0; i < steps; ++i) {
                 const double step_start = now_ms();
@@ -186,6 +208,7 @@ int main(int argc, char ** argv) {
             }
             llama_synchronize(ctx.get());
             const double elapsed = now_ms() - start;
+            const auto timing_after = timing_snapshot();
             const auto max_pos = llama_memory_seq_pos_max(llama_get_memory(ctx.get()), 0);
             require(max_pos == prompt_count + steps - 1, "KV did not grow as expected");
             std::ofstream text(output + "-generated.txt"), tokens(output + "-generated-tokens.txt");
@@ -197,7 +220,20 @@ int main(int argc, char ** argv) {
                    placement.c_str(), prompt_count, steps, generated.size(), pre_ms, elapsed,
                    1000.0*steps/elapsed, elapsed/steps, int(max_pos));
             for (size_t i = 0; i < times.size(); ++i) { printf("%s%.6f", i ? "," : "", times[i]); }
-            printf("]}\n");
+            printf("]");
+            if (timing_after.enabled) {
+                static const char * counter_names[] = {"dsp_batches", "dsp_batch_us", "dsp_batch_cycles", "dsp_ops", "dsp_op_us", "dsp_op_cycles",
+                    "host_queue_writes", "host_queue_write_us", "host_queue_reads", "host_queue_read_us"};
+                static_assert(sizeof(counter_names)/sizeof(*counter_names) == GGML_HEXAGON_TIMING_COUNT, "timing schema mismatch");
+                printf(",\"diagnostic\":{\"profile_mode\":%u,\"decode_call_ms\":%.6f,\"sample_and_wait_ms\":%.6f",
+                       timing_after.profile_mode, decode_call_ms, sample_call_ms);
+                for (int i = 0; i < GGML_HEXAGON_TIMING_COUNT; ++i) {
+                    require(timing_after.counters[i] >= timing_before.counters[i], "timing counter decreased");
+                    printf(",\"%s\":%llu", counter_names[i], (unsigned long long)(timing_after.counters[i] - timing_before.counters[i]));
+                }
+                printf("}");
+            }
+            printf("}\n");
             llama_perf_context_print(ctx.get());
         }
         llama_detach_threadpool(ctx.get());

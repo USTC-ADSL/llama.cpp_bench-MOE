@@ -1,0 +1,49 @@
+{
+  "results": [
+    {
+      "name": "mixed",
+      "steps": 8,
+      "wall_ms": 76.013164,
+      "dsp_batch_ms": 46.578,
+      "dsp_op_ms": 45.33175,
+      "host_queue_read_ms": 55.74675,
+      "host_queue_write_ms": 0.026125,
+      "host_outside_queue_read_ms": 20.266414000000005,
+      "wall_minus_dsp_batch_ms": 29.435164,
+      "dsp_batches_per_token": 36.0,
+      "dsp_ops_per_token": 146.0,
+      "sample_and_wait_ms": 0.74707025,
+      "decode_call_ms": 75.26542325,
+      "dsp_batch_cycles_per_us": 1249.0745845678218
+    },
+    {
+      "name": "npu-host1401",
+      "steps": 8,
+      "wall_ms": 60.5577995,
+      "dsp_batch_ms": 56.303,
+      "dsp_op_ms": 55.92425,
+      "host_queue_read_ms": 58.5085,
+      "host_queue_write_ms": 0.002625,
+      "host_outside_queue_read_ms": 2.0492995000000036,
+      "wall_minus_dsp_batch_ms": 4.254799500000004,
+      "dsp_batches_per_token": 1.0,
+      "dsp_ops_per_token": 545.0,
+      "sample_and_wait_ms": 0.750566125,
+      "decode_call_ms": 59.80630225,
+      "dsp_batch_cycles_per_us": 1248.0276539438396
+    }
+  ],
+  "difference_mixed_minus_npu": {
+    "wall_ms": 15.455364500000002,
+    "dsp_batch_ms": -9.724999999999994,
+    "host_queue_read_ms": -2.7617499999999993,
+    "host_outside_queue_read_ms": 18.2171145,
+    "wall_minus_dsp_batch_ms": 25.180364499999996
+  },
+  "identical_generated_tokens": 9,
+  "notes": [
+    "DSP durations overlap host queue wait: never add these columns.",
+    "Host outside queue read includes CPU Attention, scheduler, tensor handoff, sampling and other host work.",
+    "Eight steps only, including one 90 ms mixed step; retain prior 100-step run as primary throughput result."
+  ]
+}
