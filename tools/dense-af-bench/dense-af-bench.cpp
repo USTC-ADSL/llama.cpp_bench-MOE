@@ -298,6 +298,8 @@ static void print_array(const char * name, const std::vector<double> & values) {
     printf("]");
 }
 
+#include "resident-bench.h"
+
 int main(int argc, char ** argv) {
     try {
         std::string path, device = "CPU", selection = "all", stage = "both", reference;
@@ -305,6 +307,8 @@ int main(int argc, char ** argv) {
         double power_seconds = 0, power_settle = 5, idle_seconds = 0, current_to_a = 0;
         std::string battery_dir = "/sys/class/power_supply/battery";
         bool flash = false, write_reference = false, f32_reference = false;
+        bool resident = false;
+        std::string ffn_device;
         for (int i = 1; i < argc; ++i) {
             std::string a = argv[i];
             if (a == "--help") {
@@ -312,6 +316,7 @@ int main(int argc, char ** argv) {
                        "  [--layers all|0,17,35] [--stage both|attention|ffn] [--flash 0|1]\n"
                        "  [--past 0|64|256] (history is only allowed with --prompt 1)\n"
                        "  [--threads 8] [--reps 7] [--warmup 2]\n"
+                       "  [--resident] [--ffn-device CPU|GPUOpenCL|HTP0] (all layers resident, fixed independent inputs)\n"
                        "  [--reference DIR] [--write-reference] [--f32-reference]\n"
                        "  [--power-seconds 12] [--power-settle-seconds 5] [--current-to-a 0.001]\n"
                        "  [--battery-dir PATH] [--power-idle-seconds 12] (idle-only, no model needed)\n");
@@ -319,10 +324,12 @@ int main(int argc, char ** argv) {
             }
             if (a == "--write-reference") { write_reference = true; continue; }
             if (a == "--f32-reference") { f32_reference = true; continue; }
+            if (a == "--resident") { resident = true; continue; }
             require(i + 1 < argc, "missing value for " + a);
             std::string v = argv[++i];
             if      (a == "-m")          { path = v; }
             else if (a == "--device")    { device = v; }
+            else if (a == "--ffn-device") { ffn_device = v; }
             else if (a == "--layers")    { selection = v; }
             else if (a == "--stage")     { stage = v; }
             else if (a == "--reference") { reference = v; }
@@ -355,6 +362,12 @@ int main(int argc, char ** argv) {
         require(past >= 0 && past <= 32768 && (past == 0 || prompt == 1), "history requires prompt 1 and past <= 32768");
         require(!write_reference || (device == "CPU" && !reference.empty()), "write-reference requires CPU and reference directory");
         require(!f32_reference || (device == "CPU" && write_reference), "f32-reference is only for CPU reference generation");
+        require(resident || ffn_device.empty(), "ffn-device requires resident mode");
+        if (resident) {
+            if (ffn_device.empty()) { ffn_device = device; }
+            require(stage == "both" && !f32_reference, "resident mode requires stage both and native weights");
+            require(!write_reference || ffn_device == "CPU", "resident reference requires CPU for both blocks");
+        }
         ggml_backend_load_all();
         auto dev = ggml_backend_dev_by_name(device.c_str());
         if (!dev) {
@@ -378,6 +391,11 @@ int main(int argc, char ** argv) {
                 if (end == std::string::npos) { break; }
                 start = end + 1;
             } while (start < selection.size());
+        }
+        if (resident) {
+            return run_resident(m, backend.get(), ffn_device, layers, prompt, past, flash, threads,
+                                warmup, reps, reference, write_reference, battery_dir, current_to_a,
+                                power_settle, power_seconds);
         }
         bool failed = false;
         for (int layer : layers) {

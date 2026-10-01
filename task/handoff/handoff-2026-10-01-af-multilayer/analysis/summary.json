@@ -1,0 +1,86 @@
+{
+  "layers": 36,
+  "blocks_per_pass": 72,
+  "activation_handoff": false,
+  "results": [
+    {
+      "name": "mixed-cpu1401-nom",
+      "attention_backend": "CPU",
+      "ffn_backend": "HTP0",
+      "cpu_khz": 1401600,
+      "ms_per_pass": 109.32817391304349,
+      "mj_per_pass": 321.4023862101522,
+      "watts": 2.9397946998162294,
+      "passes": 46,
+      "seconds": 5.029096,
+      "samples": 48,
+      "power_cv_pct": 0.4646481652653465,
+      "half_drift_pct": 0.28254563355851897,
+      "read_overhead_pct": 0.12079705776147442,
+      "temp_start_c": 30.0,
+      "temp_end_c": 30.1,
+      "max_relative_rms": 0.00803862,
+      "weight_bytes": 1561632768,
+      "graph_bytes": 27982080,
+      "source": "task/handoff/handoff-2026-10-01-af-multilayer/results/mixed-cpu1401-nom.json"
+    },
+    {
+      "name": "npu-nom-host2649",
+      "attention_backend": "HTP0",
+      "ffn_backend": "HTP0",
+      "cpu_khz": 2649600,
+      "ms_per_pass": 223.21104347826088,
+      "mj_per_pass": 386.8633333304348,
+      "watts": 1.7331729080336138,
+      "passes": 23,
+      "seconds": 5.133854,
+      "samples": 25,
+      "power_cv_pct": 0.6532790537779082,
+      "half_drift_pct": 0.8180376139109222,
+      "read_overhead_pct": 0.08373825979468835,
+      "temp_start_c": 30.1,
+      "temp_end_c": 30.1,
+      "max_relative_rms": 0.01308176,
+      "weight_bytes": 1561632768,
+      "graph_bytes": 27988992,
+      "source": "task/handoff/handoff-2026-10-01-af-multilayer/results/npu-nom-host2649.json"
+    },
+    {
+      "name": "npu-nom-host1401",
+      "attention_backend": "HTP0",
+      "ffn_backend": "HTP0",
+      "cpu_khz": 1401600,
+      "ms_per_pass": 237.16809090909092,
+      "mj_per_pass": 387.41769829013634,
+      "watts": 1.6335152709840624,
+      "passes": 22,
+      "seconds": 5.217698,
+      "samples": 24,
+      "power_cv_pct": 1.7531779532456486,
+      "half_drift_pct": 2.2714801286978106,
+      "read_overhead_pct": 0.0985683724891705,
+      "temp_start_c": 30.1,
+      "temp_end_c": 30.1,
+      "max_relative_rms": 0.01308176,
+      "weight_bytes": 1561632768,
+      "graph_bytes": 27988992,
+      "source": "task/handoff/handoff-2026-10-01-af-multilayer/results/npu-nom-host1401.json"
+    }
+  ],
+  "comparisons": [
+    {
+      "baseline": "npu-nom-host2649",
+      "energy_saving_pct": 16.920948945133006,
+      "latency_reduction_pct": 51.02026664568178,
+      "energy_margin_mj": 65.46094712028258,
+      "latency_margin_ms": 113.88286956521739
+    },
+    {
+      "baseline": "npu-nom-host1401",
+      "energy_saving_pct": 17.039828683961,
+      "latency_reduction_pct": 53.90266308845478,
+      "energy_margin_mj": 66.01531207998414,
+      "latency_margin_ms": 127.83991699604744
+    }
+  ]
+}
