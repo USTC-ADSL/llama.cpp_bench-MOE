@@ -1,0 +1,720 @@
+{
+  "device": "CPU",
+  "point": "2438400",
+  "requested_cpu_khz": 2438400,
+  "requested_gpu_hz": null,
+  "command": "set -e\ntrap 'echo 1017600 > /sys/devices/system/cpu/cpufreq/policy6/scaling_min_freq\necho 4320000 > /sys/devices/system/cpu/cpufreq/policy6/scaling_max_freq\necho 1017600 > /sys/devices/system/cpu/cpufreq/policy6/scaling_min_freq\necho 160000000 > /sys/class/kgsl/kgsl-3d0/devfreq/min_freq\necho 1100000000 > /sys/class/kgsl/kgsl-3d0/devfreq/max_freq\necho 160000000 > /sys/class/kgsl/kgsl-3d0/devfreq/min_freq' EXIT\necho 1017600 > /sys/devices/system/cpu/cpufreq/policy6/scaling_min_freq\necho 2438400 > /sys/devices/system/cpu/cpufreq/policy6/scaling_max_freq\necho 2438400 > /sys/devices/system/cpu/cpufreq/policy6/scaling_min_freq\necho 160000000 > /sys/class/kgsl/kgsl-3d0/devfreq/min_freq\necho 1100000000 > /sys/class/kgsl/kgsl-3d0/devfreq/max_freq\necho 160000000 > /sys/class/kgsl/kgsl-3d0/devfreq/min_freq\nprintf \"CONTROL cpu_min=%s cpu_max=%s gpu_min=%s gpu_max=%s\\n\" \"$(cat /sys/devices/system/cpu/cpufreq/policy6/scaling_min_freq)\" \"$(cat /sys/devices/system/cpu/cpufreq/policy6/scaling_max_freq)\" \"$(cat /sys/class/kgsl/kgsl-3d0/devfreq/min_freq)\" \"$(cat /sys/class/kgsl/kgsl-3d0/devfreq/max_freq)\"\ncd /data/local/tmp/dense-af-dvfs\nenv LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 GGML_HEXAGON_PROFILE=0 GGML_OPENCL_Q4_0_DENSE_DP4A=1 DENSE_AF_CLOCKS=1 timeout 90 taskset c0 ./dense-af-bench -m /data/local/tmp/models/Qwen2.5-3B-2K/ggml/weights.gguf --device CPU --prompt 1 --past 256 --layers 17 --stage both --flash 1 --threads 2 --warmup 3 --reps 2 --power-seconds 5 --power-settle-seconds 5 --current-to-a 0.001 --reference reference --write-reference\nprintf \"CONTROL cpu_min=%s cpu_max=%s gpu_min=%s gpu_max=%s\\n\" \"$(cat /sys/devices/system/cpu/cpufreq/policy6/scaling_min_freq)\" \"$(cat /sys/devices/system/cpu/cpufreq/policy6/scaling_max_freq)\" \"$(cat /sys/class/kgsl/kgsl-3d0/devfreq/min_freq)\" \"$(cat /sys/class/kgsl/kgsl-3d0/devfreq/max_freq)\"",
+  "returncode": 0,
+  "before": "Current OPLUS Battery Service state:\n  Charger voltage : 23\n  Battery current : 895\n  ChargerTechnology: 0\n  ChargeFastCharger: false\n  PlugType: 0\n  UpdatesStopped: false\n  UsbHwStatus: 0\n  BatteryHwStatus: -2147483648\n  HwStatusIsSet: 1\n  BatteryIcStatus: -2147483648\n  IcStatusIsSet: 1\n\n  mUsbStatus: 0\n  PhoneTemp: -1023\n  ThermalFeatureOn: false\nCurrent Battery Service state:\n  AC powered: false\n  USB powered: false\n  Wireless powered: false\n  Dock powered: false\n  Max charging current: 0\n  Max charging voltage: 0\n  Charge counter: 3466000\n  status: 3\n  health: 2\n  present: true\n  level: 67\n  scale: 100\n  voltage: 4003\n  temperature: 343\n  technology: Li-ion\n  Charging state: 0\n  Charging policy: 0\n1017600\n4320000\n160000000\n1100000000",
+  "after": "Current OPLUS Battery Service state:\n  Charger voltage : 23\n  Battery current : 895\n  ChargerTechnology: 0\n  ChargeFastCharger: false\n  PlugType: 0\n  UpdatesStopped: false\n  UsbHwStatus: 0\n  BatteryHwStatus: -2147483648\n  HwStatusIsSet: 1\n  BatteryIcStatus: -2147483648\n  IcStatusIsSet: 1\n\n  mUsbStatus: 0\n  PhoneTemp: -1023\n  ThermalFeatureOn: false\nCurrent Battery Service state:\n  AC powered: false\n  USB powered: false\n  Wireless powered: false\n  Dock powered: false\n  Max charging current: 0\n  Max charging voltage: 0\n  Charge counter: 3466000\n  status: 3\n  health: 2\n  present: true\n  level: 67\n  scale: 100\n  voltage: 4003\n  temperature: 343\n  technology: Li-ion\n  Charging state: 0\n  Charging policy: 0\n1017600\n4320000\n160000000\n1100000000",
+  "started_unix": 1790849424.739896,
+  "elapsed_host_s": 21.0807683467865,
+  "results": [
+    {
+      "device": "CPU",
+      "prompt": 1,
+      "past": 256,
+      "kv_tokens": 512,
+      "layer": 17,
+      "block": "attention",
+      "flash": 1,
+      "threads": 2,
+      "nodes": 26,
+      "weight_buffer": "CPU_REPACK",
+      "f32_reference": false,
+      "relative_rms": -1.0,
+      "max_abs": -1.0,
+      "compute_ms": [
+        0.256,
+        0.254
+      ],
+      "upload_ms": [
+        0.001,
+        0.0
+      ],
+      "download_ms": [
+        0.001,
+        0.0
+      ],
+      "power": {
+        "seconds": 5.000028,
+        "iterations": 22258,
+        "joules": 10.475463902,
+        "average_w": 2.095080838,
+        "current_to_a": 0.001,
+        "charge_start_uah": 3462000,
+        "charge_end_uah": 3462000,
+        "temp_start_c": 34.3,
+        "temp_end_c": 34.3,
+        "wall_seconds": 5.000084,
+        "read_seconds": 0.001998,
+        "samples": [
+          [
+            0.0,
+            522,
+            4025000
+          ],
+          [
+            0.100114,
+            522,
+            4025000
+          ],
+          [
+            0.200143,
+            522,
+            4025000
+          ],
+          [
+            0.300218,
+            522,
+            4025000
+          ],
+          [
+            0.40044,
+            522,
+            4025000
+          ],
+          [
+            0.500579,
+            522,
+            4025000
+          ],
+          [
+            0.600747,
+            522,
+            4025000
+          ],
+          [
+            0.70082,
+            517,
+            4025000
+          ],
+          [
+            0.801007,
+            517,
+            4025000
+          ],
+          [
+            0.901244,
+            517,
+            4025000
+          ],
+          [
+            1.001304,
+            517,
+            4025000
+          ],
+          [
+            1.101416,
+            517,
+            4025000
+          ],
+          [
+            1.201439,
+            517,
+            4025000
+          ],
+          [
+            1.30156,
+            517,
+            4025000
+          ],
+          [
+            1.401655,
+            517,
+            4025000
+          ],
+          [
+            1.501762,
+            517,
+            4025000
+          ],
+          [
+            1.601943,
+            517,
+            4025000
+          ],
+          [
+            1.702083,
+            517,
+            4024000
+          ],
+          [
+            1.802233,
+            529,
+            4024000
+          ],
+          [
+            1.902469,
+            529,
+            4024000
+          ],
+          [
+            2.002501,
+            529,
+            4024000
+          ],
+          [
+            2.102608,
+            529,
+            4024000
+          ],
+          [
+            2.202648,
+            529,
+            4024000
+          ],
+          [
+            2.302803,
+            529,
+            4024000
+          ],
+          [
+            2.402993,
+            529,
+            4024000
+          ],
+          [
+            2.503184,
+            529,
+            4024000
+          ],
+          [
+            2.60334,
+            529,
+            4024000
+          ],
+          [
+            2.703566,
+            529,
+            4024000
+          ],
+          [
+            2.803741,
+            516,
+            4025000
+          ],
+          [
+            2.903991,
+            516,
+            4025000
+          ],
+          [
+            3.004218,
+            516,
+            4025000
+          ],
+          [
+            3.104352,
+            516,
+            4025000
+          ],
+          [
+            3.204391,
+            516,
+            4025000
+          ],
+          [
+            3.304454,
+            516,
+            4025000
+          ],
+          [
+            3.404622,
+            516,
+            4025000
+          ],
+          [
+            3.504864,
+            516,
+            4025000
+          ],
+          [
+            3.605093,
+            516,
+            4025000
+          ],
+          [
+            3.705148,
+            516,
+            4025000
+          ],
+          [
+            3.80524,
+            516,
+            4025000
+          ],
+          [
+            3.9054,
+            520,
+            4025000
+          ],
+          [
+            4.005481,
+            520,
+            4025000
+          ],
+          [
+            4.105507,
+            520,
+            4025000
+          ],
+          [
+            4.20574,
+            520,
+            4025000
+          ],
+          [
+            4.305843,
+            520,
+            4025000
+          ],
+          [
+            4.405994,
+            520,
+            4025000
+          ],
+          [
+            4.506084,
+            520,
+            4025000
+          ],
+          [
+            4.606175,
+            520,
+            4025000
+          ],
+          [
+            4.706195,
+            520,
+            4025000
+          ],
+          [
+            4.80622,
+            520,
+            4025000
+          ],
+          [
+            4.906301,
+            521,
+            4024000
+          ],
+          [
+            5.000028,
+            521,
+            4024000
+          ]
+        ],
+        "clocks": [
+          [
+            -3.9e-05,
+            2438400,
+            342000000
+          ],
+          [
+            0.500554,
+            2438400,
+            342000000
+          ],
+          [
+            1.001278,
+            2438400,
+            342000000
+          ],
+          [
+            1.501731,
+            2438400,
+            342000000
+          ],
+          [
+            2.002475,
+            2438400,
+            342000000
+          ],
+          [
+            2.503157,
+            2438400,
+            342000000
+          ],
+          [
+            3.00419,
+            2438400,
+            342000000
+          ],
+          [
+            3.504839,
+            2438400,
+            342000000
+          ],
+          [
+            4.005455,
+            2438400,
+            342000000
+          ],
+          [
+            4.506055,
+            2438400,
+            342000000
+          ]
+        ]
+      }
+    },
+    {
+      "device": "CPU",
+      "prompt": 1,
+      "past": 0,
+      "kv_tokens": 0,
+      "layer": 17,
+      "block": "ffn",
+      "flash": 0,
+      "threads": 2,
+      "nodes": 7,
+      "weight_buffer": "CPU_REPACK",
+      "f32_reference": false,
+      "relative_rms": -1.0,
+      "max_abs": -1.0,
+      "compute_ms": [
+        0.851,
+        0.828
+      ],
+      "upload_ms": [
+        0.001,
+        0.0
+      ],
+      "download_ms": [
+        0.001,
+        0.0
+      ],
+      "power": {
+        "seconds": 5.000855,
+        "iterations": 5844,
+        "joules": 19.872302664,
+        "average_w": 3.973780619,
+        "current_to_a": 0.001,
+        "charge_start_uah": 3460000,
+        "charge_end_uah": 3456000,
+        "temp_start_c": 34.4,
+        "temp_end_c": 34.4,
+        "wall_seconds": 5.000902,
+        "read_seconds": 0.001993,
+        "samples": [
+          [
+            0.0,
+            984,
+            3995000
+          ],
+          [
+            0.100706,
+            995,
+            3993000
+          ],
+          [
+            0.200765,
+            996,
+            3993000
+          ],
+          [
+            0.300847,
+            996,
+            3993000
+          ],
+          [
+            0.401162,
+            996,
+            3993000
+          ],
+          [
+            0.501494,
+            996,
+            3993000
+          ],
+          [
+            0.602363,
+            996,
+            3993000
+          ],
+          [
+            0.703142,
+            996,
+            3993000
+          ],
+          [
+            0.80377,
+            996,
+            3993000
+          ],
+          [
+            0.904602,
+            996,
+            3993000
+          ],
+          [
+            1.004991,
+            996,
+            3993000
+          ],
+          [
+            1.105171,
+            996,
+            3993000
+          ],
+          [
+            1.205321,
+            989,
+            3993000
+          ],
+          [
+            1.305747,
+            989,
+            3993000
+          ],
+          [
+            1.406374,
+            989,
+            3993000
+          ],
+          [
+            1.506415,
+            989,
+            3993000
+          ],
+          [
+            1.606522,
+            989,
+            3993000
+          ],
+          [
+            1.707342,
+            989,
+            3993000
+          ],
+          [
+            1.807375,
+            989,
+            3993000
+          ],
+          [
+            1.907888,
+            989,
+            3993000
+          ],
+          [
+            2.00831,
+            989,
+            3993000
+          ],
+          [
+            2.108493,
+            989,
+            3993000
+          ],
+          [
+            2.208655,
+            989,
+            3991000
+          ],
+          [
+            2.308843,
+            1001,
+            3991000
+          ],
+          [
+            2.409166,
+            1001,
+            3991000
+          ],
+          [
+            2.509399,
+            1001,
+            3991000
+          ],
+          [
+            2.609873,
+            1001,
+            3991000
+          ],
+          [
+            2.710222,
+            1001,
+            3991000
+          ],
+          [
+            2.810862,
+            1001,
+            3991000
+          ],
+          [
+            2.911733,
+            1001,
+            3991000
+          ],
+          [
+            3.011822,
+            1001,
+            3991000
+          ],
+          [
+            3.112675,
+            1001,
+            3991000
+          ],
+          [
+            3.212762,
+            1001,
+            3991000
+          ],
+          [
+            3.312964,
+            993,
+            3992000
+          ],
+          [
+            3.413718,
+            993,
+            3992000
+          ],
+          [
+            3.514199,
+            993,
+            3992000
+          ],
+          [
+            3.614554,
+            993,
+            3992000
+          ],
+          [
+            3.714772,
+            993,
+            3992000
+          ],
+          [
+            3.815412,
+            993,
+            3992000
+          ],
+          [
+            3.916215,
+            993,
+            3992000
+          ],
+          [
+            4.017009,
+            993,
+            3992000
+          ],
+          [
+            4.117045,
+            993,
+            3992000
+          ],
+          [
+            4.217096,
+            993,
+            3992000
+          ],
+          [
+            4.317204,
+            993,
+            3991000
+          ],
+          [
+            4.417554,
+            1002,
+            3991000
+          ],
+          [
+            4.517788,
+            1002,
+            3991000
+          ],
+          [
+            4.617916,
+            1002,
+            3991000
+          ],
+          [
+            4.718763,
+            1002,
+            3991000
+          ],
+          [
+            4.818852,
+            1002,
+            3991000
+          ],
+          [
+            4.918966,
+            1002,
+            3991000
+          ],
+          [
+            5.000855,
+            1002,
+            3991000
+          ]
+        ],
+        "clocks": [
+          [
+            -3e-05,
+            2438400,
+            342000000
+          ],
+          [
+            0.501464,
+            2438400,
+            342000000
+          ],
+          [
+            1.004964,
+            2438400,
+            342000000
+          ],
+          [
+            1.506385,
+            2438400,
+            342000000
+          ],
+          [
+            2.00827,
+            2438400,
+            342000000
+          ],
+          [
+            2.509374,
+            2438400,
+            342000000
+          ],
+          [
+            3.011796,
+            2438400,
+            342000000
+          ],
+          [
+            3.514168,
+            2438400,
+            342000000
+          ],
+          [
+            4.016982,
+            2438400,
+            342000000
+          ],
+          [
+            4.517762,
+            2438400,
+            342000000
+          ]
+        ]
+      }
+    }
+  ],
+  "controls": [
+    "CONTROL cpu_min=2438400 cpu_max=2438400 gpu_min=160000000 gpu_max=1100000000",
+    "CONTROL cpu_min=2438400 cpu_max=2438400 gpu_min=160000000 gpu_max=1100000000"
+  ],
+  "npu_power": [],
+  "screen_on": true,
+  "display_state_after": "mWakefulness=Awake",
+  "valid_frequency": true
+}

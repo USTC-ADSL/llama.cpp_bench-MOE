@@ -1,0 +1,27 @@
+[1/10] Performing build step for 'htp-v79'
+ninja: no work to do.
+[2/10] Performing install step for 'htp-v79'
+[0/1] Install the project...
+-- Install configuration: "Release"
+-- Installing: /home/miog/pzw/download/pzw/moe/llama.cpp_bench-MOE/build-android-opencl-hexagon/ggml/src/ggml-hexagon/libggml-htp-v79.so
+[3/10] Completed 'htp-v79'
+[4/10] Building CXX object tools/dense-af-bench/CMakeFiles/dense-af-bench.dir/dense-af-bench.cpp.o
+[5/10] Building CXX object ggml/src/ggml-hexagon/CMakeFiles/ggml-hexagon.dir/ggml-hexagon.cpp.o
+/home/miog/pzw/download/pzw/moe/llama.cpp_bench-MOE/ggml/src/ggml-hexagon/ggml-hexagon.cpp:4086:33: warning: format specifies type 'void *' but the argument has type 'uint8_t *' (aka 'unsigned char *') [-Wformat-pedantic]
+ 4085 |     HEX_VERBOSE("ggml-hex: %s clone-buffer: %s base %p size %zu fd %d\n", this->name.c_str(),
+      |                                                     ~~
+      |                                                     %s
+ 4086 |                 sbuf->c_name(), sbuf->base(), sbuf->size(), fd);
+      |                                 ^~~~~~~~~~~~
+/home/miog/pzw/download/pzw/moe/llama.cpp_bench-MOE/ggml/src/ggml-hexagon/ggml-hexagon.cpp:154:37: note: expanded from macro 'HEX_VERBOSE'
+  154 |     if (opt_verbose) GGML_LOG_DEBUG(__VA_ARGS__)
+      |                                     ^~~~~~~~~~~
+/home/miog/pzw/download/pzw/moe/llama.cpp_bench-MOE/ggml/src/ggml-hexagon/../ggml-impl.h:122:69: note: expanded from macro 'GGML_LOG_DEBUG'
+  122 | #define GGML_LOG_DEBUG(...) ggml_log_internal(GGML_LOG_LEVEL_DEBUG, __VA_ARGS__)
+      |                                                                     ^~~~~~~~~~~
+1 warning generated.
+[6/10] Linking CXX shared library bin/libggml-opencl.so
+[7/10] Linking CXX shared library bin/libggml-cpu.so
+[8/10] Linking CXX shared library bin/libggml-hexagon.so
+[9/10] Linking CXX shared library bin/libggml.so
+[10/10] Linking CXX executable bin/dense-af-bench

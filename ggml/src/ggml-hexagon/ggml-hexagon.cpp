@@ -91,6 +91,8 @@ static int    opt_arch    = 0; // autodetect
 static size_t opt_ndev    = 1;
 static size_t opt_nhvx    = 0; // use all
 static int    opt_nhmx    = 1; // when set, enable HMX; when 0, use HVX only
+static int    opt_power   = -1; // -1 preserves the original session power request
+static int    opt_dcvs    = 0;
 static size_t opt_vmem    = HTP_OP_MAX_VMEM_DEFAULT;  // max available va space for buffer mappings
 static size_t opt_mbuf    = 1ul * 1024 * 1024 * 1024; // max buffer size
 static int    opt_etm     = 0;
@@ -4357,6 +4359,18 @@ void ggml_hexagon_session::allocate(const ggml_hexagon_device_config & config) n
     }
     this->valid_iface = true;
 
+    if (opt_power >= 0) {
+        uint32_t core_hz = 0, hmx_hz = 0;
+        int32_t core_status = 0, hmx_status = 0;
+        err = htp_iface_power(this->handle, opt_power, opt_dcvs, &core_hz, &hmx_hz, &core_status, &hmx_status);
+        if (err != 0) {
+            GGML_LOG_ERROR("ggml-hex: power profile request failed: 0x%08x (matching DSP library required)\n", (unsigned) err);
+            throw std::runtime_error("ggml-hex: power profile request failed");
+        }
+        GGML_LOG_INFO("ggml-hex: power profile=%d dcvs=%d initial-core-hz=%u initial-hmx-hz=%u core-status=%d hmx-status=%d\n",
+                      opt_power, opt_dcvs, core_hz, hmx_hz, core_status, hmx_status);
+    }
+
     if (opt_profile) {
         htp_iface_pmu_conf pmu_conf{};
         std::copy(opt_pmu_evt.begin(), opt_pmu_evt.end(), pmu_conf.events);
@@ -8476,6 +8490,21 @@ static void ggml_hexagon_init(ggml_backend_reg * reg) {
     const char * str_hostbuf  = getenv("GGML_HEXAGON_HOSTBUF");
     const char * str_timing   = getenv("GGML_HEXAGON_TIMING");
     const char * str_dma64    = getenv("GGML_HEXAGON_DMA64");
+    const char * str_power    = getenv("GGML_HEXAGON_POWER");
+    const char * str_dcvs     = getenv("GGML_HEXAGON_DCVS");
+
+    if (str_power || str_dcvs) {
+        const char * names[] = {"max", "svs2", "svs", "svs_plus", "nom", "nom_plus", "turbo"};
+        opt_power = -1;
+        for (int i = 0; i < 7; ++i) {
+            if (strcmp(str_power ? str_power : "max", names[i]) == 0) { opt_power = i; break; }
+        }
+        if (opt_power < 0 || (str_dcvs && strcmp(str_dcvs, "0") != 0 && strcmp(str_dcvs, "1") != 0)) {
+            GGML_LOG_ERROR("ggml-hex: GGML_HEXAGON_POWER must be max|svs2|svs|svs_plus|nom|nom_plus|turbo; GGML_HEXAGON_DCVS must be 0|1\n");
+            throw std::runtime_error("invalid Hexagon power configuration");
+        }
+        opt_dcvs = str_dcvs ? atoi(str_dcvs) : 0;
+    }
 
     // Init Arch first since it affects other defaults
     if (!str_arch) {

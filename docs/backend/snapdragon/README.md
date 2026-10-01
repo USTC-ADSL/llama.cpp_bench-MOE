@@ -324,6 +324,16 @@ on 4 physical NPUs, or `--devices 'HTP0[0-1:0],HTP1[0-1:1]'` on 2 physical NPUs 
 - `GGML_HEXAGON_NHVX=0`
   Controls the number of HVX hardware threads to use. The default is all (actual number varies depending on the hardware version).
 
+- `GGML_HEXAGON_POWER=max|svs2|svs|svs_plus|nom|nom_plus|turbo` (default: unset)
+  Requests matching core/bus and HMX voltage-corner profiles after session startup. Requires matching updated host and DSP libraries.
+  The core/bus profiles use the corresponding HAP DCVS corners; HMX uses MAX, LOW_SVS, SVS, SVS_L1, NOM, NOM_L1, or TUR respectively.
+  With neither power variable set, the original MAX requests are unchanged. Requests are aggregated with other clients and subject to platform limits.
+  Startup logs report the profile and initial core/HMX clock readings, including query status; these are not continuous clock measurements.
+
+- `GGML_HEXAGON_DCVS=0|1` (default: 0 when a power profile is requested)
+  `0` requests fixed min/target/max corners. `1` enables DCVS performance mode with a lower minimum and the chosen profile as target/maximum.
+  If specified without `GGML_HEXAGON_POWER`, the profile is `max`. Session sleep-disable behavior remains unchanged.
+
 - `GGML_HEXAGON_HOSTBUF=1` (default: 0, disabled)
   Enables allocating host buffers for debugging. By default, host buffers are disabled.
 

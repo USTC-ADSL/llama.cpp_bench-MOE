@@ -16,6 +16,9 @@ struct battery_window {
     int64_t iterations = 0;
     double charge_start = 0, charge_end = 0, temp_start = 0, temp_end = 0;
     double wall_seconds = 0, read_seconds = 0;
+    struct clock_sample { double seconds, cpu_khz, gpu_hz; };
+    std::vector<clock_sample> clocks;
+    bool capture_clocks = std::getenv("DENSE_AF_CLOCKS") != nullptr;
 
     battery_window(const std::string & path, double scale) : directory(path), current_to_a(scale) {}
 
@@ -34,6 +37,17 @@ struct battery_window {
     void sample() {
         const int64_t before = ggml_time_us();
         const double current = read("current_now"), voltage = read("voltage_now");
+        if (capture_clocks && (clocks.empty() || before / 1e6 - clocks.back().seconds >= 0.5)) {
+            const auto optional_read = [](const char * path) {
+                std::ifstream f(path);
+                double value = -1;
+                if (!(f >> value)) { return -1.0; }
+                return value;
+            };
+            clocks.push_back({before / 1e6,
+                optional_read("/sys/devices/system/cpu/cpufreq/policy6/scaling_cur_freq"),
+                optional_read("/sys/class/kgsl/kgsl-3d0/devfreq/cur_freq")});
+        }
         const int64_t after = ggml_time_us();
         const double timestamp = (before + after) / 2e6;
         read_seconds += (after - before) / 1e6;
@@ -93,6 +107,15 @@ struct battery_window {
             const auto & s = samples[i];
             printf("%s[%.6f,%.0f,%.0f]", i ? "," : "", s.seconds - samples.front().seconds, s.current_raw, s.voltage_uv);
         }
-        printf("]}");
+        printf("]");
+        if (capture_clocks) {
+            printf(",\"clocks\":[");
+            for (size_t i = 0; i < clocks.size(); ++i) {
+                const auto & c = clocks[i];
+                printf("%s[%.6f,%.0f,%.0f]", i ? "," : "", c.seconds - samples.front().seconds, c.cpu_khz, c.gpu_hz);
+            }
+            printf("]");
+        }
+        printf("}");
     }
 };

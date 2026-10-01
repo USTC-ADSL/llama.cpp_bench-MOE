@@ -1,0 +1,133 @@
+[
+  {
+    "name": "default",
+    "returncode": 0,
+    "passed": true,
+    "command": "ulimit -c 0\ncd /data/local/tmp/dense-af-dvfs\nenv LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 GGML_HEXAGON_PROFILE=0 timeout 30 taskset c0 ./dense-af-bench -m /data/local/tmp/models/Qwen2.5-3B-2K/ggml/weights.gguf --device HTP0 --prompt 1 --past 256 --layers 17 --stage both --flash 1 --threads 2 --warmup 1 --reps 2 --reference reference",
+    "results": [
+      {
+        "device": "HTP0",
+        "prompt": 1,
+        "past": 256,
+        "kv_tokens": 512,
+        "layer": 17,
+        "block": "attention",
+        "flash": 1,
+        "threads": 2,
+        "nodes": 26,
+        "weight_buffer": "HTP0",
+        "f32_reference": false,
+        "relative_rms": 0.00885867,
+        "max_abs": 0.00313808,
+        "compute_ms": [
+          0.493,
+          0.479
+        ],
+        "upload_ms": [
+          0.0,
+          0.0
+        ],
+        "download_ms": [
+          0.0,
+          0.001
+        ]
+      },
+      {
+        "device": "HTP0",
+        "prompt": 1,
+        "past": 0,
+        "kv_tokens": 0,
+        "layer": 17,
+        "block": "ffn",
+        "flash": 0,
+        "threads": 2,
+        "nodes": 7,
+        "weight_buffer": "HTP0",
+        "f32_reference": false,
+        "relative_rms": 0.0071005,
+        "max_abs": 0.0375042,
+        "compute_ms": [
+          1.115,
+          1.14
+        ],
+        "upload_ms": [
+          0.001,
+          0.0
+        ],
+        "download_ms": [
+          0.0,
+          0.0
+        ]
+      }
+    ]
+  },
+  {
+    "name": "nom-dcvs1",
+    "returncode": 0,
+    "passed": true,
+    "command": "ulimit -c 0\ncd /data/local/tmp/dense-af-dvfs\nenv LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 GGML_HEXAGON_PROFILE=0 GGML_HEXAGON_POWER=nom GGML_HEXAGON_DCVS=1 timeout 30 taskset c0 ./dense-af-bench -m /data/local/tmp/models/Qwen2.5-3B-2K/ggml/weights.gguf --device HTP0 --prompt 1 --past 256 --layers 17 --stage both --flash 1 --threads 2 --warmup 1 --reps 2 --reference reference",
+    "results": [
+      {
+        "device": "HTP0",
+        "prompt": 1,
+        "past": 256,
+        "kv_tokens": 512,
+        "layer": 17,
+        "block": "attention",
+        "flash": 1,
+        "threads": 2,
+        "nodes": 26,
+        "weight_buffer": "HTP0",
+        "f32_reference": false,
+        "relative_rms": 0.00885867,
+        "max_abs": 0.00313808,
+        "compute_ms": [
+          0.593,
+          0.627
+        ],
+        "upload_ms": [
+          0.0,
+          0.0
+        ],
+        "download_ms": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "device": "HTP0",
+        "prompt": 1,
+        "past": 0,
+        "kv_tokens": 0,
+        "layer": 17,
+        "block": "ffn",
+        "flash": 0,
+        "threads": 2,
+        "nodes": 7,
+        "weight_buffer": "HTP0",
+        "f32_reference": false,
+        "relative_rms": 0.0071005,
+        "max_abs": 0.0375042,
+        "compute_ms": [
+          1.11,
+          1.124
+        ],
+        "upload_ms": [
+          0.0,
+          0.0
+        ],
+        "download_ms": [
+          0.0,
+          0.0
+        ]
+      }
+    ]
+  },
+  {
+    "name": "invalid",
+    "returncode": 1,
+    "passed": true,
+    "command": "ulimit -c 0\ncd /data/local/tmp/dense-af-dvfs\nenv LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 GGML_HEXAGON_PROFILE=0 GGML_HEXAGON_POWER=invalid timeout 30 taskset c0 ./dense-af-bench -m /data/local/tmp/models/Qwen2.5-3B-2K/ggml/weights.gguf --device HTP0 --prompt 1 --past 256 --layers 17 --stage both --flash 1 --threads 2 --warmup 1 --reps 2 --reference reference",
+    "results": []
+  }
+]

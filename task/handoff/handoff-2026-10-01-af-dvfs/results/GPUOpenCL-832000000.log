@@ -1,0 +1,48 @@
+CONTROL cpu_min=2649600 cpu_max=2649600 gpu_min=832000000 gpu_max=832000000
+ggml_opencl: selected platform: 'QUALCOMM Snapdragon(TM)'
+
+ggml_opencl: device: 'QUALCOMM Adreno(TM) 830 (OpenCL 3.0 Adreno(TM) 830)'
+ggml_opencl: default device: 'QUALCOMM Adreno(TM) 830 (OpenCL 3.0 Adreno(TM) 830)'
+ggml-hex: Loading driver libcdsprpc.so
+ggml-hex: FASTRPC_GET_DOMAINS query failed (0x6c), using static CDSP domains
+ggml-hex: Profiling mode 0 : pmu-evt [ 0x3,0x111,0x100,0x105,0x240,0x256,0x7d,0x8c ]
+ggml-hex: Hexagon backend (experimental) : allocating new registry : ndev 1
+ggml-hex: Hexagon Arch version v79, DMA64 disabled
+ggml-hex: device 0: HTP0 (phys=0, virt=0, domain=cdsp:3)
+ggml_opencl: OpenCL device: QUALCOMM Adreno(TM) 830
+ggml_opencl: OpenCL driver: OpenCL 3.0 QUALCOMM build: 0800.35 Compiler E031.47.18.28
+ggml_opencl: vector subgroup broadcast support: true
+ggml_opencl: subgroup shuffle support: true
+ggml_opencl: device FP16 support: true
+ggml_opencl: khr dot product support: true
+ggml_opencl: mem base addr align: 128
+ggml_opencl: global mem size: 7553 MB
+ggml_opencl: max mem alloc size: 1024 MB
+ggml_opencl: device max image buffer size (pixels): 134217728
+ggml_opencl: device max image2d size: 16384 x 16384
+ggml_opencl: device max workgroup size: 1024
+ggml_opencl: SVM coarse grain buffer support: true
+ggml_opencl: SVM fine grain buffer support: true
+ggml_opencl: SVM fine grain system support: false
+ggml_opencl: SVM atomics support: true
+ggml_opencl: cl_qcom_subgroup_shuffle support: true
+ggml_opencl: flattening quantized weights representation as struct of arrays (GGML_OPENCL_SOA_Q)
+ggml_opencl: using kernels optimized for Adreno (GGML_OPENCL_USE_ADRENO_KERNELS)
+ggml_opencl: Adreno xmem F16xF32 GEMM enabled (temporary weight prepack)
+MODEL layers=36 embd=2048 ff=11008 heads=16 kv_heads=2 head_dim=128
+ggml_opencl: kernel cache enabled at '/data/local/tmp/llama.cpp/cl-cache'
+ggml_opencl: loading OpenCL kernels..................................................................................................................................................................................
+ggml_opencl: lazy-compiling flash_attn prepass for DK=128 DV=128
+ggml_opencl: compiling fa prepass f16
+ggml_opencl: compiling fa f32_f16
+ggml_opencl: flash_attn_f32_f16_q1_vec_mq_split_c8 DK=128 DV=128 per-kernel max 128 < required 256; skipping registration (will fall back)
+ggml_opencl: compiling fa f32_f16 MQ_GQA=8
+ggml_opencl: flash_attn_f32_f16_q1_vec_mq (g8) DK=128 DV=128 per-kernel max 128 < required 192; skipping registration (will fall back)
+ggml_opencl: flash_attn_f32_f16_q1_vec_mq_split (g8) DK=128 DV=128 per-kernel max 128 < required 192; skipping registration (will fall back)
+ggml_opencl: flash_attn_f32_f16_q1_vec_mq_split_c8 (g8) DK=128 DV=128 per-kernel max 128 < required 192; skipping registration (will fall back)
+ggml_opencl: compiling fa f32_f16 c8 NSG2
+ggml_opencl: compiling fa f32_f16 c8 g8 NSG2
+ggml_opencl: compiling fa f32_f16 split
+RESULT {"device":"GPUOpenCL","prompt":1,"past":256,"kv_tokens":512,"layer":17,"block":"attention","flash":1,"threads":2,"nodes":26,"weight_buffer":"OpenCL","f32_reference":false,"relative_rms":0.00856271,"max_abs":0.00688851,"compute_ms":[1.187000,1.004000],"upload_ms":[0.005000,0.001000],"download_ms":[0.003000,0.001000],"power":{"seconds":5.000097,"iterations":4882,"joules":4.398661582,"average_w":0.879715250,"current_to_a":0.001,"charge_start_uah":3584000,"charge_end_uah":3584000,"temp_start_c":30.1,"temp_end_c":30.1,"wall_seconds":5.000147,"read_seconds":0.001688,"samples":[[0.000000,216,4072000],[0.100827,216,4072000],[0.201181,216,4072000],[0.302067,216,4072000],[0.402556,216,4072000],[0.503530,216,4072000],[0.604429,216,4072000],[0.705291,214,4072000],[0.805704,214,4072000],[0.906058,214,4072000],[1.006213,214,4072000],[1.107329,214,4072000],[1.207374,214,4072000],[1.308069,214,4072000],[1.408609,214,4072000],[1.508929,214,4072000],[1.609897,214,4072000],[1.710773,217,4071000],[1.811261,217,4071000],[1.912071,217,4071000],[2.012658,217,4071000],[2.112975,217,4071000],[2.213364,217,4071000],[2.313610,217,4071000],[2.413733,217,4071000],[2.514051,217,4071000],[2.614086,217,4071000],[2.714191,217,4072000],[2.814955,215,4072000],[2.915922,215,4072000],[3.016550,215,4072000],[3.116654,215,4072000],[3.217607,215,4072000],[3.318056,215,4072000],[3.418759,215,4072000],[3.519067,215,4072000],[3.619094,215,4072000],[3.719785,215,4072000],[3.820851,217,4071000],[3.921633,217,4071000],[4.021933,217,4071000],[4.122831,217,4071000],[4.223597,217,4071000],[4.323802,217,4071000],[4.424333,217,4071000],[4.524357,217,4071000],[4.624952,217,4071000],[4.725069,217,4071000],[4.825917,217,4072000],[4.926729,225,4072000],[5.000097,225,4072000]],"clocks":[[-0.000036,2649600,832000000],[0.503508,2649600,832000000],[1.006190,2649600,832000000],[1.508907,2649600,832000000],[2.012636,2649600,832000000],[2.514029,2649600,832000000],[3.016526,2649600,832000000],[3.519044,2649600,832000000],[4.021911,2649600,832000000],[4.524333,2649600,832000000]]}}
+RESULT {"device":"GPUOpenCL","prompt":1,"past":0,"kv_tokens":0,"layer":17,"block":"ffn","flash":0,"threads":2,"nodes":7,"weight_buffer":"OpenCL","f32_reference":false,"relative_rms":0.01010681,"max_abs":0.04856491,"compute_ms":[1.313000,1.310000],"upload_ms":[0.005000,0.000000],"download_ms":[0.002000,0.000000],"power":{"seconds":5.001552,"iterations":2920,"joules":8.671692166,"average_w":1.733800262,"current_to_a":0.001,"charge_start_uah":3582000,"charge_end_uah":3582000,"temp_start_c":30.2,"temp_end_c":30.2,"wall_seconds":5.001647,"read_seconds":0.005924,"samples":[[0.000000,422,4055000],[0.101372,401,4061000],[0.201986,401,4061000],[0.304495,401,4061000],[0.406586,401,4061000],[0.508949,401,4061000],[0.609039,401,4061000],[0.714462,401,4061000],[0.815352,401,4061000],[0.916632,401,4061000],[1.017977,401,4061000],[1.118719,441,4055000],[1.220028,441,4055000],[1.320995,441,4055000],[1.422379,441,4055000],[1.523244,441,4055000],[1.624084,441,4055000],[1.724592,441,4055000],[1.824904,441,4055000],[1.926776,441,4055000],[2.027958,441,4055000],[2.128101,438,4053000],[2.229803,438,4053000],[2.331560,438,4053000],[2.432477,438,4053000],[2.533911,438,4053000],[2.634584,438,4053000],[2.735842,438,4053000],[2.836711,438,4053000],[2.937545,438,4053000],[3.038741,438,4053000],[3.139510,438,4053000],[3.239604,420,4056000],[3.339871,420,4056000],[3.440513,420,4056000],[3.540732,420,4056000],[3.641676,420,4056000],[3.741773,420,4056000],[3.845293,420,4056000],[3.946681,420,4056000],[4.047612,420,4056000],[4.148501,420,4056000],[4.249554,439,4057000],[4.350605,439,4057000],[4.451535,439,4057000],[4.554931,439,4057000],[4.655082,439,4057000],[4.755857,439,4057000],[4.858147,439,4057000],[4.959087,439,4057000],[5.001552,439,4057000]],"clocks":[[-0.000039,2649600,832000000],[0.508860,2649600,832000000],[1.017902,2649600,832000000],[1.523159,2649600,832000000],[2.027794,2649600,832000000],[2.533819,2649600,832000000],[3.038663,2649600,832000000],[3.540656,2649600,832000000],[4.047512,2649600,832000000],[4.554851,2649600,832000000]]}}
+CONTROL cpu_min=2649600 cpu_max=2649600 gpu_min=832000000 gpu_max=832000000

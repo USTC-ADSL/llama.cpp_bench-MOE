@@ -622,6 +622,74 @@ AEEResult htp_iface_start(remote_handle64 handle, uint32_t sess_id, uint64_t dsp
     return AEE_SUCCESS;
 }
 
+// Explicit operating-point requests. These are votes, not guaranteed hardware clocks.
+// profile: 0=max, 1=svs2, 2=svs, 3=svs_plus, 4=nom, 5=nom_plus, 6=turbo.
+AEEResult htp_iface_power(remote_handle64 handle, uint32_t profile, uint32_t dcvs,
+                         uint32_t * core_hz, uint32_t * hmx_hz, int32_t * core_status, int32_t * hmx_status) {
+    struct htp_handle * h = (struct htp_handle *) handle;
+    if (!h || !h->ctx || profile > 6 || dcvs > 1 || !core_hz || !hmx_hz || !core_status || !hmx_status) {
+        return AEE_EBADPARM;
+    }
+    const HAP_dcvs_voltage_corner_t corners[] = {
+        HAP_DCVS_VCORNER_MAX, HAP_DCVS_VCORNER_SVS2, HAP_DCVS_VCORNER_SVS,
+        HAP_DCVS_VCORNER_SVS_PLUS, HAP_DCVS_VCORNER_NOM, HAP_DCVS_VCORNER_NOM_PLUS, HAP_DCVS_VCORNER_TURBO,
+    };
+    HAP_power_request_t request;
+    memset(&request, 0, sizeof(request));
+    request.type = HAP_power_set_DCVS_v3;
+    request.dcvs_v3.set_dcvs_enable = TRUE;
+    request.dcvs_v3.dcvs_enable = dcvs != 0;
+    request.dcvs_v3.dcvs_option = HAP_DCVS_V2_PERFORMANCE_MODE;
+    request.dcvs_v3.set_core_params = TRUE;
+    request.dcvs_v3.core_params.min_corner = dcvs ? HAP_DCVS_VCORNER_SVS2 : corners[profile];
+    request.dcvs_v3.core_params.max_corner = corners[profile];
+    request.dcvs_v3.core_params.target_corner = corners[profile];
+    request.dcvs_v3.set_bus_params = TRUE;
+    request.dcvs_v3.bus_params.min_corner = dcvs ? HAP_DCVS_VCORNER_SVS2 : corners[profile];
+    request.dcvs_v3.bus_params.max_corner = corners[profile];
+    request.dcvs_v3.bus_params.target_corner = corners[profile];
+    request.dcvs_v3.set_sleep_disable = TRUE;
+    request.dcvs_v3.sleep_disable = TRUE;
+#if (__HEXAGON_ARCH__ >= 79)
+    HAP_set_dcvs_v3_protected_bus_corners(&request, 1);
+#endif
+    int err = HAP_power_set((void *) h->ctx, &request);
+    if (err != AEE_SUCCESS) {
+        FARF(ERROR, "DCVS profile %u request failed: 0x%08x", profile, (unsigned) err);
+        return err;
+    }
+#if __HVX_ARCH__ >= 75
+    const HAP_dcvs_exp_voltage_corner_t hmx_corners[] = {
+        HAP_DCVS_EXP_VCORNER_MAX, HAP_DCVS_EXP_VCORNER_LOW_SVS, HAP_DCVS_EXP_VCORNER_SVS,
+        HAP_DCVS_EXP_VCORNER_SVS_L1, HAP_DCVS_EXP_VCORNER_NOM, HAP_DCVS_EXP_VCORNER_NOM_L1, HAP_DCVS_EXP_VCORNER_TUR,
+    };
+    memset(&request, 0, sizeof(request));
+    request.type = HAP_power_set_HMX_v2;
+    request.hmx_v2.set_power = TRUE;
+    request.hmx_v2.power_up = TRUE;
+    request.hmx_v2.set_clock = TRUE;
+    request.hmx_v2.min_corner = dcvs ? HAP_DCVS_EXP_VCORNER_LOW_SVS : hmx_corners[profile];
+    request.hmx_v2.max_corner = hmx_corners[profile];
+    request.hmx_v2.target_corner = hmx_corners[profile];
+    request.hmx_v2.perf_mode = HAP_CLK_PERF_HIGH;
+    err = HAP_power_set((void *) h->ctx, &request);
+    if (err != AEE_SUCCESS) {
+        FARF(ERROR, "HMX profile %u request failed: 0x%08x", profile, (unsigned) err);
+        return err;
+    }
+#endif
+    HAP_power_response_t response;
+    memset(&response, 0, sizeof(response));
+    response.type = HAP_power_get_clk_Freq;
+    *core_status = HAP_power_get(NULL, &response);
+    *core_hz = *core_status == 0 ? response.clkFreqHz : 0;
+    memset(&response, 0, sizeof(response));
+    response.type = HAP_power_get_hmx_core_clk_Freq;
+    *hmx_status = HAP_power_get(NULL, &response);
+    *hmx_hz = *hmx_status == 0 ? response.clkFreqHz : 0;
+    return AEE_SUCCESS;
+}
+
 AEEResult htp_iface_stop(remote_handle64 handle) {
     struct htp_handle * h = (struct htp_handle *) handle;
     if (!h || !h->ctx) {
