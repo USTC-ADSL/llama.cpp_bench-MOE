@@ -23,6 +23,8 @@ static void require(bool ok, const std::string & message) {
     if (!ok) { throw std::runtime_error(message); }
 }
 
+#include "battery-window.h"
+
 struct storage {
     ggml_context * ctx = nullptr;
     ggml_backend_buffer_t buffer = nullptr;
@@ -300,6 +302,8 @@ int main(int argc, char ** argv) {
     try {
         std::string path, device = "CPU", selection = "all", stage = "both", reference;
         int prompt = 64, past = 0, reps = 7, warmup = 2, threads = 8;
+        double power_seconds = 0, power_settle = 5, idle_seconds = 0, current_to_a = 0;
+        std::string battery_dir = "/sys/class/power_supply/battery";
         bool flash = false, write_reference = false, f32_reference = false;
         for (int i = 1; i < argc; ++i) {
             std::string a = argv[i];
@@ -308,7 +312,9 @@ int main(int argc, char ** argv) {
                        "  [--layers all|0,17,35] [--stage both|attention|ffn] [--flash 0|1]\n"
                        "  [--past 0|64|256] (history is only allowed with --prompt 1)\n"
                        "  [--threads 8] [--reps 7] [--warmup 2]\n"
-                       "  [--reference DIR] [--write-reference] [--f32-reference]\n");
+                       "  [--reference DIR] [--write-reference] [--f32-reference]\n"
+                       "  [--power-seconds 12] [--power-settle-seconds 5] [--current-to-a 0.001]\n"
+                       "  [--battery-dir PATH] [--power-idle-seconds 12] (idle-only, no model needed)\n");
                 return 0;
             }
             if (a == "--write-reference") { write_reference = true; continue; }
@@ -325,8 +331,24 @@ int main(int argc, char ** argv) {
             else if (a == "--reps")      { reps = std::stoi(v); }
             else if (a == "--warmup")    { warmup = std::stoi(v); }
             else if (a == "--threads")   { threads = std::stoi(v); }
+            else if (a == "--power-seconds") { power_seconds = std::stod(v); }
+            else if (a == "--power-settle-seconds") { power_settle = std::stod(v); }
+            else if (a == "--power-idle-seconds") { idle_seconds = std::stod(v); }
+            else if (a == "--current-to-a") { current_to_a = std::stod(v); }
+            else if (a == "--battery-dir") { battery_dir = v; }
             else if (a == "--flash")     { require(v == "0" || v == "1", "flash must be 0 or 1"); flash = v == "1"; }
             else { throw std::runtime_error("unknown option " + a); }
+        }
+        require(std::isfinite(power_seconds) && std::isfinite(power_settle) && std::isfinite(idle_seconds) &&
+                power_seconds >= 0 && power_settle >= 0 && idle_seconds >= 0, "invalid power duration");
+        require((power_seconds == 0 && idle_seconds == 0) || (std::isfinite(current_to_a) && current_to_a != 0),
+                "power measurement requires explicit signed --current-to-a conversion");
+        if (idle_seconds > 0) {
+            require(power_seconds == 0, "idle and compute power modes are exclusive");
+            battery_window idle{battery_dir, current_to_a};
+            idle.run(idle_seconds, []() { std::this_thread::sleep_for(std::chrono::milliseconds(100)); });
+            printf("IDLE "); idle.print(); printf("\n");
+            return 0;
         }
         require(!path.empty() && (prompt == 1 || prompt == 64 || prompt == 256) && reps > 0 && warmup > 0 && threads > 0, "invalid arguments; see --help");
         require(stage == "both" || stage == "attention" || stage == "ffn", "invalid stage");
@@ -405,6 +427,12 @@ int main(int argc, char ** argv) {
                         if (relative_rms > 0.05) { failed = true; }
                     }
                 }
+                battery_window power{battery_dir, current_to_a};
+                if (power_seconds > 0) {
+                    const int64_t settle_start = ggml_time_us();
+                    while ((ggml_time_us() - settle_start) / 1e6 < power_settle) { compute(); }
+                    power.run(power_seconds, compute);
+                }
                 // Host boundary transfers measured separately, never added to compute time.
                 for (int r = 0; r < reps; ++r) {
                     int64_t t = ggml_time_us();
@@ -421,6 +449,7 @@ int main(int argc, char ** argv) {
                 print_array("compute_ms", times);
                 print_array("upload_ms", uploads);
                 print_array("download_ms", downloads);
+                if (power_seconds > 0) { printf(",\"power\":"); power.print(); }
                 printf("}\n");
                 fflush(stdout);
             }

@@ -1,0 +1,31 @@
+Device: 192.168.50.180:44159, PKR110, SM8750. Observed 2026-10-01.
+
+Running device tree (read via root od -An -t x1):
+/sys/firmware/devicetree/base/soc/qcom,qupv3_i2c_geni_se@9c0000/i2c@984000/bq27541-battery@55/oplus,batt_num
+  00 00 00 02
+/sys/firmware/devicetree/base/soc/qcom,pmic_glink/qcom,battery_charger/oplus,batt_num
+  00 00 00 02
+bq27541-battery@55/status = okay
+bq27541-battery@55/qcom,batt_bq28z610 is present.
+
+After measurement, voltage_now=4151000, voltage_min=4147000, voltage_max=4151000 (uV).
+Before measurement, voltage_now ~4196000, current_now ~70-130, charge_full_design=6100000.
+Battery status Discharging; AC/USB/wireless/dock charging false throughout snapshots.
+
+Public same-platform driver evidence (not a byte-for-byte firmware source identification):
+https://github.com/OnePlusOSS/android_kernel_modules_and_devicetree_oneplus_sm8750/blob/oneplus/sm8750_b_16.0.0_oneplus_13/vendor/oplus/kernel/charger/v2/oplus_chg_gki.c
+Lines765-777: POWER_SUPPLY_PROP_VOLTAGE_NOW gets GAUGE_ITEM_VOL_MAX; on Qualcomm pval->intval = data.intval * 1000.
+Lines793-802: POWER_SUPPLY_PROP_CURRENT_NOW gets GAUGE_ITEM_CURR; pval->intval = data.intval (no *1000).
+Lines827-829: POWER_SUPPLY_PROP_CHARGE_COUNTER: pval->intval = chip->batt_rm * 1000.
+
+https://github.com/OnePlusOSS/android_kernel_modules_and_devicetree_oneplus_sm8750/blob/oneplus/sm8750_b_16.0.0_oneplus_13/vendor/oplus/kernel/charger/v2/hal/oplus_virtual_gauge.c
+Lines724-755: oplus_chg_vg_get_batt_curr(..., int *curr_ma) returns OPLUS_IC_FUNC_GAUGE_GET_BATT_CURR from the first supported child (break at751); it does not normalize to single-cell equivalent capacity/current.
+
+https://github.com/OnePlusOSS/android_kernel_modules_and_devicetree_oneplus_sm8750/blob/oneplus/sm8750_b_16.0.0_oneplus_13/vendor/oplus/kernel/charger/v2/mms/oplus_mms_gauge.c
+Lines2178-2192: oplus_gauge_get_batt_num reads OPLUS_IC_FUNC_GAUGE_GET_BATT_NUM.
+Lines4512-4549: oplus_mms_gauge_update_rm sums main/sub remaining charge, then if parallel uses rm, otherwise rm * batt_num.
+This explains 2mAh steps in charge_counter for this 2-cell series battery.
+
+18 valid windows: integrated raw mA current =47644.38uAh; summed reported charge drop=90000uAh (ratio1.889, coarse gauge).
+Analysis uses current_to_a=0.001 and voltage_multiplier=2. Actual pack voltage is approximated as2*Vmax.
+Raw logs/JSON remain unscaled for reproducibility; report/summary apply the explicit pack multiplier.
