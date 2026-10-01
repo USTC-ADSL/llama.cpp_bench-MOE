@@ -1,5 +1,7 @@
 # 亮屏 A/F 工作点 microbench：FastRPC + DVFS
 
+后续已按用户要求扩展为每后端6点；最新独立块曲线与结论见 [6点扩展报告](report-pareto-six-points.md)。本文件保留首轮每后端3点结果。
+
 日期：2026-10-01。设备：无线 ADB `192.168.50.180:44159`，PKR110 / SM8750 / Adreno 830 / HTP v79。
 
 ## 结论

@@ -30,6 +30,8 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('directories', nargs='+', type=Path)
     p.add_argument('--output', type=Path, required=True)
+    p.add_argument('--points-per-backend', type=int, default=3,
+                   help='expected number of distinct valid operating points for each backend')
     args = p.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
     blocks, excluded, screen_modes = [], [], set()
@@ -82,7 +84,12 @@ def main():
                     relative_rms=row['relative_rms'], temp_start_c=power['temp_start_c'], temp_end_c=power['temp_end_c'],
                     initial_npu_core_hz=core_hz, initial_npu_hmx_hz=hmx_hz, source=str(path)))
     keyed = {(r['backend'], r['point'], r['block']): r for r in blocks}
-    assert len(keyed) == len(blocks) == 18, 'expected three valid points per backend, two blocks each'
+    assert args.points_per_backend > 0
+    assert len(keyed) == len(blocks) == 6 * args.points_per_backend, 'unexpected or duplicate block records'
+    for backend in ('CPU', 'GPUOpenCL', 'HTP0'):
+        a_points = {r['point'] for r in blocks if r['backend'] == backend and r['block'] == 'attention'}
+        f_points = {r['point'] for r in blocks if r['backend'] == backend and r['block'] == 'ffn'}
+        assert a_points == f_points and len(a_points) == args.points_per_backend, backend
     attention = [r for r in blocks if r['block'] == 'attention']
     ffn = [r for r in blocks if r['block'] == 'ffn']
     combinations = []
@@ -97,11 +104,20 @@ def main():
                 for d in ('CPU', 'GPUOpenCL', 'HTP0')}
     result = dict(screen_on=next(iter(screen_modes)), blocks=blocks, excluded=excluded, best_independent=best, best_uniform_by_backend=baseline,
                   uniform_pareto=pareto(uniform), independent_pareto=pareto(combinations))
+    result['block_pareto'] = {kind: pareto([r for r in blocks if r['block'] == kind])
+                              for kind in ('attention', 'ffn')}
+    result['block_backend_pareto'] = {
+        kind: {backend: pareto([r for r in blocks if r['block'] == kind and r['backend'] == backend])
+               for backend in ('CPU', 'GPUOpenCL', 'HTP0')}
+        for kind in ('attention', 'ffn')}
     (args.output/'summary.json').write_text(json.dumps(result, indent=2)+'\n')
     write_csv(args.output/'blocks.csv', blocks)
     write_csv(args.output/'combinations.csv', combinations)
     write_csv(args.output/'uniform-pareto.csv', result['uniform_pareto'])
     write_csv(args.output/'independent-pareto.csv', result['independent_pareto'])
+    write_csv(args.output/'block-pareto.csv', [r for rows in result['block_pareto'].values() for r in rows])
+    write_csv(args.output/'block-backend-pareto.csv',
+              [r for backends in result['block_backend_pareto'].values() for rows in backends.values() for r in rows])
     print('Excluded:', excluded)
     print('Best independent:', best)
     for d, r in baseline.items():
@@ -118,16 +134,18 @@ def main():
     for ax, block in zip(axes[:2], ('attention', 'ffn')):
         for d in colors:
             rows = sorted([r for r in blocks if r['backend']==d and r['block']==block], key=lambda r:r['ms'])
-            ax.plot([r['ms'] for r in rows], [r['mj'] for r in rows], 'o-', color=colors[d], label=names[d])
-            for r in rows:
+            ax.scatter([r['ms'] for r in rows], [r['mj'] for r in rows], color=colors[d], label=names[d])
+            front = pareto(rows)
+            ax.plot([r['ms'] for r in front], [r['mj'] for r in front], color=colors[d])
+            for r in rows if args.points_per_backend <= 3 else []:
                 label = (f"{int(r['point'])/1e6:.2f} GHz" if d=='CPU' else
                          f"{int(r['point'])/1e6:.0f} MHz" if d=='GPUOpenCL' else r['point'].upper())
                 offset = (4, 7)
                 align = 'left'
                 if d == 'HTP0':
-                    offset = {'nom': (5,-13), 'nom_plus': (5,9), 'turbo': (5,7)}[r['point']]
+                    offset = {'nom': (5,-13), 'nom_plus': (5,9), 'turbo': (5,7)}.get(r['point'], (5,7))
                 elif d == 'CPU' and block == 'attention':
-                    offset = {'2246400': (6,-14), '2438400': (6,7), '2649600': (6,9)}[r['point']]
+                    offset = {'2246400': (6,-14), '2438400': (6,7), '2649600': (6,9)}.get(r['point'], (6,7))
                 elif d == 'GPUOpenCL' and r == rows[-1]:
                     offset, align = (-5,7), 'right'
                 ax.annotate(label, (r['ms'],r['mj']), xytext=offset, ha=align, textcoords='offset points', fontsize=7)
@@ -152,6 +170,50 @@ def main():
     fig.savefig(args.output/'pareto.png', dpi=180)
     fig.savefig(args.output/'pareto.pdf')
     plt.close(fig)
+
+    # Independent block measurements: connect only nondominated points, not all operating points.
+    # Separate backend panels retain readable operating-point labels as the grid grows.
+    for selected in (None, 'CPU', 'GPUOpenCL', 'HTP0'):
+        fig, axes = plt.subplots(1, 2, figsize=(11, 4.7), constrained_layout=True)
+        for ax, kind in zip(axes, ('attention', 'ffn')):
+            for backend in colors:
+                if selected is not None and selected != backend:
+                    continue
+                rows = [r for r in blocks if r['block'] == kind and r['backend'] == backend]
+                front = result['block_backend_pareto'][kind][backend]
+                ax.scatter([r['ms'] for r in rows], [r['mj'] for r in rows],
+                           color=colors[backend], s=36, label=names[backend], zorder=3)
+                ax.plot([r['ms'] for r in front], [r['mj'] for r in front],
+                        color=colors[backend], linewidth=1.5)
+                if selected is not None:
+                    for i, r in enumerate(sorted(rows, key=lambda r: r['ms'])):
+                        label = (f"{int(r['point']) / 1e6:.4f} GHz" if backend == 'CPU' else
+                                 f"{int(r['point']) / 1e6:.0f} MHz" if backend == 'GPUOpenCL' else
+                                 r['point'].upper().replace('_', ' '))
+                        offset, align = (4, 8 if i % 2 else -14), 'left'
+                        if backend == 'HTP0' and kind == 'ffn':
+                            if r['point'] == 'nom_plus':
+                                offset, align = (-6, 9), 'right'
+                            elif r['point'] == 'nom':
+                                offset = (5, -14)
+                        ax.annotate(label, (r['ms'], r['mj']), xytext=offset, ha=align,
+                                    textcoords='offset points', fontsize=8)
+            if selected is None:
+                front = result['block_pareto'][kind]
+                ax.plot([r['ms'] for r in front], [r['mj'] for r in front], '--',
+                        color='#333333', linewidth=1.4, label='Across-backend Pareto', zorder=4)
+            ax.set_title('Attention (FA)' if kind == 'attention' else 'FFN')
+            ax.set_xlabel('Latency (ms / block)')
+            ax.set_ylabel('Whole-device energy (mJ / block)')
+            ax.grid(alpha=.22)
+            ax.margins(x=.25 if selected else .12, y=.18)
+            ax.legend(fontsize=8)
+        fig.suptitle(f'Independent A/F measurements: decode 1 / KV 256; {display}\n'
+                     'Points: measured modes; solid lines: Pareto within each backend', fontsize=11)
+        stem = 'block-pareto' if selected is None else 'block-pareto-' + selected
+        fig.savefig(args.output / (stem + '.png'), dpi=180)
+        fig.savefig(args.output / (stem + '.pdf'))
+        plt.close(fig)
 
 
 if __name__ == '__main__':

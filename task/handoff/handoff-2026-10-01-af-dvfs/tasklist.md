@@ -14,3 +14,13 @@
 最终用户缩小范围：无固定延迟上限，给最低能耗和Pareto；先仅KV256的decode1，对同一A/F图连续预热5s+测量5s，不追求恰好100次，不测低档。CPU6–7两核（mask c0）有效档2246400/2438400/2649600kHz；GPU607/832/1050MHz；NPU nom/nom_plus/turbo（固定core/bus/HMX corner，DCVS动态浮动关闭）。最终18窗口全部亮屏，独立块组合乐观忽略边界成本。原来考虑的1792上下文暂不执行。
 
 默认NPU、NOM DCVS1及非法配置检查完成。host/DSP增量构建成功并部署到独立目录/data/local/tmp/dense-af-dvfs。请求3.2832/3.8016GHz未能维持，已剔除；NOM+不稳定窗口延长预热复测并保留原证据。CPU A + NPU NOM F的估计能耗6.2462mJ，相对最佳统一NPU节能8.44%。最终见report.md和screen-on-analysis。频率、超时、wake lock已恢复。
+
+## 追加：独立块 Pareto 曲线
+
+用户确认复用原有每后端3点、各新增3点，总计每后端Attention/FFN各6点。新增CPU1.4016/1.6896/1.9584GHz，GPU443/734/967MHz，NPU svs/svs_plus/max。继续亮屏、同一层/KV/参考/5s预热+5s测量；输出screen-on-extension。
+
+- [x] 核对现有独立块数据、在线设备与可用频率
+- [x] 确认点数并选择不重复的新工作点
+- [x] 保持亮屏，采集新增工作点的A/F独立窗口并恢复设备
+- [x] 扩展汇总工具，输出每块的后端内及跨后端Pareto曲线
+- [x] 校验结果、保存报告和Git检查点（包含本清单的追加提交）
