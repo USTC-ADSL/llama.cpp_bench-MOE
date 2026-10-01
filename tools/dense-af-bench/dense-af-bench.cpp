@@ -3,6 +3,7 @@
 #include "ggml.h"
 #include "ggml-alloc.h"
 #include "ggml-backend.h"
+#include "ggml-cpu.h"
 #include "gguf.h"
 
 #include <algorithm>
@@ -75,6 +76,28 @@ struct model {
     ~model() { if (file) { fclose(file); } ggml_free(meta); gguf_free(uf); }
 };
 
+// Reuse workers just as llama-bench does; thread creation is not block compute.
+struct cpu_workers {
+    ggml_backend_t backend;
+    ggml_threadpool_t pool = nullptr;
+    decltype(&ggml_threadpool_free) release = nullptr;
+    decltype(&ggml_backend_cpu_set_threadpool) attach = nullptr;
+    cpu_workers(ggml_backend_t b, int threads) : backend(b) {
+        auto dev = ggml_backend_get_device(b);
+        if (ggml_backend_dev_type(dev) != GGML_BACKEND_DEVICE_TYPE_CPU) { return; }
+        auto reg = ggml_backend_dev_backend_reg(dev);
+        auto create = reinterpret_cast<decltype(&ggml_threadpool_new)>(ggml_backend_reg_get_proc_address(reg, "ggml_threadpool_new"));
+        release = reinterpret_cast<decltype(release)>(ggml_backend_reg_get_proc_address(reg, "ggml_threadpool_free"));
+        attach = reinterpret_cast<decltype(attach)>(ggml_backend_reg_get_proc_address(reg, "ggml_backend_cpu_set_threadpool"));
+        require(create && release && attach, "CPU threadpool API unavailable");
+        auto params = ggml_threadpool_params_default(threads);
+        pool = create(&params);
+        require(pool != nullptr, "CPU threadpool creation failed");
+        attach(backend, pool);
+    }
+    ~cpu_workers() { if (pool) { attach(backend, nullptr); release(pool); } }
+};
+
 // Match llama's CPU preference for supported extra weight buffers (e.g. CPU_REPACK).
 static ggml_backend_buffer_type_t weight_buft(ggml_backend_t backend, ggml_tensor * weight, int prompt) {
     auto dev = ggml_backend_get_device(backend);
@@ -106,11 +129,17 @@ struct block {
     ggml_tensor * output = nullptr;
     ggml_tensor * pos = nullptr;
     ggml_tensor * mask = nullptr;
+    ggml_tensor * past_k = nullptr;
+    ggml_tensor * past_v = nullptr;
+    ggml_tensor * cache_rows = nullptr;
+    int kv_tokens = 0;
     std::string weight_buffer;
     std::vector<float> input_data;
 
-    block(model & m, ggml_backend_t backend, int layer, int prompt, bool attention, bool flash) {
+    block(model & m, ggml_backend_t backend, int layer, int prompt, int past, bool attention, bool flash, bool f32_reference) {
         auto c = graph.ctx;
+        // llama_kv_cache::get_n_kv also pads used cache rows to multiples of 256.
+        kv_tokens = attention ? (past > 0 ? ((past + prompt + 255) / 256) * 256 : prompt) : 0;
         const auto weight = [&](const char * suffix) {
             const std::string name = "blk." + std::to_string(layer) + "." + suffix;
             auto source = ggml_get_tensor(m.meta, name.c_str());
@@ -118,7 +147,9 @@ struct block {
             require(source->type == (source->ne[1] > 1 ? GGML_TYPE_Q4_0 : GGML_TYPE_F32),
                     "requires Q4_0 matrices and F32 norm/bias: " + name);
             auto s = std::make_unique<storage>(8);
-            auto w = ggml_dup_tensor(s->ctx, source);
+            const bool dequantize = f32_reference && ggml_is_quantized(source->type);
+            auto w = dequantize ? ggml_new_tensor(s->ctx, GGML_TYPE_F32, ggml_n_dims(source), source->ne)
+                                : ggml_dup_tensor(s->ctx, source);
             ggml_set_name(w, name.c_str());
             auto buft = weight_buft(backend, w, prompt);
             s->buffer = ggml_backend_alloc_ctx_tensors_from_buft(s->ctx, buft);
@@ -129,12 +160,16 @@ struct block {
                 if (weight_buffer.empty()) { weight_buffer = label; }
                 else { require(weight_buffer == label, "mixed matrix weight buffers must be reported separately"); }
             }
-            std::vector<char> bytes(ggml_nbytes(w));
+            std::vector<char> bytes(ggml_nbytes(source));
             const int64_t id = gguf_find_tensor(m.uf, name.c_str());
             const size_t offset = gguf_get_data_offset(m.uf) + gguf_get_tensor_offset(m.uf, id);
             require(fseek(m.file, offset, SEEK_SET) == 0 && fread(bytes.data(), 1, bytes.size(), m.file) == bytes.size(),
                     "weight read failed: " + name);
-            ggml_backend_tensor_set(w, bytes.data(), 0, bytes.size());
+            if (dequantize) {
+                std::vector<float> values(ggml_nelements(source));
+                ggml_get_type_traits(source->type)->to_float(bytes.data(), values.data(), values.size());
+                ggml_backend_tensor_set(w, values.data(), 0, ggml_nbytes(w));
+            } else { ggml_backend_tensor_set(w, bytes.data(), 0, bytes.size()); }
             weights.push_back(std::move(s));
             return w;
         };
@@ -159,15 +194,31 @@ struct block {
                                      m.freq, 1.0f, 0.0f, 1.0f, 32.0f, 1.0f);
             };
             q = named(rope(q), "query_rope");
-            k = named(ggml_cast(c, rope(k), GGML_TYPE_F16), "key_store_f16");
-            v = named(ggml_cast(c, v, GGML_TYPE_F16), "value_store_f16");
+            k = rope(k);
+            if (past > 0) {
+                // Resident history plus one destination slot: update only the new token.
+                const int kv_dim = m.head_dim * m.kv_heads;
+                past_k = named(ggml_new_tensor_2d(c, GGML_TYPE_F16, kv_dim, kv_tokens), "cached_keys");
+                past_v = named(ggml_new_tensor_2d(c, GGML_TYPE_F16, kv_dim, kv_tokens), "cached_values");
+                cache_rows = named(ggml_new_tensor_1d(c, GGML_TYPE_I64, prompt), "cache_rows");
+                ggml_set_input(past_k);
+                ggml_set_input(past_v);
+                ggml_set_input(cache_rows);
+                k = ggml_set_rows(c, past_k, ggml_reshape_2d(c, k, kv_dim, prompt), cache_rows);
+                v = ggml_set_rows(c, past_v, ggml_reshape_2d(c, v, kv_dim, prompt), cache_rows);
+                k = ggml_reshape_3d(c, k, m.head_dim, m.kv_heads, kv_tokens);
+                v = ggml_reshape_3d(c, v, m.head_dim, m.kv_heads, kv_tokens);
+            } else {
+                k = named(ggml_cast(c, k, GGML_TYPE_F16), "key_store_f16");
+                v = named(ggml_cast(c, v, GGML_TYPE_F16), "value_store_f16");
+            }
             ggml_build_forward_expand(gf, q);
             ggml_build_forward_expand(gf, k);
             ggml_build_forward_expand(gf, v);
             q = ggml_permute(c, q, 0, 2, 1, 3);
             k = ggml_permute(c, k, 0, 2, 1, 3);
             v = ggml_permute(c, v, 0, 2, 1, 3);
-            mask = named(ggml_new_tensor_2d(c, flash ? GGML_TYPE_F16 : GGML_TYPE_F32, prompt, prompt), "causal_mask");
+            mask = named(ggml_new_tensor_2d(c, flash ? GGML_TYPE_F16 : GGML_TYPE_F32, kv_tokens, prompt), "causal_mask");
             ggml_set_input(mask);
             if (flash) {
                 cur = named(ggml_flash_attn_ext(c, q, k, v, mask, 1.0f / std::sqrt(float(m.head_dim)), 0.0f, 0.0f), "flash_attention");
@@ -208,17 +259,32 @@ struct block {
         ggml_backend_tensor_set(input, input_data.data(), 0, ggml_nbytes(input));
         if (pos) {
             std::vector<int32_t> positions(prompt);
-            std::iota(positions.begin(), positions.end(), 0);
+            std::iota(positions.begin(), positions.end(), past);
             ggml_backend_tensor_set(pos, positions.data(), 0, ggml_nbytes(pos));
-            std::vector<float> mask_data(size_t(prompt) * prompt);
+            if (cache_rows) {
+                std::vector<int64_t> rows(prompt);
+                std::iota(rows.begin(), rows.end(), int64_t(past));
+                ggml_backend_tensor_set(cache_rows, rows.data(), 0, ggml_nbytes(cache_rows));
+            }
+            const int keys = kv_tokens;
+            std::vector<float> mask_data(size_t(keys) * prompt);
             for (int j = 0; j < prompt; ++j) {
-                for (int i = 0; i < prompt; ++i) { mask_data[size_t(j) * prompt + i] = i <= j ? 0.0f : -INFINITY; }
+                for (int i = 0; i < keys; ++i) { mask_data[size_t(j) * keys + i] = i <= past + j ? 0.0f : -INFINITY; }
             }
             if (flash) {
                 std::vector<ggml_fp16_t> half(mask_data.size());
                 ggml_fp32_to_fp16_row(mask_data.data(), half.data(), half.size());
                 ggml_backend_tensor_set(mask, half.data(), 0, ggml_nbytes(mask));
             } else { ggml_backend_tensor_set(mask, mask_data.data(), 0, ggml_nbytes(mask)); }
+            for (auto cache : {past_k, past_v}) {
+                if (!cache) { continue; }
+                std::vector<ggml_fp16_t> values(ggml_nelements(cache));
+                for (size_t i = 0; i < size_t(past) * m.head_dim * m.kv_heads; ++i) {
+                    state = state * 1664525u + 1013904223u;
+                    values[i] = ggml_fp32_to_fp16(float(state >> 8) / 8388608.0f - 1.0f);
+                }
+                ggml_backend_tensor_set(cache, values.data(), 0, ggml_nbytes(cache));
+            }
         }
         ggml_backend_synchronize(backend);
     }
@@ -233,18 +299,20 @@ static void print_array(const char * name, const std::vector<double> & values) {
 int main(int argc, char ** argv) {
     try {
         std::string path, device = "CPU", selection = "all", stage = "both", reference;
-        int prompt = 64, reps = 7, warmup = 2, threads = 8;
-        bool flash = false, write_reference = false;
+        int prompt = 64, past = 0, reps = 7, warmup = 2, threads = 8;
+        bool flash = false, write_reference = false, f32_reference = false;
         for (int i = 1; i < argc; ++i) {
             std::string a = argv[i];
             if (a == "--help") {
-                printf("dense-af-bench -m MODEL --device CPU|GPUOpenCL|HTP0 --prompt 64|256\n"
+                printf("dense-af-bench -m MODEL --device CPU|GPUOpenCL|HTP0 --prompt 1|64|256\n"
                        "  [--layers all|0,17,35] [--stage both|attention|ffn] [--flash 0|1]\n"
+                       "  [--past 0|64|256] (history is only allowed with --prompt 1)\n"
                        "  [--threads 8] [--reps 7] [--warmup 2]\n"
-                       "  [--reference DIR] [--write-reference]\n");
+                       "  [--reference DIR] [--write-reference] [--f32-reference]\n");
                 return 0;
             }
             if (a == "--write-reference") { write_reference = true; continue; }
+            if (a == "--f32-reference") { f32_reference = true; continue; }
             require(i + 1 < argc, "missing value for " + a);
             std::string v = argv[++i];
             if      (a == "-m")          { path = v; }
@@ -253,15 +321,18 @@ int main(int argc, char ** argv) {
             else if (a == "--stage")     { stage = v; }
             else if (a == "--reference") { reference = v; }
             else if (a == "--prompt")    { prompt = std::stoi(v); }
+            else if (a == "--past")      { past = std::stoi(v); }
             else if (a == "--reps")      { reps = std::stoi(v); }
             else if (a == "--warmup")    { warmup = std::stoi(v); }
             else if (a == "--threads")   { threads = std::stoi(v); }
             else if (a == "--flash")     { require(v == "0" || v == "1", "flash must be 0 or 1"); flash = v == "1"; }
             else { throw std::runtime_error("unknown option " + a); }
         }
-        require(!path.empty() && (prompt == 64 || prompt == 256) && reps > 0 && warmup > 0 && threads > 0, "invalid arguments; see --help");
+        require(!path.empty() && (prompt == 1 || prompt == 64 || prompt == 256) && reps > 0 && warmup > 0 && threads > 0, "invalid arguments; see --help");
         require(stage == "both" || stage == "attention" || stage == "ffn", "invalid stage");
+        require(past >= 0 && past <= 32768 && (past == 0 || prompt == 1), "history requires prompt 1 and past <= 32768");
         require(!write_reference || (device == "CPU" && !reference.empty()), "write-reference requires CPU and reference directory");
+        require(!f32_reference || (device == "CPU" && write_reference), "f32-reference is only for CPU reference generation");
         ggml_backend_load_all();
         auto dev = ggml_backend_dev_by_name(device.c_str());
         if (!dev) {
@@ -273,6 +344,7 @@ int main(int argc, char ** argv) {
         auto set_threads = reinterpret_cast<ggml_backend_set_n_threads_t>(ggml_backend_reg_get_proc_address(
                 ggml_backend_dev_backend_reg(dev), "ggml_backend_set_n_threads"));
         if (set_threads) { set_threads(backend.get(), threads); }
+        cpu_workers workers(backend.get(), threads);
         model m(path);
         std::vector<int> layers;
         if (selection == "all") { for (int l = 0; l < m.layers; ++l) { layers.push_back(l); } }
@@ -291,7 +363,7 @@ int main(int argc, char ** argv) {
             for (bool attention : {true, false}) {
                 const char * kind = attention ? "attention" : "ffn";
                 if (stage != "both" && stage != kind) { continue; }
-                block b(m, backend.get(), layer, prompt, attention, flash);
+                block b(m, backend.get(), layer, prompt, past, attention, flash, f32_reference);
                 const auto compute = [&]() {
                     require(ggml_backend_graph_compute(backend.get(), b.gf) == GGML_STATUS_SUCCESS, "compute failed");
                     ggml_backend_synchronize(backend.get());
@@ -308,7 +380,8 @@ int main(int argc, char ** argv) {
                 for (float v : output) { require(std::isfinite(v), "non-finite output"); }
                 double relative_rms = -1.0, max_abs = -1.0;
                 if (!reference.empty()) {
-                    std::string file = reference + "/p" + std::to_string(prompt) + "-l" + std::to_string(layer) + "-" + kind + "-fa" + std::to_string(attention && flash) + ".bin";
+                    std::string file = reference + "/p" + std::to_string(prompt) + "-l" + std::to_string(layer) + "-" + kind + "-fa" + std::to_string(attention && flash) +
+                        (past > 0 && attention ? "-past" + std::to_string(past) : "") + ".bin";
                     if (write_reference) {
                         std::ofstream f(file, std::ios::binary);
                         f.write(reinterpret_cast<const char *>(output.data()), output.size() * sizeof(float));
@@ -343,8 +416,8 @@ int main(int argc, char ** argv) {
                     ggml_backend_synchronize(backend.get());
                     downloads.push_back((ggml_time_us() - t) / 1000.0);
                 }
-                printf("RESULT {\"device\":\"%s\",\"prompt\":%d,\"layer\":%d,\"block\":\"%s\",\"flash\":%d,\"threads\":%d,\"nodes\":%d,\"weight_buffer\":\"%s\",\"relative_rms\":%.8f,\"max_abs\":%.8f",
-                       device.c_str(), prompt, layer, kind, attention && flash, threads, ggml_graph_n_nodes(b.gf), b.weight_buffer.c_str(), relative_rms, max_abs);
+                printf("RESULT {\"device\":\"%s\",\"prompt\":%d,\"past\":%d,\"kv_tokens\":%d,\"layer\":%d,\"block\":\"%s\",\"flash\":%d,\"threads\":%d,\"nodes\":%d,\"weight_buffer\":\"%s\",\"f32_reference\":%s,\"relative_rms\":%.8f,\"max_abs\":%.8f",
+                       device.c_str(), prompt, attention ? past : 0, b.kv_tokens, layer, kind, attention && flash, threads, ggml_graph_n_nodes(b.gf), b.weight_buffer.c_str(), f32_reference ? "true" : "false", relative_rms, max_abs);
                 print_array("compute_ms", times);
                 print_array("upload_ms", uploads);
                 print_array("download_ms", downloads);

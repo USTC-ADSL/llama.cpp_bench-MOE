@@ -17,6 +17,7 @@ def main():
     ap.add_argument("--model", default="/data/local/tmp/models/Qwen2.5-3B-AoT/ggml/weights.gguf")
     ap.add_argument("--devices", nargs="+", default=["CPU", "GPUOpenCL", "HTP0"])
     ap.add_argument("--prompts", nargs="+", type=int, default=[64, 256])
+    ap.add_argument("--past", type=int, default=0)
     ap.add_argument("--layers", default="all")
     ap.add_argument("--stage", choices=["both", "attention", "ffn"], default="both")
     ap.add_argument("--flash", type=int, choices=[0, 1], default=0)
@@ -25,6 +26,8 @@ def main():
     ap.add_argument("--round", default="1")
     ap.add_argument("--output", type=Path, required=True)
     ap.add_argument("--reference", action="store_true")
+    ap.add_argument("--gpu-dense-dp4a", type=int, choices=[0, 1], default=1,
+                    help="Adreno Q4_0 dense matmul path; 1 avoids large half-accumulation error on early FFNs")
     ap.add_argument("--cooldown", type=float, default=10)
     args = ap.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
@@ -54,6 +57,7 @@ def main():
                 raise SystemExit(f"refusing to overwrite {tag}")
             argv = ["timeout", "600", "taskset", "ff", "./dense-af-bench", "-m", args.model,
                     "--device", device, "--prompt", str(prompt), "--layers", args.layers,
+                    "--past", str(args.past),
                     "--stage", args.stage, "--flash", str(args.flash), "--threads", "8",
                     "--reps", str(args.reps), "--warmup", str(args.warmup)]
             if args.reference:
@@ -62,7 +66,8 @@ def main():
                     argv += ["--write-reference"]
             command = (f"cd {shlex.quote(args.directory)} && "
                        "LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 "
-                       "GGML_HEXAGON_PROFILE=0 " + shlex.join(argv))
+                       "GGML_HEXAGON_PROFILE=0 "
+                       f"GGML_OPENCL_Q4_0_DENSE_DP4A={args.gpu_dense_dp4a} " + shlex.join(argv))
             time.sleep(args.cooldown)
             record = dict(serial=args.serial, command=command, before=snapshot(),
                           started=datetime.datetime.now(datetime.timezone.utc).isoformat())

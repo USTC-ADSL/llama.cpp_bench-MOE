@@ -1,6 +1,6 @@
 # Qwen2.5-3B dense A/F prefill microbench
 
-- 目标：在 fd8657d6 比较完整 Attention 块与完整 FFN 块的 Hexagon NPU、OpenCL GPU、CPU 耗时；prompt 为 64 / 256，CPU 使用全部 8 核。
+- 目标：在 fd8657d6 比较完整 Attention 块与完整 FFN 块的 Hexagon NPU、OpenCL GPU、CPU 耗时；prefill prompt 为 64 / 256，新增 decode 每次 1 token、历史 KV 长度 256；CPU 使用全部 8 核和持久线程池。
 - 用户已确认只比较完整 Attention / FFN 块，先独立测三后端，不实现混合执行；空历史 KV、预热重复同步计时，搬运单列。
 - 模型：`/data/local/tmp/models/Qwen2.5-3B-AoT/ggml/weights.gguf`，1742627744 bytes；Qwen2.5-3B-Instruct，36 层，embedding 2048，FFN 11008，16 Q / 2 KV heads，head dim 128，权重 Q4_0、norm/bias F32。
 - 输入：各层相同种子规则的合成激活（跨后端一致），不是自然语言端到端执行。Attention / FFN 均包含各自 RMSNorm 与残差；当前 prompt 的 K/V 转 F16，无历史缓存。
