@@ -20,6 +20,7 @@ def main():
     p.add_argument('--deploy', action='store_true')
     p.add_argument('--cases', nargs='+', choices=['mixed', 'npu', 'npu-host1401'], default=['mixed', 'npu'])
     p.add_argument('--htp-diagnostic', action='store_true', help='basic DSP profile and aggregate host queue timing')
+    p.add_argument('--power', action='store_true', help='sample whole-device battery telemetry during real decode')
     args = p.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
     if (args.output / 'original-state.json').exists():
@@ -70,10 +71,14 @@ def main():
                    'GGML_HEXAGON_PROFILE=' + ('1' if args.htp_diagnostic else '0'),
                    'GGML_HEXAGON_TIMING=' + ('1' if args.htp_diagnostic else '0'),
                    'GGML_HEXAGON_POWER=nom', 'GGML_HEXAGON_DCVS=0']
+            if args.power:
+                env += ['DENSE_AF_CLOCKS=1']
             options = ['timeout', '240', 'taskset', 'c0', './dense-af-decode', '-m', args.model,
                        '--placement', placement, '--output', name, '--prompt', '256', '--steps', str(args.steps)]
             if args.phase == 'audit':
                 options += ['--audit']
+            if args.power:
+                options += ['--power']
             command = '\n'.join(['set -e', 'trap ' + shlex.quote(restore) + ' EXIT', limits(khz, khz),
                                   'cd ' + shlex.quote(args.directory), shlex.join(env + options),
                                   f'cat {cpu}/scaling_min_freq {cpu}/scaling_max_freq {cpu}/scaling_cur_freq'])

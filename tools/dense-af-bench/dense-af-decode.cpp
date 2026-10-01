@@ -20,6 +20,11 @@
 static void require(bool ok, const char * message) {
     if (!ok) { throw std::runtime_error(message); }
 }
+static void require(bool ok, const std::string & message) {
+    if (!ok) { throw std::runtime_error(message); }
+}
+#include "battery-window.h"
+
 static double now_ms() {
     return std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now().time_since_epoch()).count();
 }
@@ -58,10 +63,11 @@ int main(int argc, char ** argv) {
     try {
         std::string path, placement = "mixed", output = "decode";
         int prompt_count = 256, steps = 100;
-        bool audit_only = false;
+        bool audit_only = false, measure_power = false;
         for (int i = 1; i < argc; ++i) {
             const std::string arg = argv[i];
             if (arg == "--audit") { audit_only = true; continue; }
+            if (arg == "--power") { measure_power = true; continue; }
             require(i + 1 < argc, "missing argument value");
             const std::string value = argv[++i];
             if (arg == "-m") { path = value; }
@@ -73,6 +79,7 @@ int main(int argc, char ** argv) {
         }
         require(!path.empty() && prompt_count >= 128 && steps > 0 && prompt_count + steps < 2048, "invalid arguments");
         require(placement == "mixed" || placement == "npu" || placement == "cpu", "invalid placement");
+        require(!audit_only || !measure_power, "power requires measurement mode");
         const bool mixed = placement == "mixed";
         require(setenv("LLAMA_QWEN2_CPU_ATTENTION", mixed ? "1" : "0", 1) == 0, "setenv failed");
         llama_backend_init();
@@ -197,6 +204,27 @@ int main(int argc, char ** argv) {
             std::vector<llama_token> generated{token};
             std::vector<double> times;
             generated.reserve(steps + 1); times.reserve(steps);
+            battery_window power{"/sys/class/power_supply/battery", 0.001};
+            std::vector<double> token_end_seconds;
+            token_end_seconds.reserve(steps);
+            const auto boot_seconds = []() {
+                timespec ts;
+#ifdef CLOCK_BOOTTIME
+                require(clock_gettime(CLOCK_BOOTTIME, &ts) == 0, "boottime unavailable");
+#else
+                require(clock_gettime(CLOCK_MONOTONIC, &ts) == 0, "monotonic clock unavailable");
+#endif
+                return ts.tv_sec + ts.tv_nsec / 1e9;
+            };
+            double power_wall_start = 0, next_sample = 0;
+            if (measure_power) {
+                power.check_discharging();
+                power.charge_start = power.read("charge_counter");
+                power.temp_start = power.read("temp");
+                power_wall_start = boot_seconds();
+                power.sample();
+                next_sample = power.samples.back().seconds + 0.1;
+            }
             const auto timing_before = timing_snapshot();
             time_calls = timing_before.enabled;
             const double start = now_ms();
@@ -205,10 +233,30 @@ int main(int argc, char ** argv) {
                 token = decode(token);
                 generated.push_back(token);
                 times.push_back(now_ms() - step_start);
+                if (measure_power) {
+                    const double completed = ggml_time_us() / 1e6;
+                    token_end_seconds.push_back(completed - power.samples.front().seconds);
+                    ++power.iterations;
+                    if (completed >= next_sample) {
+                        power.sample();
+                        next_sample = power.samples.back().seconds + 0.1;
+                    }
+                }
             }
             llama_synchronize(ctx.get());
+            if (measure_power) {
+                power.sample();
+                power.wall_seconds = boot_seconds() - power_wall_start;
+                require(std::abs(power.wall_seconds - (power.samples.back().seconds - power.samples.front().seconds)) < 0.2,
+                        "system suspended during power window");
+            }
             const double elapsed = now_ms() - start;
             const auto timing_after = timing_snapshot();
+            if (measure_power) {
+                power.charge_end = power.read("charge_counter");
+                power.temp_end = power.read("temp");
+                power.check_discharging();
+            }
             const auto max_pos = llama_memory_seq_pos_max(llama_get_memory(ctx.get()), 0);
             require(max_pos == prompt_count + steps - 1, "KV did not grow as expected");
             std::ofstream text(output + "-generated.txt"), tokens(output + "-generated-tokens.txt");
@@ -232,6 +280,15 @@ int main(int argc, char ** argv) {
                     printf(",\"%s\":%llu", counter_names[i], (unsigned long long)(timing_after.counters[i] - timing_before.counters[i]));
                 }
                 printf("}");
+            }
+            if (measure_power) {
+                printf(",\"power\":");
+                power.print();
+                printf(",\"token_end_seconds\":[");
+                for (size_t i = 0; i < token_end_seconds.size(); ++i) {
+                    printf("%s%.6f", i ? "," : "", token_end_seconds[i]);
+                }
+                printf("]");
             }
             printf("}\n");
             llama_perf_context_print(ctx.get());
