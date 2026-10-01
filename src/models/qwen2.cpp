@@ -1,5 +1,8 @@
 #include "models.h"
 
+#include <cstdlib>
+#include <cstring>
+
 void llama_model_qwen2::load_arch_hparams(llama_model_loader & ml) {
     ml.get_key(LLM_KV_ATTENTION_LAYERNORM_RMS_EPS, hparams.f_norm_rms_eps);
 
@@ -56,6 +59,27 @@ llama_model_qwen2::graph::graph(const llama_model & model, const llm_graph_param
     GGML_ASSERT(n_embd_head == hparams.n_embd_head_k());
     GGML_ASSERT(n_embd_head == n_rot);
 
+    // Experimental full-model A/F benchmark. Weight overrides and CPU KV storage
+    // are supplied by dense-af-decode; explicitly pin all block operations so
+    // scheduler heuristics cannot move attention norms or FA to the FFN device.
+    const char * af_env = std::getenv("LLAMA_QWEN2_CPU_ATTENTION");
+    const bool cpu_attention = af_env && std::strcmp(af_env, "1") == 0;
+    if (cpu_attention) {
+        GGML_ASSERT(!cparams.offload_kqv);
+    }
+    const auto pin_new_nodes = [&](int first, ggml_tensor * output, ggml_backend_t backend) {
+        ggml_build_forward_expand(gf, output);
+        for (int i = first; i < ggml_graph_n_nodes(gf); ++i) {
+            auto * node = ggml_graph_node(gf, i);
+            if (node->op == GGML_OP_NONE || node->op == GGML_OP_VIEW ||
+                    node->op == GGML_OP_RESHAPE || node->op == GGML_OP_PERMUTE || node->op == GGML_OP_TRANSPOSE) {
+                continue;
+            }
+            GGML_ASSERT(backend && ggml_backend_supports_op(backend, node));
+            ggml_backend_sched_set_tensor_backend(sched, node, backend);
+        }
+    };
+
     ggml_tensor * cur;
     ggml_tensor * inpL;
 
@@ -69,6 +93,7 @@ llama_model_qwen2::graph::graph(const llama_model & model, const llm_graph_param
     ggml_tensor * inp_out_ids = build_inp_out_ids();
 
     for (int il = 0; il < n_layer; ++il) {
+        const int attention_first = ggml_graph_n_nodes(gf);
         ggml_tensor * inpSA = inpL;
 
         // norm
@@ -110,6 +135,11 @@ llama_model_qwen2::graph::graph(const llama_model & model, const llm_graph_param
         ggml_tensor * ffn_inp = ggml_add(ctx0, cur, inpSA);
         cb(ffn_inp, "ffn_inp", il);
 
+        if (cpu_attention) {
+            pin_new_nodes(attention_first, ffn_inp, backend_cpu);
+        }
+        const int ffn_first = ggml_graph_n_nodes(gf);
+
         // feed-forward network
         cur = build_norm(ffn_inp,
                 model.layers[il].ffn_norm, NULL,
@@ -128,6 +158,18 @@ llama_model_qwen2::graph::graph(const llama_model & model, const llm_graph_param
 
         cur = build_cvec(cur, il);
         cb(cur, "l_out", il);
+
+        if (cpu_attention) {
+            ggml_backend_t ffn_backend = nullptr;
+            for (int i = 0; i < ggml_backend_sched_get_n_backends(sched); ++i) {
+                auto * backend = ggml_backend_sched_get_backend(sched, i);
+                if (ggml_backend_get_device(backend) == model.dev_layer(il)) {
+                    ffn_backend = backend;
+                    break;
+                }
+            }
+            pin_new_nodes(ffn_first, cur, ffn_backend);
+        }
 
         // input for next layer
         inpL = cur;

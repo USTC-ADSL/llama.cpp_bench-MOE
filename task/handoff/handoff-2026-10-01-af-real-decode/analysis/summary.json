@@ -1,0 +1,98 @@
+{
+  "results": [
+    {
+      "name": "mixed",
+      "cpu_khz": 1401600,
+      "npu_profile": "NOM",
+      "decode_tokens": 100,
+      "seconds": 7.4369255700000005,
+      "tokens_per_second": 13.446417,
+      "ms_per_token": 74.369256,
+      "median_ms": 74.28354150000001,
+      "p95_ms": 76.099374,
+      "first10_ms": 74.2831246,
+      "last10_ms": 74.4628176,
+      "prefill_and_first_sample_ms": 1345.114999,
+      "graph_splits": 72,
+      "temperature_start_c": 30.3,
+      "temperature_end_c": 30.3,
+      "source": "task/handoff/handoff-2026-10-01-af-real-decode/results/mixed-measure.json"
+    },
+    {
+      "name": "npu",
+      "cpu_khz": 2649600,
+      "npu_profile": "NOM",
+      "decode_tokens": 100,
+      "seconds": 5.91827031,
+      "tokens_per_second": 16.896829,
+      "ms_per_token": 59.182703,
+      "median_ms": 59.3772915,
+      "p95_ms": 60.044219,
+      "first10_ms": 59.3404428,
+      "last10_ms": 59.1436666,
+      "prefill_and_first_sample_ms": 249.114948,
+      "graph_splits": 2,
+      "temperature_start_c": 30.3,
+      "temperature_end_c": 30.3,
+      "source": "task/handoff/handoff-2026-10-01-af-real-decode/results/npu-measure.json"
+    },
+    {
+      "name": "npu-host1401",
+      "cpu_khz": 1401600,
+      "npu_profile": "NOM",
+      "decode_tokens": 100,
+      "seconds": 6.018039528999999,
+      "tokens_per_second": 16.616707,
+      "ms_per_token": 60.180395,
+      "median_ms": 60.1115365,
+      "p95_ms": 62.301407,
+      "first10_ms": 60.497755,
+      "last10_ms": 60.0952236,
+      "prefill_and_first_sample_ms": 251.179011,
+      "graph_splits": 2,
+      "temperature_start_c": 30.5,
+      "temperature_end_c": 30.5,
+      "source": "task/handoff/handoff-2026-10-01-af-real-decode/matched-host/npu-host1401-measure.json"
+    }
+  ],
+  "comparisons": [
+    {
+      "baseline": "npu",
+      "mixed_throughput_change_pct": -20.42047061019556,
+      "mixed_latency_change_pct": 25.660458597168166
+    },
+    {
+      "baseline": "npu-host1401",
+      "mixed_throughput_change_pct": -19.078930620850453,
+      "mixed_latency_change_pct": 23.57721480558577
+    }
+  ],
+  "placement_checks": {
+    "mixed": {
+      "attention_layers": 36,
+      "ffn_layers": 36,
+      "fa_nodes": 36,
+      "kv_update_nodes": 72,
+      "attention_device": "CPU",
+      "ffn_device": "HTP0",
+      "head_device": "HTP0"
+    },
+    "npu": {
+      "attention_layers": 36,
+      "ffn_layers": 36,
+      "fa_nodes": 36,
+      "kv_update_nodes": 72,
+      "attention_device": "HTP0",
+      "ffn_device": "HTP0",
+      "head_device": "HTP0"
+    }
+  },
+  "identical_prompt_tokens": 256,
+  "identical_generated_tokens": 101,
+  "timing_scope": "100 full single-token decode calls and greedy samples after prefill; includes finite-logit checks",
+  "limitations": [
+    "One 100-step run per configuration, no confidence intervals.",
+    "EOG suppressed to hold workload length; output text conversion happens after timing.",
+    "No concurrent energy measurement; previous microbench energy gains do not carry over."
+  ]
+}

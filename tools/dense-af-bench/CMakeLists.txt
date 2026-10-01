@@ -1,3 +1,7 @@
 add_executable(dense-af-bench dense-af-bench.cpp)
 target_link_libraries(dense-af-bench PRIVATE ggml ${CMAKE_THREAD_LIBS_INIT})
 target_compile_features(dense-af-bench PRIVATE cxx_std_17)
+
+add_executable(dense-af-decode dense-af-decode.cpp)
+target_link_libraries(dense-af-decode PRIVATE llama ${CMAKE_THREAD_LIBS_INIT})
+target_compile_features(dense-af-decode PRIVATE cxx_std_17)
