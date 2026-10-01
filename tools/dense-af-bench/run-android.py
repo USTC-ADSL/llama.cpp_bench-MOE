@@ -10,6 +10,17 @@ import subprocess
 import time
 
 
+def write_record(path, record):
+    # Keep one sample group per line so raw result commits remain reviewable.
+    lines = ["{"]
+    lines += ["  " + json.dumps(k) + ": " + json.dumps(v) + "," for k, v in record.items() if k != "results"]
+    lines.append('  "results": [')
+    rows = record["results"]
+    lines += ["    " + json.dumps(row) + ("," if i + 1 < len(rows) else "") for i, row in enumerate(rows)]
+    lines += ["  ]", "}", ""]
+    path.write_text("\n".join(lines))
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--serial", default="fd8657d6")
@@ -79,7 +90,7 @@ def main():
                           after=snapshot())
             rows = [json.loads(line[7:]) for line in log.read_text().splitlines() if line.startswith("RESULT ")]
             record["results"] = rows
-            info.write_text(json.dumps(record, indent=2) + "\n")
+            write_record(info, record)
             for block in ("attention", "ffn"):
                 values = [statistics.median(r["compute_ms"]) for r in rows if r["block"] == block]
                 errors = [r["relative_rms"] for r in rows if r["block"] == block]

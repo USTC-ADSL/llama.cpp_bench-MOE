@@ -1,0 +1,17 @@
+{
+  "serial": "fd8657d6",
+  "command": "cd /data/local/tmp/dense-af-bench && LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 GGML_HEXAGON_PROFILE=0 timeout 600 taskset ff ./dense-af-bench -m /data/local/tmp/models/Qwen2.5-3B-AoT/ggml/weights.gguf --device HTP0 --prompt 256 --layers 0,17,35 --stage both --flash 0 --threads 8 --reps 3 --warmup 2 --reference ./reference",
+  "before": "SM8750\n0-7\n  status: 5\n  level: 100\n  temperature: 293\n  Capacity level: 5\n/sys/devices/system/cpu/cpufreq/policy0\nwalt\n2400000\n3532800\n/sys/devices/system/cpu/cpufreq/policy6\nwalt\n1017600\n4320000\n",
+  "started": "2026-10-01T07:43:54.800380+00:00",
+  "returncode": 0,
+  "elapsed_seconds": 0.8790790922939777,
+  "after": "SM8750\n0-7\n  status: 5\n  level: 100\n  temperature: 293\n  Capacity level: 5\n/sys/devices/system/cpu/cpufreq/policy0\nwalt\n2400000\n3532800\n/sys/devices/system/cpu/cpufreq/policy6\nwalt\n1017600\n4320000\n",
+  "results": [
+    {"device": "HTP0", "prompt": 256, "layer": 0, "block": "attention", "flash": 0, "threads": 8, "nodes": 27, "weight_buffer": "HTP0", "relative_rms": 0.0107345, "max_abs": 0.03757334, "compute_ms": [2.928, 2.849, 2.801], "upload_ms": [0.083, 0.06, 0.054], "download_ms": [0.064, 0.056, 0.056]},
+    {"device": "HTP0", "prompt": 256, "layer": 0, "block": "ffn", "flash": 0, "threads": 8, "nodes": 7, "weight_buffer": "HTP0", "relative_rms": 0.00964492, "max_abs": 0.01780209, "compute_ms": [5.135, 5.635, 5.561], "upload_ms": [0.472, 0.416, 0.426], "download_ms": [0.427, 0.428, 0.514]},
+    {"device": "HTP0", "prompt": 256, "layer": 17, "block": "attention", "flash": 0, "threads": 8, "nodes": 27, "weight_buffer": "HTP0", "relative_rms": 0.0104771, "max_abs": 0.06289577, "compute_ms": [2.782, 2.893, 3.088], "upload_ms": [0.213, 0.205, 0.205], "download_ms": [0.217, 0.217, 0.218]},
+    {"device": "HTP0", "prompt": 256, "layer": 17, "block": "ffn", "flash": 0, "threads": 8, "nodes": 7, "weight_buffer": "HTP0", "relative_rms": 0.01018123, "max_abs": 0.57168579, "compute_ms": [4.997, 4.94, 5.136], "upload_ms": [0.342, 0.319, 0.319], "download_ms": [0.332, 0.311, 0.311]},
+    {"device": "HTP0", "prompt": 256, "layer": 35, "block": "attention", "flash": 0, "threads": 8, "nodes": 27, "weight_buffer": "HTP0", "relative_rms": 0.00822241, "max_abs": 0.18736649, "compute_ms": [2.989, 2.99, 2.983], "upload_ms": [0.473, 0.419, 0.429], "download_ms": [0.448, 0.448, 0.477]},
+    {"device": "HTP0", "prompt": 256, "layer": 35, "block": "ffn", "flash": 0, "threads": 8, "nodes": 7, "weight_buffer": "HTP0", "relative_rms": 0.0104647, "max_abs": 0.94158936, "compute_ms": [4.869, 4.799, 5.072], "upload_ms": [0.341, 0.312, 0.31], "download_ms": [0.321, 0.318, 0.319]}
+  ]
+}

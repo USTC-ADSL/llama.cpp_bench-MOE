@@ -1,0 +1,38 @@
+ggml_opencl: selected platform: 'QUALCOMM Snapdragon(TM)'
+
+ggml_opencl: device: 'QUALCOMM Adreno(TM) 830 (OpenCL 3.0 Adreno(TM) 830)'
+ggml_opencl: default device: 'QUALCOMM Adreno(TM) 830 (OpenCL 3.0 Adreno(TM) 830)'
+ggml-hex: Loading driver libcdsprpc.so
+ggml-hex: FASTRPC_GET_DOMAINS query failed (0x6c), using static CDSP domains
+ggml-hex: Profiling mode 0 : pmu-evt [ 0x3,0x111,0x100,0x105,0x240,0x256,0x7d,0x8c ]
+ggml-hex: Hexagon backend (experimental) : allocating new registry : ndev 1
+ggml-hex: Hexagon Arch version v79, DMA64 disabled
+ggml-hex: device 0: HTP0 (phys=0, virt=0, domain=cdsp:3)
+ggml_opencl: OpenCL device: QUALCOMM Adreno(TM) 830
+ggml_opencl: OpenCL driver: OpenCL 3.0 QUALCOMM build: 0800.71 Compiler E031.47.18.49
+ggml_opencl: vector subgroup broadcast support: true
+ggml_opencl: subgroup shuffle support: true
+ggml_opencl: device FP16 support: true
+ggml_opencl: khr dot product support: true
+ggml_opencl: mem base addr align: 128
+ggml_opencl: global mem size: 7556 MB
+ggml_opencl: max mem alloc size: 1024 MB
+ggml_opencl: device max image buffer size (pixels): 134217728
+ggml_opencl: device max image2d size: 16384 x 16384
+ggml_opencl: device max workgroup size: 1024
+ggml_opencl: SVM coarse grain buffer support: true
+ggml_opencl: SVM fine grain buffer support: true
+ggml_opencl: SVM fine grain system support: false
+ggml_opencl: SVM atomics support: true
+ggml_opencl: cl_qcom_subgroup_shuffle support: true
+ggml_opencl: flattening quantized weights representation as struct of arrays (GGML_OPENCL_SOA_Q)
+ggml_opencl: using kernels optimized for Adreno (GGML_OPENCL_USE_ADRENO_KERNELS)
+ggml_opencl: Adreno xmem F16xF32 GEMM enabled (temporary weight prepack)
+MODEL layers=36 embd=2048 ff=11008 heads=16 kv_heads=2 head_dim=128
+ggml_opencl: kernel cache enabled at '/data/local/tmp/llama.cpp/cl-cache'
+ggml_opencl: loading OpenCL kernels..................................................................................................................................................................................
+RESULT {"device":"GPUOpenCL","prompt":64,"layer":1,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"OpenCL","f32_reference":false,"relative_rms":0.12195381,"max_abs":34.84429932,"compute_ms":[6.527000,6.476000,6.297000],"upload_ms":[0.090000,0.082000,0.083000],"download_ms":[0.085000,0.081000,0.082000]}
+RESULT {"device":"GPUOpenCL","prompt":64,"layer":2,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"OpenCL","f32_reference":false,"relative_rms":0.10136774,"max_abs":9.18839931,"compute_ms":[6.644000,6.767000,6.675000],"upload_ms":[0.050000,0.045000,0.045000],"download_ms":[0.047000,0.045000,0.045000]}
+RESULT {"device":"GPUOpenCL","prompt":64,"layer":3,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"OpenCL","f32_reference":false,"relative_rms":0.07391766,"max_abs":8.37769318,"compute_ms":[6.603000,6.495000,6.598000],"upload_ms":[0.117000,0.110000,0.111000],"download_ms":[0.111000,0.109000,0.110000]}
+RESULT {"device":"GPUOpenCL","prompt":64,"layer":4,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"OpenCL","f32_reference":false,"relative_rms":0.09237966,"max_abs":11.35877800,"compute_ms":[6.628000,6.367000,6.660000],"upload_ms":[0.119000,0.110000,0.112000],"download_ms":[0.112000,0.110000,0.112000]}
+ERROR: correctness check exceeded 5% relative RMS (residual excluded)

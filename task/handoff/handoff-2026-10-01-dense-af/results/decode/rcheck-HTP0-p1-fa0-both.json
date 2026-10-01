@@ -1,0 +1,11 @@
+{
+  "serial": "fd8657d6",
+  "command": "cd /data/local/tmp/dense-af-bench && LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 GGML_HEXAGON_PROFILE=0 GGML_OPENCL_Q4_0_DENSE_DP4A=1 timeout 600 taskset ff ./dense-af-bench -m /data/local/tmp/models/Qwen2.5-3B-AoT/ggml/weights.gguf --device HTP0 --prompt 1 --layers 0,1,17,35 --past 256 --stage both --flash 0 --threads 8 --reps 3 --warmup 2 --reference ./reference",
+  "before": "SM8750\n0-7\nCpus_allowed_list:\t0-7\n  status: 5\n  level: 100\n  temperature: 352\n  Capacity level: 5\n/sys/devices/system/cpu/cpufreq/policy0\nwalt\n2400000\n3532800\n/sys/devices/system/cpu/cpufreq/policy6\nwalt\n1017600\n4320000\n",
+  "started": "2026-10-01T08:01:48.087107+00:00",
+  "returncode": 1,
+  "elapsed_seconds": 0.4901193752884865,
+  "after": "SM8750\n0-7\nCpus_allowed_list:\t0-7\n  status: 5\n  level: 100\n  temperature: 352\n  Capacity level: 5\n/sys/devices/system/cpu/cpufreq/policy0\nwalt\n2400000\n3532800\n/sys/devices/system/cpu/cpufreq/policy6\nwalt\n1017600\n4320000\n",
+  "results": [
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "serial": "fd8657d6",
+  "command": "cd /data/local/tmp/dense-af-bench && LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 GGML_HEXAGON_PROFILE=0 timeout 600 taskset ff ./dense-af-bench -m /data/local/tmp/models/Qwen2.5-3B-AoT/ggml/weights.gguf --device GPUOpenCL --prompt 64 --layers 0,17,35 --stage attention --flash 1 --threads 8 --reps 3 --warmup 2 --reference ./reference",
+  "before": "SM8750\n0-7\nCpus_allowed_list:\t0-7\n  status: 5\n  level: 100\n  temperature: 293\n  Capacity level: 5\n/sys/devices/system/cpu/cpufreq/policy0\nwalt\n2400000\n3532800\n/sys/devices/system/cpu/cpufreq/policy6\nwalt\n1017600\n4320000\n",
+  "started": "2026-10-01T07:47:10.756261+00:00",
+  "returncode": 0,
+  "elapsed_seconds": 2.206372620537877,
+  "after": "SM8750\n0-7\nCpus_allowed_list:\t0-7\n  status: 5\n  level: 100\n  temperature: 293\n  Capacity level: 5\n/sys/devices/system/cpu/cpufreq/policy0\nwalt\n3532800\n3532800\n/sys/devices/system/cpu/cpufreq/policy6\nwalt\n1017600\n4320000\n",
+  "results": [
+    {"device": "GPUOpenCL", "prompt": 64, "layer": 0, "block": "attention", "flash": 1, "threads": 8, "nodes": 22, "weight_buffer": "OpenCL", "relative_rms": 0.01074244, "max_abs": 0.048522, "compute_ms": [3.081, 3.167, 3.748], "upload_ms": [0.015, 0.011, 0.01], "download_ms": [0.014, 0.01, 0.01]},
+    {"device": "GPUOpenCL", "prompt": 64, "layer": 17, "block": "attention", "flash": 1, "threads": 8, "nodes": 22, "weight_buffer": "OpenCL", "relative_rms": 0.01306355, "max_abs": 0.09082127, "compute_ms": [4.146, 3.479, 4.512], "upload_ms": [0.041, 0.037, 0.037], "download_ms": [0.037, 0.036, 0.037]},
+    {"device": "GPUOpenCL", "prompt": 64, "layer": 35, "block": "attention", "flash": 1, "threads": 8, "nodes": 22, "weight_buffer": "OpenCL", "relative_rms": 0.0113122, "max_abs": 0.21084023, "compute_ms": [3.759, 3.682, 4.343], "upload_ms": [0.041, 0.037, 0.038], "download_ms": [0.038, 0.038, 0.038]}
+  ]
+}

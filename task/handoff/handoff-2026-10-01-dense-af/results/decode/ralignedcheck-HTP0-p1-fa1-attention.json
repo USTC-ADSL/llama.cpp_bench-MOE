@@ -1,0 +1,15 @@
+{
+  "serial": "fd8657d6",
+  "command": "cd /data/local/tmp/dense-af-bench && LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 GGML_HEXAGON_PROFILE=0 GGML_OPENCL_Q4_0_DENSE_DP4A=1 timeout 600 taskset ff ./dense-af-bench -m /data/local/tmp/models/Qwen2.5-3B-AoT/ggml/weights.gguf --device HTP0 --prompt 1 --layers 0,1,17,35 --past 256 --stage attention --flash 1 --threads 8 --reps 5 --warmup 3 --reference ./reference",
+  "before": "SM8750\n0-7\nCpus_allowed_list:\t0-7\n  status: 5\n  level: 100\n  temperature: 337\n  Capacity level: 5\n/sys/devices/system/cpu/cpufreq/policy0\nwalt\n2400000\n3532800\n/sys/devices/system/cpu/cpufreq/policy6\nwalt\n1017600\n4320000\n",
+  "started": "2026-10-01T08:05:11.145405+00:00",
+  "returncode": 0,
+  "elapsed_seconds": 0.56162597425282,
+  "after": "SM8750\n0-7\nCpus_allowed_list:\t0-7\n  status: 5\n  level: 100\n  temperature: 337\n  Capacity level: 5\n/sys/devices/system/cpu/cpufreq/policy0\nwalt\n2227200\n3532800\n/sys/devices/system/cpu/cpufreq/policy6\nwalt\n1017600\n4320000\n",
+  "results": [
+    {"device": "HTP0", "prompt": 1, "past": 256, "kv_tokens": 512, "layer": 0, "block": "attention", "flash": 1, "threads": 8, "nodes": 26, "weight_buffer": "HTP0", "f32_reference": false, "relative_rms": 0.00691399, "max_abs": 0.01867402, "compute_ms": [0.525, 0.513, 0.519, 0.63, 0.773], "upload_ms": [0.001, 0.0, 0.0, 0.0, 0.001], "download_ms": [0.0, 0.0, 0.001, 0.0, 0.0]},
+    {"device": "HTP0", "prompt": 1, "past": 256, "kv_tokens": 512, "layer": 1, "block": "attention", "flash": 1, "threads": 8, "nodes": 26, "weight_buffer": "HTP0", "f32_reference": false, "relative_rms": 0.00751628, "max_abs": 0.00802144, "compute_ms": [0.525, 0.526, 0.527, 0.529, 0.631], "upload_ms": [0.001, 0.0, 0.0, 0.0, 0.0], "download_ms": [0.0, 0.0, 0.001, 0.0, 0.0]},
+    {"device": "HTP0", "prompt": 1, "past": 256, "kv_tokens": 512, "layer": 17, "block": "attention", "flash": 1, "threads": 8, "nodes": 26, "weight_buffer": "HTP0", "f32_reference": false, "relative_rms": 0.00883042, "max_abs": 0.00422789, "compute_ms": [0.636, 0.533, 0.534, 0.638, 0.639], "upload_ms": [0.0, 0.0, 0.0, 0.0, 0.0], "download_ms": [0.0, 0.001, 0.0, 0.001, 0.0]},
+    {"device": "HTP0", "prompt": 1, "past": 256, "kv_tokens": 512, "layer": 35, "block": "attention", "flash": 1, "threads": 8, "nodes": 26, "weight_buffer": "HTP0", "f32_reference": false, "relative_rms": 0.00616273, "max_abs": 0.09715557, "compute_ms": [0.544, 0.538, 0.544, 0.648, 0.653], "upload_ms": [0.001, 0.0, 0.0, 0.0, 0.0], "download_ms": [0.0, 0.0, 0.001, 0.0, 0.001]}
+  ]
+}

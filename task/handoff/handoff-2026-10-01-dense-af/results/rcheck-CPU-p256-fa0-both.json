@@ -1,0 +1,17 @@
+{
+  "serial": "fd8657d6",
+  "command": "cd /data/local/tmp/dense-af-bench && LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 GGML_HEXAGON_PROFILE=0 timeout 600 taskset ff ./dense-af-bench -m /data/local/tmp/models/Qwen2.5-3B-AoT/ggml/weights.gguf --device CPU --prompt 256 --layers 0,17,35 --stage both --flash 0 --threads 8 --reps 3 --warmup 2 --reference ./reference --write-reference",
+  "before": "SM8750\n0-7\n  status: 5\n  level: 100\n  temperature: 293\n  Capacity level: 5\n/sys/devices/system/cpu/cpufreq/policy0\nwalt\n1996800\n3532800\n/sys/devices/system/cpu/cpufreq/policy6\nwalt\n1017600\n4320000\n",
+  "started": "2026-10-01T07:43:48.568141+00:00",
+  "returncode": 0,
+  "elapsed_seconds": 1.6257586628198624,
+  "after": "SM8750\n0-7\n  status: 5\n  level: 100\n  temperature: 293\n  Capacity level: 5\n/sys/devices/system/cpu/cpufreq/policy0\nwalt\n3532800\n3532800\n/sys/devices/system/cpu/cpufreq/policy6\nwalt\n1017600\n4320000\n",
+  "results": [
+    {"device": "CPU", "prompt": 256, "layer": 0, "block": "attention", "flash": 0, "threads": 8, "nodes": 27, "weight_buffer": "CPU_REPACK", "relative_rms": -1.0, "max_abs": -1.0, "compute_ms": [31.681, 27.873, 28.047], "upload_ms": [0.104, 0.095, 0.09], "download_ms": [0.099, 0.088, 0.081]},
+    {"device": "CPU", "prompt": 256, "layer": 0, "block": "ffn", "flash": 0, "threads": 8, "nodes": 7, "weight_buffer": "CPU_REPACK", "relative_rms": -1.0, "max_abs": -1.0, "compute_ms": [37.208, 34.817, 36.955], "upload_ms": [0.101, 0.085, 0.08], "download_ms": [0.093, 0.083, 0.083]},
+    {"device": "CPU", "prompt": 256, "layer": 17, "block": "attention", "flash": 0, "threads": 8, "nodes": 27, "weight_buffer": "CPU_REPACK", "relative_rms": -1.0, "max_abs": -1.0, "compute_ms": [23.801, 24.554, 21.08], "upload_ms": [0.107, 0.09, 0.081], "download_ms": [0.098, 0.082, 0.079]},
+    {"device": "CPU", "prompt": 256, "layer": 17, "block": "ffn", "flash": 0, "threads": 8, "nodes": 7, "weight_buffer": "CPU_REPACK", "relative_rms": -1.0, "max_abs": -1.0, "compute_ms": [39.497, 36.303, 32.477], "upload_ms": [0.103, 0.08, 0.083], "download_ms": [0.093, 0.084, 0.081]},
+    {"device": "CPU", "prompt": 256, "layer": 35, "block": "attention", "flash": 0, "threads": 8, "nodes": 27, "weight_buffer": "CPU_REPACK", "relative_rms": -1.0, "max_abs": -1.0, "compute_ms": [29.615, 30.139, 32.827], "upload_ms": [0.154, 0.089, 0.081], "download_ms": [0.096, 0.081, 0.078]},
+    {"device": "CPU", "prompt": 256, "layer": 35, "block": "ffn", "flash": 0, "threads": 8, "nodes": 7, "weight_buffer": "CPU_REPACK", "relative_rms": -1.0, "max_abs": -1.0, "compute_ms": [32.022, 32.455, 40.968], "upload_ms": [0.107, 0.082, 0.075], "download_ms": [0.1, 0.081, 0.078]}
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "serial": "fd8657d6",
+  "command": "cd /data/local/tmp/dense-af-bench && LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 GGML_HEXAGON_PROFILE=0 timeout 600 taskset ff ./dense-af-bench -m /data/local/tmp/models/Qwen2.5-3B-AoT/ggml/weights.gguf --device CPU --prompt 256 --layers 0,17,35 --stage attention --flash 1 --threads 8 --reps 3 --warmup 2 --reference ./reference --write-reference",
+  "before": "SM8750\n0-7\nCpus_allowed_list:\t0-7\n  status: 5\n  level: 100\n  temperature: 293\n  Capacity level: 5\n/sys/devices/system/cpu/cpufreq/policy0\nwalt\n2400000\n3532800\n/sys/devices/system/cpu/cpufreq/policy6\nwalt\n1017600\n4320000\n",
+  "started": "2026-10-01T07:47:16.962087+00:00",
+  "returncode": 0,
+  "elapsed_seconds": 0.8329470083117485,
+  "after": "SM8750\n0-7\nCpus_allowed_list:\t0-7\n  status: 5\n  level: 100\n  temperature: 293\n  Capacity level: 5\n/sys/devices/system/cpu/cpufreq/policy0\nwalt\n3532800\n3532800\n/sys/devices/system/cpu/cpufreq/policy6\nwalt\n1017600\n4320000\n",
+  "results": [
+    {"device": "CPU", "prompt": 256, "layer": 0, "block": "attention", "flash": 1, "threads": 8, "nodes": 22, "weight_buffer": "CPU_REPACK", "relative_rms": -1.0, "max_abs": -1.0, "compute_ms": [18.426, 28.509, 19.625], "upload_ms": [0.094, 0.079, 0.074], "download_ms": [0.092, 0.079, 0.075]},
+    {"device": "CPU", "prompt": 256, "layer": 17, "block": "attention", "flash": 1, "threads": 8, "nodes": 22, "weight_buffer": "CPU_REPACK", "relative_rms": -1.0, "max_abs": -1.0, "compute_ms": [46.131, 17.018, 14.908], "upload_ms": [0.096, 0.079, 0.078], "download_ms": [0.086, 0.076, 0.074]},
+    {"device": "CPU", "prompt": 256, "layer": 35, "block": "attention", "flash": 1, "threads": 8, "nodes": 22, "weight_buffer": "CPU_REPACK", "relative_rms": -1.0, "max_abs": -1.0, "compute_ms": [45.933, 17.313, 15.359], "upload_ms": [0.102, 0.081, 0.077], "download_ms": [0.087, 0.075, 0.072]}
+  ]
+}

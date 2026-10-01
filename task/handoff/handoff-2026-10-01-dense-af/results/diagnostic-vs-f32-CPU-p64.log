@@ -1,0 +1,27 @@
+ggml_opencl: selected platform: 'QUALCOMM Snapdragon(TM)'
+
+ggml_opencl: device: 'QUALCOMM Adreno(TM) 830 (OpenCL 3.0 Adreno(TM) 830)'
+ggml_opencl: default device: 'QUALCOMM Adreno(TM) 830 (OpenCL 3.0 Adreno(TM) 830)'
+ggml-hex: Loading driver libcdsprpc.so
+ggml-hex: FASTRPC_GET_DOMAINS query failed (0x6c), using static CDSP domains
+ggml-hex: Profiling mode 0 : pmu-evt [ 0x3,0x111,0x100,0x105,0x240,0x256,0x7d,0x8c ]
+ggml-hex: Hexagon backend (experimental) : allocating new registry : ndev 1
+ggml-hex: Hexagon Arch version v79, DMA64 disabled
+ggml-hex: device 0: HTP0 (phys=0, virt=0, domain=cdsp:3)
+MODEL layers=36 embd=2048 ff=11008 heads=16 kv_heads=2 head_dim=128
+repack: repack tensor blk.1.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.1.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.1.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":64,"layer":1,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":0.00640443,"max_abs":2.15756226,"compute_ms":[26.256000,26.047000,22.577000],"upload_ms":[0.021000,0.013000,0.011000],"download_ms":[0.011000,0.012000,0.010000]}
+repack: repack tensor blk.2.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.2.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.2.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":64,"layer":2,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":0.01006835,"max_abs":0.85774136,"compute_ms":[22.923000,27.771000,21.916000],"upload_ms":[0.022000,0.013000,0.011000],"download_ms":[0.012000,0.012000,0.010000]}
+repack: repack tensor blk.3.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.3.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.3.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":64,"layer":3,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":0.01253666,"max_abs":1.27315140,"compute_ms":[25.959000,24.045000,36.638000],"upload_ms":[0.025000,0.015000,0.011000],"download_ms":[0.011000,0.013000,0.012000]}
+repack: repack tensor blk.4.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.4.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.4.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":64,"layer":4,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":0.01370343,"max_abs":0.85728550,"compute_ms":[14.425000,16.597000,26.340000],"upload_ms":[0.022000,0.014000,0.013000],"download_ms":[0.011000,0.013000,0.012000]}

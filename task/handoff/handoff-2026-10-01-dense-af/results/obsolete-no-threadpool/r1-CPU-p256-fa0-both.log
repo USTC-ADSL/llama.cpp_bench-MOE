@@ -1,0 +1,335 @@
+ggml_opencl: selected platform: 'QUALCOMM Snapdragon(TM)'
+
+ggml_opencl: device: 'QUALCOMM Adreno(TM) 830 (OpenCL 3.0 Adreno(TM) 830)'
+ggml_opencl: default device: 'QUALCOMM Adreno(TM) 830 (OpenCL 3.0 Adreno(TM) 830)'
+ggml-hex: Loading driver libcdsprpc.so
+ggml-hex: FASTRPC_GET_DOMAINS query failed (0x6c), using static CDSP domains
+ggml-hex: Profiling mode 0 : pmu-evt [ 0x3,0x111,0x100,0x105,0x240,0x256,0x7d,0x8c ]
+ggml-hex: Hexagon backend (experimental) : allocating new registry : ndev 1
+ggml-hex: Hexagon Arch version v79, DMA64 disabled
+ggml-hex: device 0: HTP0 (phys=0, virt=0, domain=cdsp:3)
+MODEL layers=36 embd=2048 ff=11008 heads=16 kv_heads=2 head_dim=128
+repack: repack tensor blk.0.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.0.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.0.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.0.attn_output.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":0,"block":"attention","flash":0,"threads":8,"nodes":27,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[23.925000,21.090000,26.677000,39.785000,24.685000,39.162000,24.083000,39.766000,32.218000,39.960000,24.475000,21.038000,26.606000,24.737000,23.893000],"upload_ms":[0.121000,0.084000,0.078000,0.074000,0.073000,0.069000,0.069000,0.067000,0.065000,0.064000,0.062000,0.064000,0.061000,0.058000,0.058000],"download_ms":[0.107000,0.082000,0.079000,0.076000,0.073000,0.072000,0.070000,0.068000,0.066000,0.065000,0.065000,0.064000,0.061000,0.059000,0.059000]}
+repack: repack tensor blk.0.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.0.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.0.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":0,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[40.484000,39.729000,28.497000,43.472000,28.411000,35.593000,31.443000,41.774000,31.533000,38.355000,33.217000,40.172000,45.559000,44.110000,39.500000],"upload_ms":[0.108000,0.087000,0.081000,0.079000,0.075000,0.074000,0.111000,0.075000,0.070000,0.069000,0.067000,0.065000,0.064000,0.064000,0.060000],"download_ms":[0.096000,0.079000,0.077000,0.075000,0.072000,0.071000,0.087000,0.066000,0.069000,0.075000,0.062000,0.062000,0.064000,0.059000,0.058000]}
+repack: repack tensor blk.1.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.1.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.1.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.1.attn_output.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":1,"block":"attention","flash":0,"threads":8,"nodes":27,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[13.332000,18.382000,36.689000,22.696000,21.745000,27.789000,27.009000,13.525000,16.825000,21.463000,94.404000,21.912000,35.731000,31.910000,32.009000],"upload_ms":[0.106000,0.092000,0.090000,0.087000,0.086000,0.084000,0.079000,0.079000,0.077000,0.076000,0.075000,0.073000,0.075000,0.070000,0.069000],"download_ms":[0.096000,0.087000,0.085000,0.093000,0.079000,0.078000,0.077000,0.075000,0.072000,0.071000,0.070000,0.069000,0.070000,0.067000,0.067000]}
+repack: repack tensor blk.1.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.1.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.1.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":1,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[44.166000,39.634000,42.213000,36.120000,35.021000,45.658000,38.522000,41.820000,41.191000,44.413000,44.702000,40.244000,39.489000,39.260000,42.723000],"upload_ms":[0.132000,0.106000,0.100000,0.095000,0.093000,0.093000,0.087000,0.082000,0.081000,0.084000,0.079000,0.077000,0.075000,0.073000,0.072000],"download_ms":[0.113000,0.098000,0.094000,0.092000,0.101000,0.086000,0.085000,0.084000,0.078000,0.078000,0.079000,0.075000,0.072000,0.073000,0.071000]}
+repack: repack tensor blk.2.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.2.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.2.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.2.attn_output.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":2,"block":"attention","flash":0,"threads":8,"nodes":27,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[22.694000,25.993000,21.919000,23.729000,24.130000,22.132000,25.792000,24.934000,17.052000,31.292000,23.303000,23.890000,24.220000,21.800000,29.870000],"upload_ms":[0.108000,0.088000,0.085000,0.080000,0.081000,0.077000,0.075000,0.075000,0.073000,0.071000,0.071000,0.072000,0.069000,0.067000,0.066000],"download_ms":[0.097000,0.079000,0.072000,0.070000,0.069000,0.069000,0.068000,0.066000,0.064000,0.062000,0.062000,0.063000,0.062000,0.062000,0.060000]}
+repack: repack tensor blk.2.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.2.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.2.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":2,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[40.815000,45.608000,39.837000,40.274000,39.757000,44.268000,39.563000,39.295000,39.455000,45.548000,41.493000,46.591000,41.136000,46.293000,47.465000],"upload_ms":[0.156000,0.133000,0.117000,0.118000,0.171000,0.106000,0.096000,0.089000,0.089000,0.097000,0.095000,0.093000,0.093000,0.087000,0.086000],"download_ms":[0.090000,0.102000,0.112000,0.117000,0.099000,0.085000,0.084000,0.081000,0.097000,0.096000,0.100000,0.098000,0.091000,0.079000,0.078000]}
+repack: repack tensor blk.3.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.3.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.3.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.3.attn_output.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":3,"block":"attention","flash":0,"threads":8,"nodes":27,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[19.865000,31.643000,44.354000,15.532000,23.520000,15.207000,17.699000,27.791000,24.148000,19.743000,16.281000,35.574000,40.474000,31.355000,24.788000],"upload_ms":[0.103000,0.094000,0.090000,0.087000,0.085000,0.082000,0.081000,0.079000,0.080000,0.078000,0.077000,0.085000,0.072000,0.072000,0.070000],"download_ms":[0.105000,0.086000,0.081000,0.080000,0.078000,0.078000,0.074000,0.074000,0.072000,0.073000,0.071000,0.068000,0.068000,0.066000,0.067000]}
+repack: repack tensor blk.3.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.3.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.3.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":3,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[45.995000,47.069000,46.587000,41.032000,47.798000,44.554000,38.587000,37.340000,40.965000,41.699000,39.775000,41.859000,38.958000,37.978000,40.348000],"upload_ms":[0.128000,0.106000,0.101000,0.098000,0.092000,0.089000,0.086000,0.085000,0.122000,0.077000,0.072000,0.071000,0.069000,0.068000,0.067000],"download_ms":[0.112000,0.096000,0.096000,0.091000,0.089000,0.087000,0.083000,0.107000,0.078000,0.072000,0.069000,0.066000,0.066000,0.065000,0.065000]}
+repack: repack tensor blk.4.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.4.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.4.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.4.attn_output.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":4,"block":"attention","flash":0,"threads":8,"nodes":27,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[14.524000,25.991000,27.428000,28.247000,31.588000,40.884000,23.372000,23.980000,40.556000,23.437000,24.140000,31.922000,29.494000,26.534000,24.435000],"upload_ms":[0.113000,0.084000,0.081000,0.080000,0.077000,0.074000,0.074000,0.073000,0.071000,0.071000,0.069000,0.068000,0.067000,0.066000,0.065000],"download_ms":[0.090000,0.078000,0.075000,0.074000,0.073000,0.072000,0.070000,0.070000,0.067000,0.067000,0.067000,0.065000,0.064000,0.063000,0.063000]}
+repack: repack tensor blk.4.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.4.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.4.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":4,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[44.079000,50.077000,46.582000,43.985000,46.917000,42.031000,46.581000,40.096000,44.215000,47.710000,42.985000,40.223000,40.769000,47.951000,34.677000],"upload_ms":[0.116000,0.097000,0.092000,0.090000,0.085000,0.084000,0.083000,0.083000,0.102000,0.079000,0.075000,0.075000,0.074000,0.073000,0.107000],"download_ms":[0.104000,0.094000,0.090000,0.089000,0.086000,0.085000,0.094000,0.078000,0.097000,0.075000,0.075000,0.071000,0.072000,0.099000,0.064000]}
+repack: repack tensor blk.5.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.5.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.5.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.5.attn_output.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":5,"block":"attention","flash":0,"threads":8,"nodes":27,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[23.952000,32.018000,23.950000,23.973000,27.605000,28.185000,24.908000,20.001000,31.947000,26.029000,29.250000,28.060000,32.760000,15.667000,22.276000],"upload_ms":[0.114000,0.090000,0.085000,0.120000,0.092000,0.090000,0.088000,0.085000,0.083000,0.083000,0.080000,0.080000,0.078000,0.076000,0.075000],"download_ms":[0.101000,0.076000,0.121000,0.135000,0.078000,0.078000,0.076000,0.075000,0.076000,0.084000,0.070000,0.072000,0.069000,0.068000,0.067000]}
+repack: repack tensor blk.5.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.5.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.5.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":5,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[38.316000,40.899000,47.447000,40.831000,48.380000,47.382000,46.901000,41.754000,47.253000,48.026000,39.503000,39.811000,39.997000,49.631000,46.167000],"upload_ms":[0.162000,0.108000,0.109000,0.106000,0.106000,0.112000,0.107000,0.112000,0.102000,0.112000,0.101000,0.096000,0.102000,0.099000,0.100000],"download_ms":[0.110000,0.103000,0.101000,0.103000,0.102000,0.108000,0.100000,0.099000,0.118000,0.108000,0.097000,0.103000,0.099000,0.100000,0.101000]}
+repack: repack tensor blk.6.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.6.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.6.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.6.attn_output.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":6,"block":"attention","flash":0,"threads":8,"nodes":27,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[20.120000,31.989000,25.531000,22.245000,23.130000,15.661000,19.560000,25.684000,25.004000,21.321000,26.224000,27.518000,28.814000,21.263000,26.227000],"upload_ms":[0.121000,0.087000,0.085000,0.083000,0.082000,0.080000,0.078000,0.076000,0.074000,0.076000,0.074000,0.073000,0.072000,0.071000,0.070000],"download_ms":[0.088000,0.073000,0.070000,0.070000,0.069000,0.067000,0.083000,0.066000,0.064000,0.067000,0.062000,0.062000,0.062000,0.062000,0.062000]}
+repack: repack tensor blk.6.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.6.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.6.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":6,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[41.173000,48.765000,44.031000,44.544000,41.313000,38.168000,39.198000,48.731000,49.260000,45.094000,48.427000,47.312000,42.113000,47.051000,47.621000],"upload_ms":[0.158000,0.118000,0.112000,0.107000,0.104000,0.101000,0.098000,0.095000,0.098000,0.091000,0.089000,0.087000,0.085000,0.083000,0.080000],"download_ms":[0.129000,0.099000,0.095000,0.095000,0.092000,0.090000,0.087000,0.085000,0.084000,0.083000,0.079000,0.077000,0.076000,0.076000,0.074000]}
+repack: repack tensor blk.7.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.7.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.7.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.7.attn_output.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":7,"block":"attention","flash":0,"threads":8,"nodes":27,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[28.251000,23.553000,24.057000,24.415000,32.179000,19.426000,16.548000,16.243000,31.900000,29.733000,22.194000,77.018000,23.857000,21.264000,25.276000],"upload_ms":[0.119000,0.082000,0.079000,0.079000,0.078000,0.075000,0.073000,0.072000,0.072000,0.070000,0.069000,0.070000,0.067000,0.068000,0.065000],"download_ms":[0.089000,0.070000,0.070000,0.068000,0.067000,0.066000,0.066000,0.064000,0.063000,0.063000,0.061000,0.062000,0.060000,0.059000,0.060000]}
+repack: repack tensor blk.7.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.7.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.7.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":7,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[46.575000,44.020000,41.154000,47.926000,36.936000,48.002000,46.511000,48.124000,45.261000,47.363000,50.673000,45.626000,43.606000,47.570000,46.620000],"upload_ms":[0.146000,0.105000,0.099000,0.095000,0.091000,0.090000,0.092000,0.084000,0.086000,0.075000,0.070000,0.072000,0.069000,0.069000,0.071000],"download_ms":[0.121000,0.090000,0.103000,0.084000,0.081000,0.081000,0.078000,0.128000,0.120000,0.070000,0.068000,0.068000,0.068000,0.066000,0.067000]}
+repack: repack tensor blk.8.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.8.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.8.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.8.attn_output.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":8,"block":"attention","flash":0,"threads":8,"nodes":27,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[34.717000,32.542000,40.825000,51.344000,50.859000,56.531000,42.111000,26.379000,48.254000,51.077000,28.876000,40.099000,63.667000,61.858000,17.560000],"upload_ms":[0.217000,0.159000,0.149000,0.142000,0.135000,0.131000,0.125000,0.120000,0.117000,0.113000,0.114000,0.187000,0.117000,0.061000,0.062000],"download_ms":[0.175000,0.135000,0.128000,0.123000,0.118000,0.114000,0.110000,0.107000,0.103000,0.102000,0.098000,0.113000,0.061000,0.061000,0.058000]}
+repack: repack tensor blk.8.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.8.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.8.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":8,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[44.225000,49.039000,59.150000,45.313000,42.183000,47.490000,41.140000,51.345000,55.554000,44.295000,48.269000,41.500000,45.871000,45.234000,46.476000],"upload_ms":[0.125000,0.089000,0.085000,0.084000,0.082000,0.080000,0.079000,0.078000,0.079000,0.075000,0.075000,0.074000,0.072000,0.072000,0.070000],"download_ms":[0.110000,0.076000,0.075000,0.075000,0.075000,0.072000,0.071000,0.073000,0.070000,0.070000,0.069000,0.068000,0.068000,0.067000,0.067000]}
+repack: repack tensor blk.9.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.9.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.9.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.9.attn_output.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":9,"block":"attention","flash":0,"threads":8,"nodes":27,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[32.659000,34.690000,25.406000,16.100000,24.330000,15.519000,27.588000,36.054000,25.412000,23.338000,15.780000,21.919000,21.819000,35.757000,16.293000],"upload_ms":[0.129000,0.089000,0.085000,0.083000,0.082000,0.079000,0.078000,0.077000,0.076000,0.075000,0.074000,0.071000,0.071000,0.071000,0.069000],"download_ms":[0.100000,0.078000,0.078000,0.075000,0.075000,0.073000,0.072000,0.071000,0.069000,0.068000,0.069000,0.067000,0.069000,0.064000,0.065000]}
+repack: repack tensor blk.9.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.9.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.9.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":9,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[48.550000,45.616000,66.024000,47.406000,45.262000,47.444000,46.680000,36.932000,49.578000,37.053000,45.212000,42.561000,42.297000,47.218000,47.859000],"upload_ms":[0.140000,0.104000,0.099000,0.094000,0.093000,0.091000,0.087000,0.088000,0.084000,0.083000,0.080000,0.078000,0.075000,0.074000,0.073000],"download_ms":[0.110000,0.092000,0.091000,0.089000,0.087000,0.085000,0.082000,0.083000,0.092000,0.075000,0.074000,0.073000,0.071000,0.069000,0.071000]}
+repack: repack tensor blk.10.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.10.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.10.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.10.attn_output.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":10,"block":"attention","flash":0,"threads":8,"nodes":27,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[27.676000,28.241000,13.944000,25.412000,26.020000,18.611000,23.890000,24.209000,23.625000,27.863000,20.332000,15.876000,23.660000,28.551000,35.610000],"upload_ms":[0.114000,0.086000,0.082000,0.082000,0.079000,0.077000,0.076000,0.075000,0.073000,0.074000,0.071000,0.071000,0.071000,0.072000,0.071000],"download_ms":[0.091000,0.080000,0.077000,0.077000,0.075000,0.074000,0.073000,0.072000,0.073000,0.070000,0.070000,0.068000,0.084000,0.064000,0.066000]}
+repack: repack tensor blk.10.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.10.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.10.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":10,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[50.272000,47.479000,48.227000,47.164000,49.077000,47.970000,40.266000,48.314000,46.642000,48.378000,43.464000,44.569000,47.674000,48.135000,46.508000],"upload_ms":[0.151000,0.107000,0.113000,0.103000,0.101000,0.104000,0.101000,0.100000,0.102000,0.107000,0.110000,0.107000,0.104000,0.102000,0.093000],"download_ms":[0.116000,0.110000,0.109000,0.107000,0.110000,0.103000,0.103000,0.109000,0.114000,0.109000,0.104000,0.105000,0.104000,0.099000,0.090000]}
+repack: repack tensor blk.11.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.11.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.11.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.11.attn_output.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":11,"block":"attention","flash":0,"threads":8,"nodes":27,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[33.957000,18.546000,17.390000,19.563000,24.201000,20.532000,21.367000,16.785000,14.253000,25.138000,12.341000,27.118000,12.785000,27.721000,13.128000],"upload_ms":[0.134000,0.101000,0.097000,0.095000,0.093000,0.093000,0.091000,0.088000,0.085000,0.086000,0.083000,0.082000,0.081000,0.080000,0.076000],"download_ms":[0.100000,0.086000,0.085000,0.082000,0.081000,0.095000,0.078000,0.076000,0.075000,0.074000,0.073000,0.071000,0.070000,0.070000,0.068000]}
+repack: repack tensor blk.11.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.11.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.11.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":11,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[43.926000,43.605000,42.961000,47.750000,46.546000,41.283000,47.411000,47.779000,36.827000,51.126000,48.512000,47.705000,50.741000,52.010000,46.620000],"upload_ms":[0.128000,0.115000,0.108000,0.102000,0.100000,0.097000,0.093000,0.092000,0.090000,0.078000,0.077000,0.074000,0.073000,0.083000,0.105000],"download_ms":[0.123000,0.101000,0.097000,0.095000,0.096000,0.090000,0.087000,0.113000,0.128000,0.072000,0.071000,0.070000,0.070000,0.065000,0.061000]}
+repack: repack tensor blk.12.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.12.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.12.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.12.attn_output.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":12,"block":"attention","flash":0,"threads":8,"nodes":27,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[21.764000,16.603000,27.638000,35.979000,23.006000,11.075000,24.945000,27.520000,29.565000,21.662000,26.536000,25.757000,20.364000,21.438000,32.252000],"upload_ms":[0.103000,0.090000,0.086000,0.083000,0.083000,0.080000,0.077000,0.077000,0.075000,0.073000,0.076000,0.072000,0.072000,0.070000,0.067000],"download_ms":[0.093000,0.081000,0.077000,0.076000,0.074000,0.073000,0.072000,0.070000,0.068000,0.068000,0.068000,0.077000,0.062000,0.063000,0.061000]}
+repack: repack tensor blk.12.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.12.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.12.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":12,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[43.720000,44.605000,40.795000,42.060000,42.017000,48.205000,39.933000,49.519000,47.954000,42.972000,47.712000,42.167000,44.097000,40.833000,43.650000],"upload_ms":[0.156000,0.119000,0.114000,0.110000,0.108000,0.109000,0.088000,0.088000,0.093000,0.103000,0.093000,0.090000,0.090000,0.090000,0.091000],"download_ms":[0.119000,0.119000,0.108000,0.108000,0.110000,0.099000,0.096000,0.086000,0.086000,0.088000,0.093000,0.092000,0.092000,0.090000,0.088000]}
+repack: repack tensor blk.13.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.13.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.13.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.13.attn_output.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":13,"block":"attention","flash":0,"threads":8,"nodes":27,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[24.466000,26.951000,18.258000,12.569000,21.303000,29.802000,12.405000,34.643000,19.294000,36.312000,21.795000,24.650000,23.117000,26.333000,19.033000],"upload_ms":[0.111000,0.095000,0.090000,0.087000,0.086000,0.086000,0.082000,0.081000,0.081000,0.077000,0.077000,0.077000,0.076000,0.074000,0.074000],"download_ms":[0.094000,0.085000,0.083000,0.080000,0.081000,0.078000,0.076000,0.077000,0.074000,0.073000,0.072000,0.070000,0.068000,0.068000,0.066000]}
+repack: repack tensor blk.13.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.13.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.13.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":13,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[42.634000,43.584000,42.374000,43.774000,40.811000,38.796000,42.014000,39.816000,40.759000,53.625000,42.771000,47.748000,53.016000,44.951000,50.025000],"upload_ms":[0.215000,0.167000,0.166000,0.154000,0.158000,0.106000,0.094000,0.096000,0.095000,0.105000,0.107000,0.095000,0.097000,0.098000,0.096000],"download_ms":[0.180000,0.158000,0.149000,0.237000,0.101000,0.118000,0.095000,0.095000,0.105000,0.108000,0.104000,0.097000,0.099000,0.096000,0.100000]}
+repack: repack tensor blk.14.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.14.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.14.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.14.attn_output.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":14,"block":"attention","flash":0,"threads":8,"nodes":27,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[22.225000,29.046000,27.074000,26.083000,22.077000,27.627000,28.383000,29.588000,19.005000,30.888000,32.807000,27.752000,12.874000,34.463000,20.446000],"upload_ms":[0.115000,0.089000,0.085000,0.083000,0.082000,0.078000,0.078000,0.077000,0.075000,0.074000,0.075000,0.073000,0.071000,0.070000,0.069000],"download_ms":[0.104000,0.083000,0.077000,0.075000,0.075000,0.075000,0.074000,0.071000,0.070000,0.069000,0.068000,0.067000,0.069000,0.067000,0.066000]}
+repack: repack tensor blk.14.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.14.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.14.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":14,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[44.116000,38.843000,42.041000,43.957000,43.298000,48.933000,44.253000,42.081000,42.362000,43.608000,44.696000,44.938000,47.310000,48.954000,48.007000],"upload_ms":[0.157000,0.117000,0.111000,0.105000,0.103000,0.096000,0.094000,0.091000,0.088000,0.086000,0.082000,0.082000,0.081000,0.079000,0.077000],"download_ms":[0.116000,0.100000,0.093000,0.092000,0.091000,0.087000,0.086000,0.083000,0.079000,0.078000,0.075000,0.073000,0.083000,0.071000,0.130000]}
+repack: repack tensor blk.15.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.15.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.15.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.15.attn_output.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":15,"block":"attention","flash":0,"threads":8,"nodes":27,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[16.761000,20.467000,24.254000,27.513000,33.622000,35.685000,29.406000,9.390000,22.478000,31.110000,17.951000,24.937000,23.767000,26.003000,14.551000],"upload_ms":[0.119000,0.087000,0.083000,0.082000,0.081000,0.078000,0.076000,0.075000,0.074000,0.074000,0.073000,0.071000,0.071000,0.070000,0.070000],"download_ms":[0.099000,0.086000,0.067000,0.084000,0.063000,0.064000,0.065000,0.065000,0.065000,0.064000,0.064000,0.065000,0.064000,0.064000,0.064000]}
+repack: repack tensor blk.15.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.15.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.15.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":15,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[48.511000,48.019000,46.097000,43.344000,43.619000,45.664000,46.310000,38.299000,42.640000,42.796000,41.798000,50.002000,43.097000,47.776000,44.899000],"upload_ms":[0.151000,0.108000,0.104000,0.099000,0.098000,0.094000,0.091000,0.089000,0.087000,0.085000,0.083000,0.081000,0.080000,0.077000,0.121000],"download_ms":[0.114000,0.092000,0.090000,0.088000,0.086000,0.083000,0.083000,0.084000,0.077000,0.077000,0.090000,0.072000,0.070000,0.069000,0.085000]}
+repack: repack tensor blk.16.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.16.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.16.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.16.attn_output.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":16,"block":"attention","flash":0,"threads":8,"nodes":27,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[26.153000,14.018000,21.188000,10.197000,26.610000,23.357000,23.514000,32.881000,25.663000,20.540000,26.005000,25.726000,12.529000,25.846000,14.636000],"upload_ms":[0.111000,0.097000,0.094000,0.094000,0.091000,0.089000,0.088000,0.088000,0.086000,0.086000,0.087000,0.085000,0.086000,0.084000,0.084000],"download_ms":[0.109000,0.085000,0.082000,0.082000,0.081000,0.081000,0.080000,0.078000,0.078000,0.094000,0.077000,0.077000,0.076000,0.077000,0.076000]}
+repack: repack tensor blk.16.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.16.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.16.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":16,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[43.003000,51.768000,47.434000,48.948000,47.818000,47.671000,46.888000,47.864000,50.596000,47.881000,45.456000,47.601000,49.503000,48.161000,42.917000],"upload_ms":[0.146000,0.107000,0.102000,0.099000,0.097000,0.096000,0.094000,0.090000,0.088000,0.085000,0.084000,0.082000,0.082000,0.071000,0.069000],"download_ms":[0.113000,0.093000,0.090000,0.091000,0.088000,0.089000,0.084000,0.082000,0.081000,0.079000,0.075000,0.075000,0.129000,0.067000,0.065000]}
+repack: repack tensor blk.17.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.17.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.17.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.17.attn_output.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":17,"block":"attention","flash":0,"threads":8,"nodes":27,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[33.566000,24.241000,26.632000,14.626000,25.209000,28.093000,46.051000,18.917000,27.037000,16.482000,24.053000,20.796000,26.394000,24.986000,21.896000],"upload_ms":[0.110000,0.092000,0.087000,0.085000,0.083000,0.082000,0.081000,0.078000,0.079000,0.077000,0.075000,0.074000,0.071000,0.070000,0.070000],"download_ms":[0.100000,0.081000,0.079000,0.078000,0.077000,0.075000,0.077000,0.073000,0.081000,0.072000,0.068000,0.068000,0.067000,0.065000,0.066000]}
+repack: repack tensor blk.17.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.17.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.17.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":17,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[45.403000,44.888000,48.102000,50.239000,45.471000,49.166000,41.998000,44.896000,46.375000,47.111000,48.695000,46.602000,41.435000,45.855000,46.397000],"upload_ms":[0.138000,0.119000,0.113000,0.110000,0.112000,0.118000,0.107000,0.104000,0.100000,0.096000,0.095000,0.091000,0.083000,0.082000,0.079000],"download_ms":[0.118000,0.104000,0.099000,0.096000,0.103000,0.102000,0.093000,0.093000,0.087000,0.088000,0.082000,0.080000,0.076000,0.072000,0.073000]}
+repack: repack tensor blk.18.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.18.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.18.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.18.attn_output.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":18,"block":"attention","flash":0,"threads":8,"nodes":27,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[23.745000,24.392000,26.340000,30.524000,23.009000,24.017000,28.524000,42.748000,87.157000,34.634000,34.167000,30.043000,52.058000,43.580000,32.732000],"upload_ms":[0.105000,0.090000,0.086000,0.083000,0.081000,0.080000,0.079000,0.078000,0.077000,0.077000,0.074000,0.072000,0.071000,0.070000,0.069000],"download_ms":[0.096000,0.087000,0.085000,0.082000,0.080000,0.080000,0.078000,0.080000,0.075000,0.074000,0.072000,0.072000,0.071000,0.068000,0.077000]}
+repack: repack tensor blk.18.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.18.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.18.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":18,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[62.459000,46.042000,52.655000,44.023000,53.757000,54.688000,42.749000,58.112000,44.320000,44.493000,53.192000,48.956000,44.797000,50.789000,49.391000],"upload_ms":[0.133000,0.109000,0.104000,0.099000,0.113000,0.097000,0.091000,0.089000,0.088000,0.086000,0.086000,0.082000,0.084000,0.116000,0.070000],"download_ms":[0.119000,0.098000,0.094000,0.090000,0.098000,0.087000,0.083000,0.081000,0.079000,0.092000,0.075000,0.074000,0.095000,0.066000,0.065000]}
+repack: repack tensor blk.19.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.19.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.19.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.19.attn_output.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":19,"block":"attention","flash":0,"threads":8,"nodes":27,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[50.951000,43.681000,36.345000,93.164000,38.422000,49.409000,73.872000,24.035000,20.443000,16.796000,28.389000,22.940000,28.955000,27.279000,22.495000],"upload_ms":[0.111000,0.089000,0.095000,0.084000,0.081000,0.084000,0.082000,0.077000,0.076000,0.075000,0.071000,0.071000,0.070000,0.068000,0.072000],"download_ms":[0.100000,0.093000,0.077000,0.074000,0.075000,0.074000,0.072000,0.069000,0.068000,0.068000,0.066000,0.065000,0.063000,0.063000,0.063000]}
+repack: repack tensor blk.19.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.19.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.19.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":19,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[51.171000,62.262000,46.274000,48.448000,40.325000,49.237000,46.128000,47.120000,45.783000,47.446000,43.934000,48.559000,58.588000,49.309000,55.081000],"upload_ms":[0.198000,0.174000,0.176000,0.159000,0.157000,0.213000,0.097000,0.096000,0.095000,0.095000,0.095000,0.095000,0.095000,0.105000,0.098000],"download_ms":[0.192000,0.172000,0.166000,0.157000,0.266000,0.100000,0.097000,0.099000,0.096000,0.097000,0.096000,0.095000,0.108000,0.099000,0.100000]}
+repack: repack tensor blk.20.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.20.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.20.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.20.attn_output.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":20,"block":"attention","flash":0,"threads":8,"nodes":27,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[20.134000,23.905000,23.609000,24.499000,28.220000,24.744000,17.191000,13.186000,32.728000,32.507000,22.089000,29.786000,30.995000,27.439000,23.564000],"upload_ms":[0.119000,0.087000,0.083000,0.093000,0.080000,0.079000,0.077000,0.076000,0.075000,0.073000,0.073000,0.072000,0.070000,0.071000,0.068000],"download_ms":[0.105000,0.074000,0.071000,0.085000,0.071000,0.068000,0.068000,0.068000,0.064000,0.065000,0.066000,0.064000,0.062000,0.064000,0.064000]}
+repack: repack tensor blk.20.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.20.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.20.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":20,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[44.326000,43.825000,43.318000,44.995000,51.999000,45.144000,47.652000,49.903000,49.520000,49.259000,55.130000,48.511000,41.784000,45.128000,50.507000],"upload_ms":[0.224000,0.164000,0.157000,0.146000,0.141000,0.136000,0.132000,0.131000,0.126000,0.119000,0.130000,0.119000,0.122000,0.104000,0.103000],"download_ms":[0.180000,0.311000,0.150000,0.141000,0.136000,0.133000,0.129000,0.125000,0.121000,0.127000,0.124000,0.118000,0.105000,0.106000,0.104000]}
+repack: repack tensor blk.21.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.21.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.21.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.21.attn_output.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":21,"block":"attention","flash":0,"threads":8,"nodes":27,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[23.085000,26.202000,18.635000,23.708000,19.862000,20.694000,25.376000,34.450000,22.984000,28.668000,28.254000,25.208000,19.801000,21.409000,14.026000],"upload_ms":[0.125000,0.089000,0.087000,0.085000,0.082000,0.081000,0.079000,0.077000,0.077000,0.074000,0.072000,0.073000,0.071000,0.071000,0.069000],"download_ms":[0.104000,0.076000,0.074000,0.073000,0.070000,0.070000,0.068000,0.068000,0.066000,0.066000,0.065000,0.066000,0.064000,0.063000,0.079000]}
+repack: repack tensor blk.21.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.21.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.21.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":21,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[40.076000,47.931000,47.217000,51.499000,42.456000,44.146000,49.788000,49.945000,42.228000,51.228000,51.741000,47.468000,37.760000,48.259000,46.700000],"upload_ms":[0.144000,0.105000,0.101000,0.096000,0.095000,0.091000,0.089000,0.088000,0.089000,0.084000,0.083000,0.081000,0.080000,0.078000,0.079000],"download_ms":[0.123000,0.091000,0.087000,0.087000,0.111000,0.081000,0.079000,0.078000,0.079000,0.077000,0.076000,0.074000,0.074000,0.074000,0.072000]}
+repack: repack tensor blk.22.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.22.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.22.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.22.attn_output.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":22,"block":"attention","flash":0,"threads":8,"nodes":27,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[24.529000,23.357000,48.219000,28.204000,33.052000,13.060000,26.230000,14.354000,29.520000,34.796000,26.622000,20.381000,23.410000,26.391000,29.006000],"upload_ms":[0.104000,0.090000,0.086000,0.084000,0.082000,0.080000,0.078000,0.077000,0.079000,0.074000,0.086000,0.076000,0.074000,0.072000,0.070000],"download_ms":[0.094000,0.080000,0.077000,0.076000,0.072000,0.072000,0.069000,0.071000,0.068000,0.080000,0.080000,0.075000,0.060000,0.061000,0.060000]}
+repack: repack tensor blk.22.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.22.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.22.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":22,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[48.589000,48.313000,47.385000,48.825000,47.984000,42.103000,49.201000,48.346000,48.114000,49.390000,41.752000,45.171000,45.851000,43.200000,40.870000],"upload_ms":[0.135000,0.116000,0.110000,0.105000,0.101000,0.100000,0.098000,0.097000,0.093000,0.090000,0.090000,0.078000,0.070000,0.070000,0.068000],"download_ms":[0.125000,0.099000,0.095000,0.092000,0.090000,0.090000,0.088000,0.085000,0.084000,0.081000,0.129000,0.103000,0.065000,0.065000,0.063000]}
+repack: repack tensor blk.23.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.23.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.23.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.23.attn_output.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":23,"block":"attention","flash":0,"threads":8,"nodes":27,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[26.155000,48.197000,28.176000,25.691000,9.934000,26.178000,24.563000,27.459000,18.196000,27.422000,32.456000,24.477000,19.519000,28.087000,14.358000],"upload_ms":[0.132000,0.104000,0.094000,0.092000,0.088000,0.087000,0.086000,0.084000,0.083000,0.083000,0.080000,0.081000,0.078000,0.076000,0.074000],"download_ms":[0.110000,0.081000,0.079000,0.076000,0.074000,0.073000,0.071000,0.072000,0.071000,0.068000,0.069000,0.067000,0.067000,0.066000,0.066000]}
+repack: repack tensor blk.23.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.23.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.23.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":23,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[43.497000,45.895000,40.867000,47.806000,41.765000,43.648000,44.918000,46.782000,49.164000,50.002000,44.435000,40.984000,43.522000,46.441000,42.846000],"upload_ms":[0.169000,0.109000,0.105000,0.100000,0.098000,0.096000,0.092000,0.091000,0.089000,0.090000,0.088000,0.086000,0.084000,0.084000,0.083000],"download_ms":[0.120000,0.100000,0.099000,0.097000,0.097000,0.092000,0.092000,0.089000,0.086000,0.086000,0.086000,0.084000,0.082000,0.082000,0.081000]}
+repack: repack tensor blk.24.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.24.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.24.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.24.attn_output.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":24,"block":"attention","flash":0,"threads":8,"nodes":27,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[31.486000,31.566000,23.024000,26.190000,23.140000,24.076000,32.017000,23.871000,24.409000,14.072000,25.006000,25.081000,13.021000,69.960000,44.896000],"upload_ms":[0.108000,0.091000,0.086000,0.084000,0.081000,0.081000,0.077000,0.077000,0.076000,0.077000,0.076000,0.076000,0.073000,0.070000,0.116000],"download_ms":[0.094000,0.084000,0.082000,0.080000,0.077000,0.078000,0.074000,0.073000,0.073000,0.073000,0.071000,0.071000,0.069000,0.091000,0.077000]}
+repack: repack tensor blk.24.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.24.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.24.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":24,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[51.626000,44.777000,47.648000,45.965000,41.788000,50.208000,40.436000,46.704000,44.712000,41.410000,44.183000,43.815000,44.810000,51.592000,45.997000],"upload_ms":[0.202000,0.170000,0.160000,0.229000,0.127000,0.109000,0.113000,0.108000,0.108000,0.108000,0.108000,0.107000,0.107000,0.108000,0.107000],"download_ms":[0.179000,0.162000,0.158000,0.187000,0.140000,0.107000,0.107000,0.105000,0.107000,0.107000,0.105000,0.105000,0.105000,0.105000,0.104000]}
+repack: repack tensor blk.25.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.25.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.25.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.25.attn_output.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":25,"block":"attention","flash":0,"threads":8,"nodes":27,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[27.936000,25.476000,25.647000,28.744000,19.266000,10.988000,23.678000,27.419000,12.659000,24.452000,28.041000,33.122000,24.207000,27.762000,24.649000],"upload_ms":[0.112000,0.094000,0.087000,0.084000,0.082000,0.080000,0.079000,0.077000,0.076000,0.074000,0.075000,0.073000,0.072000,0.070000,0.069000],"download_ms":[0.105000,0.078000,0.076000,0.074000,0.073000,0.072000,0.071000,0.071000,0.069000,0.068000,0.066000,0.065000,0.065000,0.066000,0.064000]}
+repack: repack tensor blk.25.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.25.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.25.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":25,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[39.467000,47.095000,38.978000,45.942000,43.432000,42.951000,44.278000,47.001000,43.095000,44.257000,42.890000,48.736000,49.202000,48.744000,51.664000],"upload_ms":[0.168000,0.120000,0.115000,0.114000,0.114000,0.114000,0.114000,0.112000,0.124000,0.130000,0.129000,0.107000,0.103000,0.102000,0.100000],"download_ms":[0.124000,0.119000,0.115000,0.114000,0.113000,0.115000,0.114000,0.111000,0.120000,0.116000,0.119000,0.113000,0.103000,0.103000,0.103000]}
+repack: repack tensor blk.26.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.26.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.26.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.26.attn_output.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":26,"block":"attention","flash":0,"threads":8,"nodes":27,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[23.302000,26.277000,23.683000,27.620000,23.289000,11.069000,24.817000,21.217000,39.776000,27.988000,14.337000,27.631000,24.933000,11.774000,26.931000],"upload_ms":[0.119000,0.086000,0.082000,0.081000,0.080000,0.077000,0.078000,0.106000,0.120000,0.079000,0.076000,0.076000,0.076000,0.073000,0.071000],"download_ms":[0.099000,0.073000,0.072000,0.071000,0.071000,0.069000,0.079000,0.081000,0.072000,0.068000,0.068000,0.066000,0.066000,0.067000,0.066000]}
+repack: repack tensor blk.26.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.26.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.26.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":26,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[48.876000,46.372000,46.882000,49.991000,46.320000,51.341000,43.846000,44.567000,38.514000,43.547000,49.664000,51.289000,46.059000,42.722000,46.910000],"upload_ms":[0.147000,0.112000,0.107000,0.104000,0.100000,0.095000,0.093000,0.135000,0.078000,0.077000,0.076000,0.075000,0.073000,0.072000,0.071000],"download_ms":[0.115000,0.098000,0.108000,0.092000,0.103000,0.084000,0.134000,0.077000,0.072000,0.071000,0.070000,0.069000,0.070000,0.068000,0.067000]}
+repack: repack tensor blk.27.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.27.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.27.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.27.attn_output.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":27,"block":"attention","flash":0,"threads":8,"nodes":27,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[28.829000,36.200000,31.645000,23.913000,28.489000,27.392000,25.601000,30.525000,32.443000,31.485000,22.799000,34.645000,18.993000,27.857000,32.320000],"upload_ms":[0.119000,0.087000,0.084000,0.081000,0.077000,0.077000,0.074000,0.075000,0.071000,0.070000,0.070000,0.070000,0.069000,0.067000,0.069000],"download_ms":[0.095000,0.072000,0.066000,0.066000,0.063000,0.064000,0.062000,0.062000,0.060000,0.060000,0.059000,0.058000,0.058000,0.058000,0.057000]}
+repack: repack tensor blk.27.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.27.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.27.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":27,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[49.782000,44.317000,51.603000,45.505000,50.881000,47.339000,49.842000,49.102000,42.740000,47.766000,47.805000,47.843000,42.928000,50.743000,44.695000],"upload_ms":[0.249000,0.114000,0.119000,0.127000,0.108000,0.120000,0.117000,0.104000,0.103000,0.092000,0.091000,0.092000,0.090000,0.091000,0.091000],"download_ms":[0.119000,0.118000,0.117000,0.098000,0.105000,0.120000,0.103000,0.105000,0.091000,0.091000,0.090000,0.091000,0.089000,0.090000,0.089000]}
+repack: repack tensor blk.28.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.28.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.28.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.28.attn_output.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":28,"block":"attention","flash":0,"threads":8,"nodes":27,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[43.303000,48.443000,73.259000,46.633000,56.056000,35.967000,51.747000,57.546000,53.902000,56.993000,56.695000,37.644000,41.064000,44.167000,29.099000],"upload_ms":[0.115000,0.091000,0.086000,0.084000,0.082000,0.080000,0.078000,0.077000,0.076000,0.075000,0.073000,0.086000,0.073000,0.071000,0.069000],"download_ms":[0.091000,0.073000,0.073000,0.073000,0.081000,0.068000,0.067000,0.067000,0.065000,0.064000,0.063000,0.081000,0.062000,0.062000,0.060000]}
+repack: repack tensor blk.28.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.28.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.28.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":28,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[49.333000,45.916000,48.833000,54.874000,53.018000,41.932000,55.350000,42.110000,45.694000,50.803000,48.472000,50.335000,49.111000,71.348000,41.255000],"upload_ms":[0.147000,0.216000,0.132000,0.114000,0.107000,0.092000,0.092000,0.089000,0.088000,0.088000,0.088000,0.088000,0.087000,0.087000,0.087000],"download_ms":[0.129000,0.117000,0.137000,0.105000,0.100000,0.082000,0.082000,0.083000,0.082000,0.082000,0.082000,0.082000,0.082000,0.082000,0.083000]}
+repack: repack tensor blk.29.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.29.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.29.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.29.attn_output.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":29,"block":"attention","flash":0,"threads":8,"nodes":27,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[21.775000,41.788000,23.240000,21.579000,10.177000,21.854000,36.097000,19.441000,14.697000,33.008000,24.723000,16.019000,23.160000,23.421000,14.555000],"upload_ms":[0.118000,0.082000,0.074000,0.070000,0.067000,0.064000,0.064000,0.063000,0.095000,0.067000,0.064000,0.063000,0.063000,0.063000,0.063000],"download_ms":[0.082000,0.060000,0.058000,0.057000,0.058000,0.058000,0.057000,0.057000,0.080000,0.059000,0.059000,0.060000,0.059000,0.059000,0.060000]}
+repack: repack tensor blk.29.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.29.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.29.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":29,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[40.484000,40.946000,47.045000,49.865000,42.363000,43.774000,48.307000,47.650000,39.891000,49.216000,47.697000,45.396000,46.178000,46.715000,40.969000],"upload_ms":[0.160000,0.126000,0.127000,0.123000,0.166000,0.117000,0.104000,0.101000,0.103000,0.094000,0.094000,0.093000,0.094000,0.094000,0.093000],"download_ms":[0.129000,0.127000,0.121000,0.113000,0.116000,0.120000,0.105000,0.103000,0.088000,0.089000,0.090000,0.089000,0.089000,0.089000,0.089000]}
+repack: repack tensor blk.30.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.30.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.30.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.30.attn_output.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":30,"block":"attention","flash":0,"threads":8,"nodes":27,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[25.167000,16.025000,23.974000,20.074000,27.288000,23.257000,21.207000,23.713000,24.163000,24.198000,16.321000,16.788000,26.458000,24.103000,28.190000],"upload_ms":[0.105000,0.090000,0.087000,0.084000,0.081000,0.081000,0.078000,0.079000,0.078000,0.077000,0.075000,0.075000,0.084000,0.072000,0.071000],"download_ms":[0.101000,0.081000,0.078000,0.078000,0.075000,0.074000,0.072000,0.072000,0.072000,0.072000,0.070000,0.071000,0.068000,0.066000,0.066000]}
+repack: repack tensor blk.30.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.30.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.30.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":30,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[41.787000,49.864000,47.546000,43.190000,43.515000,39.409000,48.794000,50.820000,50.361000,43.843000,45.513000,43.360000,44.558000,43.494000,46.608000],"upload_ms":[0.188000,0.165000,0.190000,0.104000,0.097000,0.094000,0.092000,0.090000,0.090000,0.078000,0.076000,0.069000,0.066000,0.078000,0.094000],"download_ms":[0.177000,0.152000,0.162000,0.095000,0.091000,0.090000,0.088000,0.085000,0.085000,0.073000,0.069000,0.063000,0.062000,0.091000,0.077000]}
+repack: repack tensor blk.31.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.31.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.31.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.31.attn_output.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":31,"block":"attention","flash":0,"threads":8,"nodes":27,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[20.179000,23.798000,36.324000,40.547000,31.737000,26.408000,31.081000,24.732000,24.687000,28.579000,37.954000,25.905000,23.694000,44.746000,23.270000],"upload_ms":[0.116000,0.088000,0.085000,0.083000,0.082000,0.079000,0.079000,0.078000,0.077000,0.076000,0.076000,0.073000,0.071000,0.070000,0.070000],"download_ms":[0.101000,0.073000,0.073000,0.072000,0.071000,0.070000,0.069000,0.070000,0.068000,0.068000,0.068000,0.065000,0.064000,0.064000,0.061000]}
+repack: repack tensor blk.31.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.31.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.31.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":31,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[42.404000,47.595000,42.001000,42.619000,48.320000,50.371000,49.665000,43.150000,51.472000,49.571000,44.996000,49.536000,48.275000,54.536000,45.909000],"upload_ms":[0.147000,0.109000,0.103000,0.100000,0.098000,0.095000,0.092000,0.093000,0.088000,0.087000,0.086000,0.091000,0.083000,0.081000,0.078000],"download_ms":[0.125000,0.092000,0.088000,0.088000,0.087000,0.086000,0.084000,0.086000,0.081000,0.080000,0.093000,0.080000,0.092000,0.083000,0.072000]}
+repack: repack tensor blk.32.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.32.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.32.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.32.attn_output.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":32,"block":"attention","flash":0,"threads":8,"nodes":27,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[24.210000,37.887000,38.278000,25.665000,25.956000,24.230000,22.049000,26.333000,24.995000,12.869000,27.353000,13.677000,23.156000,26.697000,26.716000],"upload_ms":[0.119000,0.086000,0.081000,0.079000,0.078000,0.077000,0.076000,0.073000,0.072000,0.072000,0.071000,0.070000,0.069000,0.068000,0.068000],"download_ms":[0.095000,0.068000,0.065000,0.066000,0.067000,0.064000,0.063000,0.063000,0.064000,0.061000,0.061000,0.061000,0.059000,0.060000,0.059000]}
+repack: repack tensor blk.32.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.32.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.32.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":32,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[46.738000,49.600000,47.170000,63.292000,42.020000,43.546000,42.887000,47.378000,49.327000,43.389000,37.068000,45.423000,52.574000,46.810000,54.812000],"upload_ms":[0.157000,0.121000,0.112000,0.105000,0.100000,0.118000,0.096000,0.084000,0.083000,0.075000,0.074000,0.072000,0.072000,0.070000,0.070000],"download_ms":[0.129000,0.109000,0.091000,0.094000,0.088000,0.097000,0.122000,0.073000,0.069000,0.067000,0.067000,0.065000,0.078000,0.065000,0.064000]}
+repack: repack tensor blk.33.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.33.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.33.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.33.attn_output.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":33,"block":"attention","flash":0,"threads":8,"nodes":27,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[23.043000,27.326000,33.648000,24.680000,28.062000,26.433000,20.018000,29.107000,35.889000,28.281000,27.975000,14.343000,24.611000,28.926000,25.279000],"upload_ms":[0.118000,0.086000,0.084000,0.084000,0.080000,0.078000,0.078000,0.075000,0.075000,0.073000,0.072000,0.074000,0.072000,0.070000,0.068000],"download_ms":[0.090000,0.072000,0.072000,0.071000,0.070000,0.067000,0.067000,0.065000,0.066000,0.063000,0.076000,0.067000,0.061000,0.061000,0.061000]}
+repack: repack tensor blk.33.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.33.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.33.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":33,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[48.934000,48.946000,43.414000,46.895000,42.643000,47.129000,43.411000,44.484000,45.023000,47.478000,46.439000,44.781000,35.790000,44.117000,47.360000],"upload_ms":[0.147000,0.113000,0.107000,0.103000,0.104000,0.097000,0.095000,0.091000,0.090000,0.087000,0.086000,0.073000,0.066000,0.086000,0.068000],"download_ms":[0.117000,0.097000,0.093000,0.092000,0.090000,0.087000,0.084000,0.082000,0.081000,0.078000,0.128000,0.102000,0.061000,0.077000,0.059000]}
+repack: repack tensor blk.34.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.34.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.34.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.34.attn_output.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":34,"block":"attention","flash":0,"threads":8,"nodes":27,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[25.256000,23.570000,22.532000,26.105000,38.528000,22.633000,27.268000,21.971000,19.794000,11.265000,29.511000,27.960000,26.583000,11.533000,26.378000],"upload_ms":[0.118000,0.092000,0.085000,0.083000,0.082000,0.080000,0.077000,0.078000,0.077000,0.074000,0.074000,0.072000,0.071000,0.088000,0.073000],"download_ms":[0.085000,0.074000,0.070000,0.068000,0.068000,0.067000,0.067000,0.065000,0.065000,0.064000,0.064000,0.062000,0.062000,0.076000,0.061000]}
+repack: repack tensor blk.34.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.34.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.34.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":34,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[48.704000,37.970000,53.919000,45.432000,39.869000,47.986000,47.711000,42.848000,45.589000,42.793000,44.798000,44.058000,43.699000,44.295000,43.340000],"upload_ms":[0.161000,0.107000,0.140000,0.121000,0.113000,0.106000,0.107000,0.105000,0.106000,0.104000,0.103000,0.104000,0.103000,0.103000,0.102000],"download_ms":[0.113000,0.106000,0.125000,0.121000,0.116000,0.111000,0.103000,0.103000,0.104000,0.102000,0.102000,0.102000,0.100000,0.101000,0.101000]}
+repack: repack tensor blk.35.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.35.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.35.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.35.attn_output.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":35,"block":"attention","flash":0,"threads":8,"nodes":27,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[23.241000,28.334000,27.925000,28.091000,24.326000,27.686000,22.779000,24.441000,25.056000,18.221000,12.114000,23.940000,25.740000,33.456000,40.344000],"upload_ms":[0.134000,0.141000,0.100000,0.097000,0.093000,0.093000,0.093000,0.089000,0.091000,0.086000,0.085000,0.085000,0.083000,0.081000,0.080000],"download_ms":[0.109000,0.086000,0.083000,0.084000,0.081000,0.082000,0.079000,0.077000,0.078000,0.077000,0.075000,0.074000,0.073000,0.073000,0.071000]}
+repack: repack tensor blk.35.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.35.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.35.ffn_down.weight with q4_0_4x8
+RESULT {"device":"CPU","prompt":256,"layer":35,"block":"ffn","flash":0,"threads":8,"nodes":7,"weight_buffer":"CPU_REPACK","f32_reference":false,"relative_rms":-1.00000000,"max_abs":-1.00000000,"compute_ms":[51.574000,44.181000,44.622000,51.026000,49.388000,49.048000,46.453000,42.265000,42.707000,51.762000,46.999000,46.902000,49.444000,47.064000,45.128000],"upload_ms":[0.141000,0.112000,0.105000,0.101000,0.100000,0.095000,0.091000,0.090000,0.088000,0.123000,0.076000,0.074000,0.073000,0.072000,0.072000],"download_ms":[0.123000,0.100000,0.094000,0.092000,0.092000,0.087000,0.087000,0.085000,0.091000,0.071000,0.072000,0.071000,0.069000,0.069000,0.068000]}

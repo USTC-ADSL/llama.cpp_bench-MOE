@@ -1,0 +1,17 @@
+{
+  "serial": "fd8657d6",
+  "command": "cd /data/local/tmp/dense-af-bench && LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 GGML_HEXAGON_PROFILE=0 timeout 600 taskset ff ./dense-af-bench -m /data/local/tmp/models/Qwen2.5-3B-AoT/ggml/weights.gguf --device GPUOpenCL --prompt 256 --layers 0,17,35 --stage both --flash 0 --threads 8 --reps 3 --warmup 2 --reference ./reference",
+  "before": "SM8750\n0-7\n  status: 5\n  level: 100\n  temperature: 293\n  Capacity level: 5\n/sys/devices/system/cpu/cpufreq/policy0\nwalt\n1785600\n3532800\n/sys/devices/system/cpu/cpufreq/policy6\nwalt\n1017600\n4320000\n",
+  "started": "2026-10-01T07:43:51.850096+00:00",
+  "returncode": 0,
+  "elapsed_seconds": 1.3025713805109262,
+  "after": "SM8750\n0-7\n  status: 5\n  level: 100\n  temperature: 293\n  Capacity level: 5\n/sys/devices/system/cpu/cpufreq/policy0\nwalt\n2400000\n3532800\n/sys/devices/system/cpu/cpufreq/policy6\nwalt\n1017600\n4320000\n",
+  "results": [
+    {"device": "GPUOpenCL", "prompt": 256, "layer": 0, "block": "attention", "flash": 0, "threads": 8, "nodes": 27, "weight_buffer": "OpenCL", "relative_rms": 0.01126736, "max_abs": 0.04847026, "compute_ms": [6.742, 7.254, 7.511], "upload_ms": [0.185, 0.177, 0.177], "download_ms": [0.177, 0.176, 0.176]},
+    {"device": "GPUOpenCL", "prompt": 256, "layer": 0, "block": "ffn", "flash": 0, "threads": 8, "nodes": 7, "weight_buffer": "OpenCL", "relative_rms": 0.01880983, "max_abs": 0.09075212, "compute_ms": [21.36, 21.463, 19.003], "upload_ms": [0.255, 0.179, 0.179], "download_ms": [0.177, 0.177, 0.175]},
+    {"device": "GPUOpenCL", "prompt": 256, "layer": 17, "block": "attention", "flash": 0, "threads": 8, "nodes": 27, "weight_buffer": "OpenCL", "relative_rms": 0.0134919, "max_abs": 0.13745594, "compute_ms": [7.071, 6.832, 7.242], "upload_ms": [0.331, 0.179, 0.177], "download_ms": [0.214, 0.178, 0.179]},
+    {"device": "GPUOpenCL", "prompt": 256, "layer": 17, "block": "ffn", "flash": 0, "threads": 8, "nodes": 7, "weight_buffer": "OpenCL", "relative_rms": 0.01892659, "max_abs": 2.16241455, "compute_ms": [18.96, 18.435, 21.198], "upload_ms": [0.187, 0.179, 0.178], "download_ms": [0.179, 0.177, 0.177]},
+    {"device": "GPUOpenCL", "prompt": 256, "layer": 35, "block": "attention", "flash": 0, "threads": 8, "nodes": 27, "weight_buffer": "OpenCL", "relative_rms": 0.01068314, "max_abs": 0.2859478, "compute_ms": [7.051, 7.193, 6.937], "upload_ms": [0.26, 0.177, 0.176], "download_ms": [0.311, 0.178, 0.178]},
+    {"device": "GPUOpenCL", "prompt": 256, "layer": 35, "block": "ffn", "flash": 0, "threads": 8, "nodes": 7, "weight_buffer": "OpenCL", "relative_rms": 0.01921582, "max_abs": 2.49095917, "compute_ms": [20.74, 18.413, 21.092], "upload_ms": [0.189, 0.176, 0.177], "download_ms": [0.178, 0.176, 0.178]}
+  ]
+}
