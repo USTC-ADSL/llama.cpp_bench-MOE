@@ -1,0 +1,163 @@
+{
+  "results": [
+    {
+      "name": "mixed-frozen",
+      "input_mode": "frozen",
+      "attention_backend": "CPU",
+      "ffn_backend": "HTP0",
+      "cpu_khz": 1401600,
+      "ms_per_pass": 109.60876086956523,
+      "passes_per_second": 9.123358316129522,
+      "mj_per_pass": 321.30777220604347,
+      "watts": 2.931405935593057,
+      "passes": 46,
+      "seconds": 5.042003,
+      "samples": 48,
+      "power_cv_pct": 0.4788683517920659,
+      "half_drift_pct": 0.05247994464612707,
+      "read_overhead_pct": 0.2059300639051583,
+      "temp_start_c": 30.4,
+      "temp_end_c": 30.4,
+      "max_relative_rms": 0.02088392,
+      "source": "task/handoff/handoff-2026-10-01-af-handoff/results/mixed-frozen.json"
+    },
+    {
+      "name": "mixed-chain",
+      "input_mode": "chain",
+      "attention_backend": "CPU",
+      "ffn_backend": "HTP0",
+      "cpu_khz": 1401600,
+      "ms_per_pass": 108.7636956521739,
+      "passes_per_second": 9.19424440300372,
+      "mj_per_pass": 320.19387315941304,
+      "watts": 2.9439407261720163,
+      "passes": 46,
+      "seconds": 5.00313,
+      "samples": 48,
+      "power_cv_pct": 0.6576066649727236,
+      "half_drift_pct": -0.4329351185727669,
+      "read_overhead_pct": 0.11676690391814724,
+      "temp_start_c": 30.4,
+      "temp_end_c": 30.4,
+      "max_relative_rms": 0.02088392,
+      "source": "task/handoff/handoff-2026-10-01-af-handoff/results/mixed-chain.json"
+    },
+    {
+      "name": "npu-chain-host2649",
+      "input_mode": "chain",
+      "attention_backend": "HTP0",
+      "ffn_backend": "HTP0",
+      "cpu_khz": 2649600,
+      "ms_per_pass": 225.03021739130435,
+      "passes_per_second": 4.443847637853467,
+      "mj_per_pass": 390.0535116375652,
+      "watts": 1.733338376327044,
+      "passes": 23,
+      "seconds": 5.175695,
+      "samples": 25,
+      "power_cv_pct": 1.5716384999134272,
+      "half_drift_pct": -0.9795315463454449,
+      "read_overhead_pct": 0.085167306033296,
+      "temp_start_c": 30.5,
+      "temp_end_c": 30.5,
+      "max_relative_rms": 0.01822218,
+      "source": "task/handoff/handoff-2026-10-01-af-handoff/results/npu-chain-host2649.json"
+    }
+  ],
+  "copies": [
+    {
+      "name": "mixed-chain",
+      "direction": "a_to_f_us",
+      "samples": 360,
+      "mean_us": 1.1008674,
+      "median_us": 1.0939795,
+      "p95_us": 1.5099996,
+      "max_us": 1.97996,
+      "sum_per_pass_ms": 0.039631226400000004,
+      "timing_scope": "blocking shared-memory copy"
+    },
+    {
+      "name": "mixed-chain",
+      "direction": "f_to_a_us",
+      "samples": 350,
+      "mean_us": 1.8841007514285715,
+      "median_us": 1.9535005,
+      "p95_us": 2.5000234999999997,
+      "max_us": 3.124951,
+      "sum_per_pass_ms": 0.0659435263,
+      "timing_scope": "blocking shared-memory copy"
+    },
+    {
+      "name": "npu-chain-host2649",
+      "direction": "a_to_f_us",
+      "samples": 360,
+      "mean_us": 5.757820558333333,
+      "median_us": 1.8229705,
+      "p95_us": 23.075636250000002,
+      "max_us": 116.874973,
+      "sum_per_pass_ms": 0.20728154009999997,
+      "timing_scope": "async enqueue only"
+    },
+    {
+      "name": "npu-chain-host2649",
+      "direction": "f_to_a_us",
+      "samples": 350,
+      "mean_us": 3.7909074314285713,
+      "median_us": 2.447978,
+      "p95_us": 21.82814815,
+      "max_us": 24.531964,
+      "sum_per_pass_ms": 0.1326817601,
+      "timing_scope": "async enqueue only"
+    }
+  ],
+  "diagnostic_stages": [
+    {
+      "name": "mixed-frozen",
+      "diagnostic_passes": 10,
+      "mean_diagnostic_ms": 110.61449999999999,
+      "attention_submit_ms": 16.4383443,
+      "attention_sync_ms": 0.0027702,
+      "ffn_submit_ms": 0.5749427,
+      "ffn_sync_ms": 93.58722399999999,
+      "seed_ms": 0.0018072,
+      "copy_api_ms": 0
+    },
+    {
+      "name": "mixed-chain",
+      "diagnostic_passes": 10,
+      "mean_diagnostic_ms": 110.5539,
+      "attention_submit_ms": 16.6976717,
+      "attention_sync_ms": 0.0024734,
+      "ffn_submit_ms": 0.5753595,
+      "ffn_sync_ms": 93.1408238,
+      "seed_ms": 0.0015678,
+      "copy_api_ms": 0.1055747527
+    },
+    {
+      "name": "npu-chain-host2649",
+      "diagnostic_passes": 10,
+      "mean_diagnostic_ms": 222.3534,
+      "attention_submit_ms": 0.5941714,
+      "attention_sync_ms": 141.2993174,
+      "ffn_submit_ms": 0.3516517,
+      "ffn_sync_ms": 79.720203,
+      "seed_ms": 0.0032396,
+      "copy_api_ms": 0.3399633002
+    }
+  ],
+  "comparisons": {
+    "chain_minus_frozen_ms": -0.8450652173913369,
+    "chain_minus_frozen_mj": -1.1138990466304222,
+    "mixed_vs_npu_speedup": 2.068982816756711,
+    "mixed_vs_npu_energy_saving_pct": 17.910270358766876,
+    "copy_api_fraction_of_mixed_pass_pct": 0.0970680079110477
+  },
+  "caveats": [
+    "One power window per case; chain/frozen differences do not establish a speedup.",
+    "Sync includes device computation; it is not isolated synchronization overhead.",
+    "Direct copy timing excludes any deferred cache/coherence work in later computation.",
+    "NPU-to-NPU copy timing is enqueue only; completion is included in successor graph sync.",
+    "Fixed KV256 and repeated seed; no embedding/head/sampling or growing context.",
+    "Whole-device power approximates pack voltage as twice the reported cell voltage."
+  ]
+}

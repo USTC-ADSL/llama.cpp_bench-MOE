@@ -1,0 +1,677 @@
+{
+  "name": "cpu-chain-reference",
+  "command": "set -e\ntrap 'echo 1017600 > /sys/devices/system/cpu/cpufreq/policy6/scaling_min_freq\necho 4320000 > /sys/devices/system/cpu/cpufreq/policy6/scaling_max_freq\necho 1017600 > /sys/devices/system/cpu/cpufreq/policy6/scaling_min_freq' EXIT\necho 1017600 > /sys/devices/system/cpu/cpufreq/policy6/scaling_min_freq\necho 1401600 > /sys/devices/system/cpu/cpufreq/policy6/scaling_max_freq\necho 1401600 > /sys/devices/system/cpu/cpufreq/policy6/scaling_min_freq\ncd /data/local/tmp/dense-af-handoff\nenv LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 GGML_HEXAGON_PROFILE=0 GGML_HEXAGON_POWER=nom GGML_HEXAGON_DCVS=0 DENSE_AF_CLOCKS=1 timeout 240 taskset c0 ./dense-af-bench -m /data/local/tmp/models/Qwen2.5-3B-2K/ggml/weights.gguf --device CPU --prompt 1 --past 256 --layers all --stage both --flash 1 --threads 2 --warmup 2 --reps 2 --reference reference --resident --ffn-device CPU --handoff chain --write-reference\ncat /sys/devices/system/cpu/cpufreq/policy6/scaling_min_freq /sys/devices/system/cpu/cpufreq/policy6/scaling_max_freq",
+  "cpu_khz": 1401600,
+  "returncode": 0,
+  "started_unix": 1790866517.884641,
+  "host_seconds": 4.498754501342773,
+  "before": "Current OPLUS Battery Service state:\n  Charger voltage : 4\n  Battery current : 93\n  ChargerTechnology: 0\n  ChargeFastCharger: false\n  PlugType: 0\n  UpdatesStopped: false\n  UsbHwStatus: 0\n  BatteryHwStatus: -2147483648\n  HwStatusIsSet: 1\n  BatteryIcStatus: -2147483648\n  IcStatusIsSet: 1\n\n  mUsbStatus: 0\n  PhoneTemp: -1023\n  ThermalFeatureOn: false\nCurrent Battery Service state:\n  AC powered: false\n  USB powered: false\n  Wireless powered: false\n  Dock powered: false\n  Max charging current: 0\n  Max charging voltage: 0\n  Charge counter: 2466000\n  status: 3\n  health: 2\n  present: true\n  level: 48\n  scale: 100\n  voltage: 3861\n  temperature: 304\n  technology: Li-ion\n  Charging state: 0\n  Charging policy: 0",
+  "after": "Current OPLUS Battery Service state:\n  Charger voltage : 4\n  Battery current : 93\n  ChargerTechnology: 0\n  ChargeFastCharger: false\n  PlugType: 0\n  UpdatesStopped: false\n  UsbHwStatus: 0\n  BatteryHwStatus: -2147483648\n  HwStatusIsSet: 1\n  BatteryIcStatus: -2147483648\n  IcStatusIsSet: 1\n\n  mUsbStatus: 0\n  PhoneTemp: -1023\n  ThermalFeatureOn: false\nCurrent Battery Service state:\n  AC powered: false\n  USB powered: false\n  Wireless powered: false\n  Dock powered: false\n  Max charging current: 0\n  Max charging voltage: 0\n  Charge counter: 2466000\n  status: 3\n  health: 2\n  present: true\n  level: 48\n  scale: 100\n  voltage: 3861\n  temperature: 304\n  technology: Li-ion\n  Charging state: 0\n  Charging policy: 0",
+  "results": [
+    {
+      "attention_device": "CPU",
+      "ffn_device": "CPU",
+      "layers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35
+      ],
+      "blocks_per_pass": 72,
+      "prompt": 1,
+      "past": 256,
+      "flash": 1,
+      "threads": 2,
+      "weight_bytes": 1561632768,
+      "graph_bytes": 27982080,
+      "activation_handoff": true,
+      "input_mode": "chain",
+      "verified_edges": 71,
+      "bytes_per_edge": 8192,
+      "max_relative_rms": -1.0,
+      "reference_metric": "output-relative-rms",
+      "compute_ms": [
+        67.779,
+        67.982
+      ],
+      "profiles": [
+        {
+          "attention_submit_ms": 14.716095,
+          "attention_sync_ms": 0.002032,
+          "ffn_submit_ms": 52.986827,
+          "ffn_sync_ms": 0.002344,
+          "seed_ms": 0.001094,
+          "a_to_f_us": [
+            0.625045,
+            0.780992,
+            0.521005,
+            0.625012,
+            0.624994,
+            0.572993,
+            0.467998,
+            0.469014,
+            0.67697,
+            0.469052,
+            0.624998,
+            0.521054,
+            0.468042,
+            0.936967,
+            0.938022,
+            0.467951,
+            0.467984,
+            0.937978,
+            0.676945,
+            0.676965,
+            0.78104,
+            0.988945,
+            0.573055,
+            0.936973,
+            1.14505,
+            0.519993,
+            0.625059,
+            1.406056,
+            0.937007,
+            0.78098,
+            0.625033,
+            0.676987,
+            0.885997,
+            0.676958,
+            0.780942,
+            0.730026
+          ],
+          "f_to_a_us": [
+            0.624979,
+            0.572984,
+            0.468027,
+            0.468003,
+            0.624961,
+            0.676965,
+            0.780975,
+            0.677056,
+            0.468945,
+            0.677016,
+            0.885049,
+            0.676991,
+            0.468963,
+            0.729033,
+            0.625037,
+            0.728968,
+            0.781056,
+            0.781025,
+            0.781027,
+            0.833954,
+            0.780956,
+            1.197978,
+            0.625004,
+            0.88503,
+            0.938035,
+            0.88504,
+            0.832946,
+            0.884954,
+            0.936968,
+            0.989989,
+            0.624954,
+            0.885059,
+            0.884982,
+            0.989048,
+            0.780999
+          ]
+        },
+        {
+          "attention_submit_ms": 14.719061,
+          "attention_sync_ms": 0.001978,
+          "ffn_submit_ms": 53.176302,
+          "ffn_sync_ms": 0.002814,
+          "seed_ms": 0.001458,
+          "a_to_f_us": [
+            0.937034,
+            0.625004,
+            0.886047,
+            0.83301,
+            0.729964,
+            0.72897,
+            0.780994,
+            0.728961,
+            0.938019,
+            0.886059,
+            0.938046,
+            0.832979,
+            0.886047,
+            1.144988,
+            0.936973,
+            0.729983,
+            0.885954,
+            0.780949,
+            0.937988,
+            0.781014,
+            0.624978,
+            0.572947,
+            0.782002,
+            0.780954,
+            1.250006,
+            0.52005,
+            0.938003,
+            0.728987,
+            0.833017,
+            0.938021,
+            0.520989,
+            0.521053,
+            0.886026,
+            0.886055,
+            0.833058,
+            0.67702
+          ],
+          "f_to_a_us": [
+            1.249976,
+            1.406032,
+            0.832993,
+            0.884951,
+            0.936987,
+            1.093992,
+            0.781945,
+            1.040946,
+            0.937016,
+            0.98997,
+            1.249973,
+            1.146037,
+            1.094025,
+            0.624945,
+            0.780968,
+            1.250027,
+            0.990025,
+            0.937957,
+            0.937957,
+            0.886007,
+            1.09405,
+            0.990035,
+            0.989973,
+            0.833055,
+            0.625014,
+            1.094025,
+            0.781032,
+            0.937982,
+            0.78098,
+            0.885957,
+            0.884944,
+            0.885013,
+            1.094007,
+            1.041963,
+            0.781011
+          ]
+        }
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "layer": 0,
+      "block": "attention",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 0,
+      "block": "ffn",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 1,
+      "block": "attention",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 1,
+      "block": "ffn",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 2,
+      "block": "attention",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 2,
+      "block": "ffn",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 3,
+      "block": "attention",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 3,
+      "block": "ffn",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 4,
+      "block": "attention",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 4,
+      "block": "ffn",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 5,
+      "block": "attention",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 5,
+      "block": "ffn",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 6,
+      "block": "attention",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 6,
+      "block": "ffn",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 7,
+      "block": "attention",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 7,
+      "block": "ffn",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 8,
+      "block": "attention",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 8,
+      "block": "ffn",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 9,
+      "block": "attention",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 9,
+      "block": "ffn",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 10,
+      "block": "attention",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 10,
+      "block": "ffn",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 11,
+      "block": "attention",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 11,
+      "block": "ffn",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 12,
+      "block": "attention",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 12,
+      "block": "ffn",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 13,
+      "block": "attention",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 13,
+      "block": "ffn",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 14,
+      "block": "attention",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 14,
+      "block": "ffn",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 15,
+      "block": "attention",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 15,
+      "block": "ffn",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 16,
+      "block": "attention",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 16,
+      "block": "ffn",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 17,
+      "block": "attention",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 17,
+      "block": "ffn",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 18,
+      "block": "attention",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 18,
+      "block": "ffn",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 19,
+      "block": "attention",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 19,
+      "block": "ffn",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 20,
+      "block": "attention",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 20,
+      "block": "ffn",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 21,
+      "block": "attention",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 21,
+      "block": "ffn",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 22,
+      "block": "attention",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 22,
+      "block": "ffn",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 23,
+      "block": "attention",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 23,
+      "block": "ffn",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 24,
+      "block": "attention",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 24,
+      "block": "ffn",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 25,
+      "block": "attention",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 25,
+      "block": "ffn",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 26,
+      "block": "attention",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 26,
+      "block": "ffn",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 27,
+      "block": "attention",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 27,
+      "block": "ffn",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 28,
+      "block": "attention",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 28,
+      "block": "ffn",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 29,
+      "block": "attention",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 29,
+      "block": "ffn",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 30,
+      "block": "attention",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 30,
+      "block": "ffn",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 31,
+      "block": "attention",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 31,
+      "block": "ffn",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 32,
+      "block": "attention",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 32,
+      "block": "ffn",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 33,
+      "block": "attention",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 33,
+      "block": "ffn",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 34,
+      "block": "attention",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 34,
+      "block": "ffn",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 35,
+      "block": "attention",
+      "device": "CPU",
+      "relative_rms": -1.0
+    },
+    {
+      "layer": 35,
+      "block": "ffn",
+      "device": "CPU",
+      "relative_rms": -1.0
+    }
+  ],
+  "npu_power": [],
+  "screen_on": true,
+  "control_readback": [
+    "1401600",
+    "1401600"
+  ]
+}

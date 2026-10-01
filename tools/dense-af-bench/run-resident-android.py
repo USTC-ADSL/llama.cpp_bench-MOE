@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compare 36 resident fixed-input A/F pairs, without activation handoff."""
+"""Compare 36 resident A/F pairs, with optional actual activation handoff."""
 import argparse
 import json
 from pathlib import Path
@@ -16,6 +16,8 @@ def main():
     p.add_argument('--directory', default='/data/local/tmp/dense-af-multilayer')
     p.add_argument('--seconds', type=float, default=5)
     p.add_argument('--settle', type=float, default=5)
+    p.add_argument('--handoff-experiment', action='store_true',
+                   help='CPU chain reference, mixed frozen/chain, and NPU chain; ten diagnostic passes')
     args = p.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
     if (args.output / 'original-state.json').exists():
@@ -52,15 +54,16 @@ def main():
     wake = 'dense_af_resident_' + str(time.time_ns())
     controls = f'cat {cpu}/scaling_min_freq {cpu}/scaling_max_freq'
 
-    def run(name, device, ffn, khz, resident=True, layer='all', power=False, write_ref=False):
+    def run(name, device, ffn, khz, resident=True, layer='all', power=False, write_ref=False, handoff='none'):
         env = ['env', 'LD_LIBRARY_PATH=.', 'ADSP_LIBRARY_PATH=.', 'GGML_HEXAGON_DEVICES=1',
                'GGML_HEXAGON_PROFILE=0', 'GGML_HEXAGON_POWER=nom', 'GGML_HEXAGON_DCVS=0', 'DENSE_AF_CLOCKS=1']
         options = ['timeout', '240', 'taskset', 'c0', './dense-af-bench', '-m', args.model,
                    '--device', device, '--prompt', '1', '--past', '256', '--layers', layer,
-                   '--stage', 'both', '--flash', '1', '--threads', '2', '--warmup', '2', '--reps', '2',
+                   '--stage', 'both', '--flash', '1', '--threads', '2', '--warmup', '2',
+                   '--reps', '10' if args.handoff_experiment and power else '2',
                    '--reference', 'reference']
         if resident:
-            options += ['--resident', '--ffn-device', ffn]
+            options += ['--resident', '--ffn-device', ffn, '--handoff', handoff]
         if power:
             options += ['--power-seconds', str(args.seconds), '--power-settle-seconds', str(args.settle),
                         '--current-to-a', '0.001']
@@ -95,7 +98,12 @@ def main():
             assert len(rows) == 1 and rows[0]['layers'] == expected_layers
             assert len(checks) == 2 * len(expected_layers)
             assert {(c['layer'], c['block']) for c in checks} == {(l, b) for l in expected_layers for b in ('attention', 'ffn')}
-            assert all(0 <= c['relative_rms'] <= .05 for c in checks)
+            if not write_ref:
+                assert all(0 <= c['relative_rms'] <= .05 for c in checks)
+            assert rows[0]['input_mode'] == handoff
+            if handoff != 'none':
+                assert rows[0]['verified_edges'] == len(checks) - 1
+                assert rows[0]['bytes_per_edge'] == 8192
         elif write_ref:
             assert sum(s.startswith('RESULT ') for s in r.stdout.splitlines()) == 72
         if power:
@@ -112,13 +120,21 @@ def main():
         root('settings put system screen_off_timeout 18000000\ninput keyevent 224')
         root('mkdir -p ' + shlex.quote(args.directory + '/reference'))
         time.sleep(3)
-        run('cpu-reference', 'CPU', 'CPU', 1401600, resident=False, write_ref=True)
-        run('resident-cpu-check', 'CPU', 'CPU', 1401600, layer='0,17,35')
-        run('mixed-cpu1401-nom', 'CPU', 'HTP0', 1401600, power=True)
-        time.sleep(3)
-        run('npu-nom-host2649', 'HTP0', 'HTP0', 2649600, power=True)
-        time.sleep(3)
-        run('npu-nom-host1401', 'HTP0', 'HTP0', 1401600, power=True)
+        if args.handoff_experiment:
+            run('cpu-chain-reference', 'CPU', 'CPU', 1401600, write_ref=True, handoff='chain')
+            run('mixed-frozen', 'CPU', 'HTP0', 1401600, power=True, handoff='frozen')
+            time.sleep(3)
+            run('mixed-chain', 'CPU', 'HTP0', 1401600, power=True, handoff='chain')
+            time.sleep(3)
+            run('npu-chain-host2649', 'HTP0', 'HTP0', 2649600, power=True, handoff='chain')
+        else:
+            run('cpu-reference', 'CPU', 'CPU', 1401600, resident=False, write_ref=True)
+            run('resident-cpu-check', 'CPU', 'CPU', 1401600, layer='0,17,35')
+            run('mixed-cpu1401-nom', 'CPU', 'HTP0', 1401600, power=True)
+            time.sleep(3)
+            run('npu-nom-host2649', 'HTP0', 'HTP0', 2649600, power=True)
+            time.sleep(3)
+            run('npu-nom-host1401', 'HTP0', 'HTP0', 1401600, power=True)
     finally:
         errors = []
         timeout = original['screen_off_timeout']

@@ -1,0 +1,23 @@
+CHECK {"layer":17,"block":"attention","device":"CPU","relative_rms":-1.00000000}
+CHECK {"layer":17,"block":"ffn","device":"HTP0","relative_rms":-1.00000000}
+RESIDENT_RESULT {"attention_device":"CPU","ffn_device":"HTP0","layers":[17],"blocks_per_pass":2,"prompt":1,"past":256,"flash":1,"threads":2,"weight_bytes":43378688,"graph_bytes":777280,"activation_handoff":false,"input_mode":"none","verified_edges":0,"bytes_per_edge":8192,"max_relative_rms":-1.00000000,"reference_metric":"residual-excluded-relative-rms","compute_ms":[1.491000,1.523000],"profiles":[{"attention_submit_ms":0.232813,"attention_sync_ms":0.000104,"ffn_submit_ms":0.006614,"ffn_sync_ms":1.251094,"seed_ms":0.000000,"a_to_f_us":[],"f_to_a_us":[]},{"attention_submit_ms":0.236093,"attention_sync_ms":-0.000000,"ffn_submit_ms":0.011875,"ffn_sync_ms":1.274219,"seed_ms":0.000000,"a_to_f_us":[],"f_to_a_us":[]}]}
+ggml_opencl: selected platform: 'QUALCOMM Snapdragon(TM)'
+
+ggml_opencl: device: 'QUALCOMM Adreno(TM) 830 (OpenCL 3.0 Adreno(TM) 830)'
+ggml_opencl: default device: 'QUALCOMM Adreno(TM) 830 (OpenCL 3.0 Adreno(TM) 830)'
+ggml-hex: Loading driver libcdsprpc.so
+ggml-hex: FASTRPC_GET_DOMAINS query failed (0x6c), using static CDSP domains
+ggml-hex: Hexagon backend (experimental) : allocating new registry : ndev 1
+ggml-hex: Hexagon Arch version v79, DMA64 disabled
+ggml-hex: device 0: HTP0 (phys=0, virt=0, domain=cdsp:3)
+MODEL layers=36 embd=2048 ff=11008 heads=16 kv_heads=2 head_dim=128
+ggml-hex: HTP0 allocating new session : domain 3 phys-idx 0 virt-idx 0
+ggml-hex: HTP0 hwinfo: threads 6, hvx 6, hmx 1, vtcm 8 MB
+ggml-hex: HTP0 new session : session-id 0 domain-id 3 uri file:///libggml-htp-v79.so?htp_iface_skel_handle_invoke&_modver=1.0&_dom=cdsp&_session=0 handle 0xb4000072685fb940
+ggml-hex: HTP0 op batching: n-bufs 16 n-tensors 8192 n-ops 1280 vmem 3311845376
+ggml-hex: power profile=4 dcvs=0 initial-core-hz=1248000000 initial-hmx-hz=979200000 core-status=0 hmx-status=0
+repack: repack tensor blk.17.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.17.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.17.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.17.attn_output.weight with q4_0_4x8
+RESIDENT loaded layer=17 count=2 weight-bytes=43378688 graph-bytes=777280

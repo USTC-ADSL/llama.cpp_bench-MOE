@@ -309,6 +309,7 @@ int main(int argc, char ** argv) {
         bool flash = false, write_reference = false, f32_reference = false;
         bool resident = false;
         std::string ffn_device;
+        std::string handoff = "none";
         for (int i = 1; i < argc; ++i) {
             std::string a = argv[i];
             if (a == "--help") {
@@ -317,6 +318,7 @@ int main(int argc, char ** argv) {
                        "  [--past 0|64|256] (history is only allowed with --prompt 1)\n"
                        "  [--threads 8] [--reps 7] [--warmup 2]\n"
                        "  [--resident] [--ffn-device CPU|GPUOpenCL|HTP0] (all layers resident, fixed independent inputs)\n"
+                       "  [--handoff none|chain|frozen] (resident only; frozen uses precomputed chain inputs)\n"
                        "  [--reference DIR] [--write-reference] [--f32-reference]\n"
                        "  [--power-seconds 12] [--power-settle-seconds 5] [--current-to-a 0.001]\n"
                        "  [--battery-dir PATH] [--power-idle-seconds 12] (idle-only, no model needed)\n");
@@ -330,6 +332,7 @@ int main(int argc, char ** argv) {
             if      (a == "-m")          { path = v; }
             else if (a == "--device")    { device = v; }
             else if (a == "--ffn-device") { ffn_device = v; }
+            else if (a == "--handoff") { handoff = v; }
             else if (a == "--layers")    { selection = v; }
             else if (a == "--stage")     { stage = v; }
             else if (a == "--reference") { reference = v; }
@@ -363,6 +366,8 @@ int main(int argc, char ** argv) {
         require(!write_reference || (device == "CPU" && !reference.empty()), "write-reference requires CPU and reference directory");
         require(!f32_reference || (device == "CPU" && write_reference), "f32-reference is only for CPU reference generation");
         require(resident || ffn_device.empty(), "ffn-device requires resident mode");
+        require(handoff == "none" || handoff == "chain" || handoff == "frozen", "invalid handoff mode");
+        require(resident || handoff == "none", "handoff requires resident mode");
         if (resident) {
             if (ffn_device.empty()) { ffn_device = device; }
             require(stage == "both" && !f32_reference, "resident mode requires stage both and native weights");
@@ -395,7 +400,7 @@ int main(int argc, char ** argv) {
         if (resident) {
             return run_resident(m, backend.get(), ffn_device, layers, prompt, past, flash, threads,
                                 warmup, reps, reference, write_reference, battery_dir, current_to_a,
-                                power_settle, power_seconds);
+                                power_settle, power_seconds, handoff);
         }
         bool failed = false;
         for (int layer : layers) {
