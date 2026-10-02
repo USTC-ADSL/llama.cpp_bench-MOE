@@ -18,7 +18,7 @@ def main():
     p.add_argument('--phase', choices=['audit', 'measure'], required=True)
     p.add_argument('--steps', type=int, default=100)
     p.add_argument('--deploy', action='store_true')
-    p.add_argument('--cases', nargs='+', choices=['mixed', 'npu', 'npu-host1401'], default=['mixed', 'npu'])
+    p.add_argument('--cases', nargs='+', choices=['mixed', 'core-cpu', 'npu', 'npu-host1401'], default=['mixed', 'npu'])
     p.add_argument('--htp-diagnostic', action='store_true', help='basic DSP profile and aggregate host queue timing')
     p.add_argument('--power', action='store_true', help='sample whole-device battery telemetry during real decode')
     args = p.parse_args()
@@ -64,7 +64,7 @@ def main():
     try:
         root('echo ' + wake + ' 900000000000 > /sys/power/wake_lock\nsettings put system screen_off_timeout 18000000\ninput keyevent 224')
         for case in args.cases:
-            placement = 'mixed' if case == 'mixed' else 'npu'
+            placement = case if case in ('mixed', 'core-cpu') else 'npu'
             khz = 2649600 if case == 'npu' else 1401600
             name = case + '-' + args.phase
             env = ['env', 'LD_LIBRARY_PATH=.', 'ADSP_LIBRARY_PATH=.', 'GGML_HEXAGON_DEVICES=1',

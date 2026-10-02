@@ -54,7 +54,8 @@ static bool audit_node(ggml_tensor * tensor, bool ask, void * data) {
     auto & audit = *static_cast<audit_state *>(data);
     auto * buffer = tensor->buffer ? tensor->buffer : (tensor->view_src ? tensor->view_src->buffer : nullptr);
     const std::string row = std::string(ggml_get_name(tensor)) + "\t" + ggml_op_name(tensor->op) + "\t" +
-            (buffer ? ggml_backend_buffer_name(buffer) : "none");
+            (buffer ? ggml_backend_buffer_name(buffer) : "none") + "\t" +
+            (tensor->src[0] ? ggml_get_name(tensor->src[0]) : "none");
     if (audit.seen.insert(row).second) { audit.file << row << '\n'; }
     return false; // observe placement only, do not split or synchronize at each node
 }
@@ -78,10 +79,11 @@ int main(int argc, char ** argv) {
             else { throw std::runtime_error("unknown argument: " + arg); }
         }
         require(!path.empty() && prompt_count >= 128 && steps > 0 && prompt_count + steps < 2048, "invalid arguments");
-        require(placement == "mixed" || placement == "npu" || placement == "cpu", "invalid placement");
+        require(placement == "mixed" || placement == "core-cpu" || placement == "npu" || placement == "cpu", "invalid placement");
         require(!audit_only || !measure_power, "power requires measurement mode");
         const bool mixed = placement == "mixed";
-        require(setenv("LLAMA_QWEN2_CPU_ATTENTION", mixed ? "1" : "0", 1) == 0, "setenv failed");
+        const char * attention_mode = placement == "core-cpu" ? "core" : (mixed ? "1" : "0");
+        require(setenv("LLAMA_QWEN2_CPU_ATTENTION", attention_mode, 1) == 0, "setenv failed");
         llama_backend_init();
         auto cpu = ggml_backend_dev_by_type(GGML_BACKEND_DEVICE_TYPE_CPU);
         auto htp = ggml_backend_dev_by_name("HTP0");
@@ -128,7 +130,7 @@ int main(int argc, char ** argv) {
         if (audit_only) {
             audit.file.open(output + "-placement.tsv");
             require(bool(audit.file), "cannot open placement audit file");
-            audit.file << "tensor\top\tbuffer\n";
+            audit.file << "tensor\top\tbuffer\tsrc0\n";
             cp.cb_eval = audit_node;
             cp.cb_eval_user_data = &audit;
         }

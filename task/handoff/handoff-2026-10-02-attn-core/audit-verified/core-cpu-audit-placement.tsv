@@ -1,0 +1,1231 @@
+tensor	op	buffer	src0
+embd	GET_ROWS	CPU	token_embd.weight
+norm-0	RMS_NORM	HTP0	HTP0#embd#0
+attn_norm-0	MUL	HTP0	norm-0
+Qcur-0	MUL_MAT	HTP0	blk.0.attn_q.weight
+Vcur-0	MUL_MAT	HTP0	blk.0.attn_v.weight
+Kcur-0	MUL_MAT	HTP0	blk.0.attn_k.weight
+Qcur-0	ADD	HTP0	Qcur-0
+Qcur-0	RESHAPE	HTP0	Qcur-0
+Vcur-0	ADD	HTP0	Vcur-0
+Vcur-0	RESHAPE	HTP0	Vcur-0
+Kcur-0	ADD	HTP0	Kcur-0
+Kcur-0	RESHAPE	HTP0	Kcur-0
+Qcur-0	ROPE	CPU	CPU#Qcur-0#0
+Kcur-0	ROPE	CPU	CPU#Kcur-0#0
+Kcur-0 (view)	VIEW	CPU	Kcur-0
+cache_k_l0 (view)	SET_ROWS	CPU	Kcur-0 (view)
+Vcur-0 (view)	VIEW	HTP0	Vcur-0
+cache_v_l0 (view)	SET_ROWS	CPU	CPU#Vcur-0 (view)#0
+Qcur-0 (view)	VIEW	CPU	Qcur-0
+Qcur-0 (view) (permuted)	PERMUTE	CPU	Qcur-0 (view)
+cache_k_l0 (view)	VIEW	CPU	cache_k_l0
+cache_k_l0 (view) (permuted)	PERMUTE	CPU	cache_k_l0 (view)
+cache_v_l0 (view)	VIEW	CPU	cache_v_l0
+cache_v_l0 (view) (permuted)	PERMUTE	CPU	cache_v_l0 (view)
+node_24	FLASH_ATTN_EXT	CPU	Qcur-0 (view) (permuted)
+kqv_out-0	RESHAPE	CPU	node_24
+attn_output-0	MUL_MAT	HTP0	blk.0.attn_output.weight
+ffn_inp-0	ADD	HTP0	attn_output-0
+norm-0	RMS_NORM	HTP0	ffn_inp-0
+ffn_norm-0	MUL	HTP0	norm-0
+ffn_gate-0	MUL_MAT	HTP0	blk.0.ffn_gate.weight
+ffn_up-0	MUL_MAT	HTP0	blk.0.ffn_up.weight
+ffn_swiglu-0	GLU	HTP0	ffn_gate-0
+ffn_out-0	MUL_MAT	HTP0	blk.0.ffn_down.weight
+l_out-0	ADD	HTP0	ffn_out-0
+norm-1	RMS_NORM	HTP0	l_out-0
+attn_norm-1	MUL	HTP0	norm-1
+Qcur-1	MUL_MAT	HTP0	blk.1.attn_q.weight
+Vcur-1	MUL_MAT	HTP0	blk.1.attn_v.weight
+Kcur-1	MUL_MAT	HTP0	blk.1.attn_k.weight
+Qcur-1	ADD	HTP0	Qcur-1
+Qcur-1	RESHAPE	HTP0	Qcur-1
+Vcur-1	ADD	HTP0	Vcur-1
+Vcur-1	RESHAPE	HTP0	Vcur-1
+Kcur-1	ADD	HTP0	Kcur-1
+Kcur-1	RESHAPE	HTP0	Kcur-1
+Qcur-1	ROPE	CPU	CPU#Qcur-1#0
+Kcur-1	ROPE	CPU	CPU#Kcur-1#0
+Kcur-1 (view)	VIEW	CPU	Kcur-1
+cache_k_l1 (view)	SET_ROWS	CPU	Kcur-1 (view)
+Vcur-1 (view)	VIEW	HTP0	Vcur-1
+cache_v_l1 (view)	SET_ROWS	CPU	CPU#Vcur-1 (view)#0
+Qcur-1 (view)	VIEW	CPU	Qcur-1
+Qcur-1 (view) (permuted)	PERMUTE	CPU	Qcur-1 (view)
+cache_k_l1 (view)	VIEW	CPU	cache_k_l1
+cache_k_l1 (view) (permuted)	PERMUTE	CPU	cache_k_l1 (view)
+cache_v_l1 (view)	VIEW	CPU	cache_v_l1
+cache_v_l1 (view) (permuted)	PERMUTE	CPU	cache_v_l1 (view)
+node_58	FLASH_ATTN_EXT	CPU	Qcur-1 (view) (permuted)
+kqv_out-1	RESHAPE	CPU	node_58
+attn_output-1	MUL_MAT	HTP0	blk.1.attn_output.weight
+ffn_inp-1	ADD	HTP0	attn_output-1
+norm-1	RMS_NORM	HTP0	ffn_inp-1
+ffn_norm-1	MUL	HTP0	norm-1
+ffn_gate-1	MUL_MAT	HTP0	blk.1.ffn_gate.weight
+ffn_up-1	MUL_MAT	HTP0	blk.1.ffn_up.weight
+ffn_swiglu-1	GLU	HTP0	ffn_gate-1
+ffn_out-1	MUL_MAT	HTP0	blk.1.ffn_down.weight
+l_out-1	ADD	HTP0	ffn_out-1
+norm-2	RMS_NORM	HTP0	l_out-1
+attn_norm-2	MUL	HTP0	norm-2
+Qcur-2	MUL_MAT	HTP0	blk.2.attn_q.weight
+Vcur-2	MUL_MAT	HTP0	blk.2.attn_v.weight
+Kcur-2	MUL_MAT	HTP0	blk.2.attn_k.weight
+Qcur-2	ADD	HTP0	Qcur-2
+Qcur-2	RESHAPE	HTP0	Qcur-2
+Vcur-2	ADD	HTP0	Vcur-2
+Vcur-2	RESHAPE	HTP0	Vcur-2
+Kcur-2	ADD	HTP0	Kcur-2
+Kcur-2	RESHAPE	HTP0	Kcur-2
+Qcur-2	ROPE	CPU	CPU#Qcur-2#0
+Kcur-2	ROPE	CPU	CPU#Kcur-2#0
+Kcur-2 (view)	VIEW	CPU	Kcur-2
+cache_k_l2 (view)	SET_ROWS	CPU	Kcur-2 (view)
+Vcur-2 (view)	VIEW	HTP0	Vcur-2
+cache_v_l2 (view)	SET_ROWS	CPU	CPU#Vcur-2 (view)#0
+Qcur-2 (view)	VIEW	CPU	Qcur-2
+Qcur-2 (view) (permuted)	PERMUTE	CPU	Qcur-2 (view)
+cache_k_l2 (view)	VIEW	CPU	cache_k_l2
+cache_k_l2 (view) (permuted)	PERMUTE	CPU	cache_k_l2 (view)
+cache_v_l2 (view)	VIEW	CPU	cache_v_l2
+cache_v_l2 (view) (permuted)	PERMUTE	CPU	cache_v_l2 (view)
+node_92	FLASH_ATTN_EXT	CPU	Qcur-2 (view) (permuted)
+kqv_out-2	RESHAPE	CPU	node_92
+attn_output-2	MUL_MAT	HTP0	blk.2.attn_output.weight
+ffn_inp-2	ADD	HTP0	attn_output-2
+norm-2	RMS_NORM	HTP0	ffn_inp-2
+ffn_norm-2	MUL	HTP0	norm-2
+ffn_gate-2	MUL_MAT	HTP0	blk.2.ffn_gate.weight
+ffn_up-2	MUL_MAT	HTP0	blk.2.ffn_up.weight
+ffn_swiglu-2	GLU	HTP0	ffn_gate-2
+ffn_out-2	MUL_MAT	HTP0	blk.2.ffn_down.weight
+l_out-2	ADD	HTP0	ffn_out-2
+norm-3	RMS_NORM	HTP0	l_out-2
+attn_norm-3	MUL	HTP0	norm-3
+Qcur-3	MUL_MAT	HTP0	blk.3.attn_q.weight
+Vcur-3	MUL_MAT	HTP0	blk.3.attn_v.weight
+Kcur-3	MUL_MAT	HTP0	blk.3.attn_k.weight
+Qcur-3	ADD	HTP0	Qcur-3
+Qcur-3	RESHAPE	HTP0	Qcur-3
+Vcur-3	ADD	HTP0	Vcur-3
+Vcur-3	RESHAPE	HTP0	Vcur-3
+Kcur-3	ADD	HTP0	Kcur-3
+Kcur-3	RESHAPE	HTP0	Kcur-3
+Qcur-3	ROPE	CPU	CPU#Qcur-3#0
+Kcur-3	ROPE	CPU	CPU#Kcur-3#0
+Kcur-3 (view)	VIEW	CPU	Kcur-3
+cache_k_l3 (view)	SET_ROWS	CPU	Kcur-3 (view)
+Vcur-3 (view)	VIEW	HTP0	Vcur-3
+cache_v_l3 (view)	SET_ROWS	CPU	CPU#Vcur-3 (view)#0
+Qcur-3 (view)	VIEW	CPU	Qcur-3
+Qcur-3 (view) (permuted)	PERMUTE	CPU	Qcur-3 (view)
+cache_k_l3 (view)	VIEW	CPU	cache_k_l3
+cache_k_l3 (view) (permuted)	PERMUTE	CPU	cache_k_l3 (view)
+cache_v_l3 (view)	VIEW	CPU	cache_v_l3
+cache_v_l3 (view) (permuted)	PERMUTE	CPU	cache_v_l3 (view)
+node_126	FLASH_ATTN_EXT	CPU	Qcur-3 (view) (permuted)
+kqv_out-3	RESHAPE	CPU	node_126
+attn_output-3	MUL_MAT	HTP0	blk.3.attn_output.weight
+ffn_inp-3	ADD	HTP0	attn_output-3
+norm-3	RMS_NORM	HTP0	ffn_inp-3
+ffn_norm-3	MUL	HTP0	norm-3
+ffn_gate-3	MUL_MAT	HTP0	blk.3.ffn_gate.weight
+ffn_up-3	MUL_MAT	HTP0	blk.3.ffn_up.weight
+ffn_swiglu-3	GLU	HTP0	ffn_gate-3
+ffn_out-3	MUL_MAT	HTP0	blk.3.ffn_down.weight
+l_out-3	ADD	HTP0	ffn_out-3
+norm-4	RMS_NORM	HTP0	l_out-3
+attn_norm-4	MUL	HTP0	norm-4
+Qcur-4	MUL_MAT	HTP0	blk.4.attn_q.weight
+Vcur-4	MUL_MAT	HTP0	blk.4.attn_v.weight
+Kcur-4	MUL_MAT	HTP0	blk.4.attn_k.weight
+Qcur-4	ADD	HTP0	Qcur-4
+Qcur-4	RESHAPE	HTP0	Qcur-4
+Vcur-4	ADD	HTP0	Vcur-4
+Vcur-4	RESHAPE	HTP0	Vcur-4
+Kcur-4	ADD	HTP0	Kcur-4
+Kcur-4	RESHAPE	HTP0	Kcur-4
+Qcur-4	ROPE	CPU	CPU#Qcur-4#0
+Kcur-4	ROPE	CPU	CPU#Kcur-4#0
+Kcur-4 (view)	VIEW	CPU	Kcur-4
+cache_k_l4 (view)	SET_ROWS	CPU	Kcur-4 (view)
+Vcur-4 (view)	VIEW	HTP0	Vcur-4
+cache_v_l4 (view)	SET_ROWS	CPU	CPU#Vcur-4 (view)#0
+Qcur-4 (view)	VIEW	CPU	Qcur-4
+Qcur-4 (view) (permuted)	PERMUTE	CPU	Qcur-4 (view)
+cache_k_l4 (view)	VIEW	CPU	cache_k_l4
+cache_k_l4 (view) (permuted)	PERMUTE	CPU	cache_k_l4 (view)
+cache_v_l4 (view)	VIEW	CPU	cache_v_l4
+cache_v_l4 (view) (permuted)	PERMUTE	CPU	cache_v_l4 (view)
+node_160	FLASH_ATTN_EXT	CPU	Qcur-4 (view) (permuted)
+kqv_out-4	RESHAPE	CPU	node_160
+attn_output-4	MUL_MAT	HTP0	blk.4.attn_output.weight
+ffn_inp-4	ADD	HTP0	attn_output-4
+norm-4	RMS_NORM	HTP0	ffn_inp-4
+ffn_norm-4	MUL	HTP0	norm-4
+ffn_gate-4	MUL_MAT	HTP0	blk.4.ffn_gate.weight
+ffn_up-4	MUL_MAT	HTP0	blk.4.ffn_up.weight
+ffn_swiglu-4	GLU	HTP0	ffn_gate-4
+ffn_out-4	MUL_MAT	HTP0	blk.4.ffn_down.weight
+l_out-4	ADD	HTP0	ffn_out-4
+norm-5	RMS_NORM	HTP0	l_out-4
+attn_norm-5	MUL	HTP0	norm-5
+Qcur-5	MUL_MAT	HTP0	blk.5.attn_q.weight
+Vcur-5	MUL_MAT	HTP0	blk.5.attn_v.weight
+Kcur-5	MUL_MAT	HTP0	blk.5.attn_k.weight
+Qcur-5	ADD	HTP0	Qcur-5
+Qcur-5	RESHAPE	HTP0	Qcur-5
+Vcur-5	ADD	HTP0	Vcur-5
+Vcur-5	RESHAPE	HTP0	Vcur-5
+Kcur-5	ADD	HTP0	Kcur-5
+Kcur-5	RESHAPE	HTP0	Kcur-5
+Qcur-5	ROPE	CPU	CPU#Qcur-5#0
+Kcur-5	ROPE	CPU	CPU#Kcur-5#0
+Kcur-5 (view)	VIEW	CPU	Kcur-5
+cache_k_l5 (view)	SET_ROWS	CPU	Kcur-5 (view)
+Vcur-5 (view)	VIEW	HTP0	Vcur-5
+cache_v_l5 (view)	SET_ROWS	CPU	CPU#Vcur-5 (view)#0
+Qcur-5 (view)	VIEW	CPU	Qcur-5
+Qcur-5 (view) (permuted)	PERMUTE	CPU	Qcur-5 (view)
+cache_k_l5 (view)	VIEW	CPU	cache_k_l5
+cache_k_l5 (view) (permuted)	PERMUTE	CPU	cache_k_l5 (view)
+cache_v_l5 (view)	VIEW	CPU	cache_v_l5
+cache_v_l5 (view) (permuted)	PERMUTE	CPU	cache_v_l5 (view)
+node_194	FLASH_ATTN_EXT	CPU	Qcur-5 (view) (permuted)
+kqv_out-5	RESHAPE	CPU	node_194
+attn_output-5	MUL_MAT	HTP0	blk.5.attn_output.weight
+ffn_inp-5	ADD	HTP0	attn_output-5
+norm-5	RMS_NORM	HTP0	ffn_inp-5
+ffn_norm-5	MUL	HTP0	norm-5
+ffn_gate-5	MUL_MAT	HTP0	blk.5.ffn_gate.weight
+ffn_up-5	MUL_MAT	HTP0	blk.5.ffn_up.weight
+ffn_swiglu-5	GLU	HTP0	ffn_gate-5
+ffn_out-5	MUL_MAT	HTP0	blk.5.ffn_down.weight
+l_out-5	ADD	HTP0	ffn_out-5
+norm-6	RMS_NORM	HTP0	l_out-5
+attn_norm-6	MUL	HTP0	norm-6
+Qcur-6	MUL_MAT	HTP0	blk.6.attn_q.weight
+Vcur-6	MUL_MAT	HTP0	blk.6.attn_v.weight
+Kcur-6	MUL_MAT	HTP0	blk.6.attn_k.weight
+Qcur-6	ADD	HTP0	Qcur-6
+Qcur-6	RESHAPE	HTP0	Qcur-6
+Vcur-6	ADD	HTP0	Vcur-6
+Vcur-6	RESHAPE	HTP0	Vcur-6
+Kcur-6	ADD	HTP0	Kcur-6
+Kcur-6	RESHAPE	HTP0	Kcur-6
+Qcur-6	ROPE	CPU	CPU#Qcur-6#0
+Kcur-6	ROPE	CPU	CPU#Kcur-6#0
+Kcur-6 (view)	VIEW	CPU	Kcur-6
+cache_k_l6 (view)	SET_ROWS	CPU	Kcur-6 (view)
+Vcur-6 (view)	VIEW	HTP0	Vcur-6
+cache_v_l6 (view)	SET_ROWS	CPU	CPU#Vcur-6 (view)#0
+Qcur-6 (view)	VIEW	CPU	Qcur-6
+Qcur-6 (view) (permuted)	PERMUTE	CPU	Qcur-6 (view)
+cache_k_l6 (view)	VIEW	CPU	cache_k_l6
+cache_k_l6 (view) (permuted)	PERMUTE	CPU	cache_k_l6 (view)
+cache_v_l6 (view)	VIEW	CPU	cache_v_l6
+cache_v_l6 (view) (permuted)	PERMUTE	CPU	cache_v_l6 (view)
+node_228	FLASH_ATTN_EXT	CPU	Qcur-6 (view) (permuted)
+kqv_out-6	RESHAPE	CPU	node_228
+attn_output-6	MUL_MAT	HTP0	blk.6.attn_output.weight
+ffn_inp-6	ADD	HTP0	attn_output-6
+norm-6	RMS_NORM	HTP0	ffn_inp-6
+ffn_norm-6	MUL	HTP0	norm-6
+ffn_gate-6	MUL_MAT	HTP0	blk.6.ffn_gate.weight
+ffn_up-6	MUL_MAT	HTP0	blk.6.ffn_up.weight
+ffn_swiglu-6	GLU	HTP0	ffn_gate-6
+ffn_out-6	MUL_MAT	HTP0	blk.6.ffn_down.weight
+l_out-6	ADD	HTP0	ffn_out-6
+norm-7	RMS_NORM	HTP0	l_out-6
+attn_norm-7	MUL	HTP0	norm-7
+Qcur-7	MUL_MAT	HTP0	blk.7.attn_q.weight
+Vcur-7	MUL_MAT	HTP0	blk.7.attn_v.weight
+Kcur-7	MUL_MAT	HTP0	blk.7.attn_k.weight
+Qcur-7	ADD	HTP0	Qcur-7
+Qcur-7	RESHAPE	HTP0	Qcur-7
+Vcur-7	ADD	HTP0	Vcur-7
+Vcur-7	RESHAPE	HTP0	Vcur-7
+Kcur-7	ADD	HTP0	Kcur-7
+Kcur-7	RESHAPE	HTP0	Kcur-7
+Qcur-7	ROPE	CPU	CPU#Qcur-7#0
+Kcur-7	ROPE	CPU	CPU#Kcur-7#0
+Kcur-7 (view)	VIEW	CPU	Kcur-7
+cache_k_l7 (view)	SET_ROWS	CPU	Kcur-7 (view)
+Vcur-7 (view)	VIEW	HTP0	Vcur-7
+cache_v_l7 (view)	SET_ROWS	CPU	CPU#Vcur-7 (view)#0
+Qcur-7 (view)	VIEW	CPU	Qcur-7
+Qcur-7 (view) (permuted)	PERMUTE	CPU	Qcur-7 (view)
+cache_k_l7 (view)	VIEW	CPU	cache_k_l7
+cache_k_l7 (view) (permuted)	PERMUTE	CPU	cache_k_l7 (view)
+cache_v_l7 (view)	VIEW	CPU	cache_v_l7
+cache_v_l7 (view) (permuted)	PERMUTE	CPU	cache_v_l7 (view)
+node_262	FLASH_ATTN_EXT	CPU	Qcur-7 (view) (permuted)
+kqv_out-7	RESHAPE	CPU	node_262
+attn_output-7	MUL_MAT	HTP0	blk.7.attn_output.weight
+ffn_inp-7	ADD	HTP0	attn_output-7
+norm-7	RMS_NORM	HTP0	ffn_inp-7
+ffn_norm-7	MUL	HTP0	norm-7
+ffn_gate-7	MUL_MAT	HTP0	blk.7.ffn_gate.weight
+ffn_up-7	MUL_MAT	HTP0	blk.7.ffn_up.weight
+ffn_swiglu-7	GLU	HTP0	ffn_gate-7
+ffn_out-7	MUL_MAT	HTP0	blk.7.ffn_down.weight
+l_out-7	ADD	HTP0	ffn_out-7
+norm-8	RMS_NORM	HTP0	l_out-7
+attn_norm-8	MUL	HTP0	norm-8
+Qcur-8	MUL_MAT	HTP0	blk.8.attn_q.weight
+Vcur-8	MUL_MAT	HTP0	blk.8.attn_v.weight
+Kcur-8	MUL_MAT	HTP0	blk.8.attn_k.weight
+Qcur-8	ADD	HTP0	Qcur-8
+Qcur-8	RESHAPE	HTP0	Qcur-8
+Vcur-8	ADD	HTP0	Vcur-8
+Vcur-8	RESHAPE	HTP0	Vcur-8
+Kcur-8	ADD	HTP0	Kcur-8
+Kcur-8	RESHAPE	HTP0	Kcur-8
+Qcur-8	ROPE	CPU	CPU#Qcur-8#0
+Kcur-8	ROPE	CPU	CPU#Kcur-8#0
+Kcur-8 (view)	VIEW	CPU	Kcur-8
+cache_k_l8 (view)	SET_ROWS	CPU	Kcur-8 (view)
+Vcur-8 (view)	VIEW	HTP0	Vcur-8
+cache_v_l8 (view)	SET_ROWS	CPU	CPU#Vcur-8 (view)#0
+Qcur-8 (view)	VIEW	CPU	Qcur-8
+Qcur-8 (view) (permuted)	PERMUTE	CPU	Qcur-8 (view)
+cache_k_l8 (view)	VIEW	CPU	cache_k_l8
+cache_k_l8 (view) (permuted)	PERMUTE	CPU	cache_k_l8 (view)
+cache_v_l8 (view)	VIEW	CPU	cache_v_l8
+cache_v_l8 (view) (permuted)	PERMUTE	CPU	cache_v_l8 (view)
+node_296	FLASH_ATTN_EXT	CPU	Qcur-8 (view) (permuted)
+kqv_out-8	RESHAPE	CPU	node_296
+attn_output-8	MUL_MAT	HTP0	blk.8.attn_output.weight
+ffn_inp-8	ADD	HTP0	attn_output-8
+norm-8	RMS_NORM	HTP0	ffn_inp-8
+ffn_norm-8	MUL	HTP0	norm-8
+ffn_gate-8	MUL_MAT	HTP0	blk.8.ffn_gate.weight
+ffn_up-8	MUL_MAT	HTP0	blk.8.ffn_up.weight
+ffn_swiglu-8	GLU	HTP0	ffn_gate-8
+ffn_out-8	MUL_MAT	HTP0	blk.8.ffn_down.weight
+l_out-8	ADD	HTP0	ffn_out-8
+norm-9	RMS_NORM	HTP0	l_out-8
+attn_norm-9	MUL	HTP0	norm-9
+Qcur-9	MUL_MAT	HTP0	blk.9.attn_q.weight
+Vcur-9	MUL_MAT	HTP0	blk.9.attn_v.weight
+Kcur-9	MUL_MAT	HTP0	blk.9.attn_k.weight
+Qcur-9	ADD	HTP0	Qcur-9
+Qcur-9	RESHAPE	HTP0	Qcur-9
+Vcur-9	ADD	HTP0	Vcur-9
+Vcur-9	RESHAPE	HTP0	Vcur-9
+Kcur-9	ADD	HTP0	Kcur-9
+Kcur-9	RESHAPE	HTP0	Kcur-9
+Qcur-9	ROPE	CPU	CPU#Qcur-9#0
+Kcur-9	ROPE	CPU	CPU#Kcur-9#0
+Kcur-9 (view)	VIEW	CPU	Kcur-9
+cache_k_l9 (view)	SET_ROWS	CPU	Kcur-9 (view)
+Vcur-9 (view)	VIEW	HTP0	Vcur-9
+cache_v_l9 (view)	SET_ROWS	CPU	CPU#Vcur-9 (view)#0
+Qcur-9 (view)	VIEW	CPU	Qcur-9
+Qcur-9 (view) (permuted)	PERMUTE	CPU	Qcur-9 (view)
+cache_k_l9 (view)	VIEW	CPU	cache_k_l9
+cache_k_l9 (view) (permuted)	PERMUTE	CPU	cache_k_l9 (view)
+cache_v_l9 (view)	VIEW	CPU	cache_v_l9
+cache_v_l9 (view) (permuted)	PERMUTE	CPU	cache_v_l9 (view)
+node_330	FLASH_ATTN_EXT	CPU	Qcur-9 (view) (permuted)
+kqv_out-9	RESHAPE	CPU	node_330
+attn_output-9	MUL_MAT	HTP0	blk.9.attn_output.weight
+ffn_inp-9	ADD	HTP0	attn_output-9
+norm-9	RMS_NORM	HTP0	ffn_inp-9
+ffn_norm-9	MUL	HTP0	norm-9
+ffn_gate-9	MUL_MAT	HTP0	blk.9.ffn_gate.weight
+ffn_up-9	MUL_MAT	HTP0	blk.9.ffn_up.weight
+ffn_swiglu-9	GLU	HTP0	ffn_gate-9
+ffn_out-9	MUL_MAT	HTP0	blk.9.ffn_down.weight
+l_out-9	ADD	HTP0	ffn_out-9
+norm-10	RMS_NORM	HTP0	l_out-9
+attn_norm-10	MUL	HTP0	norm-10
+Qcur-10	MUL_MAT	HTP0	blk.10.attn_q.weight
+Vcur-10	MUL_MAT	HTP0	blk.10.attn_v.weight
+Kcur-10	MUL_MAT	HTP0	blk.10.attn_k.weight
+Qcur-10	ADD	HTP0	Qcur-10
+Qcur-10	RESHAPE	HTP0	Qcur-10
+Vcur-10	ADD	HTP0	Vcur-10
+Vcur-10	RESHAPE	HTP0	Vcur-10
+Kcur-10	ADD	HTP0	Kcur-10
+Kcur-10	RESHAPE	HTP0	Kcur-10
+Qcur-10	ROPE	CPU	CPU#Qcur-10#0
+Kcur-10	ROPE	CPU	CPU#Kcur-10#0
+Kcur-10 (view)	VIEW	CPU	Kcur-10
+cache_k_l10 (view)	SET_ROWS	CPU	Kcur-10 (view)
+Vcur-10 (view)	VIEW	HTP0	Vcur-10
+cache_v_l10 (view)	SET_ROWS	CPU	CPU#Vcur-10 (view)#0
+Qcur-10 (view)	VIEW	CPU	Qcur-10
+Qcur-10 (view) (permuted)	PERMUTE	CPU	Qcur-10 (view)
+cache_k_l10 (view)	VIEW	CPU	cache_k_l10
+cache_k_l10 (view) (permuted)	PERMUTE	CPU	cache_k_l10 (view)
+cache_v_l10 (view)	VIEW	CPU	cache_v_l10
+cache_v_l10 (view) (permuted)	PERMUTE	CPU	cache_v_l10 (view)
+node_364	FLASH_ATTN_EXT	CPU	Qcur-10 (view) (permuted)
+kqv_out-10	RESHAPE	CPU	node_364
+attn_output-10	MUL_MAT	HTP0	blk.10.attn_output.weight
+ffn_inp-10	ADD	HTP0	attn_output-10
+norm-10	RMS_NORM	HTP0	ffn_inp-10
+ffn_norm-10	MUL	HTP0	norm-10
+ffn_gate-10	MUL_MAT	HTP0	blk.10.ffn_gate.weight
+ffn_up-10	MUL_MAT	HTP0	blk.10.ffn_up.weight
+ffn_swiglu-10	GLU	HTP0	ffn_gate-10
+ffn_out-10	MUL_MAT	HTP0	blk.10.ffn_down.weight
+l_out-10	ADD	HTP0	ffn_out-10
+norm-11	RMS_NORM	HTP0	l_out-10
+attn_norm-11	MUL	HTP0	norm-11
+Qcur-11	MUL_MAT	HTP0	blk.11.attn_q.weight
+Vcur-11	MUL_MAT	HTP0	blk.11.attn_v.weight
+Kcur-11	MUL_MAT	HTP0	blk.11.attn_k.weight
+Qcur-11	ADD	HTP0	Qcur-11
+Qcur-11	RESHAPE	HTP0	Qcur-11
+Vcur-11	ADD	HTP0	Vcur-11
+Vcur-11	RESHAPE	HTP0	Vcur-11
+Kcur-11	ADD	HTP0	Kcur-11
+Kcur-11	RESHAPE	HTP0	Kcur-11
+Qcur-11	ROPE	CPU	CPU#Qcur-11#0
+Kcur-11	ROPE	CPU	CPU#Kcur-11#0
+Kcur-11 (view)	VIEW	CPU	Kcur-11
+cache_k_l11 (view)	SET_ROWS	CPU	Kcur-11 (view)
+Vcur-11 (view)	VIEW	HTP0	Vcur-11
+cache_v_l11 (view)	SET_ROWS	CPU	CPU#Vcur-11 (view)#0
+Qcur-11 (view)	VIEW	CPU	Qcur-11
+Qcur-11 (view) (permuted)	PERMUTE	CPU	Qcur-11 (view)
+cache_k_l11 (view)	VIEW	CPU	cache_k_l11
+cache_k_l11 (view) (permuted)	PERMUTE	CPU	cache_k_l11 (view)
+cache_v_l11 (view)	VIEW	CPU	cache_v_l11
+cache_v_l11 (view) (permuted)	PERMUTE	CPU	cache_v_l11 (view)
+node_398	FLASH_ATTN_EXT	CPU	Qcur-11 (view) (permuted)
+kqv_out-11	RESHAPE	CPU	node_398
+attn_output-11	MUL_MAT	HTP0	blk.11.attn_output.weight
+ffn_inp-11	ADD	HTP0	attn_output-11
+norm-11	RMS_NORM	HTP0	ffn_inp-11
+ffn_norm-11	MUL	HTP0	norm-11
+ffn_gate-11	MUL_MAT	HTP0	blk.11.ffn_gate.weight
+ffn_up-11	MUL_MAT	HTP0	blk.11.ffn_up.weight
+ffn_swiglu-11	GLU	HTP0	ffn_gate-11
+ffn_out-11	MUL_MAT	HTP0	blk.11.ffn_down.weight
+l_out-11	ADD	HTP0	ffn_out-11
+norm-12	RMS_NORM	HTP0	l_out-11
+attn_norm-12	MUL	HTP0	norm-12
+Qcur-12	MUL_MAT	HTP0	blk.12.attn_q.weight
+Vcur-12	MUL_MAT	HTP0	blk.12.attn_v.weight
+Kcur-12	MUL_MAT	HTP0	blk.12.attn_k.weight
+Qcur-12	ADD	HTP0	Qcur-12
+Qcur-12	RESHAPE	HTP0	Qcur-12
+Vcur-12	ADD	HTP0	Vcur-12
+Vcur-12	RESHAPE	HTP0	Vcur-12
+Kcur-12	ADD	HTP0	Kcur-12
+Kcur-12	RESHAPE	HTP0	Kcur-12
+Qcur-12	ROPE	CPU	CPU#Qcur-12#0
+Kcur-12	ROPE	CPU	CPU#Kcur-12#0
+Kcur-12 (view)	VIEW	CPU	Kcur-12
+cache_k_l12 (view)	SET_ROWS	CPU	Kcur-12 (view)
+Vcur-12 (view)	VIEW	HTP0	Vcur-12
+cache_v_l12 (view)	SET_ROWS	CPU	CPU#Vcur-12 (view)#0
+Qcur-12 (view)	VIEW	CPU	Qcur-12
+Qcur-12 (view) (permuted)	PERMUTE	CPU	Qcur-12 (view)
+cache_k_l12 (view)	VIEW	CPU	cache_k_l12
+cache_k_l12 (view) (permuted)	PERMUTE	CPU	cache_k_l12 (view)
+cache_v_l12 (view)	VIEW	CPU	cache_v_l12
+cache_v_l12 (view) (permuted)	PERMUTE	CPU	cache_v_l12 (view)
+node_432	FLASH_ATTN_EXT	CPU	Qcur-12 (view) (permuted)
+kqv_out-12	RESHAPE	CPU	node_432
+attn_output-12	MUL_MAT	HTP0	blk.12.attn_output.weight
+ffn_inp-12	ADD	HTP0	attn_output-12
+norm-12	RMS_NORM	HTP0	ffn_inp-12
+ffn_norm-12	MUL	HTP0	norm-12
+ffn_gate-12	MUL_MAT	HTP0	blk.12.ffn_gate.weight
+ffn_up-12	MUL_MAT	HTP0	blk.12.ffn_up.weight
+ffn_swiglu-12	GLU	HTP0	ffn_gate-12
+ffn_out-12	MUL_MAT	HTP0	blk.12.ffn_down.weight
+l_out-12	ADD	HTP0	ffn_out-12
+norm-13	RMS_NORM	HTP0	l_out-12
+attn_norm-13	MUL	HTP0	norm-13
+Qcur-13	MUL_MAT	HTP0	blk.13.attn_q.weight
+Vcur-13	MUL_MAT	HTP0	blk.13.attn_v.weight
+Kcur-13	MUL_MAT	HTP0	blk.13.attn_k.weight
+Qcur-13	ADD	HTP0	Qcur-13
+Qcur-13	RESHAPE	HTP0	Qcur-13
+Vcur-13	ADD	HTP0	Vcur-13
+Vcur-13	RESHAPE	HTP0	Vcur-13
+Kcur-13	ADD	HTP0	Kcur-13
+Kcur-13	RESHAPE	HTP0	Kcur-13
+Qcur-13	ROPE	CPU	CPU#Qcur-13#0
+Kcur-13	ROPE	CPU	CPU#Kcur-13#0
+Kcur-13 (view)	VIEW	CPU	Kcur-13
+cache_k_l13 (view)	SET_ROWS	CPU	Kcur-13 (view)
+Vcur-13 (view)	VIEW	HTP0	Vcur-13
+cache_v_l13 (view)	SET_ROWS	CPU	CPU#Vcur-13 (view)#0
+Qcur-13 (view)	VIEW	CPU	Qcur-13
+Qcur-13 (view) (permuted)	PERMUTE	CPU	Qcur-13 (view)
+cache_k_l13 (view)	VIEW	CPU	cache_k_l13
+cache_k_l13 (view) (permuted)	PERMUTE	CPU	cache_k_l13 (view)
+cache_v_l13 (view)	VIEW	CPU	cache_v_l13
+cache_v_l13 (view) (permuted)	PERMUTE	CPU	cache_v_l13 (view)
+node_466	FLASH_ATTN_EXT	CPU	Qcur-13 (view) (permuted)
+kqv_out-13	RESHAPE	CPU	node_466
+attn_output-13	MUL_MAT	HTP0	blk.13.attn_output.weight
+ffn_inp-13	ADD	HTP0	attn_output-13
+norm-13	RMS_NORM	HTP0	ffn_inp-13
+ffn_norm-13	MUL	HTP0	norm-13
+ffn_gate-13	MUL_MAT	HTP0	blk.13.ffn_gate.weight
+ffn_up-13	MUL_MAT	HTP0	blk.13.ffn_up.weight
+ffn_swiglu-13	GLU	HTP0	ffn_gate-13
+ffn_out-13	MUL_MAT	HTP0	blk.13.ffn_down.weight
+l_out-13	ADD	HTP0	ffn_out-13
+norm-14	RMS_NORM	HTP0	l_out-13
+attn_norm-14	MUL	HTP0	norm-14
+Qcur-14	MUL_MAT	HTP0	blk.14.attn_q.weight
+Vcur-14	MUL_MAT	HTP0	blk.14.attn_v.weight
+Kcur-14	MUL_MAT	HTP0	blk.14.attn_k.weight
+Qcur-14	ADD	HTP0	Qcur-14
+Qcur-14	RESHAPE	HTP0	Qcur-14
+Vcur-14	ADD	HTP0	Vcur-14
+Vcur-14	RESHAPE	HTP0	Vcur-14
+Kcur-14	ADD	HTP0	Kcur-14
+Kcur-14	RESHAPE	HTP0	Kcur-14
+Qcur-14	ROPE	CPU	CPU#Qcur-14#0
+Kcur-14	ROPE	CPU	CPU#Kcur-14#0
+Kcur-14 (view)	VIEW	CPU	Kcur-14
+cache_k_l14 (view)	SET_ROWS	CPU	Kcur-14 (view)
+Vcur-14 (view)	VIEW	HTP0	Vcur-14
+cache_v_l14 (view)	SET_ROWS	CPU	CPU#Vcur-14 (view)#0
+Qcur-14 (view)	VIEW	CPU	Qcur-14
+Qcur-14 (view) (permuted)	PERMUTE	CPU	Qcur-14 (view)
+cache_k_l14 (view)	VIEW	CPU	cache_k_l14
+cache_k_l14 (view) (permuted)	PERMUTE	CPU	cache_k_l14 (view)
+cache_v_l14 (view)	VIEW	CPU	cache_v_l14
+cache_v_l14 (view) (permuted)	PERMUTE	CPU	cache_v_l14 (view)
+node_500	FLASH_ATTN_EXT	CPU	Qcur-14 (view) (permuted)
+kqv_out-14	RESHAPE	CPU	node_500
+attn_output-14	MUL_MAT	HTP0	blk.14.attn_output.weight
+ffn_inp-14	ADD	HTP0	attn_output-14
+norm-14	RMS_NORM	HTP0	ffn_inp-14
+ffn_norm-14	MUL	HTP0	norm-14
+ffn_gate-14	MUL_MAT	HTP0	blk.14.ffn_gate.weight
+ffn_up-14	MUL_MAT	HTP0	blk.14.ffn_up.weight
+ffn_swiglu-14	GLU	HTP0	ffn_gate-14
+ffn_out-14	MUL_MAT	HTP0	blk.14.ffn_down.weight
+l_out-14	ADD	HTP0	ffn_out-14
+norm-15	RMS_NORM	HTP0	l_out-14
+attn_norm-15	MUL	HTP0	norm-15
+Qcur-15	MUL_MAT	HTP0	blk.15.attn_q.weight
+Vcur-15	MUL_MAT	HTP0	blk.15.attn_v.weight
+Kcur-15	MUL_MAT	HTP0	blk.15.attn_k.weight
+Qcur-15	ADD	HTP0	Qcur-15
+Qcur-15	RESHAPE	HTP0	Qcur-15
+Vcur-15	ADD	HTP0	Vcur-15
+Vcur-15	RESHAPE	HTP0	Vcur-15
+Kcur-15	ADD	HTP0	Kcur-15
+Kcur-15	RESHAPE	HTP0	Kcur-15
+Qcur-15	ROPE	CPU	CPU#Qcur-15#0
+Kcur-15	ROPE	CPU	CPU#Kcur-15#0
+Kcur-15 (view)	VIEW	CPU	Kcur-15
+cache_k_l15 (view)	SET_ROWS	CPU	Kcur-15 (view)
+Vcur-15 (view)	VIEW	HTP0	Vcur-15
+cache_v_l15 (view)	SET_ROWS	CPU	CPU#Vcur-15 (view)#0
+Qcur-15 (view)	VIEW	CPU	Qcur-15
+Qcur-15 (view) (permuted)	PERMUTE	CPU	Qcur-15 (view)
+cache_k_l15 (view)	VIEW	CPU	cache_k_l15
+cache_k_l15 (view) (permuted)	PERMUTE	CPU	cache_k_l15 (view)
+cache_v_l15 (view)	VIEW	CPU	cache_v_l15
+cache_v_l15 (view) (permuted)	PERMUTE	CPU	cache_v_l15 (view)
+node_534	FLASH_ATTN_EXT	CPU	Qcur-15 (view) (permuted)
+kqv_out-15	RESHAPE	CPU	node_534
+attn_output-15	MUL_MAT	HTP0	blk.15.attn_output.weight
+ffn_inp-15	ADD	HTP0	attn_output-15
+norm-15	RMS_NORM	HTP0	ffn_inp-15
+ffn_norm-15	MUL	HTP0	norm-15
+ffn_gate-15	MUL_MAT	HTP0	blk.15.ffn_gate.weight
+ffn_up-15	MUL_MAT	HTP0	blk.15.ffn_up.weight
+ffn_swiglu-15	GLU	HTP0	ffn_gate-15
+ffn_out-15	MUL_MAT	HTP0	blk.15.ffn_down.weight
+l_out-15	ADD	HTP0	ffn_out-15
+norm-16	RMS_NORM	HTP0	l_out-15
+attn_norm-16	MUL	HTP0	norm-16
+Qcur-16	MUL_MAT	HTP0	blk.16.attn_q.weight
+Vcur-16	MUL_MAT	HTP0	blk.16.attn_v.weight
+Kcur-16	MUL_MAT	HTP0	blk.16.attn_k.weight
+Qcur-16	ADD	HTP0	Qcur-16
+Qcur-16	RESHAPE	HTP0	Qcur-16
+Vcur-16	ADD	HTP0	Vcur-16
+Vcur-16	RESHAPE	HTP0	Vcur-16
+Kcur-16	ADD	HTP0	Kcur-16
+Kcur-16	RESHAPE	HTP0	Kcur-16
+Qcur-16	ROPE	CPU	CPU#Qcur-16#0
+Kcur-16	ROPE	CPU	CPU#Kcur-16#0
+Kcur-16 (view)	VIEW	CPU	Kcur-16
+cache_k_l16 (view)	SET_ROWS	CPU	Kcur-16 (view)
+Vcur-16 (view)	VIEW	HTP0	Vcur-16
+cache_v_l16 (view)	SET_ROWS	CPU	CPU#Vcur-16 (view)#0
+Qcur-16 (view)	VIEW	CPU	Qcur-16
+Qcur-16 (view) (permuted)	PERMUTE	CPU	Qcur-16 (view)
+cache_k_l16 (view)	VIEW	CPU	cache_k_l16
+cache_k_l16 (view) (permuted)	PERMUTE	CPU	cache_k_l16 (view)
+cache_v_l16 (view)	VIEW	CPU	cache_v_l16
+cache_v_l16 (view) (permuted)	PERMUTE	CPU	cache_v_l16 (view)
+node_568	FLASH_ATTN_EXT	CPU	Qcur-16 (view) (permuted)
+kqv_out-16	RESHAPE	CPU	node_568
+attn_output-16	MUL_MAT	HTP0	blk.16.attn_output.weight
+ffn_inp-16	ADD	HTP0	attn_output-16
+norm-16	RMS_NORM	HTP0	ffn_inp-16
+ffn_norm-16	MUL	HTP0	norm-16
+ffn_gate-16	MUL_MAT	HTP0	blk.16.ffn_gate.weight
+ffn_up-16	MUL_MAT	HTP0	blk.16.ffn_up.weight
+ffn_swiglu-16	GLU	HTP0	ffn_gate-16
+ffn_out-16	MUL_MAT	HTP0	blk.16.ffn_down.weight
+l_out-16	ADD	HTP0	ffn_out-16
+norm-17	RMS_NORM	HTP0	l_out-16
+attn_norm-17	MUL	HTP0	norm-17
+Qcur-17	MUL_MAT	HTP0	blk.17.attn_q.weight
+Vcur-17	MUL_MAT	HTP0	blk.17.attn_v.weight
+Kcur-17	MUL_MAT	HTP0	blk.17.attn_k.weight
+Qcur-17	ADD	HTP0	Qcur-17
+Qcur-17	RESHAPE	HTP0	Qcur-17
+Vcur-17	ADD	HTP0	Vcur-17
+Vcur-17	RESHAPE	HTP0	Vcur-17
+Kcur-17	ADD	HTP0	Kcur-17
+Kcur-17	RESHAPE	HTP0	Kcur-17
+Qcur-17	ROPE	CPU	CPU#Qcur-17#0
+Kcur-17	ROPE	CPU	CPU#Kcur-17#0
+Kcur-17 (view)	VIEW	CPU	Kcur-17
+cache_k_l17 (view)	SET_ROWS	CPU	Kcur-17 (view)
+Vcur-17 (view)	VIEW	HTP0	Vcur-17
+cache_v_l17 (view)	SET_ROWS	CPU	CPU#Vcur-17 (view)#0
+Qcur-17 (view)	VIEW	CPU	Qcur-17
+Qcur-17 (view) (permuted)	PERMUTE	CPU	Qcur-17 (view)
+cache_k_l17 (view)	VIEW	CPU	cache_k_l17
+cache_k_l17 (view) (permuted)	PERMUTE	CPU	cache_k_l17 (view)
+cache_v_l17 (view)	VIEW	CPU	cache_v_l17
+cache_v_l17 (view) (permuted)	PERMUTE	CPU	cache_v_l17 (view)
+node_602	FLASH_ATTN_EXT	CPU	Qcur-17 (view) (permuted)
+kqv_out-17	RESHAPE	CPU	node_602
+attn_output-17	MUL_MAT	HTP0	blk.17.attn_output.weight
+ffn_inp-17	ADD	HTP0	attn_output-17
+norm-17	RMS_NORM	HTP0	ffn_inp-17
+ffn_norm-17	MUL	HTP0	norm-17
+ffn_gate-17	MUL_MAT	HTP0	blk.17.ffn_gate.weight
+ffn_up-17	MUL_MAT	HTP0	blk.17.ffn_up.weight
+ffn_swiglu-17	GLU	HTP0	ffn_gate-17
+ffn_out-17	MUL_MAT	HTP0	blk.17.ffn_down.weight
+l_out-17	ADD	HTP0	ffn_out-17
+norm-18	RMS_NORM	HTP0	l_out-17
+attn_norm-18	MUL	HTP0	norm-18
+Qcur-18	MUL_MAT	HTP0	blk.18.attn_q.weight
+Vcur-18	MUL_MAT	HTP0	blk.18.attn_v.weight
+Kcur-18	MUL_MAT	HTP0	blk.18.attn_k.weight
+Qcur-18	ADD	HTP0	Qcur-18
+Qcur-18	RESHAPE	HTP0	Qcur-18
+Vcur-18	ADD	HTP0	Vcur-18
+Vcur-18	RESHAPE	HTP0	Vcur-18
+Kcur-18	ADD	HTP0	Kcur-18
+Kcur-18	RESHAPE	HTP0	Kcur-18
+Qcur-18	ROPE	CPU	CPU#Qcur-18#0
+Kcur-18	ROPE	CPU	CPU#Kcur-18#0
+Kcur-18 (view)	VIEW	CPU	Kcur-18
+cache_k_l18 (view)	SET_ROWS	CPU	Kcur-18 (view)
+Vcur-18 (view)	VIEW	HTP0	Vcur-18
+cache_v_l18 (view)	SET_ROWS	CPU	CPU#Vcur-18 (view)#0
+Qcur-18 (view)	VIEW	CPU	Qcur-18
+Qcur-18 (view) (permuted)	PERMUTE	CPU	Qcur-18 (view)
+cache_k_l18 (view)	VIEW	CPU	cache_k_l18
+cache_k_l18 (view) (permuted)	PERMUTE	CPU	cache_k_l18 (view)
+cache_v_l18 (view)	VIEW	CPU	cache_v_l18
+cache_v_l18 (view) (permuted)	PERMUTE	CPU	cache_v_l18 (view)
+node_636	FLASH_ATTN_EXT	CPU	Qcur-18 (view) (permuted)
+kqv_out-18	RESHAPE	CPU	node_636
+attn_output-18	MUL_MAT	HTP0	blk.18.attn_output.weight
+ffn_inp-18	ADD	HTP0	attn_output-18
+norm-18	RMS_NORM	HTP0	ffn_inp-18
+ffn_norm-18	MUL	HTP0	norm-18
+ffn_gate-18	MUL_MAT	HTP0	blk.18.ffn_gate.weight
+ffn_up-18	MUL_MAT	HTP0	blk.18.ffn_up.weight
+ffn_swiglu-18	GLU	HTP0	ffn_gate-18
+ffn_out-18	MUL_MAT	HTP0	blk.18.ffn_down.weight
+l_out-18	ADD	HTP0	ffn_out-18
+norm-19	RMS_NORM	HTP0	l_out-18
+attn_norm-19	MUL	HTP0	norm-19
+Qcur-19	MUL_MAT	HTP0	blk.19.attn_q.weight
+Vcur-19	MUL_MAT	HTP0	blk.19.attn_v.weight
+Kcur-19	MUL_MAT	HTP0	blk.19.attn_k.weight
+Qcur-19	ADD	HTP0	Qcur-19
+Qcur-19	RESHAPE	HTP0	Qcur-19
+Vcur-19	ADD	HTP0	Vcur-19
+Vcur-19	RESHAPE	HTP0	Vcur-19
+Kcur-19	ADD	HTP0	Kcur-19
+Kcur-19	RESHAPE	HTP0	Kcur-19
+Qcur-19	ROPE	CPU	CPU#Qcur-19#0
+Kcur-19	ROPE	CPU	CPU#Kcur-19#0
+Kcur-19 (view)	VIEW	CPU	Kcur-19
+cache_k_l19 (view)	SET_ROWS	CPU	Kcur-19 (view)
+Vcur-19 (view)	VIEW	HTP0	Vcur-19
+cache_v_l19 (view)	SET_ROWS	CPU	CPU#Vcur-19 (view)#0
+Qcur-19 (view)	VIEW	CPU	Qcur-19
+Qcur-19 (view) (permuted)	PERMUTE	CPU	Qcur-19 (view)
+cache_k_l19 (view)	VIEW	CPU	cache_k_l19
+cache_k_l19 (view) (permuted)	PERMUTE	CPU	cache_k_l19 (view)
+cache_v_l19 (view)	VIEW	CPU	cache_v_l19
+cache_v_l19 (view) (permuted)	PERMUTE	CPU	cache_v_l19 (view)
+node_670	FLASH_ATTN_EXT	CPU	Qcur-19 (view) (permuted)
+kqv_out-19	RESHAPE	CPU	node_670
+attn_output-19	MUL_MAT	HTP0	blk.19.attn_output.weight
+ffn_inp-19	ADD	HTP0	attn_output-19
+norm-19	RMS_NORM	HTP0	ffn_inp-19
+ffn_norm-19	MUL	HTP0	norm-19
+ffn_gate-19	MUL_MAT	HTP0	blk.19.ffn_gate.weight
+ffn_up-19	MUL_MAT	HTP0	blk.19.ffn_up.weight
+ffn_swiglu-19	GLU	HTP0	ffn_gate-19
+ffn_out-19	MUL_MAT	HTP0	blk.19.ffn_down.weight
+l_out-19	ADD	HTP0	ffn_out-19
+norm-20	RMS_NORM	HTP0	l_out-19
+attn_norm-20	MUL	HTP0	norm-20
+Qcur-20	MUL_MAT	HTP0	blk.20.attn_q.weight
+Vcur-20	MUL_MAT	HTP0	blk.20.attn_v.weight
+Kcur-20	MUL_MAT	HTP0	blk.20.attn_k.weight
+Qcur-20	ADD	HTP0	Qcur-20
+Qcur-20	RESHAPE	HTP0	Qcur-20
+Vcur-20	ADD	HTP0	Vcur-20
+Vcur-20	RESHAPE	HTP0	Vcur-20
+Kcur-20	ADD	HTP0	Kcur-20
+Kcur-20	RESHAPE	HTP0	Kcur-20
+Qcur-20	ROPE	CPU	CPU#Qcur-20#0
+Kcur-20	ROPE	CPU	CPU#Kcur-20#0
+Kcur-20 (view)	VIEW	CPU	Kcur-20
+cache_k_l20 (view)	SET_ROWS	CPU	Kcur-20 (view)
+Vcur-20 (view)	VIEW	HTP0	Vcur-20
+cache_v_l20 (view)	SET_ROWS	CPU	CPU#Vcur-20 (view)#0
+Qcur-20 (view)	VIEW	CPU	Qcur-20
+Qcur-20 (view) (permuted)	PERMUTE	CPU	Qcur-20 (view)
+cache_k_l20 (view)	VIEW	CPU	cache_k_l20
+cache_k_l20 (view) (permuted)	PERMUTE	CPU	cache_k_l20 (view)
+cache_v_l20 (view)	VIEW	CPU	cache_v_l20
+cache_v_l20 (view) (permuted)	PERMUTE	CPU	cache_v_l20 (view)
+node_704	FLASH_ATTN_EXT	CPU	Qcur-20 (view) (permuted)
+kqv_out-20	RESHAPE	CPU	node_704
+attn_output-20	MUL_MAT	HTP0	blk.20.attn_output.weight
+ffn_inp-20	ADD	HTP0	attn_output-20
+norm-20	RMS_NORM	HTP0	ffn_inp-20
+ffn_norm-20	MUL	HTP0	norm-20
+ffn_gate-20	MUL_MAT	HTP0	blk.20.ffn_gate.weight
+ffn_up-20	MUL_MAT	HTP0	blk.20.ffn_up.weight
+ffn_swiglu-20	GLU	HTP0	ffn_gate-20
+ffn_out-20	MUL_MAT	HTP0	blk.20.ffn_down.weight
+l_out-20	ADD	HTP0	ffn_out-20
+norm-21	RMS_NORM	HTP0	l_out-20
+attn_norm-21	MUL	HTP0	norm-21
+Qcur-21	MUL_MAT	HTP0	blk.21.attn_q.weight
+Vcur-21	MUL_MAT	HTP0	blk.21.attn_v.weight
+Kcur-21	MUL_MAT	HTP0	blk.21.attn_k.weight
+Qcur-21	ADD	HTP0	Qcur-21
+Qcur-21	RESHAPE	HTP0	Qcur-21
+Vcur-21	ADD	HTP0	Vcur-21
+Vcur-21	RESHAPE	HTP0	Vcur-21
+Kcur-21	ADD	HTP0	Kcur-21
+Kcur-21	RESHAPE	HTP0	Kcur-21
+Qcur-21	ROPE	CPU	CPU#Qcur-21#0
+Kcur-21	ROPE	CPU	CPU#Kcur-21#0
+Kcur-21 (view)	VIEW	CPU	Kcur-21
+cache_k_l21 (view)	SET_ROWS	CPU	Kcur-21 (view)
+Vcur-21 (view)	VIEW	HTP0	Vcur-21
+cache_v_l21 (view)	SET_ROWS	CPU	CPU#Vcur-21 (view)#0
+Qcur-21 (view)	VIEW	CPU	Qcur-21
+Qcur-21 (view) (permuted)	PERMUTE	CPU	Qcur-21 (view)
+cache_k_l21 (view)	VIEW	CPU	cache_k_l21
+cache_k_l21 (view) (permuted)	PERMUTE	CPU	cache_k_l21 (view)
+cache_v_l21 (view)	VIEW	CPU	cache_v_l21
+cache_v_l21 (view) (permuted)	PERMUTE	CPU	cache_v_l21 (view)
+node_738	FLASH_ATTN_EXT	CPU	Qcur-21 (view) (permuted)
+kqv_out-21	RESHAPE	CPU	node_738
+attn_output-21	MUL_MAT	HTP0	blk.21.attn_output.weight
+ffn_inp-21	ADD	HTP0	attn_output-21
+norm-21	RMS_NORM	HTP0	ffn_inp-21
+ffn_norm-21	MUL	HTP0	norm-21
+ffn_gate-21	MUL_MAT	HTP0	blk.21.ffn_gate.weight
+ffn_up-21	MUL_MAT	HTP0	blk.21.ffn_up.weight
+ffn_swiglu-21	GLU	HTP0	ffn_gate-21
+ffn_out-21	MUL_MAT	HTP0	blk.21.ffn_down.weight
+l_out-21	ADD	HTP0	ffn_out-21
+norm-22	RMS_NORM	HTP0	l_out-21
+attn_norm-22	MUL	HTP0	norm-22
+Qcur-22	MUL_MAT	HTP0	blk.22.attn_q.weight
+Vcur-22	MUL_MAT	HTP0	blk.22.attn_v.weight
+Kcur-22	MUL_MAT	HTP0	blk.22.attn_k.weight
+Qcur-22	ADD	HTP0	Qcur-22
+Qcur-22	RESHAPE	HTP0	Qcur-22
+Vcur-22	ADD	HTP0	Vcur-22
+Vcur-22	RESHAPE	HTP0	Vcur-22
+Kcur-22	ADD	HTP0	Kcur-22
+Kcur-22	RESHAPE	HTP0	Kcur-22
+Qcur-22	ROPE	CPU	CPU#Qcur-22#0
+Kcur-22	ROPE	CPU	CPU#Kcur-22#0
+Kcur-22 (view)	VIEW	CPU	Kcur-22
+cache_k_l22 (view)	SET_ROWS	CPU	Kcur-22 (view)
+Vcur-22 (view)	VIEW	HTP0	Vcur-22
+cache_v_l22 (view)	SET_ROWS	CPU	CPU#Vcur-22 (view)#0
+Qcur-22 (view)	VIEW	CPU	Qcur-22
+Qcur-22 (view) (permuted)	PERMUTE	CPU	Qcur-22 (view)
+cache_k_l22 (view)	VIEW	CPU	cache_k_l22
+cache_k_l22 (view) (permuted)	PERMUTE	CPU	cache_k_l22 (view)
+cache_v_l22 (view)	VIEW	CPU	cache_v_l22
+cache_v_l22 (view) (permuted)	PERMUTE	CPU	cache_v_l22 (view)
+node_772	FLASH_ATTN_EXT	CPU	Qcur-22 (view) (permuted)
+kqv_out-22	RESHAPE	CPU	node_772
+attn_output-22	MUL_MAT	HTP0	blk.22.attn_output.weight
+ffn_inp-22	ADD	HTP0	attn_output-22
+norm-22	RMS_NORM	HTP0	ffn_inp-22
+ffn_norm-22	MUL	HTP0	norm-22
+ffn_gate-22	MUL_MAT	HTP0	blk.22.ffn_gate.weight
+ffn_up-22	MUL_MAT	HTP0	blk.22.ffn_up.weight
+ffn_swiglu-22	GLU	HTP0	ffn_gate-22
+ffn_out-22	MUL_MAT	HTP0	blk.22.ffn_down.weight
+l_out-22	ADD	HTP0	ffn_out-22
+norm-23	RMS_NORM	HTP0	l_out-22
+attn_norm-23	MUL	HTP0	norm-23
+Qcur-23	MUL_MAT	HTP0	blk.23.attn_q.weight
+Vcur-23	MUL_MAT	HTP0	blk.23.attn_v.weight
+Kcur-23	MUL_MAT	HTP0	blk.23.attn_k.weight
+Qcur-23	ADD	HTP0	Qcur-23
+Qcur-23	RESHAPE	HTP0	Qcur-23
+Vcur-23	ADD	HTP0	Vcur-23
+Vcur-23	RESHAPE	HTP0	Vcur-23
+Kcur-23	ADD	HTP0	Kcur-23
+Kcur-23	RESHAPE	HTP0	Kcur-23
+Qcur-23	ROPE	CPU	CPU#Qcur-23#0
+Kcur-23	ROPE	CPU	CPU#Kcur-23#0
+Kcur-23 (view)	VIEW	CPU	Kcur-23
+cache_k_l23 (view)	SET_ROWS	CPU	Kcur-23 (view)
+Vcur-23 (view)	VIEW	HTP0	Vcur-23
+cache_v_l23 (view)	SET_ROWS	CPU	CPU#Vcur-23 (view)#0
+Qcur-23 (view)	VIEW	CPU	Qcur-23
+Qcur-23 (view) (permuted)	PERMUTE	CPU	Qcur-23 (view)
+cache_k_l23 (view)	VIEW	CPU	cache_k_l23
+cache_k_l23 (view) (permuted)	PERMUTE	CPU	cache_k_l23 (view)
+cache_v_l23 (view)	VIEW	CPU	cache_v_l23
+cache_v_l23 (view) (permuted)	PERMUTE	CPU	cache_v_l23 (view)
+node_806	FLASH_ATTN_EXT	CPU	Qcur-23 (view) (permuted)
+kqv_out-23	RESHAPE	CPU	node_806
+attn_output-23	MUL_MAT	HTP0	blk.23.attn_output.weight
+ffn_inp-23	ADD	HTP0	attn_output-23
+norm-23	RMS_NORM	HTP0	ffn_inp-23
+ffn_norm-23	MUL	HTP0	norm-23
+ffn_gate-23	MUL_MAT	HTP0	blk.23.ffn_gate.weight
+ffn_up-23	MUL_MAT	HTP0	blk.23.ffn_up.weight
+ffn_swiglu-23	GLU	HTP0	ffn_gate-23
+ffn_out-23	MUL_MAT	HTP0	blk.23.ffn_down.weight
+l_out-23	ADD	HTP0	ffn_out-23
+norm-24	RMS_NORM	HTP0	l_out-23
+attn_norm-24	MUL	HTP0	norm-24
+Qcur-24	MUL_MAT	HTP0	blk.24.attn_q.weight
+Vcur-24	MUL_MAT	HTP0	blk.24.attn_v.weight
+Kcur-24	MUL_MAT	HTP0	blk.24.attn_k.weight
+Qcur-24	ADD	HTP0	Qcur-24
+Qcur-24	RESHAPE	HTP0	Qcur-24
+Vcur-24	ADD	HTP0	Vcur-24
+Vcur-24	RESHAPE	HTP0	Vcur-24
+Kcur-24	ADD	HTP0	Kcur-24
+Kcur-24	RESHAPE	HTP0	Kcur-24
+Qcur-24	ROPE	CPU	CPU#Qcur-24#0
+Kcur-24	ROPE	CPU	CPU#Kcur-24#0
+Kcur-24 (view)	VIEW	CPU	Kcur-24
+cache_k_l24 (view)	SET_ROWS	CPU	Kcur-24 (view)
+Vcur-24 (view)	VIEW	HTP0	Vcur-24
+cache_v_l24 (view)	SET_ROWS	CPU	CPU#Vcur-24 (view)#0
+Qcur-24 (view)	VIEW	CPU	Qcur-24
+Qcur-24 (view) (permuted)	PERMUTE	CPU	Qcur-24 (view)
+cache_k_l24 (view)	VIEW	CPU	cache_k_l24
+cache_k_l24 (view) (permuted)	PERMUTE	CPU	cache_k_l24 (view)
+cache_v_l24 (view)	VIEW	CPU	cache_v_l24
+cache_v_l24 (view) (permuted)	PERMUTE	CPU	cache_v_l24 (view)
+node_840	FLASH_ATTN_EXT	CPU	Qcur-24 (view) (permuted)
+kqv_out-24	RESHAPE	CPU	node_840
+attn_output-24	MUL_MAT	HTP0	blk.24.attn_output.weight
+ffn_inp-24	ADD	HTP0	attn_output-24
+norm-24	RMS_NORM	HTP0	ffn_inp-24
+ffn_norm-24	MUL	HTP0	norm-24
+ffn_gate-24	MUL_MAT	HTP0	blk.24.ffn_gate.weight
+ffn_up-24	MUL_MAT	HTP0	blk.24.ffn_up.weight
+ffn_swiglu-24	GLU	HTP0	ffn_gate-24
+ffn_out-24	MUL_MAT	HTP0	blk.24.ffn_down.weight
+l_out-24	ADD	HTP0	ffn_out-24
+norm-25	RMS_NORM	HTP0	l_out-24
+attn_norm-25	MUL	HTP0	norm-25
+Qcur-25	MUL_MAT	HTP0	blk.25.attn_q.weight
+Vcur-25	MUL_MAT	HTP0	blk.25.attn_v.weight
+Kcur-25	MUL_MAT	HTP0	blk.25.attn_k.weight
+Qcur-25	ADD	HTP0	Qcur-25
+Qcur-25	RESHAPE	HTP0	Qcur-25
+Vcur-25	ADD	HTP0	Vcur-25
+Vcur-25	RESHAPE	HTP0	Vcur-25
+Kcur-25	ADD	HTP0	Kcur-25
+Kcur-25	RESHAPE	HTP0	Kcur-25
+Qcur-25	ROPE	CPU	CPU#Qcur-25#0
+Kcur-25	ROPE	CPU	CPU#Kcur-25#0
+Kcur-25 (view)	VIEW	CPU	Kcur-25
+cache_k_l25 (view)	SET_ROWS	CPU	Kcur-25 (view)
+Vcur-25 (view)	VIEW	HTP0	Vcur-25
+cache_v_l25 (view)	SET_ROWS	CPU	CPU#Vcur-25 (view)#0
+Qcur-25 (view)	VIEW	CPU	Qcur-25
+Qcur-25 (view) (permuted)	PERMUTE	CPU	Qcur-25 (view)
+cache_k_l25 (view)	VIEW	CPU	cache_k_l25
+cache_k_l25 (view) (permuted)	PERMUTE	CPU	cache_k_l25 (view)
+cache_v_l25 (view)	VIEW	CPU	cache_v_l25
+cache_v_l25 (view) (permuted)	PERMUTE	CPU	cache_v_l25 (view)
+node_874	FLASH_ATTN_EXT	CPU	Qcur-25 (view) (permuted)
+kqv_out-25	RESHAPE	CPU	node_874
+attn_output-25	MUL_MAT	HTP0	blk.25.attn_output.weight
+ffn_inp-25	ADD	HTP0	attn_output-25
+norm-25	RMS_NORM	HTP0	ffn_inp-25
+ffn_norm-25	MUL	HTP0	norm-25
+ffn_gate-25	MUL_MAT	HTP0	blk.25.ffn_gate.weight
+ffn_up-25	MUL_MAT	HTP0	blk.25.ffn_up.weight
+ffn_swiglu-25	GLU	HTP0	ffn_gate-25
+ffn_out-25	MUL_MAT	HTP0	blk.25.ffn_down.weight
+l_out-25	ADD	HTP0	ffn_out-25
+norm-26	RMS_NORM	HTP0	l_out-25
+attn_norm-26	MUL	HTP0	norm-26
+Qcur-26	MUL_MAT	HTP0	blk.26.attn_q.weight
+Vcur-26	MUL_MAT	HTP0	blk.26.attn_v.weight
+Kcur-26	MUL_MAT	HTP0	blk.26.attn_k.weight
+Qcur-26	ADD	HTP0	Qcur-26
+Qcur-26	RESHAPE	HTP0	Qcur-26
+Vcur-26	ADD	HTP0	Vcur-26
+Vcur-26	RESHAPE	HTP0	Vcur-26
+Kcur-26	ADD	HTP0	Kcur-26
+Kcur-26	RESHAPE	HTP0	Kcur-26
+Qcur-26	ROPE	CPU	CPU#Qcur-26#0
+Kcur-26	ROPE	CPU	CPU#Kcur-26#0
+Kcur-26 (view)	VIEW	CPU	Kcur-26
+cache_k_l26 (view)	SET_ROWS	CPU	Kcur-26 (view)
+Vcur-26 (view)	VIEW	HTP0	Vcur-26
+cache_v_l26 (view)	SET_ROWS	CPU	CPU#Vcur-26 (view)#0
+Qcur-26 (view)	VIEW	CPU	Qcur-26
+Qcur-26 (view) (permuted)	PERMUTE	CPU	Qcur-26 (view)
+cache_k_l26 (view)	VIEW	CPU	cache_k_l26
+cache_k_l26 (view) (permuted)	PERMUTE	CPU	cache_k_l26 (view)
+cache_v_l26 (view)	VIEW	CPU	cache_v_l26
+cache_v_l26 (view) (permuted)	PERMUTE	CPU	cache_v_l26 (view)
+node_908	FLASH_ATTN_EXT	CPU	Qcur-26 (view) (permuted)
+kqv_out-26	RESHAPE	CPU	node_908
+attn_output-26	MUL_MAT	HTP0	blk.26.attn_output.weight
+ffn_inp-26	ADD	HTP0	attn_output-26
+norm-26	RMS_NORM	HTP0	ffn_inp-26
+ffn_norm-26	MUL	HTP0	norm-26
+ffn_gate-26	MUL_MAT	HTP0	blk.26.ffn_gate.weight
+ffn_up-26	MUL_MAT	HTP0	blk.26.ffn_up.weight
+ffn_swiglu-26	GLU	HTP0	ffn_gate-26
+ffn_out-26	MUL_MAT	HTP0	blk.26.ffn_down.weight
+l_out-26	ADD	HTP0	ffn_out-26
+norm-27	RMS_NORM	HTP0	l_out-26
+attn_norm-27	MUL	HTP0	norm-27
+Qcur-27	MUL_MAT	HTP0	blk.27.attn_q.weight
+Vcur-27	MUL_MAT	HTP0	blk.27.attn_v.weight
+Kcur-27	MUL_MAT	HTP0	blk.27.attn_k.weight
+Qcur-27	ADD	HTP0	Qcur-27
+Qcur-27	RESHAPE	HTP0	Qcur-27
+Vcur-27	ADD	HTP0	Vcur-27
+Vcur-27	RESHAPE	HTP0	Vcur-27
+Kcur-27	ADD	HTP0	Kcur-27
+Kcur-27	RESHAPE	HTP0	Kcur-27
+Qcur-27	ROPE	CPU	CPU#Qcur-27#0
+Kcur-27	ROPE	CPU	CPU#Kcur-27#0
+Kcur-27 (view)	VIEW	CPU	Kcur-27
+cache_k_l27 (view)	SET_ROWS	CPU	Kcur-27 (view)
+Vcur-27 (view)	VIEW	HTP0	Vcur-27
+cache_v_l27 (view)	SET_ROWS	CPU	CPU#Vcur-27 (view)#0
+Qcur-27 (view)	VIEW	CPU	Qcur-27
+Qcur-27 (view) (permuted)	PERMUTE	CPU	Qcur-27 (view)
+cache_k_l27 (view)	VIEW	CPU	cache_k_l27
+cache_k_l27 (view) (permuted)	PERMUTE	CPU	cache_k_l27 (view)
+cache_v_l27 (view)	VIEW	CPU	cache_v_l27
+cache_v_l27 (view) (permuted)	PERMUTE	CPU	cache_v_l27 (view)
+node_942	FLASH_ATTN_EXT	CPU	Qcur-27 (view) (permuted)
+kqv_out-27	RESHAPE	CPU	node_942
+attn_output-27	MUL_MAT	HTP0	blk.27.attn_output.weight
+ffn_inp-27	ADD	HTP0	attn_output-27
+norm-27	RMS_NORM	HTP0	ffn_inp-27
+ffn_norm-27	MUL	HTP0	norm-27
+ffn_gate-27	MUL_MAT	HTP0	blk.27.ffn_gate.weight
+ffn_up-27	MUL_MAT	HTP0	blk.27.ffn_up.weight
+ffn_swiglu-27	GLU	HTP0	ffn_gate-27
+ffn_out-27	MUL_MAT	HTP0	blk.27.ffn_down.weight
+l_out-27	ADD	HTP0	ffn_out-27
+norm-28	RMS_NORM	HTP0	l_out-27
+attn_norm-28	MUL	HTP0	norm-28
+Qcur-28	MUL_MAT	HTP0	blk.28.attn_q.weight
+Vcur-28	MUL_MAT	HTP0	blk.28.attn_v.weight
+Kcur-28	MUL_MAT	HTP0	blk.28.attn_k.weight
+Qcur-28	ADD	HTP0	Qcur-28
+Qcur-28	RESHAPE	HTP0	Qcur-28
+Vcur-28	ADD	HTP0	Vcur-28
+Vcur-28	RESHAPE	HTP0	Vcur-28
+Kcur-28	ADD	HTP0	Kcur-28
+Kcur-28	RESHAPE	HTP0	Kcur-28
+Qcur-28	ROPE	CPU	CPU#Qcur-28#0
+Kcur-28	ROPE	CPU	CPU#Kcur-28#0
+Kcur-28 (view)	VIEW	CPU	Kcur-28
+cache_k_l28 (view)	SET_ROWS	CPU	Kcur-28 (view)
+Vcur-28 (view)	VIEW	HTP0	Vcur-28
+cache_v_l28 (view)	SET_ROWS	CPU	CPU#Vcur-28 (view)#0
+Qcur-28 (view)	VIEW	CPU	Qcur-28
+Qcur-28 (view) (permuted)	PERMUTE	CPU	Qcur-28 (view)
+cache_k_l28 (view)	VIEW	CPU	cache_k_l28
+cache_k_l28 (view) (permuted)	PERMUTE	CPU	cache_k_l28 (view)
+cache_v_l28 (view)	VIEW	CPU	cache_v_l28
+cache_v_l28 (view) (permuted)	PERMUTE	CPU	cache_v_l28 (view)
+node_976	FLASH_ATTN_EXT	CPU	Qcur-28 (view) (permuted)
+kqv_out-28	RESHAPE	CPU	node_976
+attn_output-28	MUL_MAT	HTP0	blk.28.attn_output.weight
+ffn_inp-28	ADD	HTP0	attn_output-28
+norm-28	RMS_NORM	HTP0	ffn_inp-28
+ffn_norm-28	MUL	HTP0	norm-28
+ffn_gate-28	MUL_MAT	HTP0	blk.28.ffn_gate.weight
+ffn_up-28	MUL_MAT	HTP0	blk.28.ffn_up.weight
+ffn_swiglu-28	GLU	HTP0	ffn_gate-28
+ffn_out-28	MUL_MAT	HTP0	blk.28.ffn_down.weight
+l_out-28	ADD	HTP0	ffn_out-28
+norm-29	RMS_NORM	HTP0	l_out-28
+attn_norm-29	MUL	HTP0	norm-29
+Qcur-29	MUL_MAT	HTP0	blk.29.attn_q.weight
+Vcur-29	MUL_MAT	HTP0	blk.29.attn_v.weight
+Kcur-29	MUL_MAT	HTP0	blk.29.attn_k.weight
+Qcur-29	ADD	HTP0	Qcur-29
+Qcur-29	RESHAPE	HTP0	Qcur-29
+Vcur-29	ADD	HTP0	Vcur-29
+Vcur-29	RESHAPE	HTP0	Vcur-29
+Kcur-29	ADD	HTP0	Kcur-29
+Kcur-29	RESHAPE	HTP0	Kcur-29
+Qcur-29	ROPE	CPU	CPU#Qcur-29#0
+Kcur-29	ROPE	CPU	CPU#Kcur-29#0
+Kcur-29 (view)	VIEW	CPU	Kcur-29
+cache_k_l29 (view)	SET_ROWS	CPU	Kcur-29 (view)
+Vcur-29 (view)	VIEW	HTP0	Vcur-29
+cache_v_l29 (view)	SET_ROWS	CPU	CPU#Vcur-29 (view)#0
+Qcur-29 (view)	VIEW	CPU	Qcur-29
+Qcur-29 (view) (permuted)	PERMUTE	CPU	Qcur-29 (view)
+cache_k_l29 (view)	VIEW	CPU	cache_k_l29
+cache_k_l29 (view) (permuted)	PERMUTE	CPU	cache_k_l29 (view)
+cache_v_l29 (view)	VIEW	CPU	cache_v_l29
+cache_v_l29 (view) (permuted)	PERMUTE	CPU	cache_v_l29 (view)
+node_1010	FLASH_ATTN_EXT	CPU	Qcur-29 (view) (permuted)
+kqv_out-29	RESHAPE	CPU	node_1010
+attn_output-29	MUL_MAT	HTP0	blk.29.attn_output.weight
+ffn_inp-29	ADD	HTP0	attn_output-29
+norm-29	RMS_NORM	HTP0	ffn_inp-29
+ffn_norm-29	MUL	HTP0	norm-29
+ffn_gate-29	MUL_MAT	HTP0	blk.29.ffn_gate.weight
+ffn_up-29	MUL_MAT	HTP0	blk.29.ffn_up.weight
+ffn_swiglu-29	GLU	HTP0	ffn_gate-29
+ffn_out-29	MUL_MAT	HTP0	blk.29.ffn_down.weight
+l_out-29	ADD	HTP0	ffn_out-29
+norm-30	RMS_NORM	HTP0	l_out-29
+attn_norm-30	MUL	HTP0	norm-30
+Qcur-30	MUL_MAT	HTP0	blk.30.attn_q.weight
+Vcur-30	MUL_MAT	HTP0	blk.30.attn_v.weight
+Kcur-30	MUL_MAT	HTP0	blk.30.attn_k.weight
+Qcur-30	ADD	HTP0	Qcur-30
+Qcur-30	RESHAPE	HTP0	Qcur-30
+Vcur-30	ADD	HTP0	Vcur-30
+Vcur-30	RESHAPE	HTP0	Vcur-30
+Kcur-30	ADD	HTP0	Kcur-30
+Kcur-30	RESHAPE	HTP0	Kcur-30
+Qcur-30	ROPE	CPU	CPU#Qcur-30#0
+Kcur-30	ROPE	CPU	CPU#Kcur-30#0
+Kcur-30 (view)	VIEW	CPU	Kcur-30
+cache_k_l30 (view)	SET_ROWS	CPU	Kcur-30 (view)
+Vcur-30 (view)	VIEW	HTP0	Vcur-30
+cache_v_l30 (view)	SET_ROWS	CPU	CPU#Vcur-30 (view)#0
+Qcur-30 (view)	VIEW	CPU	Qcur-30
+Qcur-30 (view) (permuted)	PERMUTE	CPU	Qcur-30 (view)
+cache_k_l30 (view)	VIEW	CPU	cache_k_l30
+cache_k_l30 (view) (permuted)	PERMUTE	CPU	cache_k_l30 (view)
+cache_v_l30 (view)	VIEW	CPU	cache_v_l30
+cache_v_l30 (view) (permuted)	PERMUTE	CPU	cache_v_l30 (view)
+node_1044	FLASH_ATTN_EXT	CPU	Qcur-30 (view) (permuted)
+kqv_out-30	RESHAPE	CPU	node_1044
+attn_output-30	MUL_MAT	HTP0	blk.30.attn_output.weight
+ffn_inp-30	ADD	HTP0	attn_output-30
+norm-30	RMS_NORM	HTP0	ffn_inp-30
+ffn_norm-30	MUL	HTP0	norm-30
+ffn_gate-30	MUL_MAT	HTP0	blk.30.ffn_gate.weight
+ffn_up-30	MUL_MAT	HTP0	blk.30.ffn_up.weight
+ffn_swiglu-30	GLU	HTP0	ffn_gate-30
+ffn_out-30	MUL_MAT	HTP0	blk.30.ffn_down.weight
+l_out-30	ADD	HTP0	ffn_out-30
+norm-31	RMS_NORM	HTP0	l_out-30
+attn_norm-31	MUL	HTP0	norm-31
+Qcur-31	MUL_MAT	HTP0	blk.31.attn_q.weight
+Vcur-31	MUL_MAT	HTP0	blk.31.attn_v.weight
+Kcur-31	MUL_MAT	HTP0	blk.31.attn_k.weight
+Qcur-31	ADD	HTP0	Qcur-31
+Qcur-31	RESHAPE	HTP0	Qcur-31
+Vcur-31	ADD	HTP0	Vcur-31
+Vcur-31	RESHAPE	HTP0	Vcur-31
+Kcur-31	ADD	HTP0	Kcur-31
+Kcur-31	RESHAPE	HTP0	Kcur-31
+Qcur-31	ROPE	CPU	CPU#Qcur-31#0
+Kcur-31	ROPE	CPU	CPU#Kcur-31#0
+Kcur-31 (view)	VIEW	CPU	Kcur-31
+cache_k_l31 (view)	SET_ROWS	CPU	Kcur-31 (view)
+Vcur-31 (view)	VIEW	HTP0	Vcur-31
+cache_v_l31 (view)	SET_ROWS	CPU	CPU#Vcur-31 (view)#0
+Qcur-31 (view)	VIEW	CPU	Qcur-31
+Qcur-31 (view) (permuted)	PERMUTE	CPU	Qcur-31 (view)
+cache_k_l31 (view)	VIEW	CPU	cache_k_l31
+cache_k_l31 (view) (permuted)	PERMUTE	CPU	cache_k_l31 (view)
+cache_v_l31 (view)	VIEW	CPU	cache_v_l31
+cache_v_l31 (view) (permuted)	PERMUTE	CPU	cache_v_l31 (view)
+node_1078	FLASH_ATTN_EXT	CPU	Qcur-31 (view) (permuted)
+kqv_out-31	RESHAPE	CPU	node_1078
+attn_output-31	MUL_MAT	HTP0	blk.31.attn_output.weight
+ffn_inp-31	ADD	HTP0	attn_output-31
+norm-31	RMS_NORM	HTP0	ffn_inp-31
+ffn_norm-31	MUL	HTP0	norm-31
+ffn_gate-31	MUL_MAT	HTP0	blk.31.ffn_gate.weight
+ffn_up-31	MUL_MAT	HTP0	blk.31.ffn_up.weight
+ffn_swiglu-31	GLU	HTP0	ffn_gate-31
+ffn_out-31	MUL_MAT	HTP0	blk.31.ffn_down.weight
+l_out-31	ADD	HTP0	ffn_out-31
+norm-32	RMS_NORM	HTP0	l_out-31
+attn_norm-32	MUL	HTP0	norm-32
+Qcur-32	MUL_MAT	HTP0	blk.32.attn_q.weight
+Vcur-32	MUL_MAT	HTP0	blk.32.attn_v.weight
+Kcur-32	MUL_MAT	HTP0	blk.32.attn_k.weight
+Qcur-32	ADD	HTP0	Qcur-32
+Qcur-32	RESHAPE	HTP0	Qcur-32
+Vcur-32	ADD	HTP0	Vcur-32
+Vcur-32	RESHAPE	HTP0	Vcur-32
+Kcur-32	ADD	HTP0	Kcur-32
+Kcur-32	RESHAPE	HTP0	Kcur-32
+Qcur-32	ROPE	CPU	CPU#Qcur-32#0
+Kcur-32	ROPE	CPU	CPU#Kcur-32#0
+Kcur-32 (view)	VIEW	CPU	Kcur-32
+cache_k_l32 (view)	SET_ROWS	CPU	Kcur-32 (view)
+Vcur-32 (view)	VIEW	HTP0	Vcur-32
+cache_v_l32 (view)	SET_ROWS	CPU	CPU#Vcur-32 (view)#0
+Qcur-32 (view)	VIEW	CPU	Qcur-32
+Qcur-32 (view) (permuted)	PERMUTE	CPU	Qcur-32 (view)
+cache_k_l32 (view)	VIEW	CPU	cache_k_l32
+cache_k_l32 (view) (permuted)	PERMUTE	CPU	cache_k_l32 (view)
+cache_v_l32 (view)	VIEW	CPU	cache_v_l32
+cache_v_l32 (view) (permuted)	PERMUTE	CPU	cache_v_l32 (view)
+node_1112	FLASH_ATTN_EXT	CPU	Qcur-32 (view) (permuted)
+kqv_out-32	RESHAPE	CPU	node_1112
+attn_output-32	MUL_MAT	HTP0	blk.32.attn_output.weight
+ffn_inp-32	ADD	HTP0	attn_output-32
+norm-32	RMS_NORM	HTP0	ffn_inp-32
+ffn_norm-32	MUL	HTP0	norm-32
+ffn_gate-32	MUL_MAT	HTP0	blk.32.ffn_gate.weight
+ffn_up-32	MUL_MAT	HTP0	blk.32.ffn_up.weight
+ffn_swiglu-32	GLU	HTP0	ffn_gate-32
+ffn_out-32	MUL_MAT	HTP0	blk.32.ffn_down.weight
+l_out-32	ADD	HTP0	ffn_out-32
+norm-33	RMS_NORM	HTP0	l_out-32
+attn_norm-33	MUL	HTP0	norm-33
+Qcur-33	MUL_MAT	HTP0	blk.33.attn_q.weight
+Vcur-33	MUL_MAT	HTP0	blk.33.attn_v.weight
+Kcur-33	MUL_MAT	HTP0	blk.33.attn_k.weight
+Qcur-33	ADD	HTP0	Qcur-33
+Qcur-33	RESHAPE	HTP0	Qcur-33
+Vcur-33	ADD	HTP0	Vcur-33
+Vcur-33	RESHAPE	HTP0	Vcur-33
+Kcur-33	ADD	HTP0	Kcur-33
+Kcur-33	RESHAPE	HTP0	Kcur-33
+Qcur-33	ROPE	CPU	CPU#Qcur-33#0
+Kcur-33	ROPE	CPU	CPU#Kcur-33#0
+Kcur-33 (view)	VIEW	CPU	Kcur-33
+cache_k_l33 (view)	SET_ROWS	CPU	Kcur-33 (view)
+Vcur-33 (view)	VIEW	HTP0	Vcur-33
+cache_v_l33 (view)	SET_ROWS	CPU	CPU#Vcur-33 (view)#0
+Qcur-33 (view)	VIEW	CPU	Qcur-33
+Qcur-33 (view) (permuted)	PERMUTE	CPU	Qcur-33 (view)
+cache_k_l33 (view)	VIEW	CPU	cache_k_l33
+cache_k_l33 (view) (permuted)	PERMUTE	CPU	cache_k_l33 (view)
+cache_v_l33 (view)	VIEW	CPU	cache_v_l33
+cache_v_l33 (view) (permuted)	PERMUTE	CPU	cache_v_l33 (view)
+node_1146	FLASH_ATTN_EXT	CPU	Qcur-33 (view) (permuted)
+kqv_out-33	RESHAPE	CPU	node_1146
+attn_output-33	MUL_MAT	HTP0	blk.33.attn_output.weight
+ffn_inp-33	ADD	HTP0	attn_output-33
+norm-33	RMS_NORM	HTP0	ffn_inp-33
+ffn_norm-33	MUL	HTP0	norm-33
+ffn_gate-33	MUL_MAT	HTP0	blk.33.ffn_gate.weight
+ffn_up-33	MUL_MAT	HTP0	blk.33.ffn_up.weight
+ffn_swiglu-33	GLU	HTP0	ffn_gate-33
+ffn_out-33	MUL_MAT	HTP0	blk.33.ffn_down.weight
+l_out-33	ADD	HTP0	ffn_out-33
+norm-34	RMS_NORM	HTP0	l_out-33
+attn_norm-34	MUL	HTP0	norm-34
+Qcur-34	MUL_MAT	HTP0	blk.34.attn_q.weight
+Vcur-34	MUL_MAT	HTP0	blk.34.attn_v.weight
+Kcur-34	MUL_MAT	HTP0	blk.34.attn_k.weight
+Qcur-34	ADD	HTP0	Qcur-34
+Qcur-34	RESHAPE	HTP0	Qcur-34
+Vcur-34	ADD	HTP0	Vcur-34
+Vcur-34	RESHAPE	HTP0	Vcur-34
+Kcur-34	ADD	HTP0	Kcur-34
+Kcur-34	RESHAPE	HTP0	Kcur-34
+Qcur-34	ROPE	CPU	CPU#Qcur-34#0
+Kcur-34	ROPE	CPU	CPU#Kcur-34#0
+Kcur-34 (view)	VIEW	CPU	Kcur-34
+cache_k_l34 (view)	SET_ROWS	CPU	Kcur-34 (view)
+Vcur-34 (view)	VIEW	HTP0	Vcur-34
+cache_v_l34 (view)	SET_ROWS	CPU	CPU#Vcur-34 (view)#0
+Qcur-34 (view)	VIEW	CPU	Qcur-34
+Qcur-34 (view) (permuted)	PERMUTE	CPU	Qcur-34 (view)
+cache_k_l34 (view)	VIEW	CPU	cache_k_l34
+cache_k_l34 (view) (permuted)	PERMUTE	CPU	cache_k_l34 (view)
+cache_v_l34 (view)	VIEW	CPU	cache_v_l34
+cache_v_l34 (view) (permuted)	PERMUTE	CPU	cache_v_l34 (view)
+node_1180	FLASH_ATTN_EXT	CPU	Qcur-34 (view) (permuted)
+kqv_out-34	RESHAPE	CPU	node_1180
+attn_output-34	MUL_MAT	HTP0	blk.34.attn_output.weight
+ffn_inp-34	ADD	HTP0	attn_output-34
+norm-34	RMS_NORM	HTP0	ffn_inp-34
+ffn_norm-34	MUL	HTP0	norm-34
+ffn_gate-34	MUL_MAT	HTP0	blk.34.ffn_gate.weight
+ffn_up-34	MUL_MAT	HTP0	blk.34.ffn_up.weight
+ffn_swiglu-34	GLU	HTP0	ffn_gate-34
+ffn_out-34	MUL_MAT	HTP0	blk.34.ffn_down.weight
+l_out-34	ADD	HTP0	ffn_out-34
+norm-35	RMS_NORM	HTP0	l_out-34
+attn_norm-35	MUL	HTP0	norm-35
+Qcur-35	MUL_MAT	HTP0	blk.35.attn_q.weight
+Vcur-35	MUL_MAT	HTP0	blk.35.attn_v.weight
+Kcur-35	MUL_MAT	HTP0	blk.35.attn_k.weight
+Qcur-35	ADD	HTP0	Qcur-35
+Qcur-35	RESHAPE	HTP0	Qcur-35
+Vcur-35	ADD	HTP0	Vcur-35
+Vcur-35	RESHAPE	HTP0	Vcur-35
+Kcur-35	ADD	HTP0	Kcur-35
+Kcur-35	RESHAPE	HTP0	Kcur-35
+Qcur-35	ROPE	CPU	CPU#Qcur-35#0
+Kcur-35	ROPE	CPU	CPU#Kcur-35#0
+Kcur-35 (view)	VIEW	CPU	Kcur-35
+cache_k_l35 (view)	SET_ROWS	CPU	Kcur-35 (view)
+Vcur-35 (view)	VIEW	HTP0	Vcur-35
+cache_v_l35 (view)	SET_ROWS	CPU	CPU#Vcur-35 (view)#0
+Qcur-35 (view)	VIEW	CPU	Qcur-35
+Qcur-35 (view) (permuted)	PERMUTE	CPU	Qcur-35 (view)
+cache_k_l35 (view)	VIEW	CPU	cache_k_l35
+cache_k_l35 (view) (permuted)	PERMUTE	CPU	cache_k_l35 (view)
+cache_v_l35 (view)	VIEW	CPU	cache_v_l35
+cache_v_l35 (view) (permuted)	PERMUTE	CPU	cache_v_l35 (view)
+node_1214	FLASH_ATTN_EXT	CPU	Qcur-35 (view) (permuted)
+kqv_out-35	RESHAPE	CPU	node_1214
+attn_output-35	MUL_MAT	HTP0	blk.35.attn_output.weight
+node_1217	GET_ROWS	HTP0	attn_output-35
+node_1218	GET_ROWS	HTP0	l_out-34
+ffn_inp-35	ADD	HTP0	node_1217
+norm-35	RMS_NORM	HTP0	ffn_inp-35
+ffn_norm-35	MUL	HTP0	norm-35
+ffn_gate-35	MUL_MAT	HTP0	blk.35.ffn_gate.weight
+ffn_up-35	MUL_MAT	HTP0	blk.35.ffn_up.weight
+ffn_swiglu-35	GLU	HTP0	ffn_gate-35
+ffn_out-35	MUL_MAT	HTP0	blk.35.ffn_down.weight
+l_out-35	ADD	HTP0	ffn_out-35
+norm	RMS_NORM	HTP0	l_out-35
+result_norm	MUL	HTP0	norm
+result_output	MUL_MAT	HTP0	token_embd.weight

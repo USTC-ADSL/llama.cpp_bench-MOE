@@ -1,0 +1,22 @@
+{
+  "command": "set -e\ntrap 'echo 1017600 > /sys/devices/system/cpu/cpufreq/policy6/scaling_min_freq\necho 4320000 > /sys/devices/system/cpu/cpufreq/policy6/scaling_max_freq\necho 1017600 > /sys/devices/system/cpu/cpufreq/policy6/scaling_min_freq' EXIT\necho 1017600 > /sys/devices/system/cpu/cpufreq/policy6/scaling_min_freq\necho 1401600 > /sys/devices/system/cpu/cpufreq/policy6/scaling_max_freq\necho 1401600 > /sys/devices/system/cpu/cpufreq/policy6/scaling_min_freq\ncd /data/local/tmp/dense-af-real-energy\nenv LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 GGML_HEXAGON_PROFILE=0 GGML_HEXAGON_TIMING=0 GGML_HEXAGON_POWER=nom GGML_HEXAGON_DCVS=0 timeout 240 taskset c0 ./dense-af-decode -m /data/local/tmp/models/Qwen2.5-3B-2K/ggml/weights.gguf --placement core-cpu --output core-cpu-audit --prompt 256 --steps 200 --audit\ncat /sys/devices/system/cpu/cpufreq/policy6/scaling_min_freq /sys/devices/system/cpu/cpufreq/policy6/scaling_max_freq /sys/devices/system/cpu/cpufreq/policy6/scaling_cur_freq",
+  "returncode": 0,
+  "cpu_khz": 1401600,
+  "before": "Current OPLUS Battery Service state:\n  Charger voltage : 4\n  Battery current : 69\n  ChargerTechnology: 0\n  ChargeFastCharger: false\n  PlugType: 0\n  UpdatesStopped: false\n  UsbHwStatus: 0\n  BatteryHwStatus: -2147483648\n  HwStatusIsSet: 1\n  BatteryIcStatus: -2147483648\n  IcStatusIsSet: 1\n\n  mUsbStatus: 0\n  PhoneTemp: -1023\n  ThermalFeatureOn: false\nCurrent Battery Service state:\n  AC powered: false\n  USB powered: false\n  Wireless powered: false\n  Dock powered: false\n  Max charging current: 0\n  Max charging voltage: 0\n  Charge counter: 2524000\n  status: 3\n  health: 2\n  present: true\n  level: 50\n  scale: 100\n  voltage: 3921\n  temperature: 292\n  technology: Li-ion\n  Charging state: 0\n  Charging policy: 0",
+  "after": "Current OPLUS Battery Service state:\n  Charger voltage : 4\n  Battery current : 69\n  ChargerTechnology: 0\n  ChargeFastCharger: false\n  PlugType: 0\n  UpdatesStopped: false\n  UsbHwStatus: 0\n  BatteryHwStatus: -2147483648\n  HwStatusIsSet: 1\n  BatteryIcStatus: -2147483648\n  IcStatusIsSet: 1\n\n  mUsbStatus: 0\n  PhoneTemp: -1023\n  ThermalFeatureOn: false\nCurrent Battery Service state:\n  AC powered: false\n  USB powered: false\n  Wireless powered: false\n  Dock powered: false\n  Max charging current: 0\n  Max charging voltage: 0\n  Charge counter: 2524000\n  status: 3\n  health: 2\n  present: true\n  level: 50\n  scale: 100\n  voltage: 3921\n  temperature: 292\n  technology: Li-ion\n  Charging state: 0\n  Charging policy: 0",
+  "results": [
+    {
+      "placement": "core-cpu",
+      "prompt_tokens": 256,
+      "decode_steps": 4,
+      "unique_nodes": 1230
+    }
+  ],
+  "host_seconds": 5.5408124923706055,
+  "control_readback": [
+    "1401600",
+    "1401600",
+    "1401600"
+  ],
+  "screen_on": true
+}

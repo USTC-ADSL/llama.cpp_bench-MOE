@@ -24,12 +24,17 @@ def integrate(samples):
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('directory', type=Path)
+    p.add_argument('--cases', nargs='+', choices=['mixed', 'core-cpu', 'npu-host1401', 'npu'],
+                   default=['mixed', 'npu-host1401', 'npu'])
+    p.add_argument('--candidate', choices=['mixed', 'core-cpu'], default='mixed')
     args = p.parse_args()
+    assert args.candidate in args.cases and len(set(args.cases)) == len(args.cases)
     base = args.directory
     out = base / 'analysis'
     out.mkdir(exist_ok=True)
     rows, all_tokens, all_prompts, traces = [], {}, {}, {}
-    for name, khz in [('mixed', 1401600), ('npu-host1401', 1401600), ('npu', 2649600)]:
+    for name in args.cases:
+        khz = 2649600 if name == 'npu' else 1401600
         d = json.loads((base / 'results' / (name + '-measure.json')).read_text())
         r, = d['results']
         assert d['returncode'] == 0 and d['screen_on'] and d['control_readback'] == [str(khz)] * 3
@@ -72,16 +77,16 @@ def main():
                              half_drift_pct=100*(integrate(last)-integrate(first))/(duration/2)/avg,
                              full_window_read_overhead_pct=w['read_seconds']/w['seconds']*100,
                              temp_start_c=w['temp_start_c'], temp_end_c=w['temp_end_c']))
-    assert all(v == all_prompts['mixed'] for v in all_prompts.values())
+    assert all(v == all_prompts[args.candidate] for v in all_prompts.values())
     original = json.loads((base / 'results/original-state.json').read_text())
     restored = json.loads((base / 'results/restored-state.json').read_text())
     assert restored['/sys/power/wake_lock'] == ''
     assert all(v == original[k] for k, v in restored.items() if k != '/sys/power/wake_lock')
     comparisons = []
     for window in ['full200', 'tail100']:
-        mixed, = [r for r in rows if r['name'] == 'mixed' and r['window'] == window]
-        for baseline in [r for r in rows if r['name'] != 'mixed' and r['window'] == window]:
-            comparisons.append(dict(window=window, baseline=baseline['name'],
+        mixed, = [r for r in rows if r['name'] == args.candidate and r['window'] == window]
+        for baseline in [r for r in rows if r['name'] != args.candidate and r['window'] == window]:
+            comparisons.append(dict(window=window, candidate=args.candidate, baseline=baseline['name'],
                                     mixed_j_per_token=mixed['joules_per_token'], baseline_j_per_token=baseline['joules_per_token'],
                                     energy_saving_pct=100*(1-mixed['joules_per_token']/baseline['joules_per_token']),
                                     energy_change_j_per_token=mixed['joules_per_token']-baseline['joules_per_token'],
@@ -93,14 +98,15 @@ def main():
             break
         common_prefix += 1
     summary = dict(results=rows, comparisons=comparisons,
-                   identical_generated_tokens=all(v == all_tokens['mixed'] for v in all_tokens.values()),
+                   identical_generated_tokens=all(v == all_tokens[args.candidate] for v in all_tokens.values()),
                    common_prefix_generated_tokens=common_prefix,
-                   npu_host_sequences_identical=all_tokens['npu'] == all_tokens['npu-host1401'],
+                   npu_host_sequences_identical=(all_tokens['npu'] == all_tokens['npu-host1401']
+                                                if 'npu' in all_tokens and 'npu-host1401' in all_tokens else None),
                    generated_token_count=201, identical_prompt_tokens=256,
                    notes=['Whole-device screen-on energy; pack voltage approximated by twice the reported cell voltage.',
                           'Tail100 is after 100 continuous real decode steps and covers past KV356 through455.',
                           'One run per configuration; battery telemetry updates about once per second. No confidence intervals.',
-                          'Positive energy_saving_pct means mixed saves energy; negative means mixed uses more.'])
+                          'Positive energy_saving_pct means the candidate saves energy; negative means it uses more.'])
     (out / 'summary.json').write_text(json.dumps(summary, indent=2)+'\n')
     with (out / 'results.csv').open('w') as f:
         writer = csv.DictWriter(f, fieldnames=list(rows[0]), lineterminator='\n')
@@ -110,13 +116,16 @@ def main():
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     fig, axes = plt.subplots(1, 2, figsize=(12, 4.7), layout='constrained')
-    colors = ['#b83c60', '#477cb0', '#219366']
-    names = ['mixed', 'npu-host1401', 'npu']
-    labels = ['CPU A + NPU F\nCPU 1.4016 GHz', 'All NPU\nHost 1.4016 GHz', 'All NPU\nHost 2.6496 GHz']
+    colors = ['#b83c60', '#477cb0', '#219366', '#b58026']
+    names = args.cases
+    label_map = {'mixed': 'CPU A + NPU F\nCPU 1.4016 GHz',
+                 'core-cpu': 'CPU attention core\nNPU projections + FFN',
+                 'npu-host1401': 'All NPU\nHost 1.4016 GHz', 'npu': 'All NPU\nHost 2.6496 GHz'}
+    labels = [label_map[name] for name in names]
     tail = [next(r for r in rows if r['name'] == n and r['window'] == 'tail100') for n in names]
-    bars = axes[0].bar(range(3), [r['joules_per_token'] for r in tail], color=colors, width=.65)
+    bars = axes[0].bar(range(len(names)), [r['joules_per_token'] for r in tail], color=colors, width=.65)
     axes[0].bar_label(bars, fmt='%.4f', padding=4)
-    axes[0].set_xticks(range(3), labels, fontsize=8)
+    axes[0].set_xticks(range(len(names)), labels, fontsize=8)
     axes[0].set_ylabel('Whole-device energy (J / generated token)')
     axes[0].set_ylim(0, max(r['joules_per_token'] for r in tail)*1.2)
     axes[0].grid(axis='y', alpha=.2); axes[0].set_axisbelow(True)

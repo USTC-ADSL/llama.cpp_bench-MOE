@@ -63,7 +63,8 @@ llama_model_qwen2::graph::graph(const llama_model & model, const llm_graph_param
     // are supplied by dense-af-decode; explicitly pin all block operations so
     // scheduler heuristics cannot move attention norms or FA to the FFN device.
     const char * af_env = std::getenv("LLAMA_QWEN2_CPU_ATTENTION");
-    const bool cpu_attention = af_env && std::strcmp(af_env, "1") == 0;
+    const bool cpu_attention_core = af_env && std::strcmp(af_env, "core") == 0;
+    const bool cpu_attention = cpu_attention_core || (af_env && std::strcmp(af_env, "1") == 0);
     if (cpu_attention) {
         GGML_ASSERT(!cparams.offload_kqv);
     }
@@ -84,6 +85,10 @@ llama_model_qwen2::graph::graph(const llama_model & model, const llm_graph_param
     ggml_tensor * inpL;
 
     inpL = build_inp_embd(model.tok_embd);
+    if (cpu_attention_core) {
+        // Keep the embedding outside the explicitly pinned NPU projection range.
+        ggml_build_forward_expand(gf, inpL);
+    }
 
     // inp_pos - contains the positions
     ggml_tensor * inp_pos = build_inp_pos();
@@ -94,6 +99,18 @@ llama_model_qwen2::graph::graph(const llama_model & model, const llm_graph_param
 
     for (int il = 0; il < n_layer; ++il) {
         const int attention_first = ggml_graph_n_nodes(gf);
+        int projection_first = attention_first;
+        ggml_backend_t layer_backend = nullptr;
+        if (cpu_attention) {
+            for (int i = 0; i < ggml_backend_sched_get_n_backends(sched); ++i) {
+                auto * backend = ggml_backend_sched_get_backend(sched, i);
+                if (ggml_backend_get_device(backend) == model.dev_layer(il)) {
+                    layer_backend = backend;
+                    break;
+                }
+            }
+            GGML_ASSERT(layer_backend);
+        }
         ggml_tensor * inpSA = inpL;
 
         // norm
@@ -107,6 +124,14 @@ llama_model_qwen2::graph::graph(const llama_model & model, const llm_graph_param
             // compute Q and K and RoPE them
             auto [Qcur, Kcur, Vcur] = build_qkv(model.layers[il], cur,
                     n_embd_head, n_head, n_head_kv, il);
+
+            if (cpu_attention_core) {
+                // Norm and all projection/bias operations stay with NPU weights.
+                pin_new_nodes(attention_first, Qcur, layer_backend);
+                pin_new_nodes(attention_first, Vcur, layer_backend);
+                pin_new_nodes(attention_first, Kcur, layer_backend);
+            }
+            const int core_first = ggml_graph_n_nodes(gf);
 
             Qcur = ggml_rope_ext(
                     ctx0, Qcur, inp_pos, nullptr,
@@ -124,9 +149,21 @@ llama_model_qwen2::graph::graph(const llama_model & model, const llm_graph_param
             cb(Kcur, "Kcur", il);
             cb(Vcur, "Vcur", il);
 
-            cur = build_attn(inp_attn,
-                    model.layers[il].wo, model.layers[il].wo_b, model.layers[il].wo_s,
-                    Qcur, Kcur, Vcur, nullptr, nullptr, nullptr, 1.0f/sqrtf(float(n_embd_head)), il);
+            if (cpu_attention_core) {
+                cur = build_attn(inp_attn, nullptr, nullptr, nullptr,
+                        Qcur, Kcur, Vcur, nullptr, nullptr, nullptr, 1.0f/sqrtf(float(n_embd_head)), il);
+                pin_new_nodes(core_first, cur, backend_cpu);
+                projection_first = ggml_graph_n_nodes(gf);
+                cur = build_lora_mm(model.layers[il].wo, cur, model.layers[il].wo_s);
+                if (model.layers[il].wo_b) {
+                    cur = ggml_add(ctx0, cur, model.layers[il].wo_b);
+                }
+                cb(cur, "attn_output", il);
+            } else {
+                cur = build_attn(inp_attn,
+                        model.layers[il].wo, model.layers[il].wo_b, model.layers[il].wo_s,
+                        Qcur, Kcur, Vcur, nullptr, nullptr, nullptr, 1.0f/sqrtf(float(n_embd_head)), il);
+            }
         }
         if (il == n_layer - 1 && inp_out_ids) {
             cur   = ggml_get_rows(ctx0,   cur, inp_out_ids);
@@ -136,7 +173,7 @@ llama_model_qwen2::graph::graph(const llama_model & model, const llm_graph_param
         cb(ffn_inp, "ffn_inp", il);
 
         if (cpu_attention) {
-            pin_new_nodes(attention_first, ffn_inp, backend_cpu);
+            pin_new_nodes(projection_first, ffn_inp, cpu_attention_core ? layer_backend : backend_cpu);
         }
         const int ffn_first = ggml_graph_n_nodes(gf);
 
@@ -160,15 +197,7 @@ llama_model_qwen2::graph::graph(const llama_model & model, const llm_graph_param
         cb(cur, "l_out", il);
 
         if (cpu_attention) {
-            ggml_backend_t ffn_backend = nullptr;
-            for (int i = 0; i < ggml_backend_sched_get_n_backends(sched); ++i) {
-                auto * backend = ggml_backend_sched_get_backend(sched, i);
-                if (ggml_backend_get_device(backend) == model.dev_layer(il)) {
-                    ffn_backend = backend;
-                    break;
-                }
-            }
-            pin_new_nodes(ffn_first, cur, ffn_backend);
+            pin_new_nodes(ffn_first, cur, layer_backend);
         }
 
         // input for next layer
