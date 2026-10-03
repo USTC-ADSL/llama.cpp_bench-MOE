@@ -1,0 +1,122 @@
+{
+  "device": "CPU",
+  "serial": "192.168.50.178:43879",
+  "model": "/data/local/tmp/models/Qwen2.5-3B-2K/ggml/weights.gguf",
+  "command": "cd /data/local/tmp/dense-layer-energy\nenv -u GGML_HEXAGON_POWER -u GGML_HEXAGON_DCVS -u GGML_HEXAGON_TIMING -u GGML_OPENCL_Q4_0_DENSE_DP4A LD_LIBRARY_PATH=. ADSP_LIBRARY_PATH=. GGML_HEXAGON_DEVICES=1 GGML_HEXAGON_PROFILE=0 DENSE_AF_CLOCKS=1 timeout 600 taskset c0 ./dense-af-bench -m /data/local/tmp/models/Qwen2.5-3B-2K/ggml/weights.gguf --device CPU --whole-layer --prompt 1 --past 256 --layers 0,17,35 --stage both --flash 1 --threads 2 --warmup 3 --reps 5 --reference reference --power-seconds 0.0 --power-settle-seconds 0.0 --current-to-a 0.001 --write-reference",
+  "started_unix": 1791016733.5466554,
+  "before": "Current OPLUS Battery Service state:\n  Charger voltage : 9\n  Battery current : 88\n  ChargerTechnology: 0\n  ChargeFastCharger: false\n  PlugType: 0\n  UpdatesStopped: false\n  UsbHwStatus: 0\n  BatteryHwStatus: -2147483648\n  HwStatusIsSet: 1\n  BatteryIcStatus: -2147483648\n  IcStatusIsSet: 1\n\n  mUsbStatus: 0\n  PhoneTemp: -1023\n  ThermalFeatureOn: false\nCurrent Battery Service state:\n  AC powered: false\n  USB powered: false\n  Wireless powered: false\n  Dock powered: false\n  Max charging current: 0\n  Max charging voltage: 0\n  Charge counter: 4032000\n  status: 3\n  health: 2\n  present: true\n  level: 79\n  scale: 100\n  voltage: 4200\n  temperature: 306\n  technology: Li-ion\n  Charging state: 0\n  Charging policy: 0",
+  "results": [
+    {
+      "device": "CPU",
+      "prompt": 1,
+      "past": 256,
+      "kv_tokens": 512,
+      "layer": 0,
+      "block": "layer",
+      "flash": 1,
+      "threads": 2,
+      "nodes": 33,
+      "weight_buffer": "CPU_REPACK",
+      "f32_reference": false,
+      "relative_rms": -1.0,
+      "max_abs": -1.0,
+      "compute_ms": [
+        0.727,
+        0.75,
+        0.751,
+        0.732,
+        0.739
+      ],
+      "upload_ms": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "download_ms": [
+        0.0,
+        0.0,
+        0.001,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "device": "CPU",
+      "prompt": 1,
+      "past": 256,
+      "kv_tokens": 512,
+      "layer": 17,
+      "block": "layer",
+      "flash": 1,
+      "threads": 2,
+      "nodes": 33,
+      "weight_buffer": "CPU_REPACK",
+      "f32_reference": false,
+      "relative_rms": -1.0,
+      "max_abs": -1.0,
+      "compute_ms": [
+        0.847,
+        0.841,
+        0.821,
+        0.779,
+        0.773
+      ],
+      "upload_ms": [
+        0.0,
+        0.001,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "download_ms": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "device": "CPU",
+      "prompt": 1,
+      "past": 256,
+      "kv_tokens": 512,
+      "layer": 35,
+      "block": "layer",
+      "flash": 1,
+      "threads": 2,
+      "nodes": 33,
+      "weight_buffer": "CPU_REPACK",
+      "f32_reference": false,
+      "relative_rms": -1.0,
+      "max_abs": -1.0,
+      "compute_ms": [
+        0.829,
+        0.777,
+        0.818,
+        0.811,
+        0.83
+      ],
+      "upload_ms": [
+        0.001,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "download_ms": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "returncode": 0,
+  "after": "Current OPLUS Battery Service state:\n  Charger voltage : 9\n  Battery current : 88\n  ChargerTechnology: 0\n  ChargeFastCharger: false\n  PlugType: 0\n  UpdatesStopped: false\n  UsbHwStatus: 0\n  BatteryHwStatus: -2147483648\n  HwStatusIsSet: 1\n  BatteryIcStatus: -2147483648\n  IcStatusIsSet: 1\n\n  mUsbStatus: 0\n  PhoneTemp: -1023\n  ThermalFeatureOn: false\nCurrent Battery Service state:\n  AC powered: false\n  USB powered: false\n  Wireless powered: false\n  Dock powered: false\n  Max charging current: 0\n  Max charging voltage: 0\n  Charge counter: 4032000\n  status: 3\n  health: 2\n  present: true\n  level: 79\n  scale: 100\n  voltage: 4200\n  temperature: 306\n  technology: Li-ion\n  Charging state: 0\n  Charging policy: 0",
+  "elapsed_host_s": 1.6644070148468018,
+  "screen_on": true
+}

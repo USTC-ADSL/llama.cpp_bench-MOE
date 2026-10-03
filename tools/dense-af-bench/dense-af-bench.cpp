@@ -138,7 +138,9 @@ struct block {
     std::string weight_buffer;
     std::vector<float> input_data;
 
-    block(model & m, ggml_backend_t backend, int layer, int prompt, int past, bool attention, bool flash, bool f32_reference) {
+    block(model & m, ggml_backend_t backend, int layer, int prompt, int past, bool attention, bool flash,
+          bool f32_reference, bool whole_layer = false) {
+        require(!whole_layer || attention, "whole layer requires attention input");
         auto c = graph.ctx;
         // llama_kv_cache::get_n_kv also pads used cache rows to multiples of 256.
         kv_tokens = attention ? (past > 0 ? ((past + prompt + 255) / 256) * 256 : prompt) : 0;
@@ -241,7 +243,17 @@ struct block {
             cur = named(ggml_swiglu_split(c, gate, up), "swiglu");
             cur = named(ggml_mul_mat(c, weight("ffn_down.weight"), cur), "ffn_down");
         }
-        output = named(ggml_add(c, cur, input), "block_output");
+        cur = ggml_add(c, cur, input);
+        if (whole_layer) {
+            auto residual = named(cur, "attention_residual");
+            auto ffn_norm = named(ggml_mul(c, ggml_rms_norm(c, residual, m.eps), weight("ffn_norm.weight")), "ffn_norm");
+            auto up = named(ggml_mul_mat(c, weight("ffn_up.weight"), ffn_norm), "ffn_up");
+            auto gate = named(ggml_mul_mat(c, weight("ffn_gate.weight"), ffn_norm), "ffn_gate");
+            auto activated = named(ggml_swiglu_split(c, gate, up), "swiglu");
+            cur = named(ggml_mul_mat(c, weight("ffn_down.weight"), activated), "ffn_down");
+            cur = ggml_add(c, cur, residual);
+        }
+        output = named(cur, "block_output");
         ggml_set_output(output);
         ggml_build_forward_expand(gf, output);
         graph.buffer = ggml_backend_alloc_ctx_tensors(c, backend);
@@ -307,7 +319,7 @@ int main(int argc, char ** argv) {
         double power_seconds = 0, power_settle = 5, idle_seconds = 0, current_to_a = 0;
         std::string battery_dir = "/sys/class/power_supply/battery";
         bool flash = false, write_reference = false, f32_reference = false;
-        bool resident = false;
+        bool resident = false, whole_layer = false;
         std::string ffn_device;
         std::string handoff = "none";
         for (int i = 1; i < argc; ++i) {
@@ -319,6 +331,7 @@ int main(int argc, char ** argv) {
                        "  [--threads 8] [--reps 7] [--warmup 2]\n"
                        "  [--resident] [--ffn-device CPU|GPUOpenCL|HTP0] (all layers resident, fixed independent inputs)\n"
                        "  [--handoff none|chain|frozen] (resident only; frozen uses precomputed chain inputs)\n"
+                       "  [--whole-layer] (one complete Attention + FFN graph per layer; not resident)\n"
                        "  [--reference DIR] [--write-reference] [--f32-reference]\n"
                        "  [--power-seconds 12] [--power-settle-seconds 5] [--current-to-a 0.001]\n"
                        "  [--battery-dir PATH] [--power-idle-seconds 12] (idle-only, no model needed)\n");
@@ -327,6 +340,7 @@ int main(int argc, char ** argv) {
             if (a == "--write-reference") { write_reference = true; continue; }
             if (a == "--f32-reference") { f32_reference = true; continue; }
             if (a == "--resident") { resident = true; continue; }
+            if (a == "--whole-layer") { whole_layer = true; continue; }
             require(i + 1 < argc, "missing value for " + a);
             std::string v = argv[++i];
             if      (a == "-m")          { path = v; }
@@ -362,6 +376,7 @@ int main(int argc, char ** argv) {
         }
         require(!path.empty() && (prompt == 1 || prompt == 64 || prompt == 256) && reps > 0 && warmup > 0 && threads > 0, "invalid arguments; see --help");
         require(stage == "both" || stage == "attention" || stage == "ffn", "invalid stage");
+        require(!whole_layer || (!resident && stage == "both"), "whole-layer requires stage both and non-resident mode");
         require(past >= 0 && past <= 32768 && (past == 0 || prompt == 1), "history requires prompt 1 and past <= 32768");
         require(!write_reference || (device == "CPU" && !reference.empty()), "write-reference requires CPU and reference directory");
         require(!f32_reference || (device == "CPU" && write_reference), "f32-reference is only for CPU reference generation");
@@ -406,9 +421,10 @@ int main(int argc, char ** argv) {
         for (int layer : layers) {
             require(layer >= 0 && layer < m.layers, "invalid layer");
             for (bool attention : {true, false}) {
-                const char * kind = attention ? "attention" : "ffn";
+                if (whole_layer && !attention) { continue; }
+                const char * kind = whole_layer ? "layer" : (attention ? "attention" : "ffn");
                 if (stage != "both" && stage != kind) { continue; }
-                block b(m, backend.get(), layer, prompt, past, attention, flash, f32_reference);
+                block b(m, backend.get(), layer, prompt, past, attention, flash, f32_reference, whole_layer);
                 const auto compute = [&]() {
                     require(ggml_backend_graph_compute(backend.get(), b.gf) == GGML_STATUS_SUCCESS, "compute failed");
                     ggml_backend_synchronize(backend.get());

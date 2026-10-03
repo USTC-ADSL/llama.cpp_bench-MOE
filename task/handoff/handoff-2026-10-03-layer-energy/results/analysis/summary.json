@@ -1,0 +1,74 @@
+{
+  "backends": [
+    {
+      "device": "CPU",
+      "measured_layers": [
+        0,
+        8,
+        17,
+        26,
+        35
+      ],
+      "mean_j": 0.008201650216887416,
+      "min_j": 0.00809790552715383,
+      "max_j": 0.008270421931646491,
+      "cv_pct": 0.736168381943767,
+      "range_pct": 2.1034352835170296,
+      "max_deviation_from_mean_pct": 1.264924582128271,
+      "fitted_layer1_to36_change_pct": 1.9743942468660025,
+      "charge_drop_uah": 10000.0,
+      "current_integral_uah": 6280.52731986111,
+      "charge_counter_to_current_ratio": 1.5922229919097213
+    },
+    {
+      "device": "GPUOpenCL",
+      "measured_layers": [
+        0,
+        8,
+        17,
+        26,
+        35
+      ],
+      "mean_j": 0.01078475745591275,
+      "min_j": 0.010685710738446898,
+      "max_j": 0.011030453419815345,
+      "cv_pct": 1.2278357044985007,
+      "range_pct": 3.1965733376733567,
+      "max_deviation_from_mean_pct": 2.278177927570291,
+      "fitted_layer1_to36_change_pct": 2.483336498806373,
+      "charge_drop_uah": 12000.0,
+      "current_integral_uah": 5193.372464861111,
+      "charge_counter_to_current_ratio": 2.3106372749486437
+    },
+    {
+      "device": "HTP0",
+      "measured_layers": [
+        0,
+        8,
+        17,
+        26,
+        35
+      ],
+      "mean_j": 0.009644245608354196,
+      "min_j": 0.009425204853622178,
+      "max_j": 0.009763218672810195,
+      "cv_pct": 1.241522129778755,
+      "range_pct": 3.5048238391525177,
+      "max_deviation_from_mean_pct": 2.271206723958558,
+      "fitted_layer1_to36_change_pct": 3.2055671517981885,
+      "charge_drop_uah": 12000.0,
+      "current_integral_uah": 5557.985447222222,
+      "charge_counter_to_current_ratio": 2.159055671151024
+    }
+  ],
+  "voltage_multiplier": 2.0,
+  "scope": "Whole-device screen-on joules per isolated complete layer invocation; fixed synthetic input and KV256.",
+  "notes": [
+    "Default DVFS; CPU affinity 6-7, two threads. Backend order CPU, GPUOpenCL, HTP0.",
+    "Each energy is that layer window mean power times window duration per invocation.",
+    "Interpolation is a visualization/estimate, not additional measured evidence.",
+    "The voltage multiplier is explicit; unscaled energy retained for recalibration.",
+    "Sequential measurements do not separate layer identity from temperature/time effects.",
+    "No repeated-run confidence interval; coefficient of variation is across selected layers."
+  ]
+}
