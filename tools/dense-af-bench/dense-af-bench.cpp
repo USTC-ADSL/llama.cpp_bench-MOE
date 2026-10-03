@@ -311,6 +311,7 @@ static void print_array(const char * name, const std::vector<double> & values) {
 }
 
 #include "resident-bench.h"
+#include "layer-chain-bench.h"
 
 int main(int argc, char ** argv) {
     try {
@@ -319,7 +320,7 @@ int main(int argc, char ** argv) {
         double power_seconds = 0, power_settle = 5, idle_seconds = 0, current_to_a = 0;
         std::string battery_dir = "/sys/class/power_supply/battery";
         bool flash = false, write_reference = false, f32_reference = false;
-        bool resident = false, whole_layer = false;
+        bool resident = false, whole_layer = false, layer_chain = false;
         std::string ffn_device;
         std::string handoff = "none";
         for (int i = 1; i < argc; ++i) {
@@ -332,6 +333,7 @@ int main(int argc, char ** argv) {
                        "  [--resident] [--ffn-device CPU|GPUOpenCL|HTP0] (all layers resident, fixed independent inputs)\n"
                        "  [--handoff none|chain|frozen] (resident only; frozen uses precomputed chain inputs)\n"
                        "  [--whole-layer] (one complete Attention + FFN graph per layer; not resident)\n"
+                       "  [--layer-chain] (same-backend single graph vs explicit whole-layer boundaries)\n"
                        "  [--reference DIR] [--write-reference] [--f32-reference]\n"
                        "  [--power-seconds 12] [--power-settle-seconds 5] [--current-to-a 0.001]\n"
                        "  [--battery-dir PATH] [--power-idle-seconds 12] (idle-only, no model needed)\n");
@@ -341,6 +343,7 @@ int main(int argc, char ** argv) {
             if (a == "--f32-reference") { f32_reference = true; continue; }
             if (a == "--resident") { resident = true; continue; }
             if (a == "--whole-layer") { whole_layer = true; continue; }
+            if (a == "--layer-chain") { layer_chain = true; continue; }
             require(i + 1 < argc, "missing value for " + a);
             std::string v = argv[++i];
             if      (a == "-m")          { path = v; }
@@ -377,6 +380,8 @@ int main(int argc, char ** argv) {
         require(!path.empty() && (prompt == 1 || prompt == 64 || prompt == 256) && reps > 0 && warmup > 0 && threads > 0, "invalid arguments; see --help");
         require(stage == "both" || stage == "attention" || stage == "ffn", "invalid stage");
         require(!whole_layer || (!resident && stage == "both"), "whole-layer requires stage both and non-resident mode");
+        require(!layer_chain || (!resident && !whole_layer && stage == "both" && reference.empty() && !f32_reference),
+                "layer-chain requires standalone stage both and native weights, with internal correctness checks");
         require(past >= 0 && past <= 32768 && (past == 0 || prompt == 1), "history requires prompt 1 and past <= 32768");
         require(!write_reference || (device == "CPU" && !reference.empty()), "write-reference requires CPU and reference directory");
         require(!f32_reference || (device == "CPU" && write_reference), "f32-reference is only for CPU reference generation");
@@ -411,6 +416,10 @@ int main(int argc, char ** argv) {
                 if (end == std::string::npos) { break; }
                 start = end + 1;
             } while (start < selection.size());
+        }
+        if (layer_chain) {
+            return run_layer_chain(m, backend.get(), layers, prompt, past, flash, threads, warmup, reps,
+                                   battery_dir, current_to_a, power_settle, power_seconds);
         }
         if (resident) {
             return run_resident(m, backend.get(), ffn_device, layers, prompt, past, flash, threads,

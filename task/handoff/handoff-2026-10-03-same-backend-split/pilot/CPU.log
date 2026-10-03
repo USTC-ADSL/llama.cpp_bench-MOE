@@ -1,0 +1,30 @@
+ggml_opencl: selected platform: 'QUALCOMM Snapdragon(TM)'
+
+ggml_opencl: device: 'QUALCOMM Adreno(TM) 830 (OpenCL 3.0 Adreno(TM) 830)'
+ggml_opencl: default device: 'QUALCOMM Adreno(TM) 830 (OpenCL 3.0 Adreno(TM) 830)'
+ggml-hex: Loading driver libcdsprpc.so
+ggml-hex: FASTRPC_GET_DOMAINS query failed (0x6c), using static CDSP domains
+ggml-hex: Profiling mode 0 : pmu-evt [ 0x3,0x111,0x100,0x105,0x240,0x256,0x7d,0x8c ]
+ggml-hex: Hexagon backend (experimental) : allocating new registry : ndev 1
+ggml-hex: Hexagon Arch version v79, DMA64 disabled
+ggml-hex: device 0: HTP0 (phys=0, virt=0, domain=cdsp:3)
+MODEL layers=36 embd=2048 ff=11008 heads=16 kv_heads=2 head_dim=128
+repack: repack tensor blk.0.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.0.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.0.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.0.attn_output.weight with q4_0_4x8
+repack: repack tensor blk.0.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.0.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.0.ffn_down.weight with q4_0_4x8
+LAYER_CHAIN loaded layer=0 weight-bytes=43378688 graph-bytes=769088
+repack: repack tensor blk.1.attn_q.weight with q4_0_4x8
+repack: repack tensor blk.1.attn_k.weight with q4_0_4x8
+repack: repack tensor blk.1.attn_v.weight with q4_0_4x8
+repack: repack tensor blk.1.attn_output.weight with q4_0_4x8
+repack: repack tensor blk.1.ffn_up.weight with q4_0_4x8
+repack: repack tensor blk.1.ffn_gate.weight with q4_0_4x8
+repack: repack tensor blk.1.ffn_down.weight with q4_0_4x8
+LAYER_CHAIN loaded layer=1 weight-bytes=86757376 graph-bytes=1538176
+LAYER_CHAIN_RESULT {"device":"CPU","mode":"single_graph","layers":[0,1],"prompt":1,"past":256,"threads":2,"flash":1,"nodes":66,"weight_bytes":86757376,"graph_bytes":1538176,"graph_calls_per_pass":1,"explicit_copies_per_pass":0,"bytes_per_copy":8192,"verified_edges":0,"relative_rms_vs_single_graph":0,"max_abs":0,"diagnostic_graph_ms_per_pass":1.671800,"diagnostic_transfer_ms_per_pass":0.000000,"compute_ms":[1.610000,1.654000,1.570000,1.544000,1.640000]}
+LAYER_CHAIN_RESULT {"device":"CPU","mode":"split_shared","layers":[0,1],"prompt":1,"past":256,"threads":2,"flash":1,"nodes":66,"weight_bytes":86757376,"graph_bytes":1538176,"graph_calls_per_pass":2,"explicit_copies_per_pass":0,"bytes_per_copy":8192,"verified_edges":0,"relative_rms_vs_single_graph":0,"max_abs":0,"diagnostic_graph_ms_per_pass":1.634800,"diagnostic_transfer_ms_per_pass":0.000000,"compute_ms":[1.657000,1.605000,1.592000,1.533000,1.684000]}
+LAYER_CHAIN_RESULT {"device":"CPU","mode":"split_copy","layers":[0,1],"prompt":1,"past":256,"threads":2,"flash":1,"nodes":66,"weight_bytes":86757376,"graph_bytes":1538176,"graph_calls_per_pass":2,"explicit_copies_per_pass":1,"bytes_per_copy":8192,"verified_edges":1,"relative_rms_vs_single_graph":0,"max_abs":0,"diagnostic_graph_ms_per_pass":1.602600,"diagnostic_transfer_ms_per_pass":0.000200,"compute_ms":[1.557000,1.568000,1.613000,1.645000,1.587000]}

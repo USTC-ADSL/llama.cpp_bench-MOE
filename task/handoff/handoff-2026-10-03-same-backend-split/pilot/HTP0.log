@@ -1,0 +1,20 @@
+ggml_opencl: selected platform: 'QUALCOMM Snapdragon(TM)'
+
+ggml_opencl: device: 'QUALCOMM Adreno(TM) 830 (OpenCL 3.0 Adreno(TM) 830)'
+ggml_opencl: default device: 'QUALCOMM Adreno(TM) 830 (OpenCL 3.0 Adreno(TM) 830)'
+ggml-hex: Loading driver libcdsprpc.so
+ggml-hex: FASTRPC_GET_DOMAINS query failed (0x6c), using static CDSP domains
+ggml-hex: Profiling mode 0 : pmu-evt [ 0x3,0x111,0x100,0x105,0x240,0x256,0x7d,0x8c ]
+ggml-hex: Hexagon backend (experimental) : allocating new registry : ndev 1
+ggml-hex: Hexagon Arch version v79, DMA64 disabled
+ggml-hex: device 0: HTP0 (phys=0, virt=0, domain=cdsp:3)
+ggml-hex: HTP0 allocating new session : domain 3 phys-idx 0 virt-idx 0
+ggml-hex: HTP0 hwinfo: threads 6, hvx 6, hmx 1, vtcm 8 MB
+ggml-hex: HTP0 new session : session-id 0 domain-id 3 uri file:///libggml-htp-v79.so?htp_iface_skel_handle_invoke&_modver=1.0&_dom=cdsp&_session=0 handle 0xb400007c82e24570
+ggml-hex: HTP0 op batching: n-bufs 16 n-tensors 8192 n-ops 1280 vmem 3311845376
+MODEL layers=36 embd=2048 ff=11008 heads=16 kv_heads=2 head_dim=128
+LAYER_CHAIN loaded layer=0 weight-bytes=43378688 graph-bytes=769280
+LAYER_CHAIN loaded layer=1 weight-bytes=86757376 graph-bytes=1538560
+LAYER_CHAIN_RESULT {"device":"HTP0","mode":"single_graph","layers":[0,1],"prompt":1,"past":256,"threads":2,"flash":1,"nodes":66,"weight_bytes":86757376,"graph_bytes":1538560,"graph_calls_per_pass":1,"explicit_copies_per_pass":0,"bytes_per_copy":8192,"verified_edges":0,"relative_rms_vs_single_graph":0,"max_abs":0,"diagnostic_graph_ms_per_pass":2.745400,"diagnostic_transfer_ms_per_pass":0.000000,"compute_ms":[2.581000,2.704000,2.761000,2.895000,2.741000]}
+LAYER_CHAIN_RESULT {"device":"HTP0","mode":"split_shared","layers":[0,1],"prompt":1,"past":256,"threads":2,"flash":1,"nodes":66,"weight_bytes":86757376,"graph_bytes":1538560,"graph_calls_per_pass":2,"explicit_copies_per_pass":0,"bytes_per_copy":8192,"verified_edges":0,"relative_rms_vs_single_graph":0,"max_abs":0,"diagnostic_graph_ms_per_pass":2.558600,"diagnostic_transfer_ms_per_pass":0.000000,"compute_ms":[2.578000,2.619000,2.525000,2.624000,2.625000]}
+LAYER_CHAIN_RESULT {"device":"HTP0","mode":"split_copy","layers":[0,1],"prompt":1,"past":256,"threads":2,"flash":1,"nodes":66,"weight_bytes":86757376,"graph_bytes":1538560,"graph_calls_per_pass":2,"explicit_copies_per_pass":1,"bytes_per_copy":8192,"verified_edges":1,"relative_rms_vs_single_graph":0,"max_abs":0,"diagnostic_graph_ms_per_pass":2.562200,"diagnostic_transfer_ms_per_pass":0.251000,"compute_ms":[2.949000,2.852000,2.940000,4.211000,3.161000]}

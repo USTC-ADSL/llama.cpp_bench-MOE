@@ -19,7 +19,11 @@ def main():
     p.add_argument('--seconds', type=float, default=5)
     p.add_argument('--settle', type=float, default=2)
     p.add_argument('--deploy', action='store_true')
+    p.add_argument('--chain', action='store_true', help='compare one graph with explicit layer boundaries')
+    p.add_argument('--devices', nargs='+', choices=['CPU', 'GPUOpenCL', 'HTP0'], default=['CPU', 'GPUOpenCL', 'HTP0'])
     args = p.parse_args()
+    if not args.chain and ('CPU' not in args.devices or args.devices[0] != 'CPU'):
+        p.error('independent layer checks require CPU reference generation first')
     args.output.mkdir(parents=True, exist_ok=True)
     if (args.output / 'original-state.json').exists():
         p.error('use a fresh output directory')
@@ -67,7 +71,7 @@ def main():
         root('echo ' + wake + ' 1800000000000 > /sys/power/wake_lock\n'
              'settings put system screen_off_timeout 18000000\ninput keyevent 224')
         assert wake in root('cat /sys/power/wake_lock').split()
-        for device in ['CPU', 'GPUOpenCL', 'HTP0']:
+        for device in args.devices:
             env = ['env']
             for key in ['GGML_HEXAGON_POWER', 'GGML_HEXAGON_DCVS', 'GGML_HEXAGON_TIMING',
                         'GGML_OPENCL_Q4_0_DENSE_DP4A']:
@@ -75,13 +79,17 @@ def main():
             env += ['LD_LIBRARY_PATH=.', 'ADSP_LIBRARY_PATH=.', 'GGML_HEXAGON_DEVICES=1',
                     'GGML_HEXAGON_PROFILE=0', 'DENSE_AF_CLOCKS=1']
             options = ['timeout', '600', 'taskset', 'c0', './dense-af-bench', '-m', args.model,
-                       '--device', device, '--whole-layer', '--prompt', '1', '--past', '256',
+                       '--device', device, '--prompt', '1', '--past', '256',
                        '--layers', args.layers, '--stage', 'both', '--flash', '1', '--threads', '2',
-                       '--warmup', '3', '--reps', '5', '--reference', 'reference',
+                       '--warmup', '3', '--reps', '5',
                        '--power-seconds', str(args.seconds), '--power-settle-seconds', str(args.settle),
                        '--current-to-a', '0.001']
-            if device == 'CPU':
-                options += ['--write-reference']
+            if args.chain:
+                options += ['--layer-chain']
+            else:
+                options += ['--whole-layer', '--reference', 'reference']
+                if device == 'CPU':
+                    options += ['--write-reference']
             command = 'cd ' + shlex.quote(args.directory) + '\n' + shlex.join(env + options)
             record = dict(device=device, serial=args.serial, model=args.model, command=command,
                           started_unix=time.time(), before=root('dumpsys battery'), results=[])
@@ -89,20 +97,23 @@ def main():
                 proc = subprocess.Popen(adb + ['shell', 'su -c ' + shlex.quote(command)],
                                         text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                 try:
+                    prefix = 'LAYER_CHAIN_RESULT ' if args.chain else 'RESULT '
                     for line in proc.stdout:
                         log.write(line)
-                        if line.startswith('RESULT '):
-                            row = json.loads(line[len('RESULT '):])
+                        if line.startswith(prefix):
+                            row = json.loads(line[len(prefix):])
                             record['results'].append(row)
                             save(device + '.json', record)
+                            label = row['mode'] if args.chain else f'layer={row["layer"]:02d}'
                             if 'power' in row:
                                 w = row['power']
-                                print(f'{device} layer={row["layer"]:02d} '
+                                print(f'{device} {label} '
                                       f't={w["seconds"]*1000/w["iterations"]:.4f}ms '
                                       f'raw_J={w["joules"]/w["iterations"]:.7f} '
                                       f'temp={w["temp_end_c"]:.1f}C', flush=True)
                             else:
-                                print(f'{device} layer={row["layer"]:02d} check rms={row["relative_rms"]}', flush=True)
+                                rms = row['relative_rms_vs_single_graph'] if args.chain else row['relative_rms']
+                                print(f'{device} {label} check rms={rms}', flush=True)
                     record['returncode'] = proc.wait(timeout=10)
                 finally:
                     if proc.poll() is None:
@@ -113,15 +124,21 @@ def main():
             save(device + '.json', record)
             expected = list(range(36)) if args.layers == 'all' else [int(x) for x in args.layers.split(',')]
             assert record['returncode'] == 0, f'{device} failed, inspect log'
-            assert [r['layer'] for r in record['results']] == expected
             assert record['screen_on']
-            assert all(r['block']=='layer' and r['past']==256 and r['prompt']==1 for r in record['results'])
-        subprocess.run(adb + ['pull', args.directory + '/reference', str(args.output)],
-                       capture_output=True, check=True)
-        # Only remove the reference files generated by this protocol after pulling them.
-        chosen = range(36) if args.layers == 'all' else [int(x) for x in args.layers.split(',')]
-        for layer in chosen:
-            root('rm -- ' + shlex.quote(args.directory + f'/reference/p1-l{layer}-layer-fa1-past256.bin'))
+            assert all(r['past']==256 and r['prompt']==1 for r in record['results'])
+            if args.chain:
+                assert [r['mode'] for r in record['results']] == ['single_graph', 'split_shared', 'split_copy']
+                assert all(r['layers']==expected and r['relative_rms_vs_single_graph']<=1e-4 for r in record['results'])
+            else:
+                assert [r['layer'] for r in record['results']] == expected
+                assert all(r['block']=='layer' for r in record['results'])
+        if not args.chain:
+            subprocess.run(adb + ['pull', args.directory + '/reference', str(args.output)],
+                           capture_output=True, check=True)
+            # Only remove the reference files generated by this protocol after pulling them.
+            chosen = range(36) if args.layers == 'all' else [int(x) for x in args.layers.split(',')]
+            for layer in chosen:
+                root('rm -- ' + shlex.quote(args.directory + f'/reference/p1-l{layer}-layer-fa1-past256.bin'))
         root('rmdir ' + shlex.quote(args.directory + '/reference'))
     finally:
         timeout = original['screen_off_timeout']
