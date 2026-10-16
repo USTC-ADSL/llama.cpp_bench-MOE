@@ -3,6 +3,8 @@
 #include "ggml-alloc.h"
 #include "ggml-cpp.h"
 #include "ggml-shared-weight.h"
+#include "ggml-opencl.h"
+#include "ggml-hexagon.h"
 #include "json.hpp"
 
 #include <algorithm>
@@ -34,6 +36,9 @@ struct job {
     ggml_backend_buffer_ptr wb, gb;
     ggml_tensor * w, * x, * y;
     ggml_cgraph * graph;
+    ggml_backend_opencl_get_compute_timing_fn cl_timing=nullptr;
+    ggml_backend_hexagon_get_timing_fn htp_timing=nullptr;
+    double device_us=-1;
     job(ggml_backend_t b, ggml_backend_buffer_type_t wt, int k, int m, int n,
         const std::vector<uint8_t> & raw, const std::vector<float> & input, ggml_tensor * shared=nullptr) : backend(b) {
         wc.reset(ggml_init({ggml_tensor_overhead(), nullptr, true}));
@@ -55,12 +60,30 @@ struct job {
         ggml_backend_synchronize(b);
         graph = ggml_new_graph_custom(gc.get(),8,false);
         ggml_build_forward_expand(graph,y);
+        auto reg=ggml_backend_dev_backend_reg(ggml_backend_get_device(b));
+        cl_timing=reinterpret_cast<ggml_backend_opencl_get_compute_timing_fn>(ggml_backend_reg_get_proc_address(reg,"ggml_backend_opencl_get_compute_timing"));
+        htp_timing=reinterpret_cast<ggml_backend_hexagon_get_timing_fn>(ggml_backend_reg_get_proc_address(reg,"ggml_backend_hexagon_get_timing"));
     }
     double run() {
+        ggml_opencl_compute_timing cl_before{},cl_after{};
+        ggml_hexagon_timing htp_before{},htp_after{};
+        bool cl_active=cl_timing && cl_timing(backend,&cl_before);
+        bool htp_active=htp_timing && htp_timing(&htp_before,sizeof(htp_before)) && htp_before.enabled && htp_before.profile_mode;
         auto t = timer::now();
         check(ggml_backend_graph_compute(backend,graph)==GGML_STATUS_SUCCESS,"compute failed");
         ggml_backend_synchronize(backend);
-        return std::chrono::duration<double,std::micro>(timer::now()-t).count();
+        double wall_us=std::chrono::duration<double,std::micro>(timer::now()-t).count();
+        device_us=-1;
+        if(cl_active) {
+            check(cl_timing(backend,&cl_after) && cl_after.kernels>cl_before.kernels,"missing GPU timing events");
+            device_us=double(cl_after.kernel_ns-cl_before.kernel_ns)/1000;
+        }
+        if(htp_active) {
+            check(htp_timing(&htp_after,sizeof(htp_after)) &&
+                htp_after.counters[GGML_HEXAGON_TIMING_OPS]>htp_before.counters[GGML_HEXAGON_TIMING_OPS],"missing DSP timing events");
+            device_us=double(htp_after.counters[GGML_HEXAGON_TIMING_OP_US]-htp_before.counters[GGML_HEXAGON_TIMING_OP_US]);
+        }
+        return wall_us;
     }
     double validate(const std::vector<float> & ref) {
         std::vector<float> out(ref.size());
@@ -110,6 +133,7 @@ int main(int argc,char **argv) {
         auto reg=ggml_backend_dev_backend_reg(dev);
         cpu_pool pool(b.get(),reg,threads);
         bool shared_mode=std::getenv("GGML_SHARED_WEIGHT_TEST")!=nullptr;
+        bool edges=std::getenv("GGML_SHARED_WEIGHT_EDGES")!=nullptr;
         ggml_backend_ptr htp_owner, other_cpu, other_gpu;
         ggml_backend_t htp=nullptr,cpu=nullptr,gpu=nullptr;
         if(shared_mode) {
@@ -118,6 +142,19 @@ int main(int argc,char **argv) {
             if(std::string(argv[1])=="CPU") { cpu=b.get(); } else { other_cpu.reset(init("CPU")); cpu=other_cpu.get(); }
             if(std::string(argv[1])=="GPUOpenCL") { gpu=b.get(); } else { other_gpu.reset(init("GPUOpenCL")); gpu=other_gpu.get(); }
             check(htp && cpu && gpu,"shared backend init failed");
+            ggml_shared_weight_free(nullptr);
+            ggml_shared_weight_desc invalid{};
+            uint8_t dummy=0;
+            check(!ggml_shared_weight_describe(nullptr,&invalid) && !ggml_shared_weight_bind(nullptr,cpu),"null handle accepted");
+            check(!ggml_shared_weight_create(nullptr,32,32,&dummy,576) &&
+                !ggml_shared_weight_create(htp,0,32,&dummy,0) &&
+                !ggml_shared_weight_create(htp,33,32,&dummy,576) &&
+                !ggml_shared_weight_create(htp,32,32,&dummy,575),"invalid create accepted");
+            for(auto backend:{cpu,gpu}) {
+                auto reg=ggml_backend_dev_backend_reg(ggml_backend_get_device(backend));
+                auto import=reinterpret_cast<ggml_backend_import_shared_weight_t>(ggml_backend_reg_get_proc_address(reg,"ggml_backend_import_shared_weight"));
+                check(import && !import(backend,nullptr) && !import(backend,&invalid),"invalid import accepted");
+            }
         }
         auto set_threads=reinterpret_cast<ggml_backend_set_n_threads_t>(ggml_backend_reg_get_proc_address(reg,"ggml_backend_set_n_threads"));
         if(set_threads) { set_threads(b.get(),threads); }
@@ -133,7 +170,9 @@ int main(int argc,char **argv) {
             {"cpu_affinity",std::getenv("GGML_SHARED_TEST_CPUMASK")?std::getenv("GGML_SHARED_TEST_CPUMASK"):"default"},
             {"timing","single MUL_MAT graph + completion; weight loading/repack and activation upload excluded; invocation scratch included"},
             {"input","deterministic synthetic Q4_0; Qwen representative matrix shapes; no MoE routing"}, {"cases",json::array()}};
-        for(auto dims: {std::pair<int,int>{2048,1408},{1408,2048}}) {
+        const std::vector<std::pair<int,int>> shapes=edges?std::vector<std::pair<int,int>>{{128,32},{256,96}}:
+            std::vector<std::pair<int,int>>{{2048,1408},{1408,2048}};
+        for(auto dims:shapes) {
             int k=dims.first,m=dims.second;
             std::vector<float> source(size_t(k)*m),dequant(source.size());
             for(size_t i=0;i<source.size();++i) { source[i]=0.1f*std::sin(float(i%10007)*0.071f)+0.03f*std::cos(float(i%997)*0.13f); }
@@ -147,6 +186,7 @@ int main(int argc,char **argv) {
                 check(ggml_shared_weight_describe(owner.get(),&desc),"describe failed");
                 for(auto backend:{htp,cpu,gpu}) {
                     auto * t=ggml_shared_weight_bind(owner.get(),backend); check(t,"shared bind failed");
+                    check(ggml_shared_weight_bind(owner.get(),backend)==t,"repeated bind creates new alias");
                     check(t->data==static_cast<char *>(desc.storage.host_ptr)+desc.offset,"shared pointer differs");
                     std::vector<uint8_t> recovered(raw.size());
                     ggml_backend_tensor_get(t,recovered.data(),0,recovered.size());
@@ -154,6 +194,26 @@ int main(int argc,char **argv) {
                     if(backend!=htp) {
                         uint8_t partial[37]; ggml_backend_tensor_get(t,partial,17,sizeof(partial));
                         check(std::memcmp(partial,raw.data()+17,sizeof(partial))==0,"partial byte roundtrip differs");
+                        ggml_backend_tensor_get(t,partial,raw.size()-sizeof(partial),sizeof(partial));
+                        check(std::memcmp(partial,raw.data()+raw.size()-sizeof(partial),sizeof(partial))==0,"tail byte roundtrip differs");
+                        auto reg=ggml_backend_dev_backend_reg(ggml_backend_get_device(backend));
+                        auto import=reinterpret_cast<ggml_backend_import_shared_weight_t>(ggml_backend_reg_get_proc_address(reg,"ggml_backend_import_shared_weight"));
+                        auto bad=desc; bad.storage.size=raw.size()-1;
+                        check(!import(backend,&bad),"undersized import accepted");
+                        bad=desc; bad.layout=0;
+                        check(!import(backend,&bad),"unknown layout accepted");
+                        bad=desc; bad.offset=1;
+                        check(!import(backend,&bad),"misaligned import accepted");
+                        ggml_context_ptr negctx(ggml_init({12*ggml_tensor_overhead()+ggml_graph_overhead_custom(8,false),nullptr,true}));
+                        auto * unsupported=ggml_dup(negctx.get(),t);
+                        check(!ggml_backend_supports_op(backend,unsupported),"shared DUP advertised as supported");
+                        auto * graph=ggml_new_graph_custom(negctx.get(),8,false);
+                        ggml_build_forward_expand(graph,unsupported);
+                        check(ggml_backend_graph_compute(backend,graph)==GGML_STATUS_FAILED,"shared DUP did not reject before execution");
+                        auto * view=ggml_view_2d(negctx.get(),t,t->ne[0],t->ne[1],t->nb[1],0);
+                        auto * x=ggml_new_tensor_2d(negctx.get(),GGML_TYPE_F32,k,1);
+                        auto * mm=ggml_mul_mat(negctx.get(),view,x);
+                        check(!ggml_backend_supports_op(backend,mm),"shared weight view accepted");
                     }
                 }
                 shared=ggml_shared_weight_bind(owner.get(),b.get()); check(shared,"target binding failed");
@@ -162,7 +222,8 @@ int main(int argc,char **argv) {
             }
             auto to_float=ggml_get_type_traits(GGML_TYPE_Q4_0)->to_float;
             for(int r=0;r<m;++r) { to_float(raw.data()+ggml_row_size(GGML_TYPE_Q4_0,k)*r,dequant.data()+size_t(r)*k,k); }
-            for(int n: {1,32,128}) {
+            const std::vector<int> batches=edges?std::vector<int>{1,2,3,4,5,7,8,9,31,33}:std::vector<int>{1,32,128};
+            for(int n:batches) {
                 std::vector<float> input(size_t(k)*n),ref(size_t(m)*n);
                 for(size_t i=0;i<input.size();++i) { input[i]=std::sin(float(i%10009)*0.13f)+0.1f*std::cos(float(i%997)*0.021f); }
                 for(int t=0;t<n;++t) { for(int r=0;r<m;++r) {
@@ -171,6 +232,7 @@ int main(int argc,char **argv) {
                 } }
                 std::vector<std::unique_ptr<job>> jobs;
                 std::vector<std::vector<double>> samples(types.size());
+                std::vector<std::vector<double>> device_samples(types.size());
                 json rows=json::array();
                 for(auto type:types) {
                     jobs.emplace_back(new job(b.get(),type,k,m,n,raw,input));
@@ -199,13 +261,19 @@ int main(int argc,char **argv) {
                     rows.push_back({{"buffer","SHARED_Q4_0_32X32_V1"},{"nrmse",jobs.back()->validate(ref)},
                                     {"weight_buffer_bytes",0},{"shared_owner_bytes",desc.storage.size}});
                     samples.emplace_back();
+                    device_samples.emplace_back();
                 }
                 // Alternate direction each round to reduce order/temperature bias.
                 for(int r=0;r<reps;++r) { for(size_t j=0;j<jobs.size();++j) {
                     size_t i=r%2?jobs.size()-1-j:j; samples[i].push_back(jobs[i]->run());
+                    if(jobs[i]->device_us>=0) { device_samples[i].push_back(jobs[i]->device_us); }
                 } }
                 for(size_t i=0;i<jobs.size();++i) {
                     rows[i]["samples_us"]=samples[i]; rows[i]["median_us"]=median(samples[i]);
+                    if(!device_samples[i].empty()) {
+                        rows[i]["device_samples_us"]=device_samples[i]; rows[i]["device_median_us"]=median(device_samples[i]);
+                        rows[i]["device_timing"]=jobs[i]->cl_timing?"sum kernel event END-START; includes activation preparation":"DSP op usecs; includes DMA/decode";
+                    }
                     fprintf(stderr,"%s %s K=%d M=%d N=%d median=%.3f us\n",argv[1],rows[i]["buffer"].get<std::string>().c_str(),k,m,n,median(samples[i]));
                 }
                 result["cases"].push_back({{"k",k},{"m",m},{"n",n},{"variants",rows}});

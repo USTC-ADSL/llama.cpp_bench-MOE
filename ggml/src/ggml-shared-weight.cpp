@@ -1,4 +1,5 @@
 #include "ggml-shared-weight.h"
+#include "ggml-shared-weight-impl.h"
 #include "ggml-alloc.h"
 #include "ggml-cpp.h"
 
@@ -27,6 +28,7 @@ static std::unique_ptr<shared_weight_binding> make_binding(ggml_backend_t backen
     b->ctx.reset(ggml_init({ggml_tensor_overhead(), nullptr, true}));
     if (!b->ctx) { return nullptr; }
     b->tensor = ggml_new_tensor_2d(b->ctx.get(), GGML_TYPE_Q4_0, k, m);
+    if (!b->tensor) { return nullptr; }
     ggml_set_name(b->tensor, "shared_weight_q4_0_32x32_v1");
     return b;
 }
@@ -45,12 +47,16 @@ ggml_shared_weight_t ggml_shared_weight_create(ggml_backend_t allocator, uint32_
     if (!b) { return nullptr; }
     b->buffer.reset(ggml_backend_alloc_ctx_tensors(b->ctx.get(),allocator));
     if (!b->buffer || !export_dma(b->buffer.get(),&w->desc.storage)) { return nullptr; }
+    const uintptr_t base = reinterpret_cast<uintptr_t>(w->desc.storage.host_ptr);
+    const uintptr_t data = reinterpret_cast<uintptr_t>(b->tensor->data);
+    if (!base || data < base) { return nullptr; }
+    w->desc.offset = data-base;
+    w->desc.layout = GGML_SHARED_WEIGHT_Q4_0_32X32_V1;
+    w->desc.k=k; w->desc.m=m;
+    if (!ggml_shared_weight_desc_valid(&w->desc)) { return nullptr; }
     ggml_backend_buffer_set_usage(b->buffer.get(),GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
     ggml_backend_tensor_set(b->tensor,canonical,0,size);
     ggml_backend_synchronize(allocator);
-    w->desc.offset = static_cast<char *>(b->tensor->data)-static_cast<char *>(w->desc.storage.host_ptr);
-    w->desc.layout = GGML_SHARED_WEIGHT_Q4_0_32X32_V1;
-    w->desc.k=k; w->desc.m=m;
     w->bindings.push_back(std::move(b));
     return w.release();
 }

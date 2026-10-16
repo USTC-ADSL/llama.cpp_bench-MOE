@@ -31,7 +31,8 @@ GGML_BACKEND_API ggml_shared_weight_t ggml_shared_weight_create(
 
 // Returns a cached, backend-compatible tensor referencing the same allocation.
 // Caller must not mutate/free the returned tensor or create arbitrary views.
-// V1 supports contiguous 2D Q4_0 x F32 MUL_MAT only. Check supports_op before
+// V1 supports contiguous 2D Q4_0 x F32 MUL_MAT only (OpenCL: tested Adreno A8x).
+// Check supports_op before
 // execution. Bind/free require external serialization; compute on distinct
 // backends may overlap after binding because storage is immutable.
 GGML_BACKEND_API struct ggml_tensor * ggml_shared_weight_bind(ggml_shared_weight_t weight, ggml_backend_t backend);

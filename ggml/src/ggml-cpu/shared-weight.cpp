@@ -3,6 +3,7 @@
 #include "ggml-cpu.h"
 #include "repack.h"
 #include "traits.h"
+#include "ggml-impl.h"
 #include <cstring>
 #if defined(__aarch64__)
 #include <arm_neon.h>
@@ -130,14 +131,34 @@ public:
 
 static bool supported(const ggml_tensor * op) {
     auto * w=op->src[0]; auto * x=op->src[1];
-    return op->op==GGML_OP_MUL_MAT && w && x && w->buffer &&
-        w->buffer->buft==ggml_backend_cpu_shared_weight_buffer_type() &&
+    if(op->op!=GGML_OP_MUL_MAT || !w || !x || !w->buffer ||
+        w->buffer->buft!=ggml_backend_cpu_shared_weight_buffer_type()) { return false; }
+    const auto * d=static_cast<const ggml_shared_weight_desc *>(w->buffer->context);
+    return w->ne[0]==d->k && w->ne[1]==d->m &&
+        w->data==static_cast<const char *>(d->storage.host_ptr)+d->offset &&
         w->type==GGML_TYPE_Q4_0 && w->ne[0]%32==0 && w->ne[1]%32==0 &&
         w->ne[2]==1 && w->ne[3]==1 && !w->view_src && ggml_is_contiguous(w) &&
         op->type==GGML_TYPE_F32 && ggml_is_contiguous(op) &&
+        op->ne[0]==w->ne[1] && op->ne[1]==x->ne[1] && op->ne[2]==1 && op->ne[3]==1 &&
         x->type==GGML_TYPE_F32 && x->ne[1]>0 && x->ne[1]<=INT32_MAX &&
         x->ne[0]==w->ne[0] && x->ne[2]==1 && x->ne[3]==1 &&
         ggml_is_contiguous(x) && (!x->buffer || ggml_backend_buft_is_host(x->buffer->buft));
+}
+bool ggml_backend_cpu_shared_weight_op_allowed(const ggml_tensor * op) {
+    for(const auto * src:op->src) {
+        if(!src) { continue; }
+        const auto * root=src->view_src?src->view_src:src;
+        if(root->buffer && root->buffer->buft==ggml_backend_cpu_shared_weight_buffer_type() && !supported(op)) {
+            return false;
+        }
+    }
+    return true;
+}
+bool ggml_backend_cpu_shared_weight_graph_supported(const ggml_cgraph * graph) {
+    for(int i=0;i<graph->n_nodes;++i) {
+        if(!ggml_backend_cpu_shared_weight_op_allowed(graph->nodes[i])) { return false; }
+    }
+    return true;
 }
 class shared_extra final : public ggml::cpu::extra_buffer_type {
     bool supports_op(ggml_backend_dev_t, const ggml_tensor * op) override { return supported(op); }
@@ -169,6 +190,7 @@ ggml_backend_buffer_t ggml_backend_cpu_import_shared_weight(ggml_backend_t backe
                 t->data==static_cast<char *>(d->storage.host_ptr)+d->offset?GGML_STATUS_SUCCESS:GGML_STATUS_FAILED;
         };
         i.get_tensor=[](ggml_backend_buffer_t,const ggml_tensor * t,void * out,size_t off,size_t size) {
+            GGML_ASSERT(off<=ggml_nbytes(t) && size<=ggml_nbytes(t)-off);
             ggml_shared_weight_get_canonical(t->data,t->ne[0],out,off,size);
         };
         return i;

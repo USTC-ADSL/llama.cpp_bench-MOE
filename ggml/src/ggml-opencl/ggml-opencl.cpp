@@ -1058,6 +1058,7 @@ struct ggml_backend_opencl_context {
 
     std::vector<ProfilingInfo> profiling_info;
     std::vector<ProfilingInfo> profiling_results;
+    ggml_opencl_compute_timing compute_timing = {};
 
     void flush_profiling_batch() {
         if (profiling_info.empty()) {
@@ -1101,6 +1102,9 @@ struct ggml_backend_opencl_context {
             info.cmd_duration_ns            = cmd_end       - cmd_start;
             info.cmd_complete_duration_ns   = cmd_complete  - cmd_end;
             info.cmd_total_duration_ns      = cmd_complete  - cmd_queued;
+            ++compute_timing.kernels;
+            compute_timing.kernel_ns += cmd_end-cmd_start;
+            CL_CHECK(clReleaseKernel(info.kernel));
         }
         profiling_results.insert(profiling_results.end(),
             std::make_move_iterator(profiling_info.begin()),
@@ -1182,6 +1186,7 @@ struct ggml_backend_opencl_context {
         CL_CHECK(clEnqueueNDRangeKernel(queue, kernel, work_dim, NULL, global_work_size, local_work_size, 0, NULL, &evt));
 
         profiling_info.emplace_back();
+        CL_CHECK(clRetainKernel(kernel));
         populateProfilingInfo(profiling_info.back(), evt, kernel, work_dim, global_work_size, local_work_size, tensor);
         if (profiling_info.size() >= 2048) {
             flush_profiling_batch();
@@ -8431,7 +8436,10 @@ static void ggml_opencl_op_rms_norm_mul_add_fused(ggml_backend_t backend, ggml_t
     backend_ctx->enqueue_ndrange_kernel(kernel, 3, global_work_size, local_work_size, dst);
 }
 
+static bool ggml_opencl_shared_weight_graph_supported(ggml_backend_dev_t dev, const ggml_cgraph * graph);
+
 static ggml_status ggml_backend_opencl_graph_compute(ggml_backend_t backend, ggml_cgraph * cgraph) {
+    if (!ggml_opencl_shared_weight_graph_supported(backend->device,cgraph)) { return GGML_STATUS_FAILED; }
     ggml_backend_opencl_context *backend_ctx = (ggml_backend_opencl_context *)backend->context;
 
     for (int i = 0; i < cgraph->n_nodes; i++) {
@@ -13165,20 +13173,39 @@ static ggml_backend_buffer_t ggml_backend_opencl_device_buffer_from_ptr(ggml_bac
 static bool ggml_backend_opencl_device_supports_op(ggml_backend_dev_t dev, const struct ggml_tensor * op) {
     for (int i=0;i<GGML_MAX_SRC;++i) {
         const auto * t=op->src[i];
-        if (!t || !t->buffer || t->buffer->iface.free_buffer!=ggml_backend_opencl_buffer_free_buffer) { continue; }
-        auto * ctx=static_cast<ggml_backend_opencl_buffer_context *>(t->buffer->context);
+        const auto * root=t && t->view_src?t->view_src:t;
+        if (!root || !root->buffer || root->buffer->iface.free_buffer!=ggml_backend_opencl_buffer_free_buffer) { continue; }
+        auto * ctx=static_cast<ggml_backend_opencl_buffer_context *>(root->buffer->context);
         if (!ctx->shared_weight.layout) { continue; }
         const auto * x=op->src[1];
         return i==0 && op->op==GGML_OP_MUL_MAT && op->type==GGML_TYPE_F32 && ggml_is_contiguous(op) &&
+            root->buffer->buft->device==dev && t->type==GGML_TYPE_Q4_0 &&
+            t->ne[0]==ctx->shared_weight.k && t->ne[1]==ctx->shared_weight.m &&
             !t->view_src && ggml_is_contiguous(t) &&
             t->ne[2]==1 && t->ne[3]==1 && x && x->type==GGML_TYPE_F32 && ggml_is_contiguous(x) &&
-            x->ne[1]>0 && x->ne[1]<=INT32_MAX &&
-            uint64_t(x->ne[1])*uint64_t(x->ne[0])<=UINT32_MAX &&
+            !x->view_src && !op->view_src &&
+            (!x->buffer || (x->buffer->iface.free_buffer==ggml_backend_opencl_buffer_free_buffer && x->buffer->buft->device==dev)) &&
+            x->ne[1]>0 && x->ne[1]<=INT32_MAX-7 &&
+            uint64_t((x->ne[1]+7)/8*8)*uint64_t(x->ne[0])<=INT32_MAX &&
             uint64_t(x->ne[1])*uint64_t(t->ne[1])<=UINT32_MAX &&
+            op->ne[0]==t->ne[1] && op->ne[1]==x->ne[1] && op->ne[2]==1 && op->ne[3]==1 &&
             x->ne[0]==t->ne[0] && x->ne[2]==1 && x->ne[3]==1;
     }
     ggml_cl_init(dev);
     return ggml_opencl_supports_op(dev, op);
+}
+
+static bool ggml_opencl_shared_weight_graph_supported(ggml_backend_dev_t dev, const ggml_cgraph * graph) {
+    for(int i=0;i<graph->n_nodes;++i) {
+        const auto * op=graph->nodes[i];
+        for(const auto * src:op->src) {
+            const auto * root=src && src->view_src?src->view_src:src;
+            if(!root || !root->buffer || root->buffer->iface.free_buffer!=ggml_backend_opencl_buffer_free_buffer) { continue; }
+            auto * ctx=static_cast<ggml_backend_opencl_buffer_context *>(root->buffer->context);
+            if(ctx->shared_weight.layout && !ggml_backend_opencl_device_supports_op(dev,op)) { return false; }
+        }
+    }
+    return true;
 }
 
 static bool ggml_backend_opencl_device_supports_buft(ggml_backend_dev_t dev, ggml_backend_buffer_type_t buft) {
@@ -13340,7 +13367,14 @@ bool ggml_backend_opencl_pack_q4_0_htp(ggml_backend_t backend,
 
 static ggml_backend_buffer_t ggml_backend_opencl_import_shared_weight(
         ggml_backend_t backend, const ggml_shared_weight_desc * desc) {
-    if (!ggml_shared_weight_desc_valid(desc)) { return nullptr; }
+    if (!backend || !ggml_backend_is_opencl(backend) || !ggml_shared_weight_desc_valid(desc) ||
+        desc->storage.size/4>INT32_MAX) { return nullptr; }
+    auto * ctx=ggml_cl_init(backend->device);
+    // V1 uses the tested Adreno half-wave (64 lanes) kernel and image aliasing.
+    if(ctx->gpu_family!=ADRENO || ctx->adreno_gen!=ADRENO_GPU_GEN::A8X) { return nullptr; }
+    size_t image_limit=0;
+    if(clGetDeviceInfo(ctx->device,CL_DEVICE_IMAGE_MAX_BUFFER_SIZE,sizeof(image_limit),&image_limit,nullptr)!=CL_SUCCESS ||
+        desc->storage.size/4>image_limit) { return nullptr; }
     auto buffer=ggml_backend_opencl_import_shared_dma_compute_buffer(backend,&desc->storage);
     if (!buffer) { return nullptr; }
     auto * bc=static_cast<ggml_backend_opencl_buffer_context *>(buffer->context);
@@ -13358,7 +13392,6 @@ static ggml_backend_buffer_t ggml_backend_opencl_import_shared_weight(
 #else
     const std::string source=read_file("shared_q4_0.cl");
 #endif
-    auto * ctx=ggml_cl_init(backend->device);
     cl_program program=build_program_from_source(ctx,source.c_str(),"-cl-std=CL2.0");
     cl_int error=CL_SUCCESS;
     bc->shared_mv=clCreateKernel(program,"shared_q4_0_mv",&error);
@@ -13375,12 +13408,29 @@ static ggml_backend_buffer_t ggml_backend_opencl_import_shared_weight(
     buffer->iface.set_tensor=nullptr; buffer->iface.memset_tensor=nullptr;
     buffer->iface.set_tensor_2d=nullptr; buffer->iface.clear=nullptr;
     buffer->iface.get_tensor=[](ggml_backend_buffer_t,const ggml_tensor * t,void * out,size_t off,size_t size) {
+        GGML_ASSERT(off<=ggml_nbytes(t) && size<=ggml_nbytes(t)-off);
         ggml_shared_weight_get_canonical(t->data,t->ne[0],out,off,size);
     };
     return buffer;
 }
 
+static bool ggml_backend_opencl_get_compute_timing(ggml_backend_t backend, ggml_opencl_compute_timing * out) {
+#ifdef GGML_OPENCL_PROFILING
+    if(!backend || !ggml_backend_is_opencl(backend) || !out) { return false; }
+    auto * ctx=ggml_cl_init(backend->device);
+    ctx->flush_profiling_batch();
+    *out=ctx->compute_timing;
+    return true;
+#else
+    GGML_UNUSED(backend); GGML_UNUSED(out);
+    return false;
+#endif
+}
+
 static void * ggml_backend_opencl_get_proc_address(ggml_backend_reg_t, const char * name) {
+    if (strcmp(name,"ggml_backend_opencl_get_compute_timing")==0) {
+        return (void *)ggml_backend_opencl_get_compute_timing;
+    }
     if (strcmp(name,"ggml_backend_import_shared_weight")==0) {
         return (void *)ggml_backend_opencl_import_shared_weight;
     }
@@ -23741,7 +23791,7 @@ static void ggml_cl_mul_mat(ggml_backend_t backend, const ggml_tensor * src0, co
     GGML_ASSERT(dst);
     GGML_ASSERT(dst->extra);
 
-    if (src0->buffer) {
+    if (src0->buffer && src0->buffer->iface.free_buffer==ggml_backend_opencl_buffer_free_buffer) {
         auto * bc=static_cast<ggml_backend_opencl_buffer_context *>(src0->buffer->context);
         if (bc->shared_weight.layout) {
             GGML_ASSERT(ggml_backend_opencl_device_supports_op(backend->device,dst));

@@ -1,0 +1,980 @@
+{
+  "backend": "HTP0",
+  "threads": 4,
+  "reps": 4,
+  "persistent_cpu_pool": false,
+  "cpu_affinity": "default",
+  "timing": "single MUL_MAT graph + completion; weight loading/repack and activation upload excluded; invocation scratch included",
+  "input": "deterministic synthetic Q4_0; Qwen representative matrix shapes; no MoE routing",
+  "cases": [
+    {
+      "k": 128,
+      "m": 32,
+      "n": 1,
+      "variants": [
+        {
+          "buffer": "HTP0",
+          "nrmse": 0.0010062990597170657,
+          "weight_buffer_bytes": 2304,
+          "samples_us": [
+            263.125,
+            265.156,
+            267.813,
+            266.615
+          ],
+          "median_us": 265.8855,
+          "device_samples_us": [
+            16.0,
+            16.0,
+            16.0,
+            16.0
+          ],
+          "device_median_us": 16.0,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.0010062990597170657,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 2304,
+          "samples_us": [
+            268.333,
+            267.188,
+            267.24,
+            266.25
+          ],
+          "median_us": 267.214,
+          "device_samples_us": [
+            17.0,
+            16.0,
+            17.0,
+            16.0
+          ],
+          "device_median_us": 16.5,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        }
+      ]
+    },
+    {
+      "k": 128,
+      "m": 32,
+      "n": 2,
+      "variants": [
+        {
+          "buffer": "HTP0",
+          "nrmse": 0.0010715892414275468,
+          "weight_buffer_bytes": 2304,
+          "samples_us": [
+            267.031,
+            300.573,
+            267.761,
+            270.625
+          ],
+          "median_us": 269.193,
+          "device_samples_us": [
+            17.0,
+            16.0,
+            16.0,
+            17.0
+          ],
+          "device_median_us": 16.5,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.0010715892414275468,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 2304,
+          "samples_us": [
+            263.23,
+            339.375,
+            349.166,
+            189.844
+          ],
+          "median_us": 301.3025,
+          "device_samples_us": [
+            16.0,
+            16.0,
+            16.0,
+            17.0
+          ],
+          "device_median_us": 16.0,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        }
+      ]
+    },
+    {
+      "k": 128,
+      "m": 32,
+      "n": 3,
+      "variants": [
+        {
+          "buffer": "HTP0",
+          "nrmse": 0.0013990126971570372,
+          "weight_buffer_bytes": 2304,
+          "samples_us": [
+            273.594,
+            269.532,
+            267.604,
+            272.187
+          ],
+          "median_us": 270.8595,
+          "device_samples_us": [
+            18.0,
+            17.0,
+            18.0,
+            19.0
+          ],
+          "device_median_us": 18.0,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.0013990126971570372,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 2304,
+          "samples_us": [
+            329.323,
+            307.344,
+            268.385,
+            270.469
+          ],
+          "median_us": 288.9065,
+          "device_samples_us": [
+            18.0,
+            17.0,
+            18.0,
+            17.0
+          ],
+          "device_median_us": 17.5,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        }
+      ]
+    },
+    {
+      "k": 128,
+      "m": 32,
+      "n": 4,
+      "variants": [
+        {
+          "buffer": "HTP0",
+          "nrmse": 0.0013098725431374403,
+          "weight_buffer_bytes": 2304,
+          "samples_us": [
+            262.135,
+            271.979,
+            272.76,
+            270.521
+          ],
+          "median_us": 271.25,
+          "device_samples_us": [
+            18.0,
+            18.0,
+            16.0,
+            17.0
+          ],
+          "device_median_us": 17.5,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.0013098725431374403,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 2304,
+          "samples_us": [
+            274.375,
+            268.282,
+            268.437,
+            267.24
+          ],
+          "median_us": 268.3595,
+          "device_samples_us": [
+            16.0,
+            16.0,
+            17.0,
+            16.0
+          ],
+          "device_median_us": 16.0,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        }
+      ]
+    },
+    {
+      "k": 128,
+      "m": 32,
+      "n": 5,
+      "variants": [
+        {
+          "buffer": "HTP0",
+          "nrmse": 0.0002358254818599404,
+          "weight_buffer_bytes": 2304,
+          "samples_us": [
+            413.906,
+            273.75,
+            273.906,
+            273.177
+          ],
+          "median_us": 273.828,
+          "device_samples_us": [
+            21.0,
+            21.0,
+            21.0,
+            22.0
+          ],
+          "device_median_us": 21.0,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.0002358254818599404,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 2304,
+          "samples_us": [
+            343.855,
+            307.031,
+            271.094,
+            273.386
+          ],
+          "median_us": 290.2085,
+          "device_samples_us": [
+            22.0,
+            22.0,
+            22.0,
+            21.0
+          ],
+          "device_median_us": 22.0,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        }
+      ]
+    },
+    {
+      "k": 128,
+      "m": 32,
+      "n": 7,
+      "variants": [
+        {
+          "buffer": "HTP0",
+          "nrmse": 0.00023360731423625864,
+          "weight_buffer_bytes": 2304,
+          "samples_us": [
+            271.615,
+            288.438,
+            265.104,
+            376.666
+          ],
+          "median_us": 280.0265,
+          "device_samples_us": [
+            21.0,
+            22.0,
+            21.0,
+            22.0
+          ],
+          "device_median_us": 21.5,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.00023360731423625864,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 2304,
+          "samples_us": [
+            274.635,
+            273.594,
+            272.761,
+            272.5
+          ],
+          "median_us": 273.1775,
+          "device_samples_us": [
+            22.0,
+            22.0,
+            21.0,
+            21.0
+          ],
+          "device_median_us": 21.5,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        }
+      ]
+    },
+    {
+      "k": 128,
+      "m": 32,
+      "n": 8,
+      "variants": [
+        {
+          "buffer": "HTP0",
+          "nrmse": 0.00024325221231875956,
+          "weight_buffer_bytes": 2304,
+          "samples_us": [
+            270.469,
+            273.021,
+            274.219,
+            277.188
+          ],
+          "median_us": 273.62,
+          "device_samples_us": [
+            21.0,
+            22.0,
+            20.0,
+            21.0
+          ],
+          "device_median_us": 21.0,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.00024325221231875956,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 2304,
+          "samples_us": [
+            273.54200000000003,
+            275.781,
+            272.291,
+            274.531
+          ],
+          "median_us": 274.03650000000005,
+          "device_samples_us": [
+            21.0,
+            22.0,
+            20.0,
+            21.0
+          ],
+          "device_median_us": 21.0,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        }
+      ]
+    },
+    {
+      "k": 128,
+      "m": 32,
+      "n": 9,
+      "variants": [
+        {
+          "buffer": "HTP0",
+          "nrmse": 0.0002392483346812555,
+          "weight_buffer_bytes": 2304,
+          "samples_us": [
+            270.469,
+            281.511,
+            443.594,
+            280.156
+          ],
+          "median_us": 280.8335,
+          "device_samples_us": [
+            23.0,
+            22.0,
+            22.0,
+            24.0
+          ],
+          "device_median_us": 22.5,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.0002392483346812555,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 2304,
+          "samples_us": [
+            274.532,
+            271.563,
+            320.886,
+            275.157
+          ],
+          "median_us": 274.8445,
+          "device_samples_us": [
+            22.0,
+            23.0,
+            29.0,
+            22.0
+          ],
+          "device_median_us": 22.5,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        }
+      ]
+    },
+    {
+      "k": 128,
+      "m": 32,
+      "n": 31,
+      "variants": [
+        {
+          "buffer": "HTP0",
+          "nrmse": 0.000247116251390932,
+          "weight_buffer_bytes": 2304,
+          "samples_us": [
+            279.011,
+            278.333,
+            276.563,
+            278.021
+          ],
+          "median_us": 278.177,
+          "device_samples_us": [
+            25.0,
+            24.0,
+            25.0,
+            24.0
+          ],
+          "device_median_us": 24.5,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.000247116251390932,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 2304,
+          "samples_us": [
+            279.531,
+            277.032,
+            279.73900000000003,
+            277.812
+          ],
+          "median_us": 278.67150000000004,
+          "device_samples_us": [
+            26.0,
+            24.0,
+            25.0,
+            23.0
+          ],
+          "device_median_us": 24.5,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        }
+      ]
+    },
+    {
+      "k": 128,
+      "m": 32,
+      "n": 33,
+      "variants": [
+        {
+          "buffer": "HTP0",
+          "nrmse": 0.0002481466964998622,
+          "weight_buffer_bytes": 2304,
+          "samples_us": [
+            273.802,
+            306.093,
+            250.364,
+            382.812
+          ],
+          "median_us": 289.9475,
+          "device_samples_us": [
+            24.0,
+            24.0,
+            24.0,
+            25.0
+          ],
+          "device_median_us": 24.0,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.0002481466964998622,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 2304,
+          "samples_us": [
+            281.562,
+            280.0,
+            276.146,
+            282.084
+          ],
+          "median_us": 280.781,
+          "device_samples_us": [
+            25.0,
+            25.0,
+            25.0,
+            24.0
+          ],
+          "device_median_us": 25.0,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        }
+      ]
+    },
+    {
+      "k": 256,
+      "m": 96,
+      "n": 1,
+      "variants": [
+        {
+          "buffer": "HTP0",
+          "nrmse": 0.0009236270388538187,
+          "weight_buffer_bytes": 13824,
+          "samples_us": [
+            159.167,
+            164.844,
+            163.958,
+            164.74
+          ],
+          "median_us": 164.349,
+          "device_samples_us": [
+            16.0,
+            17.0,
+            17.0,
+            17.0
+          ],
+          "device_median_us": 17.0,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.0009236270388538187,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 13824,
+          "samples_us": [
+            169.115,
+            163.229,
+            165.468,
+            162.812
+          ],
+          "median_us": 164.3485,
+          "device_samples_us": [
+            17.0,
+            17.0,
+            16.0,
+            16.0
+          ],
+          "device_median_us": 16.5,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        }
+      ]
+    },
+    {
+      "k": 256,
+      "m": 96,
+      "n": 2,
+      "variants": [
+        {
+          "buffer": "HTP0",
+          "nrmse": 0.0010486925013574754,
+          "weight_buffer_bytes": 13824,
+          "samples_us": [
+            166.875,
+            235.625,
+            161.042,
+            164.844
+          ],
+          "median_us": 165.8595,
+          "device_samples_us": [
+            17.0,
+            17.0,
+            16.0,
+            17.0
+          ],
+          "device_median_us": 17.0,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.0010486925013574754,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 13824,
+          "samples_us": [
+            238.906,
+            233.75,
+            171.511,
+            165.104
+          ],
+          "median_us": 202.63049999999998,
+          "device_samples_us": [
+            17.0,
+            17.0,
+            19.0,
+            18.0
+          ],
+          "device_median_us": 17.5,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        }
+      ]
+    },
+    {
+      "k": 256,
+      "m": 96,
+      "n": 3,
+      "variants": [
+        {
+          "buffer": "HTP0",
+          "nrmse": 0.0010438007818469631,
+          "weight_buffer_bytes": 13824,
+          "samples_us": [
+            234.27,
+            268.438,
+            267.91700000000003,
+            271.979
+          ],
+          "median_us": 268.1775,
+          "device_samples_us": [
+            19.0,
+            20.0,
+            20.0,
+            20.0
+          ],
+          "device_median_us": 20.0,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.0010438007818469631,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 13824,
+          "samples_us": [
+            261.04200000000003,
+            277.344,
+            276.562,
+            269.11400000000003
+          ],
+          "median_us": 272.838,
+          "device_samples_us": [
+            19.0,
+            20.0,
+            20.0,
+            19.0
+          ],
+          "device_median_us": 19.5,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        }
+      ]
+    },
+    {
+      "k": 256,
+      "m": 96,
+      "n": 4,
+      "variants": [
+        {
+          "buffer": "HTP0",
+          "nrmse": 0.0010111454569421408,
+          "weight_buffer_bytes": 13824,
+          "samples_us": [
+            259.427,
+            271.093,
+            269.688,
+            349.219
+          ],
+          "median_us": 270.3905,
+          "device_samples_us": [
+            19.0,
+            19.0,
+            19.0,
+            18.0
+          ],
+          "device_median_us": 19.0,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.0010111454569421408,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 13824,
+          "samples_us": [
+            271.719,
+            272.188,
+            268.854,
+            367.969
+          ],
+          "median_us": 271.95349999999996,
+          "device_samples_us": [
+            18.0,
+            19.0,
+            19.0,
+            19.0
+          ],
+          "device_median_us": 19.0,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        }
+      ]
+    },
+    {
+      "k": 256,
+      "m": 96,
+      "n": 5,
+      "variants": [
+        {
+          "buffer": "HTP0",
+          "nrmse": 0.00023679335977775257,
+          "weight_buffer_bytes": 13824,
+          "samples_us": [
+            371.19800000000004,
+            233.177,
+            272.968,
+            264.271
+          ],
+          "median_us": 268.6195,
+          "device_samples_us": [
+            21.0,
+            21.0,
+            23.0,
+            21.0
+          ],
+          "device_median_us": 21.0,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.00023679335977775257,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 13824,
+          "samples_us": [
+            409.062,
+            375.0,
+            271.875,
+            278.385
+          ],
+          "median_us": 326.6925,
+          "device_samples_us": [
+            22.0,
+            21.0,
+            22.0,
+            21.0
+          ],
+          "device_median_us": 21.5,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        }
+      ]
+    },
+    {
+      "k": 256,
+      "m": 96,
+      "n": 7,
+      "variants": [
+        {
+          "buffer": "HTP0",
+          "nrmse": 0.00023343139477549128,
+          "weight_buffer_bytes": 13824,
+          "samples_us": [
+            309.219,
+            269.271,
+            274.687,
+            297.86400000000003
+          ],
+          "median_us": 286.2755,
+          "device_samples_us": [
+            21.0,
+            21.0,
+            21.0,
+            21.0
+          ],
+          "device_median_us": 21.0,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.00023343139477549128,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 13824,
+          "samples_us": [
+            332.032,
+            273.229,
+            270.677,
+            453.281
+          ],
+          "median_us": 302.6305,
+          "device_samples_us": [
+            22.0,
+            21.0,
+            21.0,
+            20.0
+          ],
+          "device_median_us": 21.0,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        }
+      ]
+    },
+    {
+      "k": 256,
+      "m": 96,
+      "n": 8,
+      "variants": [
+        {
+          "buffer": "HTP0",
+          "nrmse": 0.0002339233137972264,
+          "weight_buffer_bytes": 13824,
+          "samples_us": [
+            269.844,
+            276.823,
+            270.781,
+            277.187
+          ],
+          "median_us": 273.802,
+          "device_samples_us": [
+            22.0,
+            23.0,
+            22.0,
+            22.0
+          ],
+          "device_median_us": 22.0,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.0002339233137972264,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 13824,
+          "samples_us": [
+            272.552,
+            270.209,
+            273.334,
+            272.396
+          ],
+          "median_us": 272.47400000000005,
+          "device_samples_us": [
+            22.0,
+            22.0,
+            22.0,
+            23.0
+          ],
+          "device_median_us": 22.0,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        }
+      ]
+    },
+    {
+      "k": 256,
+      "m": 96,
+      "n": 9,
+      "variants": [
+        {
+          "buffer": "HTP0",
+          "nrmse": 0.00023351222900049764,
+          "weight_buffer_bytes": 13824,
+          "samples_us": [
+            264.219,
+            273.125,
+            275.26,
+            262.5
+          ],
+          "median_us": 268.672,
+          "device_samples_us": [
+            22.0,
+            22.0,
+            21.0,
+            22.0
+          ],
+          "device_median_us": 22.0,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.00023351222900049764,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 13824,
+          "samples_us": [
+            271.77,
+            273.594,
+            432.031,
+            325.938
+          ],
+          "median_us": 299.76599999999996,
+          "device_samples_us": [
+            22.0,
+            22.0,
+            21.0,
+            21.0
+          ],
+          "device_median_us": 21.5,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        }
+      ]
+    },
+    {
+      "k": 256,
+      "m": 96,
+      "n": 31,
+      "variants": [
+        {
+          "buffer": "HTP0",
+          "nrmse": 0.00023686062124782597,
+          "weight_buffer_bytes": 13824,
+          "samples_us": [
+            275.156,
+            278.125,
+            276.98,
+            361.562
+          ],
+          "median_us": 277.5525,
+          "device_samples_us": [
+            24.0,
+            24.0,
+            23.0,
+            24.0
+          ],
+          "device_median_us": 24.0,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.00023686062124782597,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 13824,
+          "samples_us": [
+            288.594,
+            265.677,
+            277.187,
+            275.313
+          ],
+          "median_us": 276.25,
+          "device_samples_us": [
+            23.0,
+            23.0,
+            23.0,
+            23.0
+          ],
+          "device_median_us": 23.0,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        }
+      ]
+    },
+    {
+      "k": 256,
+      "m": 96,
+      "n": 33,
+      "variants": [
+        {
+          "buffer": "HTP0",
+          "nrmse": 0.0002374277238794931,
+          "weight_buffer_bytes": 13824,
+          "samples_us": [
+            277.187,
+            336.25,
+            279.375,
+            240.365
+          ],
+          "median_us": 278.281,
+          "device_samples_us": [
+            27.0,
+            26.0,
+            25.0,
+            25.0
+          ],
+          "device_median_us": 25.5,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.0002374277238794931,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 13824,
+          "samples_us": [
+            281.719,
+            337.761,
+            284.73900000000003,
+            314.16700000000003
+          ],
+          "median_us": 299.45300000000003,
+          "device_samples_us": [
+            26.0,
+            25.0,
+            26.0,
+            26.0
+          ],
+          "device_median_us": 26.0,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        }
+      ]
+    }
+  ],
+  "shared_storage": {
+    "layout": 1,
+    "weight_bytes": 13824,
+    "allocation_bytes": 13824,
+    "backend_bindings": 3,
+    "pointer_alias": true,
+    "roundtrip_exact": true,
+    "post_bind_alias_compute_verified": true
+  }
+}

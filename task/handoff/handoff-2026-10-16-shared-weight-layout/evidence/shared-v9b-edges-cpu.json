@@ -1,0 +1,900 @@
+{
+  "backend": "CPU",
+  "threads": 4,
+  "reps": 4,
+  "persistent_cpu_pool": true,
+  "cpu_affinity": "f0",
+  "timing": "single MUL_MAT graph + completion; weight loading/repack and activation upload excluded; invocation scratch included",
+  "input": "deterministic synthetic Q4_0; Qwen representative matrix shapes; no MoE routing",
+  "cases": [
+    {
+      "k": 128,
+      "m": 32,
+      "n": 1,
+      "variants": [
+        {
+          "buffer": "CPU",
+          "nrmse": 0.0012879650159119483,
+          "weight_buffer_bytes": 2304,
+          "samples_us": [
+            1.719,
+            1.458,
+            1.458,
+            1.4060000000000001
+          ],
+          "median_us": 1.458
+        },
+        {
+          "buffer": "CPU_REPACK",
+          "nrmse": 0.00128796103570362,
+          "weight_buffer_bytes": 2304,
+          "samples_us": [
+            1.614,
+            1.719,
+            1.615,
+            1.823
+          ],
+          "median_us": 1.667
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.00128796103570362,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 2304,
+          "samples_us": [
+            1.198,
+            1.094,
+            1.354,
+            1.094
+          ],
+          "median_us": 1.146
+        }
+      ]
+    },
+    {
+      "k": 128,
+      "m": 32,
+      "n": 2,
+      "variants": [
+        {
+          "buffer": "CPU",
+          "nrmse": 0.0012588359791353258,
+          "weight_buffer_bytes": 2304,
+          "samples_us": [
+            1.25,
+            1.563,
+            12.031,
+            1.719
+          ],
+          "median_us": 1.641
+        },
+        {
+          "buffer": "CPU_REPACK",
+          "nrmse": 0.0012588359791353258,
+          "weight_buffer_bytes": 2304,
+          "samples_us": [
+            1.77,
+            1.979,
+            28.594,
+            2.031
+          ],
+          "median_us": 2.005
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.0012588359791353258,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 2304,
+          "samples_us": [
+            1.094,
+            1.1460000000000001,
+            1.5110000000000001,
+            1.25
+          ],
+          "median_us": 1.198
+        }
+      ]
+    },
+    {
+      "k": 128,
+      "m": 32,
+      "n": 3,
+      "variants": [
+        {
+          "buffer": "CPU",
+          "nrmse": 0.0014786506195795261,
+          "weight_buffer_bytes": 2304,
+          "samples_us": [
+            2.448,
+            1.875,
+            1.875,
+            1.719
+          ],
+          "median_us": 1.875
+        },
+        {
+          "buffer": "CPU_REPACK",
+          "nrmse": 0.001478647642193752,
+          "weight_buffer_bytes": 2304,
+          "samples_us": [
+            2.8120000000000003,
+            1.875,
+            1.875,
+            1.719
+          ],
+          "median_us": 1.875
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.001478647642193752,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 2304,
+          "samples_us": [
+            1.667,
+            1.51,
+            17.136,
+            1.354
+          ],
+          "median_us": 1.5885
+        }
+      ]
+    },
+    {
+      "k": 128,
+      "m": 32,
+      "n": 4,
+      "variants": [
+        {
+          "buffer": "CPU",
+          "nrmse": 0.0016377165981986662,
+          "weight_buffer_bytes": 2304,
+          "samples_us": [
+            1.718,
+            1.719,
+            1.719,
+            1.51
+          ],
+          "median_us": 1.7185000000000001
+        },
+        {
+          "buffer": "CPU_REPACK",
+          "nrmse": 0.0016377165981986662,
+          "weight_buffer_bytes": 2304,
+          "samples_us": [
+            1.875,
+            1.563,
+            1.458,
+            1.615
+          ],
+          "median_us": 1.589
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.0016377165981986662,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 2304,
+          "samples_us": [
+            1.093,
+            1.198,
+            1.354,
+            1.094
+          ],
+          "median_us": 1.146
+        }
+      ]
+    },
+    {
+      "k": 128,
+      "m": 32,
+      "n": 5,
+      "variants": [
+        {
+          "buffer": "CPU",
+          "nrmse": 0.0015868803236320484,
+          "weight_buffer_bytes": 2304,
+          "samples_us": [
+            1.875,
+            2.136,
+            2.031,
+            1.875
+          ],
+          "median_us": 1.953
+        },
+        {
+          "buffer": "CPU_REPACK",
+          "nrmse": 0.0015868717463634534,
+          "weight_buffer_bytes": 2304,
+          "samples_us": [
+            2.1350000000000002,
+            1.7710000000000001,
+            1.875,
+            1.615
+          ],
+          "median_us": 1.823
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.0015868717463634534,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 2304,
+          "samples_us": [
+            1.25,
+            1.094,
+            1.094,
+            1.094
+          ],
+          "median_us": 1.094
+        }
+      ]
+    },
+    {
+      "k": 128,
+      "m": 32,
+      "n": 7,
+      "variants": [
+        {
+          "buffer": "CPU",
+          "nrmse": 0.0013819047609132495,
+          "weight_buffer_bytes": 2304,
+          "samples_us": [
+            2.395,
+            2.395,
+            2.552,
+            2.2920000000000003
+          ],
+          "median_us": 2.395
+        },
+        {
+          "buffer": "CPU_REPACK",
+          "nrmse": 0.0013818957818588398,
+          "weight_buffer_bytes": 2304,
+          "samples_us": [
+            2.239,
+            2.187,
+            2.031,
+            2.031
+          ],
+          "median_us": 2.109
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.0013818957818588398,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 2304,
+          "samples_us": [
+            1.4060000000000001,
+            1.458,
+            1.51,
+            1.407
+          ],
+          "median_us": 1.4325
+        }
+      ]
+    },
+    {
+      "k": 128,
+      "m": 32,
+      "n": 8,
+      "variants": [
+        {
+          "buffer": "CPU",
+          "nrmse": 0.0013603477875292877,
+          "weight_buffer_bytes": 2304,
+          "samples_us": [
+            2.813,
+            2.187,
+            2.188,
+            2.083
+          ],
+          "median_us": 2.1875
+        },
+        {
+          "buffer": "CPU_REPACK",
+          "nrmse": 0.0013603477875292877,
+          "weight_buffer_bytes": 2304,
+          "samples_us": [
+            2.344,
+            2.344,
+            2.187,
+            2.239
+          ],
+          "median_us": 2.2915
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.0013603477875292877,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 2304,
+          "samples_us": [
+            1.562,
+            1.407,
+            1.718,
+            1.407
+          ],
+          "median_us": 1.4845000000000002
+        }
+      ]
+    },
+    {
+      "k": 128,
+      "m": 32,
+      "n": 9,
+      "variants": [
+        {
+          "buffer": "CPU",
+          "nrmse": 0.0013091357638619436,
+          "weight_buffer_bytes": 2304,
+          "samples_us": [
+            3.49,
+            3.75,
+            3.75,
+            3.646
+          ],
+          "median_us": 3.698
+        },
+        {
+          "buffer": "CPU_REPACK",
+          "nrmse": 0.0013091264644857223,
+          "weight_buffer_bytes": 2304,
+          "samples_us": [
+            2.291,
+            2.343,
+            2.239,
+            2.239
+          ],
+          "median_us": 2.2649999999999997
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.0013091264644857223,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 2304,
+          "samples_us": [
+            1.719,
+            1.5110000000000001,
+            1.719,
+            1.458
+          ],
+          "median_us": 1.6150000000000002
+        }
+      ]
+    },
+    {
+      "k": 128,
+      "m": 32,
+      "n": 31,
+      "variants": [
+        {
+          "buffer": "CPU",
+          "nrmse": 0.001348738531773678,
+          "weight_buffer_bytes": 2304,
+          "samples_us": [
+            8.125,
+            8.125,
+            8.438,
+            7.812
+          ],
+          "median_us": 8.125
+        },
+        {
+          "buffer": "CPU_REPACK",
+          "nrmse": 0.0013487356482524543,
+          "weight_buffer_bytes": 2304,
+          "samples_us": [
+            4.843,
+            5.781,
+            6.51,
+            5.938
+          ],
+          "median_us": 5.8595
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.0013487356482524543,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 2304,
+          "samples_us": [
+            2.708,
+            2.708,
+            3.438,
+            3.4370000000000003
+          ],
+          "median_us": 3.0725000000000002
+        }
+      ]
+    },
+    {
+      "k": 128,
+      "m": 32,
+      "n": 33,
+      "variants": [
+        {
+          "buffer": "CPU",
+          "nrmse": 0.001416711115339939,
+          "weight_buffer_bytes": 2304,
+          "samples_us": [
+            8.646,
+            8.75,
+            9.167,
+            9.063
+          ],
+          "median_us": 8.906500000000001
+        },
+        {
+          "buffer": "CPU_REPACK",
+          "nrmse": 0.0014167075205044047,
+          "weight_buffer_bytes": 2304,
+          "samples_us": [
+            5.937,
+            6.094,
+            5.937,
+            4.687
+          ],
+          "median_us": 5.937
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.0014167075205044047,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 2304,
+          "samples_us": [
+            2.657,
+            2.5,
+            2.5,
+            2.605
+          ],
+          "median_us": 2.5525
+        }
+      ]
+    },
+    {
+      "k": 256,
+      "m": 96,
+      "n": 1,
+      "variants": [
+        {
+          "buffer": "CPU",
+          "nrmse": 0.0012177298678873072,
+          "weight_buffer_bytes": 13824,
+          "samples_us": [
+            1.927,
+            1.875,
+            1.875,
+            1.875
+          ],
+          "median_us": 1.875
+        },
+        {
+          "buffer": "CPU_REPACK",
+          "nrmse": 0.0012177333230045224,
+          "weight_buffer_bytes": 13824,
+          "samples_us": [
+            2.2920000000000003,
+            1.979,
+            1.875,
+            2.031
+          ],
+          "median_us": 2.005
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.0012177333230045224,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 13824,
+          "samples_us": [
+            1.979,
+            1.667,
+            2.031,
+            1.927
+          ],
+          "median_us": 1.953
+        }
+      ]
+    },
+    {
+      "k": 256,
+      "m": 96,
+      "n": 2,
+      "variants": [
+        {
+          "buffer": "CPU",
+          "nrmse": 0.0015419630234849205,
+          "weight_buffer_bytes": 13824,
+          "samples_us": [
+            2.031,
+            2.031,
+            2.031,
+            1.98
+          ],
+          "median_us": 2.031
+        },
+        {
+          "buffer": "CPU_REPACK",
+          "nrmse": 0.0015419630234849205,
+          "weight_buffer_bytes": 13824,
+          "samples_us": [
+            2.239,
+            2.239,
+            2.188,
+            2.187
+          ],
+          "median_us": 2.2135
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.0015419630234849205,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 13824,
+          "samples_us": [
+            2.396,
+            2.188,
+            2.5,
+            2.448
+          ],
+          "median_us": 2.4219999999999997
+        }
+      ]
+    },
+    {
+      "k": 256,
+      "m": 96,
+      "n": 3,
+      "variants": [
+        {
+          "buffer": "CPU",
+          "nrmse": 0.0014083461182368025,
+          "weight_buffer_bytes": 13824,
+          "samples_us": [
+            2.969,
+            3.125,
+            3.125,
+            3.281
+          ],
+          "median_us": 3.125
+        },
+        {
+          "buffer": "CPU_REPACK",
+          "nrmse": 0.0014083380499306166,
+          "weight_buffer_bytes": 13824,
+          "samples_us": [
+            2.552,
+            2.604,
+            2.657,
+            2.552
+          ],
+          "median_us": 2.5780000000000003
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.0014083380499306166,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 13824,
+          "samples_us": [
+            3.282,
+            3.3850000000000002,
+            3.125,
+            3.229
+          ],
+          "median_us": 3.2555
+        }
+      ]
+    },
+    {
+      "k": 256,
+      "m": 96,
+      "n": 4,
+      "variants": [
+        {
+          "buffer": "CPU",
+          "nrmse": 0.0012810998713999975,
+          "weight_buffer_bytes": 13824,
+          "samples_us": [
+            2.969,
+            2.9170000000000003,
+            2.761,
+            2.656
+          ],
+          "median_us": 2.8390000000000004
+        },
+        {
+          "buffer": "CPU_REPACK",
+          "nrmse": 0.0012810998713999975,
+          "weight_buffer_bytes": 13824,
+          "samples_us": [
+            2.188,
+            2.343,
+            1.979,
+            2.188
+          ],
+          "median_us": 2.188
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.0012810998713999975,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 13824,
+          "samples_us": [
+            2.448,
+            2.343,
+            2.5,
+            2.656
+          ],
+          "median_us": 2.474
+        }
+      ]
+    },
+    {
+      "k": 256,
+      "m": 96,
+      "n": 5,
+      "variants": [
+        {
+          "buffer": "CPU",
+          "nrmse": 0.0011646639631071353,
+          "weight_buffer_bytes": 13824,
+          "samples_us": [
+            4.4270000000000005,
+            4.115,
+            4.166,
+            4.218
+          ],
+          "median_us": 4.192
+        },
+        {
+          "buffer": "CPU_REPACK",
+          "nrmse": 0.0011646583144634905,
+          "weight_buffer_bytes": 13824,
+          "samples_us": [
+            2.344,
+            2.656,
+            2.5,
+            2.552
+          ],
+          "median_us": 2.526
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.0011646583144634905,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 13824,
+          "samples_us": [
+            3.177,
+            2.605,
+            2.656,
+            2.656
+          ],
+          "median_us": 2.656
+        }
+      ]
+    },
+    {
+      "k": 256,
+      "m": 96,
+      "n": 7,
+      "variants": [
+        {
+          "buffer": "CPU",
+          "nrmse": 0.0011909860436083919,
+          "weight_buffer_bytes": 13824,
+          "samples_us": [
+            6.094,
+            5.938,
+            5.729,
+            5.781
+          ],
+          "median_us": 5.8595
+        },
+        {
+          "buffer": "CPU_REPACK",
+          "nrmse": 0.001190982640941093,
+          "weight_buffer_bytes": 13824,
+          "samples_us": [
+            3.333,
+            2.969,
+            2.5,
+            3.021
+          ],
+          "median_us": 2.995
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.001190982640941093,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 13824,
+          "samples_us": [
+            5.938,
+            4.062,
+            4.219,
+            4.375
+          ],
+          "median_us": 4.297000000000001
+        }
+      ]
+    },
+    {
+      "k": 256,
+      "m": 96,
+      "n": 8,
+      "variants": [
+        {
+          "buffer": "CPU",
+          "nrmse": 0.0011302956267947115,
+          "weight_buffer_bytes": 13824,
+          "samples_us": [
+            4.739,
+            4.48,
+            4.843,
+            4.531
+          ],
+          "median_us": 4.635
+        },
+        {
+          "buffer": "CPU_REPACK",
+          "nrmse": 0.0011302956267947115,
+          "weight_buffer_bytes": 13824,
+          "samples_us": [
+            3.75,
+            3.3850000000000002,
+            3.594,
+            3.3850000000000002
+          ],
+          "median_us": 3.4895
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.0011302956267947115,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 13824,
+          "samples_us": [
+            3.907,
+            4.4270000000000005,
+            4.531,
+            4.48
+          ],
+          "median_us": 4.4535
+        }
+      ]
+    },
+    {
+      "k": 256,
+      "m": 96,
+      "n": 9,
+      "variants": [
+        {
+          "buffer": "CPU",
+          "nrmse": 0.0011327532482323824,
+          "weight_buffer_bytes": 13824,
+          "samples_us": [
+            6.875,
+            6.563,
+            6.666,
+            6.458
+          ],
+          "median_us": 6.6145
+        },
+        {
+          "buffer": "CPU_REPACK",
+          "nrmse": 0.0011327500811336396,
+          "weight_buffer_bytes": 13824,
+          "samples_us": [
+            3.593,
+            3.75,
+            3.594,
+            3.75
+          ],
+          "median_us": 3.6719999999999997
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.0011327500811336396,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 13824,
+          "samples_us": [
+            5.313,
+            5.156,
+            5.573,
+            4.531
+          ],
+          "median_us": 5.2345
+        }
+      ]
+    },
+    {
+      "k": 256,
+      "m": 96,
+      "n": 31,
+      "variants": [
+        {
+          "buffer": "CPU",
+          "nrmse": 0.0011305860411689268,
+          "weight_buffer_bytes": 13824,
+          "samples_us": [
+            19.688,
+            19.896,
+            20.0,
+            20.313
+          ],
+          "median_us": 19.948
+        },
+        {
+          "buffer": "CPU_REPACK",
+          "nrmse": 0.0011305856357077273,
+          "weight_buffer_bytes": 13824,
+          "samples_us": [
+            8.854000000000001,
+            6.719,
+            7.343,
+            6.3020000000000005
+          ],
+          "median_us": 7.031000000000001
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.0011305856357077273,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 13824,
+          "samples_us": [
+            7.969,
+            7.969,
+            8.073,
+            7.813
+          ],
+          "median_us": 7.969
+        }
+      ]
+    },
+    {
+      "k": 256,
+      "m": 96,
+      "n": 33,
+      "variants": [
+        {
+          "buffer": "CPU",
+          "nrmse": 0.0011122310828094216,
+          "weight_buffer_bytes": 13824,
+          "samples_us": [
+            15.625,
+            15.261000000000001,
+            15.781,
+            15.469000000000001
+          ],
+          "median_us": 15.547
+        },
+        {
+          "buffer": "CPU_REPACK",
+          "nrmse": 0.0011122309025036535,
+          "weight_buffer_bytes": 13824,
+          "samples_us": [
+            5.729,
+            5.625,
+            7.5,
+            7.656000000000001
+          ],
+          "median_us": 6.6145
+        },
+        {
+          "buffer": "SHARED_Q4_0_32X32_V1",
+          "nrmse": 0.0011122309025036535,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 13824,
+          "samples_us": [
+            8.177,
+            9.011000000000001,
+            8.177,
+            8.594
+          ],
+          "median_us": 8.3855
+        }
+      ]
+    }
+  ],
+  "shared_storage": {
+    "layout": 1,
+    "weight_bytes": 13824,
+    "allocation_bytes": 13824,
+    "backend_bindings": 3,
+    "pointer_alias": true,
+    "roundtrip_exact": true,
+    "post_bind_alias_compute_verified": true
+  }
+}

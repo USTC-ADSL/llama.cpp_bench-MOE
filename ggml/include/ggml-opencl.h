@@ -20,6 +20,14 @@ GGML_BACKEND_API ggml_backend_buffer_type_t ggml_backend_opencl_host_buffer_type
 
 GGML_BACKEND_API ggml_backend_reg_t ggml_backend_opencl_reg(void);
 
+// Optional monotonic kernel-event counters (GGML_OPENCL_PROFILING builds).
+// Resolve "ggml_backend_opencl_get_compute_timing" via the registry. Call after
+// synchronization; includes activation preparation kernels, excludes host/RPC
+// and transfer commands. Counters belong to this device's shared command queue.
+struct ggml_opencl_compute_timing { uint64_t kernels, kernel_ns; };
+typedef bool (*ggml_backend_opencl_get_compute_timing_fn)(
+        ggml_backend_t backend, struct ggml_opencl_compute_timing * out);
+
 // QCOM IO-coherent DMA import, restricted to F32/I32 activation tensors.
 // Returns NULL when unsupported; callers must not silently claim zero-copy.
 GGML_BACKEND_API ggml_backend_buffer_t ggml_backend_opencl_import_shared_dma_compute_buffer(

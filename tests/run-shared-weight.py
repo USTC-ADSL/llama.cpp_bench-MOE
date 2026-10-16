@@ -23,6 +23,8 @@ def main():
     p.add_argument("--cpu-mask", default="f0", help="CPU compute affinity on K80 Pro; helpers do no weight conversion")
     p.add_argument("--deploy", action="store_true")
     p.add_argument("--shared", action="store_true")
+    p.add_argument("--edges", action="store_true", help="small shapes and tail batches; correctness only")
+    p.add_argument("--profile", action="store_true", help="enable DSP counters; GPU counters require profiling build")
     a = p.parse_args()
     if not a.tag or any(c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-" for c in a.tag):
         p.error("invalid tag")
@@ -60,6 +62,10 @@ def main():
            "GGML_HEXAGON_DEVICES=1", "GGML_OPENCL_KERNEL_CACHE_DIR=off"]
     if a.shared:
         env.append("GGML_SHARED_WEIGHT_TEST=1")
+    if a.edges:
+        env.append("GGML_SHARED_WEIGHT_EDGES=1")
+    if a.profile:
+        env += ["GGML_HEXAGON_PROFILE=1", "GGML_HEXAGON_TIMING=1"]
     if a.backend == "CPU":
         int(a.cpu_mask, 16)
         env.append(f"GGML_SHARED_TEST_CPUMASK={a.cpu_mask}")
@@ -84,6 +90,10 @@ def main():
         raise RuntimeError(f"probe failed; inspect {prefix}.log")
     adb("pull", f"{REMOTE}/{a.tag}.json", str(prefix.with_suffix(".json")))
     shell(f"rm {REMOTE}/{a.tag}.json")
+    for name in ["cl_profiling.csv", "cl_trace.json"]:
+        if shell(f"test -f {REMOTE}/{name}", check=False).returncode == 0:
+            adb("pull", f"{REMOTE}/{name}", str(OUT / f"{a.tag}-{name}"))
+            shell(f"rm {REMOTE}/{name}")
     print(f"saved {prefix}.json", flush=True)
 
 
