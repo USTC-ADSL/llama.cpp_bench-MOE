@@ -27,6 +27,7 @@ def main():
     p.add_argument("--profile", action="store_true", help="enable DSP counters; GPU counters require profiling build")
     p.add_argument("--model", action="store_true", help="read expert 7 weights from the designated device GGUF")
     p.add_argument("--layout", choices=["htp", "cpu4x8"], default="htp")
+    p.add_argument("--gpu-dp4a", action="store_true", help="enable native dense DP4A for an additional baseline")
     a = p.parse_args()
     if not a.tag or any(c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-" for c in a.tag):
         p.error("invalid tag")
@@ -64,6 +65,8 @@ def main():
            "GGML_HEXAGON_DEVICES=1", "GGML_OPENCL_KERNEL_CACHE_DIR=off"]
     if a.shared:
         env.append("GGML_SHARED_WEIGHT_TEST=1")
+    if a.gpu_dp4a:
+        env.append("GGML_OPENCL_Q4_0_DENSE_DP4A=1")
     if a.layout == "cpu4x8":
         env.append("GGML_SHARED_WEIGHT_CPU4X8=1")
     if a.edges:

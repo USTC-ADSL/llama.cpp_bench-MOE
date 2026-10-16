@@ -1,0 +1,1000 @@
+{
+  "backend": "GPUOpenCL",
+  "threads": 4,
+  "reps": 4,
+  "persistent_cpu_pool": false,
+  "cpu_affinity": "default",
+  "timing": "single MUL_MAT graph + completion; weight loading/repack and activation upload excluded; invocation scratch included",
+  "input": "deterministic synthetic Q4_0; Qwen representative matrix shapes; no MoE routing",
+  "cases": [
+    {
+      "k": 128,
+      "m": 32,
+      "n": 1,
+      "source_tensor": "synthetic",
+      "variants": [
+        {
+          "buffer": "OpenCL",
+          "nrmse": 1.3856291359468388e-07,
+          "weight_buffer_bytes": 2816,
+          "samples_us": [
+            158.542,
+            159.583,
+            158.906,
+            157.031
+          ],
+          "median_us": 158.724,
+          "device_samples_us": [
+            7.936,
+            7.936,
+            7.936,
+            7.936
+          ],
+          "device_median_us": 7.936,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        },
+        {
+          "buffer": "SHARED_Q4_0_CPU4X8_V2",
+          "nrmse": 1.596572761414841e-07,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 2304,
+          "samples_us": [
+            151.875,
+            151.875,
+            155.312,
+            152.969
+          ],
+          "median_us": 152.422,
+          "device_samples_us": [
+            5.12,
+            4.864,
+            4.864,
+            5.12
+          ],
+          "device_median_us": 4.992,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        }
+      ]
+    },
+    {
+      "k": 128,
+      "m": 32,
+      "n": 2,
+      "source_tensor": "synthetic",
+      "variants": [
+        {
+          "buffer": "OpenCL",
+          "nrmse": 1.2127906843169714e-07,
+          "weight_buffer_bytes": 2816,
+          "samples_us": [
+            215.833,
+            224.479,
+            242.5,
+            219.06300000000002
+          ],
+          "median_us": 221.77100000000002,
+          "device_samples_us": [
+            7.936,
+            7.936,
+            7.936,
+            7.936
+          ],
+          "device_median_us": 7.936,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        },
+        {
+          "buffer": "SHARED_Q4_0_CPU4X8_V2",
+          "nrmse": 0.002096965372133692,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 2304,
+          "samples_us": [
+            258.438,
+            168.43800000000002,
+            272.91700000000003,
+            264.531
+          ],
+          "median_us": 261.4845,
+          "device_samples_us": [
+            18.944,
+            19.968,
+            18.944,
+            19.968
+          ],
+          "device_median_us": 19.456,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        }
+      ]
+    },
+    {
+      "k": 128,
+      "m": 32,
+      "n": 3,
+      "source_tensor": "synthetic",
+      "variants": [
+        {
+          "buffer": "OpenCL",
+          "nrmse": 1.2966426537943963e-07,
+          "weight_buffer_bytes": 2816,
+          "samples_us": [
+            345.209,
+            523.75,
+            174.375,
+            164.167
+          ],
+          "median_us": 259.79200000000003,
+          "device_samples_us": [
+            7.936,
+            9.984,
+            7.936,
+            7.936
+          ],
+          "device_median_us": 7.936,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        },
+        {
+          "buffer": "SHARED_Q4_0_CPU4X8_V2",
+          "nrmse": 0.0018357707020624932,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 2304,
+          "samples_us": [
+            572.188,
+            625.521,
+            206.56300000000002,
+            196.719
+          ],
+          "median_us": 389.3755,
+          "device_samples_us": [
+            23.04,
+            21.76,
+            19.968,
+            20.992
+          ],
+          "device_median_us": 21.376,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        }
+      ]
+    },
+    {
+      "k": 128,
+      "m": 32,
+      "n": 4,
+      "source_tensor": "synthetic",
+      "variants": [
+        {
+          "buffer": "OpenCL",
+          "nrmse": 1.4574290533093046e-07,
+          "weight_buffer_bytes": 2816,
+          "samples_us": [
+            251.25,
+            494.843,
+            504.844,
+            219.062
+          ],
+          "median_us": 373.04650000000004,
+          "device_samples_us": [
+            7.936,
+            8.192,
+            10.24,
+            7.936
+          ],
+          "device_median_us": 8.064,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        },
+        {
+          "buffer": "SHARED_Q4_0_CPU4X8_V2",
+          "nrmse": 0.001752730624807946,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 2304,
+          "samples_us": [
+            161.979,
+            251.666,
+            268.75,
+            263.906
+          ],
+          "median_us": 257.786,
+          "device_samples_us": [
+            20.224,
+            19.968,
+            19.968,
+            20.992
+          ],
+          "device_median_us": 20.096,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        }
+      ]
+    },
+    {
+      "k": 128,
+      "m": 32,
+      "n": 5,
+      "source_tensor": "synthetic",
+      "variants": [
+        {
+          "buffer": "OpenCL",
+          "nrmse": 1.5696236073064864e-07,
+          "weight_buffer_bytes": 2816,
+          "samples_us": [
+            131.875,
+            284.375,
+            127.44800000000001,
+            303.854
+          ],
+          "median_us": 208.125,
+          "device_samples_us": [
+            7.936,
+            8.192,
+            7.936,
+            7.936
+          ],
+          "device_median_us": 7.936,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        },
+        {
+          "buffer": "SHARED_Q4_0_CPU4X8_V2",
+          "nrmse": 0.001767494415395765,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 2304,
+          "samples_us": [
+            281.146,
+            164.166,
+            284.218,
+            160.312
+          ],
+          "median_us": 222.656,
+          "device_samples_us": [
+            20.992,
+            20.992,
+            20.992,
+            21.248
+          ],
+          "device_median_us": 20.992,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        }
+      ]
+    },
+    {
+      "k": 128,
+      "m": 32,
+      "n": 7,
+      "source_tensor": "synthetic",
+      "variants": [
+        {
+          "buffer": "OpenCL",
+          "nrmse": 1.4710707116599015e-07,
+          "weight_buffer_bytes": 2816,
+          "samples_us": [
+            130.833,
+            263.646,
+            269.531,
+            131.51
+          ],
+          "median_us": 197.578,
+          "device_samples_us": [
+            9.216000000000001,
+            8.96,
+            8.96,
+            8.96
+          ],
+          "device_median_us": 8.96,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        },
+        {
+          "buffer": "SHARED_Q4_0_CPU4X8_V2",
+          "nrmse": 0.0017225498737244971,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 2304,
+          "samples_us": [
+            323.907,
+            131.458,
+            190.93800000000002,
+            315.468
+          ],
+          "median_us": 253.20300000000003,
+          "device_samples_us": [
+            20.992,
+            20.992,
+            20.992,
+            20.992
+          ],
+          "device_median_us": 20.992,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        }
+      ]
+    },
+    {
+      "k": 128,
+      "m": 32,
+      "n": 8,
+      "source_tensor": "synthetic",
+      "variants": [
+        {
+          "buffer": "OpenCL",
+          "nrmse": 1.4885575479392681e-07,
+          "weight_buffer_bytes": 2816,
+          "samples_us": [
+            133.02100000000002,
+            296.198,
+            127.86500000000001,
+            605.208
+          ],
+          "median_us": 214.6095,
+          "device_samples_us": [
+            8.96,
+            8.96,
+            9.216000000000001,
+            11.008000000000001
+          ],
+          "device_median_us": 9.088000000000001,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        },
+        {
+          "buffer": "SHARED_Q4_0_CPU4X8_V2",
+          "nrmse": 0.0017169229895272011,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 2304,
+          "samples_us": [
+            314.844,
+            170.31300000000002,
+            438.646,
+            637.968
+          ],
+          "median_us": 376.745,
+          "device_samples_us": [
+            22.016000000000002,
+            20.992,
+            21.76,
+            23.808
+          ],
+          "device_median_us": 21.888,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        }
+      ]
+    },
+    {
+      "k": 128,
+      "m": 32,
+      "n": 9,
+      "source_tensor": "synthetic",
+      "variants": [
+        {
+          "buffer": "OpenCL",
+          "nrmse": 1.4801813476021774e-07,
+          "weight_buffer_bytes": 2816,
+          "samples_us": [
+            137.81300000000002,
+            277.24,
+            127.44800000000001,
+            262.187
+          ],
+          "median_us": 200.0,
+          "device_samples_us": [
+            8.96,
+            8.96,
+            8.96,
+            8.96
+          ],
+          "device_median_us": 8.96,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        },
+        {
+          "buffer": "SHARED_Q4_0_CPU4X8_V2",
+          "nrmse": 0.0013004183695372682,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 2304,
+          "samples_us": [
+            316.927,
+            165.261,
+            332.187,
+            130.573
+          ],
+          "median_us": 241.094,
+          "device_samples_us": [
+            19.968,
+            19.968,
+            19.968,
+            19.968
+          ],
+          "device_median_us": 19.968,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        }
+      ]
+    },
+    {
+      "k": 128,
+      "m": 32,
+      "n": 31,
+      "source_tensor": "synthetic",
+      "variants": [
+        {
+          "buffer": "OpenCL",
+          "nrmse": 1.4682213465923902e-07,
+          "weight_buffer_bytes": 2816,
+          "samples_us": [
+            125.417,
+            610.625,
+            567.76,
+            293.906
+          ],
+          "median_us": 430.83299999999997,
+          "device_samples_us": [
+            16.896,
+            18.944,
+            19.2,
+            16.896
+          ],
+          "device_median_us": 17.92,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        },
+        {
+          "buffer": "SHARED_Q4_0_CPU4X8_V2",
+          "nrmse": 0.001284055005589398,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 2304,
+          "samples_us": [
+            398.75,
+            642.187,
+            336.719,
+            295.781
+          ],
+          "median_us": 367.7345,
+          "device_samples_us": [
+            23.04,
+            24.832,
+            23.04,
+            23.04
+          ],
+          "device_median_us": 23.04,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        }
+      ]
+    },
+    {
+      "k": 128,
+      "m": 32,
+      "n": 33,
+      "source_tensor": "synthetic",
+      "variants": [
+        {
+          "buffer": "OpenCL",
+          "nrmse": 2.128657995101985e-07,
+          "weight_buffer_bytes": 2816,
+          "samples_us": [
+            299.948,
+            380.312,
+            553.75,
+            264.688
+          ],
+          "median_us": 340.13,
+          "device_samples_us": [
+            38.144,
+            37.888,
+            40.192,
+            37.888
+          ],
+          "device_median_us": 38.016,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        },
+        {
+          "buffer": "SHARED_Q4_0_CPU4X8_V2",
+          "nrmse": 0.001364509235979132,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 2304,
+          "samples_us": [
+            269.166,
+            292.031,
+            295.729,
+            290.26
+          ],
+          "median_us": 291.14549999999997,
+          "device_samples_us": [
+            22.016000000000002,
+            22.016000000000002,
+            22.016000000000002,
+            22.272000000000002
+          ],
+          "device_median_us": 22.016000000000002,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        }
+      ]
+    },
+    {
+      "k": 256,
+      "m": 96,
+      "n": 1,
+      "source_tensor": "synthetic",
+      "variants": [
+        {
+          "buffer": "OpenCL",
+          "nrmse": 1.0161134217958363e-07,
+          "weight_buffer_bytes": 14336,
+          "samples_us": [
+            160.625,
+            155.677,
+            87.813,
+            155.469
+          ],
+          "median_us": 155.57299999999998,
+          "device_samples_us": [
+            8.96,
+            7.936,
+            8.192,
+            7.936
+          ],
+          "device_median_us": 8.064,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        },
+        {
+          "buffer": "SHARED_Q4_0_CPU4X8_V2",
+          "nrmse": 1.1957909241943854e-07,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 13824,
+          "samples_us": [
+            150.365,
+            151.98,
+            173.43800000000002,
+            153.958
+          ],
+          "median_us": 152.969,
+          "device_samples_us": [
+            5.888,
+            6.144,
+            5.888,
+            5.888
+          ],
+          "device_median_us": 5.888,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        }
+      ]
+    },
+    {
+      "k": 256,
+      "m": 96,
+      "n": 2,
+      "source_tensor": "synthetic",
+      "variants": [
+        {
+          "buffer": "OpenCL",
+          "nrmse": 9.354072190374123e-08,
+          "weight_buffer_bytes": 14336,
+          "samples_us": [
+            185.156,
+            189.89600000000002,
+            182.24,
+            182.344
+          ],
+          "median_us": 183.75,
+          "device_samples_us": [
+            8.96,
+            8.96,
+            7.936,
+            8.96
+          ],
+          "device_median_us": 8.96,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        },
+        {
+          "buffer": "SHARED_Q4_0_CPU4X8_V2",
+          "nrmse": 0.0019026006040717698,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 13824,
+          "samples_us": [
+            235.261,
+            239.219,
+            252.76000000000002,
+            240.26
+          ],
+          "median_us": 239.7395,
+          "device_samples_us": [
+            35.072,
+            34.816,
+            35.072,
+            35.072
+          ],
+          "device_median_us": 35.072,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        }
+      ]
+    },
+    {
+      "k": 256,
+      "m": 96,
+      "n": 3,
+      "source_tensor": "synthetic",
+      "variants": [
+        {
+          "buffer": "OpenCL",
+          "nrmse": 8.875254922598882e-08,
+          "weight_buffer_bytes": 14336,
+          "samples_us": [
+            239.532,
+            299.063,
+            288.281,
+            236.56300000000002
+          ],
+          "median_us": 263.9065,
+          "device_samples_us": [
+            8.96,
+            8.96,
+            8.96,
+            8.96
+          ],
+          "device_median_us": 8.96,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        },
+        {
+          "buffer": "SHARED_Q4_0_CPU4X8_V2",
+          "nrmse": 0.0018528526445078697,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 13824,
+          "samples_us": [
+            278.49,
+            320.781,
+            292.656,
+            285.937
+          ],
+          "median_us": 289.29650000000004,
+          "device_samples_us": [
+            35.072,
+            36.096000000000004,
+            35.072,
+            35.072
+          ],
+          "device_median_us": 35.072,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        }
+      ]
+    },
+    {
+      "k": 256,
+      "m": 96,
+      "n": 4,
+      "source_tensor": "synthetic",
+      "variants": [
+        {
+          "buffer": "OpenCL",
+          "nrmse": 9.480157326356648e-08,
+          "weight_buffer_bytes": 14336,
+          "samples_us": [
+            248.906,
+            215.52100000000002,
+            217.552,
+            217.34300000000002
+          ],
+          "median_us": 217.4475,
+          "device_samples_us": [
+            9.216000000000001,
+            9.984,
+            8.96,
+            9.984
+          ],
+          "device_median_us": 9.600000000000001,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        },
+        {
+          "buffer": "SHARED_Q4_0_CPU4X8_V2",
+          "nrmse": 0.001979255223638354,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 13824,
+          "samples_us": [
+            263.48900000000003,
+            274.844,
+            275.833,
+            275.729
+          ],
+          "median_us": 275.2865,
+          "device_samples_us": [
+            36.096000000000004,
+            35.84,
+            35.84,
+            36.096000000000004
+          ],
+          "device_median_us": 35.968,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        }
+      ]
+    },
+    {
+      "k": 256,
+      "m": 96,
+      "n": 5,
+      "source_tensor": "synthetic",
+      "variants": [
+        {
+          "buffer": "OpenCL",
+          "nrmse": 9.676612485210091e-08,
+          "weight_buffer_bytes": 14336,
+          "samples_us": [
+            234.68800000000002,
+            237.5,
+            142.083,
+            242.969
+          ],
+          "median_us": 236.094,
+          "device_samples_us": [
+            9.984,
+            9.984,
+            9.984,
+            9.984
+          ],
+          "device_median_us": 9.984,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        },
+        {
+          "buffer": "SHARED_Q4_0_CPU4X8_V2",
+          "nrmse": 0.0019409351277084408,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 13824,
+          "samples_us": [
+            274.531,
+            286.823,
+            276.406,
+            285.0
+          ],
+          "median_us": 280.703,
+          "device_samples_us": [
+            34.816,
+            35.072,
+            35.072,
+            35.072
+          ],
+          "device_median_us": 35.072,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        }
+      ]
+    },
+    {
+      "k": 256,
+      "m": 96,
+      "n": 7,
+      "source_tensor": "synthetic",
+      "variants": [
+        {
+          "buffer": "OpenCL",
+          "nrmse": 9.567343750828499e-08,
+          "weight_buffer_bytes": 14336,
+          "samples_us": [
+            249.531,
+            165.468,
+            247.344,
+            256.61400000000003
+          ],
+          "median_us": 248.4375,
+          "device_samples_us": [
+            14.848,
+            14.848,
+            15.104000000000001,
+            14.848
+          ],
+          "device_median_us": 14.848,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        },
+        {
+          "buffer": "SHARED_Q4_0_CPU4X8_V2",
+          "nrmse": 0.002076793441200684,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 13824,
+          "samples_us": [
+            280.625,
+            292.969,
+            225.209,
+            308.125
+          ],
+          "median_us": 286.797,
+          "device_samples_us": [
+            36.096000000000004,
+            34.816,
+            34.816,
+            35.072
+          ],
+          "device_median_us": 34.944,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        }
+      ]
+    },
+    {
+      "k": 256,
+      "m": 96,
+      "n": 8,
+      "source_tensor": "synthetic",
+      "variants": [
+        {
+          "buffer": "OpenCL",
+          "nrmse": 9.829421980291032e-08,
+          "weight_buffer_bytes": 14336,
+          "samples_us": [
+            276.562,
+            122.292,
+            129.531,
+            605.469
+          ],
+          "median_us": 203.0465,
+          "device_samples_us": [
+            14.848,
+            15.104000000000001,
+            15.104000000000001,
+            17.152
+          ],
+          "device_median_us": 15.104000000000001,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        },
+        {
+          "buffer": "SHARED_Q4_0_CPU4X8_V2",
+          "nrmse": 0.002106570618556291,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 13824,
+          "samples_us": [
+            355.521,
+            316.823,
+            394.16700000000003,
+            631.823
+          ],
+          "median_us": 374.84400000000005,
+          "device_samples_us": [
+            35.84,
+            36.864000000000004,
+            37.12,
+            38.912
+          ],
+          "device_median_us": 36.992000000000004,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        }
+      ]
+    },
+    {
+      "k": 256,
+      "m": 96,
+      "n": 9,
+      "source_tensor": "synthetic",
+      "variants": [
+        {
+          "buffer": "OpenCL",
+          "nrmse": 9.75057332525481e-08,
+          "weight_buffer_bytes": 14336,
+          "samples_us": [
+            245.573,
+            249.115,
+            314.16700000000003,
+            243.75
+          ],
+          "median_us": 247.344,
+          "device_samples_us": [
+            16.128,
+            16.128,
+            15.872,
+            16.128
+          ],
+          "device_median_us": 16.128,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        },
+        {
+          "buffer": "SHARED_Q4_0_CPU4X8_V2",
+          "nrmse": 0.000997144640870058,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 13824,
+          "samples_us": [
+            296.198,
+            291.718,
+            293.48900000000003,
+            293.021
+          ],
+          "median_us": 293.255,
+          "device_samples_us": [
+            33.024,
+            33.024,
+            33.024,
+            33.024
+          ],
+          "device_median_us": 33.024,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        }
+      ]
+    },
+    {
+      "k": 256,
+      "m": 96,
+      "n": 31,
+      "source_tensor": "synthetic",
+      "variants": [
+        {
+          "buffer": "OpenCL",
+          "nrmse": 1.0773944139828348e-07,
+          "weight_buffer_bytes": 14336,
+          "samples_us": [
+            269.11400000000003,
+            271.198,
+            273.281,
+            283.802
+          ],
+          "median_us": 272.2395,
+          "device_samples_us": [
+            40.96,
+            39.936,
+            39.936,
+            39.936
+          ],
+          "device_median_us": 39.936,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        },
+        {
+          "buffer": "SHARED_Q4_0_CPU4X8_V2",
+          "nrmse": 0.001100904176081276,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 13824,
+          "samples_us": [
+            304.687,
+            296.77,
+            298.75,
+            296.61400000000003
+          ],
+          "median_us": 297.76,
+          "device_samples_us": [
+            37.12,
+            37.12,
+            37.12,
+            37.12
+          ],
+          "device_median_us": 37.12,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        }
+      ]
+    },
+    {
+      "k": 256,
+      "m": 96,
+      "n": 33,
+      "source_tensor": "synthetic",
+      "variants": [
+        {
+          "buffer": "OpenCL",
+          "nrmse": 2.421301516105802e-07,
+          "weight_buffer_bytes": 14336,
+          "samples_us": [
+            336.875,
+            278.75,
+            392.344,
+            382.916
+          ],
+          "median_us": 359.89549999999997,
+          "device_samples_us": [
+            71.936,
+            70.912,
+            71.936,
+            71.936
+          ],
+          "device_median_us": 71.936,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        },
+        {
+          "buffer": "SHARED_Q4_0_CPU4X8_V2",
+          "nrmse": 0.0010910074607537986,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 13824,
+          "samples_us": [
+            306.302,
+            329.687,
+            326.355,
+            308.229
+          ],
+          "median_us": 317.29200000000003,
+          "device_samples_us": [
+            36.096000000000004,
+            36.096000000000004,
+            35.84,
+            35.072
+          ],
+          "device_median_us": 35.968,
+          "device_timing": "sum kernel event END-START; includes activation preparation"
+        }
+      ]
+    }
+  ],
+  "shared_storage": {
+    "layout": 2,
+    "weight_bytes": 13824,
+    "allocation_bytes": 13824,
+    "backend_bindings": 2,
+    "pointer_alias": true,
+    "roundtrip_exact": true,
+    "post_bind_alias_compute_verified": true
+  }
+}

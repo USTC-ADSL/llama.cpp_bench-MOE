@@ -9768,6 +9768,7 @@ struct ggml_backend_opencl_buffer_context {
     cl_kernel shared_mv = nullptr;
     cl_kernel shared_mm = nullptr;
     cl_kernel shared_transpose = nullptr;
+    cl_kernel shared_dp4a = nullptr;
     cl_mem shared_weight_image = nullptr;
 };
 
@@ -9776,6 +9777,7 @@ static void ggml_backend_opencl_buffer_free_buffer(ggml_backend_buffer_t buffer)
     if (ctx->shared_mv) { CL_CHECK(clReleaseKernel(ctx->shared_mv)); }
     if (ctx->shared_mm) { CL_CHECK(clReleaseKernel(ctx->shared_mm)); }
     if (ctx->shared_transpose) { CL_CHECK(clReleaseKernel(ctx->shared_transpose)); }
+    if (ctx->shared_dp4a) { CL_CHECK(clReleaseKernel(ctx->shared_dp4a)); }
     if (ctx->shared_weight_image) { CL_CHECK(clReleaseMemObject(ctx->shared_weight_image)); }
     delete ctx;
 }
@@ -13393,12 +13395,16 @@ static ggml_backend_buffer_t ggml_backend_opencl_import_shared_weight(
     const std::string source=read_file("shared_q4_0.cl");
 #endif
     const std::string options=std::string("-cl-std=CL2.0 -cl-mad-enable")+
-        (desc->layout==GGML_SHARED_WEIGHT_Q4_0_CPU4X8_V2?" -DSHARED_CPU4X8":"");
+        (desc->layout==GGML_SHARED_WEIGHT_Q4_0_CPU4X8_V2?" -DSHARED_CPU4X8":"")+
+        (desc->layout==GGML_SHARED_WEIGHT_Q4_0_CPU4X8_V2 && ctx->has_integer_dot?" -DSHARED_DP4A":"");
     cl_program program=build_program_from_source(ctx,source.c_str(),options);
     cl_int error=CL_SUCCESS;
     bc->shared_mv=clCreateKernel(program,"shared_q4_0_mv",&error);
     if (error==CL_SUCCESS) { bc->shared_mm=clCreateKernel(program,"shared_q4_0_mm",&error); }
     if (error==CL_SUCCESS) { bc->shared_transpose=clCreateKernel(program,"shared_q4_0_transpose",&error); }
+    if (error==CL_SUCCESS && desc->layout==GGML_SHARED_WEIGHT_Q4_0_CPU4X8_V2 && ctx->has_integer_dot) {
+        bc->shared_dp4a=clCreateKernel(program,"shared_q4_0_dp4a",&error);
+    }
     clReleaseProgram(program);
     if (error!=CL_SUCCESS) { ggml_backend_buffer_free(buffer); return nullptr; }
     cl_image_format format={CL_R,CL_UNSIGNED_INT32};
@@ -23807,6 +23813,36 @@ static void ggml_cl_mul_mat(ggml_backend_t backend, const ggml_tensor * src0, co
             cl_int error;
             cl_buffer_region region={size_t(xo),size_t(k)*n*sizeof(float)};
             cl_mem input_buffer=clCreateSubBuffer(x->data_device,0,CL_BUFFER_CREATE_TYPE_REGION,&region,&error); CL_CHECK(error);
+            if(n>8 && bc->shared_dp4a) {
+                const size_t blocks=size_t(n)*(k/32);
+                ctx->prealloc_moe_qa.allocate(ctx->context,size_t(n)*k);
+                ctx->prealloc_moe_da.allocate(ctx->context,blocks*sizeof(cl_half));
+                ctx->prealloc_moe_sa.allocate(ctx->context,blocks*sizeof(cl_half));
+                cl_int total_blocks=blocks;
+                cl_kernel quant=ctx->kernel_quant_a_q8_1;
+                CL_CHECK(clSetKernelArg(quant,0,sizeof(cl_mem),&input_buffer));
+                CL_CHECK(clSetKernelArg(quant,1,sizeof(cl_mem),&ctx->prealloc_moe_qa.buffer));
+                CL_CHECK(clSetKernelArg(quant,2,sizeof(cl_mem),&ctx->prealloc_moe_da.buffer));
+                CL_CHECK(clSetKernelArg(quant,3,sizeof(cl_mem),&ctx->prealloc_moe_sa.buffer));
+                CL_CHECK(clSetKernelArg(quant,4,sizeof(total_blocks),&total_blocks));
+                size_t qlocal=64,qglobal=(blocks+63)/64*64;
+                ctx->enqueue_ndrange_kernel(quant,1,&qglobal,&qlocal,dst);
+                cl_kernel kernel=bc->shared_dp4a;
+                CL_CHECK(clSetKernelArg(kernel,0,sizeof(cl_mem),&bc->buffer[0]));
+                CL_CHECK(clSetKernelArg(kernel,1,sizeof(a->offset),&a->offset));
+                CL_CHECK(clSetKernelArg(kernel,2,sizeof(cl_mem),&ctx->prealloc_moe_qa.buffer));
+                CL_CHECK(clSetKernelArg(kernel,3,sizeof(cl_mem),&ctx->prealloc_moe_da.buffer));
+                CL_CHECK(clSetKernelArg(kernel,4,sizeof(cl_mem),&ctx->prealloc_moe_sa.buffer));
+                CL_CHECK(clSetKernelArg(kernel,5,sizeof(cl_mem),&y->data_device));
+                CL_CHECK(clSetKernelArg(kernel,6,sizeof(yo),&yo));
+                CL_CHECK(clSetKernelArg(kernel,7,sizeof(m),&m));
+                CL_CHECK(clSetKernelArg(kernel,8,sizeof(n),&n));
+                CL_CHECK(clSetKernelArg(kernel,9,sizeof(k),&k));
+                size_t local[]={64,1,1},global[]={64,(size_t(m)+63)/64,(size_t(n)+31)/32};
+                ctx->enqueue_ndrange_kernel(kernel,3,global,local,dst);
+                CL_CHECK(clReleaseMemObject(input_buffer));
+                return;
+            }
             cl_image_format format={CL_RGBA,CL_FLOAT};
             cl_image_desc image_desc={}; image_desc.image_type=CL_MEM_OBJECT_IMAGE1D_BUFFER;
             image_desc.image_width=size_t(k)*n/4; image_desc.buffer=input_buffer;
@@ -23842,7 +23878,9 @@ static void ggml_cl_mul_mat(ggml_backend_t backend, const ggml_tensor * src0, co
             }
             cl_mem activation=n==1?input_image:trans_image;
             cl_kernel kernel=n==1?bc->shared_mv:bc->shared_mm;
-            CL_CHECK(clSetKernelArg(kernel,0,sizeof(cl_mem),&bc->shared_weight_image));
+            cl_mem weights=bc->shared_weight.layout==GGML_SHARED_WEIGHT_Q4_0_CPU4X8_V2?
+                bc->buffer[0]:bc->shared_weight_image;
+            CL_CHECK(clSetKernelArg(kernel,0,sizeof(cl_mem),&weights));
             CL_CHECK(clSetKernelArg(kernel,1,sizeof(a->offset),&a->offset));
             CL_CHECK(clSetKernelArg(kernel,2,sizeof(cl_mem),&activation));
             CL_CHECK(clSetKernelArg(kernel,3,sizeof(cl_mem),&y->data_device));
@@ -23850,7 +23888,8 @@ static void ggml_cl_mul_mat(ggml_backend_t backend, const ggml_tensor * src0, co
             CL_CHECK(clSetKernelArg(kernel,5,sizeof(k),&k));
             CL_CHECK(clSetKernelArg(kernel,6,sizeof(m),&m));
             if(n==1) {
-                size_t local[]={64,4},global[]={((size_t(m/2)+63)/64)*64,4};
+                size_t parts=bc->shared_weight.layout==GGML_SHARED_WEIGHT_Q4_0_CPU4X8_V2?8:4;
+                size_t local[]={64,parts},global[]={((size_t(m/2)+63)/64)*64,parts};
                 ctx->enqueue_ndrange_kernel(kernel,2,global,local,dst);
             } else {
                 CL_CHECK(clSetKernelArg(kernel,7,sizeof(n),&n));
