@@ -328,6 +328,8 @@ set(GGML_PUBLIC_HEADERS
     include/ggml-cpu.h
     include/ggml-alloc.h
     include/ggml-backend.h
+    include/ggml-shared-dma.h
+    include/ggml-shared-weight.h
     include/ggml-accel-budget.h
     include/ggml-blas.h
     include/ggml-cann.h

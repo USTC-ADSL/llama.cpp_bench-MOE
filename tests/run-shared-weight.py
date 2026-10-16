@@ -25,6 +25,7 @@ def main():
     p.add_argument("--shared", action="store_true")
     p.add_argument("--edges", action="store_true", help="small shapes and tail batches; correctness only")
     p.add_argument("--profile", action="store_true", help="enable DSP counters; GPU counters require profiling build")
+    p.add_argument("--model", action="store_true", help="read expert 7 weights from the designated device GGUF")
     a = p.parse_args()
     if not a.tag or any(c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-" for c in a.tag):
         p.error("invalid tag")
@@ -66,6 +67,8 @@ def main():
         env.append("GGML_SHARED_WEIGHT_EDGES=1")
     if a.profile:
         env += ["GGML_HEXAGON_PROFILE=1", "GGML_HEXAGON_TIMING=1"]
+    if a.model:
+        env.append("GGML_SHARED_WEIGHT_MODEL=/data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf")
     if a.backend == "CPU":
         int(a.cpu_mask, 16)
         env.append(f"GGML_SHARED_TEST_CPUMASK={a.cpu_mask}")

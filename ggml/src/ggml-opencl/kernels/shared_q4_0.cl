@@ -16,41 +16,44 @@ __kernel void shared_q4_0_transpose(__global const uchar * input, ulong offset,
 }
 
 // Images alias the imported DMA allocation; they are not converted weights.
-// Four rows per work item, four K partitions. Broadcast activation reads
+// Two rows per work item, four K partitions. Broadcast activation reads
 // across a 64-lane wave, as in the native Adreno decode path.
 SHARED_SUBGROUP
 __kernel void shared_q4_0_mv(read_only image1d_buffer_t weights, ulong wo,
         read_only image1d_buffer_t input, __global uchar * output, ulong yo,
         uint k, uint m) {
     uint lane=get_local_id(0), part=get_local_id(1);
-    uint row=get_global_id(0)*4, safe_row=min(row,m-4), kb=k/32;
+    uint row=get_global_id(0)*2, safe_row=min(row,m-2), kb=k/32;
     __global float * y=(__global float *)(output+yo);
-    float4 sum=0;
+    float2 sum=0;
     for(uint b=part;b<kb;b+=4) {
         uint tile=(uint)(wo/4)+((safe_row/32)*kb+b)*144;
-        uint ri=(safe_row%32)/4, si=tile+128+ri*2;
-        float4 scale=convert_float4(as_half4((uint2)(read_imageui(weights,si).x,read_imageui(weights,si+1).x)));
-        float4 acc=0;
+        uint ri=(safe_row%32)/4, si=tile+128+(safe_row%32)/2, shift=(safe_row%4)*8;
+        float2 scale=convert_float2(as_half2(read_imageui(weights,si).x));
+        float2 acc=0;
         float4 loaded=0;
         if(lane<8) loaded=read_imagef(input,b*8+lane);
+        // Match the native decode's constant broadcast lanes and contracted
+        // multiply/add arithmetic. An explicit fma requests stricter rounding.
+        #pragma unroll
         for(uint j=0;j<8;++j) {
-            uint4 p=convert_uint4(as_uchar4(read_imageui(weights,tile+j*16+ri).x));
-            uint4 q=convert_uint4(as_uchar4(read_imageui(weights,tile+j*16+8+ri).x));
+            uint2 p=convert_uint2(as_uchar2((ushort)(read_imageui(weights,tile+j*16+ri).x>>shift)));
+            uint2 q=convert_uint2(as_uchar2((ushort)(read_imageui(weights,tile+j*16+8+ri).x>>shift)));
             float4 a=(float4)(sub_group_broadcast(loaded.s0,j),sub_group_broadcast(loaded.s1,j),
                 sub_group_broadcast(loaded.s2,j),sub_group_broadcast(loaded.s3,j));
-            acc=fma(convert_float4(convert_int4(p&15)-8),(float4)(a.s0),acc);
-            acc=fma(convert_float4(convert_int4(p>>4)-8),(float4)(a.s1),acc);
-            acc=fma(convert_float4(convert_int4(q&15)-8),(float4)(a.s2),acc);
-            acc=fma(convert_float4(convert_int4(q>>4)-8),(float4)(a.s3),acc);
+            acc+=convert_float2(convert_int2(p&15)-8)*a.s0;
+            acc+=convert_float2(convert_int2(p>>4)-8)*a.s1;
+            acc+=convert_float2(convert_int2(q&15)-8)*a.s2;
+            acc+=convert_float2(convert_int2(q>>4)-8)*a.s3;
         }
-        sum=fma(scale,acc,sum);
+        sum+=scale*acc;
     }
-    __local float4 partial[192];
+    __local float2 partial[192];
     if(part) partial[(part-1)*64+lane]=sum;
     barrier(CLK_LOCAL_MEM_FENCE);
     if(part==0 && row<m) {
         for(uint p=0;p<3;++p) sum+=partial[lane+p*64];
-        vstore4(sum,0,y+row);
+        vstore2(sum,0,y+row);
     }
 }
 

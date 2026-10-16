@@ -111,9 +111,11 @@ public:
         for(int t=grouped+p->ith;t<n;t+=p->nth) {
             quant(static_cast<const float *>(x->data)+size_t(t)*k,act+size_t(t)*qrow,k);
         }
+        // Match native repack's dynamic scheduling on heterogeneous CPU cores.
+        if(p->ith==0) { ggml_threadpool_chunk_set(p->threadpool,p->nth); }
         ggml_barrier(p->threadpool);
         auto * scratch=reinterpret_cast<block_q4_0x4 *>(act+qbytes+size_t(p->ith)*GGML_PAD(size_t(k)*18,128));
-        for(int ct=p->ith;ct<m/32;ct+=p->nth) {
+        for(int ct=p->ith;ct<m/32;ct=ggml_threadpool_chunk_add(p->threadpool,1)) {
             auto * tiles=static_cast<const uint8_t *>(w->data)+size_t(ct)*kb*576;
             auto * dst=static_cast<float *>(op->data)+ct*32;
 #if defined(__aarch64__) && defined(__ARM_FEATURE_DOTPROD)

@@ -5,6 +5,7 @@
 #include "ggml-shared-weight.h"
 #include "ggml-opencl.h"
 #include "ggml-hexagon.h"
+#include "gguf.h"
 #include "json.hpp"
 
 #include <algorithm>
@@ -134,6 +135,18 @@ int main(int argc,char **argv) {
         cpu_pool pool(b.get(),reg,threads);
         bool shared_mode=std::getenv("GGML_SHARED_WEIGHT_TEST")!=nullptr;
         bool edges=std::getenv("GGML_SHARED_WEIGHT_EDGES")!=nullptr;
+        const char * model=std::getenv("GGML_SHARED_WEIGHT_MODEL");
+        check(!model || !edges,"model and synthetic edge mode are separate suites");
+        gguf_context_ptr model_gguf;
+        ggml_context_ptr model_meta;
+        std::ifstream model_file;
+        if(model) {
+            ggml_context * meta=nullptr;
+            model_gguf.reset(gguf_init_from_file(model,{true,&meta}));
+            model_meta.reset(meta);
+            model_file.open(model,std::ios::binary);
+            check(model_gguf && model_meta && bool(model_file),"cannot read GGUF metadata");
+        }
         ggml_backend_ptr htp_owner, other_cpu, other_gpu;
         ggml_backend_t htp=nullptr,cpu=nullptr,gpu=nullptr;
         if(shared_mode) {
@@ -170,6 +183,7 @@ int main(int argc,char **argv) {
             {"cpu_affinity",std::getenv("GGML_SHARED_TEST_CPUMASK")?std::getenv("GGML_SHARED_TEST_CPUMASK"):"default"},
             {"timing","single MUL_MAT graph + completion; weight loading/repack and activation upload excluded; invocation scratch included"},
             {"input","deterministic synthetic Q4_0; Qwen representative matrix shapes; no MoE routing"}, {"cases",json::array()}};
+        if(model) { result["input"]={{"model",model},{"expert",7},{"activation","deterministic synthetic F32"},{"routing",false}}; }
         const std::vector<std::pair<int,int>> shapes=edges?std::vector<std::pair<int,int>>{{128,32},{256,96}}:
             std::vector<std::pair<int,int>>{{2048,1408},{1408,2048}};
         for(auto dims:shapes) {
@@ -177,7 +191,19 @@ int main(int argc,char **argv) {
             std::vector<float> source(size_t(k)*m),dequant(source.size());
             for(size_t i=0;i<source.size();++i) { source[i]=0.1f*std::sin(float(i%10007)*0.071f)+0.03f*std::cos(float(i%997)*0.13f); }
             std::vector<uint8_t> raw(ggml_row_size(GGML_TYPE_Q4_0,k)*m);
-            ggml_quantize_chunk(GGML_TYPE_Q4_0,source.data(),raw.data(),0,m,k,nullptr);
+            std::string source_name="synthetic";
+            if(model) {
+                source_name=k==2048?"blk.0.ffn_gate_exps.weight":"blk.0.ffn_down_exps.weight";
+                auto * tensor=ggml_get_tensor(model_meta.get(),source_name.c_str());
+                auto index=gguf_find_tensor(model_gguf.get(),source_name.c_str());
+                check(tensor && index>=0 && tensor->type==GGML_TYPE_Q4_0 && tensor->ne[0]==k && tensor->ne[1]==m &&
+                    tensor->ne[2]>7 && tensor->ne[3]==1 && tensor->nb[2]==raw.size(),"model tensor mismatch");
+                auto offset=gguf_get_data_offset(model_gguf.get())+gguf_get_tensor_offset(model_gguf.get(),index)+7*raw.size();
+                model_file.seekg(offset); model_file.read(reinterpret_cast<char *>(raw.data()),raw.size());
+                check(bool(model_file),"short model tensor read");
+            } else {
+                ggml_quantize_chunk(GGML_TYPE_Q4_0,source.data(),raw.data(),0,m,k,nullptr);
+            }
             std::unique_ptr<ggml_shared_weight,decltype(&ggml_shared_weight_free)> owner(nullptr,ggml_shared_weight_free);
             ggml_tensor * shared=nullptr;
             ggml_shared_weight_desc desc{};
@@ -276,7 +302,7 @@ int main(int argc,char **argv) {
                     }
                     fprintf(stderr,"%s %s K=%d M=%d N=%d median=%.3f us\n",argv[1],rows[i]["buffer"].get<std::string>().c_str(),k,m,n,median(samples[i]));
                 }
-                result["cases"].push_back({{"k",k},{"m",m},{"n",n},{"variants",rows}});
+                result["cases"].push_back({{"k",k},{"m",m},{"n",n},{"source_tensor",source_name},{"variants",rows}});
                 std::ofstream file(argv[2]); check(bool(file),"cannot write result"); file<<result.dump(2)<<'\n';
             }
         }

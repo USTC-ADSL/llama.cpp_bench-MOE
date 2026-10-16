@@ -13392,7 +13392,7 @@ static ggml_backend_buffer_t ggml_backend_opencl_import_shared_weight(
 #else
     const std::string source=read_file("shared_q4_0.cl");
 #endif
-    cl_program program=build_program_from_source(ctx,source.c_str(),"-cl-std=CL2.0");
+    cl_program program=build_program_from_source(ctx,source.c_str(),"-cl-std=CL2.0 -cl-mad-enable");
     cl_int error=CL_SUCCESS;
     bc->shared_mv=clCreateKernel(program,"shared_q4_0_mv",&error);
     if (error==CL_SUCCESS) { bc->shared_mm=clCreateKernel(program,"shared_q4_0_mm",&error); }
@@ -23847,7 +23847,7 @@ static void ggml_cl_mul_mat(ggml_backend_t backend, const ggml_tensor * src0, co
             CL_CHECK(clSetKernelArg(kernel,5,sizeof(k),&k));
             CL_CHECK(clSetKernelArg(kernel,6,sizeof(m),&m));
             if(n==1) {
-                size_t local[]={64,4},global[]={((size_t(m/4)+63)/64)*64,4};
+                size_t local[]={64,4},global[]={((size_t(m/2)+63)/64)*64,4};
                 ctx->enqueue_ndrange_kernel(kernel,2,global,local,dst);
             } else {
                 CL_CHECK(clSetKernelArg(kernel,7,sizeof(n),&n));
