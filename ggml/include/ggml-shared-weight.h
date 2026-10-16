@@ -14,7 +14,7 @@ extern "C" {
 enum ggml_shared_weight_layout {
     GGML_SHARED_WEIGHT_Q4_0_32X32_V1 = 1,
     // Candidate: CPU native four rows, eight-byte interleave, 72-byte blocks.
-    // CPU/OpenCL candidate; HTP compute binding is not yet supported.
+    // CPU/OpenCL/HTP candidate; HTP requires K to be a multiple of 128.
     GGML_SHARED_WEIGHT_Q4_0_CPU4X8_V2 = 2,
 };
 

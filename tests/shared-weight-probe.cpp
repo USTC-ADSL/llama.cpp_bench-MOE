@@ -136,8 +136,7 @@ int main(int argc,char **argv) {
         bool shared_mode=std::getenv("GGML_SHARED_WEIGHT_TEST")!=nullptr;
         const auto layout=std::getenv("GGML_SHARED_WEIGHT_CPU4X8")?
             GGML_SHARED_WEIGHT_Q4_0_CPU4X8_V2:GGML_SHARED_WEIGHT_Q4_0_32X32_V1;
-        check(layout!=GGML_SHARED_WEIGHT_Q4_0_CPU4X8_V2 || (shared_mode && std::string(argv[1])!="HTP0"),
-            "CPU4x8 candidate does not yet support HTP compute");
+        check(layout!=GGML_SHARED_WEIGHT_Q4_0_CPU4X8_V2 || shared_mode,"CPU4x8 requires shared mode");
         bool edges=std::getenv("GGML_SHARED_WEIGHT_EDGES")!=nullptr;
         const char * model=std::getenv("GGML_SHARED_WEIGHT_MODEL");
         check(!model || !edges,"model and synthetic edge mode are separate suites");
@@ -215,21 +214,18 @@ int main(int argc,char **argv) {
                 owner.reset(ggml_shared_weight_create_with_layout(htp,k,m,raw.data(),raw.size(),layout)); check(owner!=nullptr,"shared create failed");
                 check(ggml_shared_weight_describe(owner.get(),&desc),"describe failed");
                 for(auto backend:{htp,cpu,gpu}) {
-                    if(layout==GGML_SHARED_WEIGHT_Q4_0_CPU4X8_V2 && backend==htp) {
-                        check(!ggml_shared_weight_bind(owner.get(),backend),"unsupported CPU4x8 backend accepted");
-                        continue;
-                    }
                     auto * t=ggml_shared_weight_bind(owner.get(),backend); check(t,"shared bind failed");
                     check(ggml_shared_weight_bind(owner.get(),backend)==t,"repeated bind creates new alias");
                     check(t->data==static_cast<char *>(desc.storage.host_ptr)+desc.offset,"shared pointer differs");
                     std::vector<uint8_t> recovered(raw.size());
                     ggml_backend_tensor_get(t,recovered.data(),0,recovered.size());
                     check(recovered==raw,"shared layout byte roundtrip differs");
-                    if(backend!=htp) {
+                    if(backend!=htp || layout==GGML_SHARED_WEIGHT_Q4_0_CPU4X8_V2) {
                         uint8_t partial[37]; ggml_backend_tensor_get(t,partial,17,sizeof(partial));
                         check(std::memcmp(partial,raw.data()+17,sizeof(partial))==0,"partial byte roundtrip differs");
                         ggml_backend_tensor_get(t,partial,raw.size()-sizeof(partial),sizeof(partial));
                         check(std::memcmp(partial,raw.data()+raw.size()-sizeof(partial),sizeof(partial))==0,"tail byte roundtrip differs");
+                        if(backend!=htp) {
                         auto reg=ggml_backend_dev_backend_reg(ggml_backend_get_device(backend));
                         auto import=reinterpret_cast<ggml_backend_import_shared_weight_t>(ggml_backend_reg_get_proc_address(reg,"ggml_backend_import_shared_weight"));
                         auto bad=desc; bad.storage.size=raw.size()-1;
@@ -238,6 +234,7 @@ int main(int argc,char **argv) {
                         check(!import(backend,&bad),"unknown layout accepted");
                         bad=desc; bad.offset=1;
                         check(!import(backend,&bad),"misaligned import accepted");
+                        }
                         ggml_context_ptr negctx(ggml_init({12*ggml_tensor_overhead()+ggml_graph_overhead_custom(8,false),nullptr,true}));
                         auto * unsupported=ggml_dup(negctx.get(),t);
                         check(!ggml_backend_supports_op(backend,unsupported),"shared DUP advertised as supported");
@@ -252,7 +249,7 @@ int main(int argc,char **argv) {
                 }
                 shared=ggml_shared_weight_bind(owner.get(),b.get()); check(shared,"target binding failed");
                 result["shared_storage"]={{"layout",desc.layout},{"weight_bytes",raw.size()},
-                    {"allocation_bytes",desc.storage.size},{"backend_bindings",layout==GGML_SHARED_WEIGHT_Q4_0_CPU4X8_V2?2:3},
+                    {"allocation_bytes",desc.storage.size},{"backend_bindings",3},
                     {"pointer_alias",true},{"roundtrip_exact",true}};
             }
             auto to_float=ggml_get_type_traits(GGML_TYPE_Q4_0)->to_float;

@@ -1,4 +1,5 @@
 #include <assert.h>
+#include "ggml-shared-weight-impl.h"
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -287,7 +288,10 @@ enum ggml_hexagon_tensor_flags {
     GGML_HEXAGON_TENSOR_FUSEABLE  = (1 << 3),
     GGML_HEXAGON_TENSOR_CANONICAL_Q4_0 = (1 << 4),
     GGML_HEXAGON_TENSOR_WRITTEN   = (1 << 5),
+    GGML_HEXAGON_TENSOR_CPU4X8_Q4_0 = (1 << 6),
 };
+
+static bool ggml_hexagon_tensor_is_cpu4x8(const ggml_tensor * tensor);
 
 static inline bool ggml_hexagon_is_repack_type(enum ggml_type type) {
     return type == GGML_TYPE_Q4_0 || type == GGML_TYPE_Q4_1 ||
@@ -2616,6 +2620,9 @@ struct ggml_hexagon_opbatch {
         if ((extra->flags & GGML_HEXAGON_TENSOR_CANONICAL_Q4_0) != 0) {
             h.flags |= HTP_TENSOR_CANONICAL_Q4_0;
         }
+        if ((extra->flags & GGML_HEXAGON_TENSOR_CPU4X8_Q4_0) != 0) {
+            h.flags |= HTP_TENSOR_CPU4X8_Q4_0;
+        }
 
         HEX_VERBOSE("ggml-hex: %s add-tensor #%u %s : bi %d data %p offset %zu size %zu flags 0x%x : %zu:%zu:%zu:%zu\n", sess->c_name(),
                 ti, t->name, h.bi, (void*) t->data, (size_t) t_offset, t_size, h.flags,
@@ -4807,7 +4814,7 @@ static bool ggml_hexagon_matmul_is_hmx_eligible(
     // M alignment: Use HMX when M > HTP_MM_HMX_MIN_NROWS.
     // For MUL_MAT_ID, src1 shape is [K, n_expert_used, n_tokens, 1], so n_tokens is ne12.
     const int m = is_matmul_id ? ne12 : ne11;
-    if (m <= HTP_MM_HMX_MIN_NROWS) {
+    if (m <= HTP_MM_HMX_MIN_NROWS && !(m>1 && ggml_hexagon_tensor_is_cpu4x8(src0))) {
         return false;
     }
 
@@ -5849,6 +5856,13 @@ static bool ggml_hexagon_tensor_is_non_host(const struct ggml_hexagon_session * 
     GGML_UNUSED(sess);
 }
 
+static bool ggml_hexagon_tensor_is_cpu4x8(const ggml_tensor * tensor) {
+    if(tensor && tensor->view_src) { return ggml_hexagon_tensor_is_cpu4x8(tensor->view_src); }
+    return tensor && tensor->buffer && tensor->extra &&
+        tensor->buffer->iface.free_buffer==ggml_backend_hexagon_buffer_free_buffer &&
+        (static_cast<const ggml_hexagon_tensor_extra *>(tensor->extra)->flags & GGML_HEXAGON_TENSOR_CPU4X8_Q4_0);
+}
+
 static bool ggml_hexagon_tensor_is_canonical_q4_0(const struct ggml_tensor * tensor) {
     if (tensor && tensor->view_src) { return ggml_hexagon_tensor_is_canonical_q4_0(tensor->view_src); }
     return tensor && tensor->buffer && tensor->extra &&
@@ -5861,6 +5875,21 @@ static bool ggml_hexagon_supported_mul_mat(const struct ggml_hexagon_session * s
     const struct ggml_tensor * src1 = dst->src[1];
 
     if (ggml_hexagon_tensor_is_canonical_q4_0(src0)) { return false; }
+    if(ggml_hexagon_tensor_is_cpu4x8(src0)) {
+        if(src0->view_src || src1->view_src || dst->view_src || src0->type!=GGML_TYPE_Q4_0 ||
+           src1->type!=GGML_TYPE_F32 || dst->type!=GGML_TYPE_F32 ||
+           !ggml_is_contiguous(src0) || !ggml_is_contiguous(src1) || !ggml_is_contiguous(dst) ||
+           src0->ne[2]!=1 || src0->ne[3]!=1 || src1->ne[2]!=1 || src1->ne[3]!=1 ||
+           dst->ne[2]!=1 || dst->ne[3]!=1 || src0->ne[0]%128 || src0->ne[1]%32 ||
+           src0->ne[0]!=src1->ne[0] || dst->ne[0]!=src0->ne[1] || dst->ne[1]!=src1->ne[1] ||
+           src1->ne[1]<1) { return false; }
+        auto * storage=static_cast<const ggml_hexagon_shared_buffer *>(src0->buffer->context);
+        if(storage->sess!=sess || src0->data!=storage->base()) { return false; }
+        htp_mm_kernel_params params;
+        ggml_hexagon_precompute_matmul_params(sess,src0,src1,dst,&params);
+        return params.kernel_type!=HTP_MM_KERNEL_UNSUPPORTED && (size_t)params.vtcm_size<=sess->vtcm_size &&
+            (src1->ne[1]==1 ? params.n_hmx==0 : params.kernel_type==HTP_MM_KERNEL_HMX_2D);
+    }
 
     if (dst->type != GGML_TYPE_F32) {
         return false;
@@ -5937,6 +5966,15 @@ static bool ggml_hexagon_supported_mul_mat(const struct ggml_hexagon_session * s
         return false;
     }
 
+    return true;
+}
+
+static bool ggml_hexagon_cpu4x8_op_allowed(const ggml_hexagon_session * sess, const ggml_tensor * op) {
+    if(ggml_hexagon_tensor_is_cpu4x8(op)) { return false; }
+    for(int i=0;i<GGML_MAX_SRC;++i) {
+        if(ggml_hexagon_tensor_is_cpu4x8(op->src[i]) &&
+           (i!=0 || op->op!=GGML_OP_MUL_MAT || !ggml_hexagon_supported_mul_mat(sess,op))) { return false; }
+    }
     return true;
 }
 
@@ -6853,6 +6891,7 @@ static bool is_supported_mul_mat_id_nx_kernel(const ggml_tensor * src0, const st
 
 static bool is_mergeable_mul_mat(const ggml_tensor * t) {
     if (t->op != GGML_OP_MUL_MAT) return false;
+    if (ggml_hexagon_tensor_is_cpu4x8(t->src[0])) return false;
 
     const ggml_tensor * src0 = t->src[0];
     const ggml_tensor * src1 = t->src[1];
@@ -6984,6 +7023,9 @@ static std::unordered_map<ggml_tensor *, ggml_hexagon_gather_fusion> ggml_hexago
 
 static ggml_status ggml_backend_hexagon_graph_compute(ggml_backend_t backend, ggml_cgraph * graph) {
     auto sess = static_cast<ggml_hexagon_session *>(backend->context);
+    for(int i=0;i<graph->n_nodes;++i) {
+        if(!ggml_hexagon_cpu4x8_op_allowed(sess,graph->nodes[i])) { return GGML_STATUS_FAILED; }
+    }
 
     if (sess->last_error > HTP_STATUS_OK) {
         return GGML_STATUS_FAILED;
@@ -7005,6 +7047,7 @@ static ggml_status ggml_backend_hexagon_graph_compute(ggml_backend_t backend, gg
             if (!extra) continue;
 
             extra->flags &= ~GGML_HEXAGON_TENSOR_FUSEABLE;
+            if(ggml_hexagon_tensor_is_cpu4x8(graph->nodes[i]->src[0])) { continue; }
 
             if (graph->nodes[i]->op == GGML_OP_RMS_NORM && ggml_can_fuse(graph, i, { GGML_OP_RMS_NORM, GGML_OP_MUL })) {
                 extra->flags |= GGML_HEXAGON_TENSOR_FUSEABLE;
@@ -7447,6 +7490,7 @@ static bool ggml_backend_hexagon_cpy_tensor_async(ggml_backend_t backend_src, gg
     // Use canonical get/set semantics; raw async copies must not overwrite the
     // destination layout flag or leave a packed consumer reading canonical bytes.
     if (ggml_hexagon_tensor_is_canonical_q4_0(src) || ggml_hexagon_tensor_is_canonical_q4_0(dst)) { return false; }
+    if (ggml_hexagon_tensor_is_cpu4x8(src) || ggml_hexagon_tensor_is_cpu4x8(dst)) { return false; }
 
     // FIXME: ggml-meta needs to call init_tensor on auxiliary tensors
     if (!dst->extra) {
@@ -7858,6 +7902,7 @@ static bool ggml_hexagon_supported_roll(const struct ggml_hexagon_session * sess
 static bool ggml_backend_hexagon_device_supports_op(ggml_backend_dev_t dev, const struct ggml_tensor * op) {
     auto dev_ctx = static_cast<ggml_backend_hexagon_device_context *>(dev->context);
     auto sess    = dev_ctx->session();
+    if(!ggml_hexagon_cpu4x8_op_allowed(sess,op)) { return false; }
 
     // Canonical storage is an explicit contract for base HMX ID weights only.
     // In particular, a view may have its own extra and must not lose this guard.
@@ -8306,6 +8351,25 @@ bool ggml_backend_hexagon_tensor_use_canonical_q4_0(ggml_tensor * tensor) {
     return true;
 }
 
+static bool ggml_backend_hexagon_tensor_use_cpu4x8_q4_0(ggml_tensor * tensor) {
+    if(!tensor || !tensor->buffer || !tensor->extra || tensor->view_src ||
+       tensor->buffer->iface.free_buffer!=ggml_backend_hexagon_buffer_free_buffer ||
+       tensor->type!=GGML_TYPE_Q4_0 || !ggml_is_contiguous(tensor) ||
+       tensor->ne[0]%128 || tensor->ne[1]%32 || tensor->ne[2]!=1 || tensor->ne[3]!=1 ||
+       tensor->data!=ggml_backend_buffer_get_base(tensor->buffer)) { return false; }
+    auto * extra=static_cast<ggml_hexagon_tensor_extra *>(tensor->extra);
+    if(!extra->shadow_buf.empty() || (extra->flags & (GGML_HEXAGON_TENSOR_WRITTEN|GGML_HEXAGON_TENSOR_CANONICAL_Q4_0))) { return false; }
+    extra->flags=GGML_HEXAGON_TENSOR_CPU4X8_Q4_0|GGML_HEXAGON_TENSOR_WEIGHT|GGML_HEXAGON_TENSOR_WRITTEN;
+    auto & iface=tensor->buffer->iface;
+    iface.set_tensor=nullptr; iface.set_tensor_2d=nullptr; iface.memset_tensor=nullptr;
+    iface.clear=nullptr; iface.cpy_tensor=nullptr; iface.get_tensor_2d=nullptr;
+    iface.get_tensor=[](ggml_backend_buffer_t,const ggml_tensor * t,void * out,size_t off,size_t size) {
+        GGML_ASSERT(off<=ggml_nbytes(t) && size<=ggml_nbytes(t)-off);
+        ggml_shared_weight_get_canonical(t->data,t->ne[0],out,off,size,GGML_SHARED_WEIGHT_Q4_0_CPU4X8_V2);
+    };
+    return true;
+}
+
 static ggml_backend_buffer_type_t ggml_backend_hexagon_split_buffer_type(int main_device, const float * tensor_split) {
     GGML_UNUSED(tensor_split);
     auto reg = ggml_backend_hexagon_reg();
@@ -8322,6 +8386,9 @@ static void * ggml_backend_hexagon_get_proc_address(ggml_backend_reg_t reg, cons
     GGML_UNUSED(reg);
     if (strcmp(name, "ggml_backend_hexagon_get_timing") == 0) {
         return (void *) ggml_backend_hexagon_get_timing;
+    }
+    if (strcmp(name,"ggml_backend_hexagon_tensor_use_cpu4x8_q4_0")==0) {
+        return (void *) ggml_backend_hexagon_tensor_use_cpu4x8_q4_0;
     }
     if (strcmp(name, "ggml_backend_hexagon_tensor_use_canonical_q4_0") == 0) {
         return (void *) ggml_backend_hexagon_tensor_use_canonical_q4_0;

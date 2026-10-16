@@ -16,6 +16,7 @@ struct shared_weight_binding {
 struct ggml_shared_weight {
     ggml_shared_weight_desc desc{};
     ggml_backend_buffer_ptr raw_storage;
+    ggml_backend_t allocator = nullptr;
     std::vector<std::unique_ptr<shared_weight_binding>> bindings;
 };
 
@@ -50,8 +51,8 @@ ggml_shared_weight_t ggml_shared_weight_create_with_layout(ggml_backend_t alloca
     if (!export_dma) { return nullptr; }
     auto w = std::unique_ptr<ggml_shared_weight>(new ggml_shared_weight);
     if(layout==GGML_SHARED_WEIGHT_Q4_0_CPU4X8_V2) {
-        // Allocator supplies storage only. There is deliberately no HTP tensor:
-        // it must not interpret this candidate as the native tiled layout.
+        // Bind the allocator only through its explicit CPU4x8 marker.
+        w->allocator=allocator;
         w->raw_storage.reset(ggml_backend_alloc_buffer(allocator,size));
         if(!w->raw_storage || !export_dma(w->raw_storage.get(),&w->desc.storage)) { return nullptr; }
         w->desc.layout=layout; w->desc.k=k; w->desc.m=m;
@@ -90,6 +91,19 @@ ggml_shared_weight_t ggml_shared_weight_create_with_layout(ggml_backend_t alloca
 ggml_tensor * ggml_shared_weight_bind(ggml_shared_weight_t w, ggml_backend_t backend) {
     if (!w || !backend) { return nullptr; }
     for (const auto & b : w->bindings) { if (b->backend==backend) { return b->tensor; } }
+    if(w->raw_storage && backend==w->allocator) {
+        using marker_fn=bool (*)(ggml_tensor *);
+        auto mark=reinterpret_cast<marker_fn>(proc(backend,"ggml_backend_hexagon_tensor_use_cpu4x8_q4_0"));
+        if(!mark || w->desc.k%128) { return nullptr; }
+        auto b=make_binding(backend,w->desc.k,w->desc.m);
+        if(!b || ggml_backend_tensor_alloc(w->raw_storage.get(),b->tensor,w->desc.storage.host_ptr)!=GGML_STATUS_SUCCESS ||
+           !mark(b->tensor)) { return nullptr; }
+        ggml_set_name(b->tensor,"shared_weight_q4_0_cpu4x8_v2");
+        ggml_backend_buffer_set_usage(w->raw_storage.get(),GGML_BACKEND_BUFFER_USAGE_WEIGHTS);
+        auto * result=b->tensor;
+        w->bindings.push_back(std::move(b));
+        return result;
+    }
     auto import = reinterpret_cast<ggml_backend_import_shared_weight_t>(proc(backend,"ggml_backend_import_shared_weight"));
     if (!import) { return nullptr; }
     auto b=make_binding(backend,w->desc.k,w->desc.m);

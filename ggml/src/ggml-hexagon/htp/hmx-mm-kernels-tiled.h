@@ -196,6 +196,51 @@ static void dequantize_tiled_weight_to_fp16_task_q4_0_canonical(
     }
 }
 
+static inline void cpu4x8_store_hmx_half(__fp16 *dst, HVX_Vector v0, HVX_Vector v1,
+        HVX_Vector v2, HVX_Vector v3, HVX_Vector v4, HVX_Vector v5, HVX_Vector v6, HVX_Vector v7) {
+    HVX_VectorPair a0=Q6_W_vshuff_VVR(v1,v0,-16);
+    HVX_VectorPair a1=Q6_W_vshuff_VVR(v3,v2,-16);
+    HVX_VectorPair a2=Q6_W_vshuff_VVR(v5,v4,-16);
+    HVX_VectorPair a3=Q6_W_vshuff_VVR(v7,v6,-16);
+    HVX_VectorPair b0=Q6_W_vshuff_VVR(Q6_V_lo_W(a1),Q6_V_lo_W(a0),-32);
+    HVX_VectorPair b1=Q6_W_vshuff_VVR(Q6_V_hi_W(a1),Q6_V_hi_W(a0),-32);
+    HVX_VectorPair b2=Q6_W_vshuff_VVR(Q6_V_lo_W(a3),Q6_V_lo_W(a2),-32);
+    HVX_VectorPair b3=Q6_W_vshuff_VVR(Q6_V_hi_W(a3),Q6_V_hi_W(a2),-32);
+    HVX_VectorPair c0=Q6_W_vshuff_VVR(Q6_V_lo_W(b2),Q6_V_lo_W(b0),-64);
+    HVX_VectorPair c1=Q6_W_vshuff_VVR(Q6_V_hi_W(b2),Q6_V_hi_W(b0),-64);
+    HVX_VectorPair c2=Q6_W_vshuff_VVR(Q6_V_lo_W(b3),Q6_V_lo_W(b1),-64);
+    HVX_VectorPair c3=Q6_W_vshuff_VVR(Q6_V_hi_W(b3),Q6_V_hi_W(b1),-64);
+    hvx_vmem(dst+0*64)=Q6_V_lo_W(c0); hvx_vmem(dst+1*64)=Q6_V_hi_W(c0);
+    hvx_vmem(dst+2*64)=Q6_V_lo_W(c1); hvx_vmem(dst+3*64)=Q6_V_hi_W(c1);
+    hvx_vmem(dst+4*64)=Q6_V_lo_W(c2); hvx_vmem(dst+5*64)=Q6_V_hi_W(c2);
+    hvx_vmem(dst+6*64)=Q6_V_lo_W(c3); hvx_vmem(dst+7*64)=Q6_V_hi_W(c3);
+}
+
+static void dequantize_tiled_weight_to_fp16_task_q4_0_cpu4x8(
+        const tiled_dequantize_state_t *state, uint32_t start_tile, uint32_t end_tile) {
+    for(uint32_t t=start_tile;t<end_tile;++t) {
+        uint32_t ct=fastdiv(t,&state->n_k_tiles_div),kb=t-ct*state->n_k_tiles;
+        __fp16 *dst=state->dst+t*HTP_MM_HMX_TILE_N_ELMS;
+        HVX_Vector lo[8],hi[8];
+        #pragma unroll
+        for(uint32_t group=0;group<8;++group) {
+            uint32_t row=group*4;
+            const uint8_t *p=state->src+(ct*32+row)*state->row_stride+kb*72;
+            HVX_Vector raw=hvx_vmemu(p);
+            HVX_VectorPair q=Q6_Wh_vunpack_Vb(cpu4x8_decode_hmx(raw));
+            HVX_Vector scales=cpu4x8_hmx_scales(raw);
+            HVX_Vector f0=Q6_Vhf_equals_Vqf16(Q6_Vqf16_vmpy_VhfVhf(
+                Q6_Vhf_equals_Vh(Q6_V_lo_W(q)),scales));
+            HVX_Vector f1=Q6_Vhf_equals_Vqf16(Q6_Vqf16_vmpy_VhfVhf(
+                Q6_Vhf_equals_Vh(Q6_V_hi_W(q)),scales));
+            // Transpose in registers and store whole vectors: no VTCM scatter.
+            lo[group]=f0; hi[group]=f1;
+        }
+        cpu4x8_store_hmx_half(dst,lo[0],lo[1],lo[2],lo[3],lo[4],lo[5],lo[6],lo[7]);
+        cpu4x8_store_hmx_half(dst+512,hi[0],hi[1],hi[2],hi[3],hi[4],hi[5],hi[6],hi[7]);
+    }
+}
+
 static void dequantize_tiled_weight_to_fp16_task_q4_1(
         const tiled_dequantize_state_t *state,
         uint32_t start_tile, uint32_t end_tile) {
