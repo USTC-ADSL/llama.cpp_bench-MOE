@@ -200,6 +200,7 @@ add_library(ggml-base
             ggml.cpp
             ggml-alloc.c
             ggml-backend.cpp
+            ggml-shared-weight.cpp
             ggml-accel-budget.cpp
             ggml-backend-meta.cpp
             ggml-opt.cpp

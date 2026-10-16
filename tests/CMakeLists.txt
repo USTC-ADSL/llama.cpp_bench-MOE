@@ -280,6 +280,11 @@ endif()
 # TODO: make this test (and others) not link `libllama` as it is not needed [TAG_TESTS_LLAMA_LINK]
 llama_build(test-backend-ops.cpp)
 
+# Standalone operator/layout probe; run explicitly on the target device.
+add_executable(shared-weight-probe shared-weight-probe.cpp)
+target_link_libraries(shared-weight-probe PRIVATE ggml)
+target_include_directories(shared-weight-probe PRIVATE ../vendor/nlohmann)
+
 llama_build_and_test(test-tiled-mulmat.cpp)
 llama_build_and_test(test-model-load-cancel.cpp LABEL "model")
 llama_build_and_test(test-autorelease.cpp       LABEL "model")

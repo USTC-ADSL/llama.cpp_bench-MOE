@@ -8,6 +8,7 @@
 #endif
 
 #include "ggml-opencl.h"
+#include "ggml-shared-weight-impl.h"
 #include "ggml-backend.h"
 #include "ggml-impl.h"
 #include "ggml-quants.h"
@@ -9754,10 +9755,20 @@ struct ggml_backend_opencl_buffer_context {
     std::vector<cl_mem> img;
     std::string name;
     void * shared_host_base = nullptr;
+    ggml_shared_weight_desc shared_weight = {};
+    ggml_backend_buffer_type shared_weight_type = {};
+    cl_kernel shared_mv = nullptr;
+    cl_kernel shared_mm = nullptr;
+    cl_kernel shared_transpose = nullptr;
+    cl_mem shared_weight_image = nullptr;
 };
 
 static void ggml_backend_opencl_buffer_free_buffer(ggml_backend_buffer_t buffer) {
     ggml_backend_opencl_buffer_context * ctx = (ggml_backend_opencl_buffer_context *) buffer->context;
+    if (ctx->shared_mv) { CL_CHECK(clReleaseKernel(ctx->shared_mv)); }
+    if (ctx->shared_mm) { CL_CHECK(clReleaseKernel(ctx->shared_mm)); }
+    if (ctx->shared_transpose) { CL_CHECK(clReleaseKernel(ctx->shared_transpose)); }
+    if (ctx->shared_weight_image) { CL_CHECK(clReleaseMemObject(ctx->shared_weight_image)); }
     delete ctx;
 }
 
@@ -9770,7 +9781,12 @@ static void * ggml_backend_opencl_buffer_get_base(ggml_backend_buffer_t buffer) 
 
 static enum ggml_status ggml_backend_opencl_buffer_init_tensor(ggml_backend_buffer_t buffer, ggml_tensor * tensor) {
     ggml_backend_opencl_buffer_context * ctx = (ggml_backend_opencl_buffer_context *) buffer->context;
-    if (ctx->shared_host_base && tensor->type != GGML_TYPE_F32 && tensor->type != GGML_TYPE_I32) {
+    if (ctx->shared_weight.layout) {
+        const auto & d=ctx->shared_weight;
+        if (tensor->view_src || tensor->type!=GGML_TYPE_Q4_0 || tensor->ne[0]!=d.k || tensor->ne[1]!=d.m ||
+            tensor->ne[2]!=1 || tensor->ne[3]!=1 || !ggml_is_contiguous(tensor) ||
+            tensor->data!=static_cast<char *>(d.storage.host_ptr)+d.offset) { return GGML_STATUS_FAILED; }
+    } else if (ctx->shared_host_base && tensor->type != GGML_TYPE_F32 && tensor->type != GGML_TYPE_I32) {
         return GGML_STATUS_FAILED;
     }
 
@@ -13147,6 +13163,20 @@ static ggml_backend_buffer_t ggml_backend_opencl_device_buffer_from_ptr(ggml_bac
 }
 
 static bool ggml_backend_opencl_device_supports_op(ggml_backend_dev_t dev, const struct ggml_tensor * op) {
+    for (int i=0;i<GGML_MAX_SRC;++i) {
+        const auto * t=op->src[i];
+        if (!t || !t->buffer || t->buffer->iface.free_buffer!=ggml_backend_opencl_buffer_free_buffer) { continue; }
+        auto * ctx=static_cast<ggml_backend_opencl_buffer_context *>(t->buffer->context);
+        if (!ctx->shared_weight.layout) { continue; }
+        const auto * x=op->src[1];
+        return i==0 && op->op==GGML_OP_MUL_MAT && op->type==GGML_TYPE_F32 && ggml_is_contiguous(op) &&
+            !t->view_src && ggml_is_contiguous(t) &&
+            t->ne[2]==1 && t->ne[3]==1 && x && x->type==GGML_TYPE_F32 && ggml_is_contiguous(x) &&
+            x->ne[1]>0 && x->ne[1]<=INT32_MAX &&
+            uint64_t(x->ne[1])*uint64_t(x->ne[0])<=UINT32_MAX &&
+            uint64_t(x->ne[1])*uint64_t(t->ne[1])<=UINT32_MAX &&
+            x->ne[0]==t->ne[0] && x->ne[2]==1 && x->ne[3]==1;
+    }
     ggml_cl_init(dev);
     return ggml_opencl_supports_op(dev, op);
 }
@@ -13308,7 +13338,52 @@ bool ggml_backend_opencl_pack_q4_0_htp(ggml_backend_t backend,
     return ggml_backend_opencl_pack_q4_0_htp_batch(backend,source,target,&desc,1);
 }
 
+static ggml_backend_buffer_t ggml_backend_opencl_import_shared_weight(
+        ggml_backend_t backend, const ggml_shared_weight_desc * desc) {
+    if (!ggml_shared_weight_desc_valid(desc)) { return nullptr; }
+    auto buffer=ggml_backend_opencl_import_shared_dma_compute_buffer(backend,&desc->storage);
+    if (!buffer) { return nullptr; }
+    auto * bc=static_cast<ggml_backend_opencl_buffer_context *>(buffer->context);
+    bc->shared_weight=*desc;
+    // The native allocator reserves SoA alignment gaps. This import has a
+    // fixed tiled extent and must neither charge nor allocate those gaps.
+    bc->shared_weight_type=*buffer->buft;
+    bc->shared_weight_type.iface.get_alloc_size=nullptr;
+    bc->shared_weight_type.iface.alloc_buffer=[](ggml_backend_buffer_type_t,size_t)->ggml_backend_buffer_t { return nullptr; };
+    buffer->buft=&bc->shared_weight_type;
+#ifdef GGML_OPENCL_EMBED_KERNELS
+    const std::string source {
+#include "shared_q4_0.cl.h"
+    };
+#else
+    const std::string source=read_file("shared_q4_0.cl");
+#endif
+    auto * ctx=ggml_cl_init(backend->device);
+    cl_program program=build_program_from_source(ctx,source.c_str(),"-cl-std=CL2.0");
+    cl_int error=CL_SUCCESS;
+    bc->shared_mv=clCreateKernel(program,"shared_q4_0_mv",&error);
+    if (error==CL_SUCCESS) { bc->shared_mm=clCreateKernel(program,"shared_q4_0_mm",&error); }
+    if (error==CL_SUCCESS) { bc->shared_transpose=clCreateKernel(program,"shared_q4_0_transpose",&error); }
+    clReleaseProgram(program);
+    if (error!=CL_SUCCESS) { ggml_backend_buffer_free(buffer); return nullptr; }
+    cl_image_format format={CL_R,CL_UNSIGNED_INT32};
+    cl_image_desc image_desc={}; image_desc.image_type=CL_MEM_OBJECT_IMAGE1D_BUFFER;
+    image_desc.image_width=desc->storage.size/4; image_desc.buffer=bc->buffer[0];
+    bc->shared_weight_image=clCreateImage(ctx->context,CL_MEM_READ_ONLY,&format,&image_desc,nullptr,&error);
+    if (error!=CL_SUCCESS) { ggml_backend_buffer_free(buffer); return nullptr; }
+    // Immutable import. Prevent set/clear/copy from creating private SoA state.
+    buffer->iface.set_tensor=nullptr; buffer->iface.memset_tensor=nullptr;
+    buffer->iface.set_tensor_2d=nullptr; buffer->iface.clear=nullptr;
+    buffer->iface.get_tensor=[](ggml_backend_buffer_t,const ggml_tensor * t,void * out,size_t off,size_t size) {
+        ggml_shared_weight_get_canonical(t->data,t->ne[0],out,off,size);
+    };
+    return buffer;
+}
+
 static void * ggml_backend_opencl_get_proc_address(ggml_backend_reg_t, const char * name) {
+    if (strcmp(name,"ggml_backend_import_shared_weight")==0) {
+        return (void *)ggml_backend_opencl_import_shared_weight;
+    }
     if (strcmp(name, "ggml_backend_opencl_pack_q4_0_htp_batch") == 0) {
         return (void *) ggml_backend_opencl_pack_q4_0_htp_batch;
     }
@@ -23665,6 +23740,76 @@ static void ggml_cl_mul_mat(ggml_backend_t backend, const ggml_tensor * src0, co
     GGML_ASSERT(src1->extra);
     GGML_ASSERT(dst);
     GGML_ASSERT(dst->extra);
+
+    if (src0->buffer) {
+        auto * bc=static_cast<ggml_backend_opencl_buffer_context *>(src0->buffer->context);
+        if (bc->shared_weight.layout) {
+            GGML_ASSERT(ggml_backend_opencl_device_supports_op(backend->device,dst));
+            auto * ctx=static_cast<ggml_backend_opencl_context *>(backend->context);
+            auto * a=static_cast<ggml_tensor_extra_cl *>(src0->extra);
+            auto * x=static_cast<ggml_tensor_extra_cl *>(src1->extra);
+            auto * y=static_cast<ggml_tensor_extra_cl *>(dst->extra);
+            cl_uint k=src0->ne[0],m=src0->ne[1],n=src1->ne[1];
+            cl_ulong xo=x->offset+src1->view_offs,yo=y->offset+dst->view_offs;
+            cl_int error;
+            cl_buffer_region region={size_t(xo),size_t(k)*n*sizeof(float)};
+            cl_mem input_buffer=clCreateSubBuffer(x->data_device,0,CL_BUFFER_CREATE_TYPE_REGION,&region,&error); CL_CHECK(error);
+            cl_image_format format={CL_RGBA,CL_FLOAT};
+            cl_image_desc image_desc={}; image_desc.image_type=CL_MEM_OBJECT_IMAGE1D_BUFFER;
+            image_desc.image_width=size_t(k)*n/4; image_desc.buffer=input_buffer;
+            cl_mem input_image=clCreateImage(ctx->context,CL_MEM_READ_ONLY,&format,&image_desc,nullptr,&error); CL_CHECK(error);
+            cl_mem trans_image=nullptr;
+            cl_uint padded_n=(n+7)/8*8;
+            if(n>1) {
+                ctx->prealloc_act_trans.allocate(ctx->context,size_t(k)*padded_n*sizeof(cl_half));
+                format={CL_RGBA,CL_HALF_FLOAT}; image_desc.image_width=size_t(k)*padded_n/4;
+                image_desc.buffer=ctx->prealloc_act_trans.buffer;
+                trans_image=clCreateImage(ctx->context,0,&format,&image_desc,nullptr,&error); CL_CHECK(error);
+                if(n%4==0) {
+                    cl_kernel transpose=ctx->kernel_transpose_32_16;
+                    cl_int height=n/4,width=k/4,padded_height=padded_n/4;
+                    CL_CHECK(clSetKernelArg(transpose,0,sizeof(cl_mem),&input_image));
+                    CL_CHECK(clSetKernelArg(transpose,1,sizeof(cl_mem),&trans_image));
+                    CL_CHECK(clSetKernelArg(transpose,2,sizeof(height),&height));
+                    CL_CHECK(clSetKernelArg(transpose,3,sizeof(width),&width));
+                    CL_CHECK(clSetKernelArg(transpose,4,sizeof(padded_height),&padded_height));
+                    size_t local[]={1,16},global[]={size_t(width),size_t(padded_height)};
+                    ctx->enqueue_ndrange_kernel(transpose,2,global,local,dst);
+                } else {
+                    cl_kernel transpose=bc->shared_transpose;
+                    CL_CHECK(clSetKernelArg(transpose,0,sizeof(cl_mem),&x->data_device));
+                    CL_CHECK(clSetKernelArg(transpose,1,sizeof(xo),&xo));
+                    CL_CHECK(clSetKernelArg(transpose,2,sizeof(cl_mem),&ctx->prealloc_act_trans.buffer));
+                    CL_CHECK(clSetKernelArg(transpose,3,sizeof(k),&k));
+                    CL_CHECK(clSetKernelArg(transpose,4,sizeof(n),&n));
+                    CL_CHECK(clSetKernelArg(transpose,5,sizeof(padded_n),&padded_n));
+                    size_t local=64,global=size_t(k)*padded_n;
+                    ctx->enqueue_ndrange_kernel(transpose,1,&global,&local,dst);
+                }
+            }
+            cl_mem activation=n==1?input_image:trans_image;
+            cl_kernel kernel=n==1?bc->shared_mv:bc->shared_mm;
+            CL_CHECK(clSetKernelArg(kernel,0,sizeof(cl_mem),&bc->shared_weight_image));
+            CL_CHECK(clSetKernelArg(kernel,1,sizeof(a->offset),&a->offset));
+            CL_CHECK(clSetKernelArg(kernel,2,sizeof(cl_mem),&activation));
+            CL_CHECK(clSetKernelArg(kernel,3,sizeof(cl_mem),&y->data_device));
+            CL_CHECK(clSetKernelArg(kernel,4,sizeof(yo),&yo));
+            CL_CHECK(clSetKernelArg(kernel,5,sizeof(k),&k));
+            CL_CHECK(clSetKernelArg(kernel,6,sizeof(m),&m));
+            if(n==1) {
+                size_t local[]={64,4},global[]={((size_t(m/4)+63)/64)*64,4};
+                ctx->enqueue_ndrange_kernel(kernel,2,global,local,dst);
+            } else {
+                CL_CHECK(clSetKernelArg(kernel,7,sizeof(n),&n));
+                CL_CHECK(clSetKernelArg(kernel,8,sizeof(padded_n),&padded_n));
+                size_t local[]={1,128},global[]={size_t(padded_n/8),size_t(m/4)};
+                ctx->enqueue_ndrange_kernel(kernel,2,global,local,dst);
+            }
+            if(trans_image) { CL_CHECK(clReleaseMemObject(trans_image)); }
+            CL_CHECK(clReleaseMemObject(input_image)); CL_CHECK(clReleaseMemObject(input_buffer));
+            return;
+        }
+    }
 
     // bf16 is stored as f16 on device
     const enum ggml_type src0t = (src0->type == GGML_TYPE_BF16) ? GGML_TYPE_F16 : src0->type;

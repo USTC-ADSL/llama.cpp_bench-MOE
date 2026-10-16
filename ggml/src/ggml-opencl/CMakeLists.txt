@@ -70,6 +70,7 @@ set(GGML_OPENCL_KERNELS
     clamp
     cpy
     cvt
+    shared_q4_0
     diag_mask_inf
     diag
     div

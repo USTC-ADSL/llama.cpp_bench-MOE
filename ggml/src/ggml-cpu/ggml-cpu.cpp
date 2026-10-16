@@ -3,6 +3,7 @@
 #include "ggml-cpu.h"
 #include "repack.h"
 #include "traits.h"
+#include "shared-weight.h"
 #include "ggml-impl.h"
 #include "amx/amx.h"
 
@@ -67,6 +68,7 @@ std::vector<ggml_backend_buffer_type_t> & ggml_backend_cpu_get_extra_buffer_type
         }
 #endif
 
+        bufts.push_back(ggml_backend_cpu_shared_weight_buffer_type());
         return bufts;
     }();
 
@@ -653,6 +655,9 @@ static ggml_backend_feature * ggml_backend_cpu_get_features(ggml_backend_reg_t r
 }
 
 static void * ggml_backend_cpu_get_proc_address(ggml_backend_reg_t reg, const char * name) {
+    if (strcmp(name, "ggml_backend_import_shared_weight") == 0) {
+        return (void *)ggml_backend_cpu_import_shared_weight;
+    }
     if (strcmp(name, "ggml_backend_set_n_threads") == 0) {
         ggml_backend_set_n_threads_t fct = ggml_backend_cpu_set_n_threads;
         return (void *)fct;
