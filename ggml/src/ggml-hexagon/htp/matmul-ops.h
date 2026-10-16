@@ -360,7 +360,7 @@ struct htp_mm_hvx_vtcm_layout {
     size_t total_bytes;
 };
 
-static inline void htp_mm_hmx_vtcm_layout_build(
+static inline void htp_mm_hmx_vtcm_layout_build_ex(
     struct htp_mm_hmx_vtcm_layout * L,
     int kernel_type,
     int wtype,
@@ -371,7 +371,8 @@ static inline void htp_mm_hmx_vtcm_layout_build(
     bool pipeline,
     uint32_t act_threads,
     uint32_t aligned_tile_size,
-    size_t src2_size
+    size_t src2_size,
+    size_t packed_weight_bytes
 ) {
     size_t off = 0;
 
@@ -427,7 +428,9 @@ static inline void htp_mm_hmx_vtcm_layout_build(
         const uint32_t n_k_tiles = k / HTP_MM_HMX_TILE_N_COLS;
 
         const size_t min_f32_size = hex_align_up(act_threads * HTP_MM_DMA_ACT_MULTIPLIER * k * sizeof(float), 128);
-        const size_t weight_area_size = is_quant
+        const size_t weight_area_size = packed_weight_bytes
+            ? hex_align_up(packed_weight_bytes, HTP_MM_HMX_TILE_SIZE)
+            : is_quant
             ? hex_align_up((nc / 32) * n_k_tiles * aligned_tile_size, HTP_MM_HMX_TILE_SIZE)
             : hex_align_up(nc * row_stride, HTP_MM_HMX_TILE_SIZE);
         const size_t act_area_size    = hex_align_up(mc * vec_dot_size, HTP_MM_HMX_TILE_SIZE);
@@ -474,6 +477,14 @@ static inline void htp_mm_hmx_vtcm_layout_build(
     }
 
     L->total_bytes = off;
+}
+
+static inline void htp_mm_hmx_vtcm_layout_build(
+    struct htp_mm_hmx_vtcm_layout *L, int kernel_type, int wtype, uint32_t k,
+    size_t mc, size_t nc, uint32_t group_size, bool pipeline, uint32_t act_threads,
+    uint32_t aligned_tile_size, size_t src2_size) {
+    htp_mm_hmx_vtcm_layout_build_ex(L,kernel_type,wtype,k,mc,nc,group_size,pipeline,
+                                  act_threads,aligned_tile_size,src2_size,0);
 }
 
 static inline void htp_mm_hvx_vtcm_layout_build(

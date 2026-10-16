@@ -1,0 +1,124 @@
+[
+  {
+    "source": "task/handoff/handoff-2026-10-16-shared-weight-layout/evidence/shared-v41-cpu4x8-cpu-stable.json",
+    "backend": "CPU",
+    "timing": "CPU persistent-pool operator",
+    "bootstrap_draws": 2000,
+    "bootstrap_block_size": 8,
+    "shared_storage": {
+      "layout": 2,
+      "weight_bytes": 1622016,
+      "allocation_bytes": 1622016,
+      "backend_bindings": 3,
+      "pointer_alias": true,
+      "roundtrip_exact": true,
+      "post_bind_alias_compute_verified": true
+    },
+    "cases": [
+      {
+        "k": 2048,
+        "m": 1408,
+        "n": 1,
+        "baseline": "CPU_REPACK",
+        "samples": 512,
+        "native_us": 20.105,
+        "shared_us": 20.2085,
+        "ratio": 1.0051479731410098,
+        "ratio_ci95": [
+          1.0025864212882367,
+          1.0077396308791429
+        ],
+        "within_5_percent": true,
+        "ci_upper_within_5_percent": true,
+        "nrmse": 0.00315819726013841
+      },
+      {
+        "k": 2048,
+        "m": 1408,
+        "n": 32,
+        "baseline": "CPU_REPACK",
+        "samples": 512,
+        "native_us": 205.99,
+        "shared_us": 206.094,
+        "ratio": 1.0005048788776154,
+        "ratio_ci95": [
+          1.0002523757292203,
+          1.0007575095417067
+        ],
+        "within_5_percent": true,
+        "ci_upper_within_5_percent": true,
+        "nrmse": 0.0031919106968504103
+      },
+      {
+        "k": 2048,
+        "m": 1408,
+        "n": 128,
+        "baseline": "CPU_REPACK",
+        "samples": 512,
+        "native_us": 907.8125,
+        "shared_us": 942.188,
+        "ratio": 1.037866299483649,
+        "ratio_ci95": [
+          1.0004920649273363,
+          1.0484536890361655
+        ],
+        "within_5_percent": true,
+        "ci_upper_within_5_percent": true,
+        "nrmse": 0.0032059287752853605
+      },
+      {
+        "k": 1408,
+        "m": 2048,
+        "n": 1,
+        "baseline": "CPU_REPACK",
+        "samples": 512,
+        "native_us": 20.026,
+        "shared_us": 20.156,
+        "ratio": 1.0064915609707379,
+        "ratio_ci95": [
+          0.9999748693204663,
+          1.0256485994190911
+        ],
+        "within_5_percent": true,
+        "ci_upper_within_5_percent": true,
+        "nrmse": 0.0031665632012586047
+      },
+      {
+        "k": 1408,
+        "m": 2048,
+        "n": 32,
+        "baseline": "CPU_REPACK",
+        "samples": 512,
+        "native_us": 237.812,
+        "shared_us": 238.073,
+        "ratio": 1.001097505592653,
+        "ratio_ci95": [
+          1.0008742544668938,
+          1.0128617294885116
+        ],
+        "within_5_percent": true,
+        "ci_upper_within_5_percent": true,
+        "nrmse": 0.0032171143609502147
+      },
+      {
+        "k": 1408,
+        "m": 2048,
+        "n": 128,
+        "baseline": "CPU_REPACK",
+        "samples": 512,
+        "native_us": 947.76,
+        "shared_us": 947.552,
+        "ratio": 0.9997805351565797,
+        "ratio_ci95": [
+          0.9996977167326186,
+          0.9999456553854985
+        ],
+        "within_5_percent": true,
+        "ci_upper_within_5_percent": true,
+        "nrmse": 0.003227406023274197
+      }
+    ],
+    "all_medians_within_5_percent": true,
+    "all_ci_upper_within_5_percent": true
+  }
+]

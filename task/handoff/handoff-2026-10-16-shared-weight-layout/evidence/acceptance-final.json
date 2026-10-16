@@ -1,0 +1,368 @@
+[
+  {
+    "source": "task/handoff/handoff-2026-10-16-shared-weight-layout/evidence/shared-v41-cpu4x8-cpu-stable.json",
+    "backend": "CPU",
+    "timing": "CPU persistent-pool operator",
+    "bootstrap_draws": 2000,
+    "bootstrap_block_size": 8,
+    "shared_storage": {
+      "layout": 2,
+      "weight_bytes": 1622016,
+      "allocation_bytes": 1622016,
+      "backend_bindings": 3,
+      "pointer_alias": true,
+      "roundtrip_exact": true,
+      "post_bind_alias_compute_verified": true
+    },
+    "cases": [
+      {
+        "k": 2048,
+        "m": 1408,
+        "n": 1,
+        "baseline": "CPU_REPACK",
+        "samples": 512,
+        "native_us": 20.105,
+        "shared_us": 20.2085,
+        "ratio": 1.0051479731410098,
+        "ratio_ci95": [
+          1.0025864212882367,
+          1.0077396308791429
+        ],
+        "within_5_percent": true,
+        "ci_upper_within_5_percent": true,
+        "nrmse": 0.00315819726013841
+      },
+      {
+        "k": 2048,
+        "m": 1408,
+        "n": 32,
+        "baseline": "CPU_REPACK",
+        "samples": 512,
+        "native_us": 205.99,
+        "shared_us": 206.094,
+        "ratio": 1.0005048788776154,
+        "ratio_ci95": [
+          1.0002523757292203,
+          1.0007575095417067
+        ],
+        "within_5_percent": true,
+        "ci_upper_within_5_percent": true,
+        "nrmse": 0.0031919106968504103
+      },
+      {
+        "k": 2048,
+        "m": 1408,
+        "n": 128,
+        "baseline": "CPU_REPACK",
+        "samples": 512,
+        "native_us": 907.8125,
+        "shared_us": 942.188,
+        "ratio": 1.037866299483649,
+        "ratio_ci95": [
+          1.0004920649273363,
+          1.0484536890361655
+        ],
+        "within_5_percent": true,
+        "ci_upper_within_5_percent": true,
+        "nrmse": 0.0032059287752853605
+      },
+      {
+        "k": 1408,
+        "m": 2048,
+        "n": 1,
+        "baseline": "CPU_REPACK",
+        "samples": 512,
+        "native_us": 20.026,
+        "shared_us": 20.156,
+        "ratio": 1.0064915609707379,
+        "ratio_ci95": [
+          0.9999748693204663,
+          1.0256485994190911
+        ],
+        "within_5_percent": true,
+        "ci_upper_within_5_percent": true,
+        "nrmse": 0.0031665632012586047
+      },
+      {
+        "k": 1408,
+        "m": 2048,
+        "n": 32,
+        "baseline": "CPU_REPACK",
+        "samples": 512,
+        "native_us": 237.812,
+        "shared_us": 238.073,
+        "ratio": 1.001097505592653,
+        "ratio_ci95": [
+          1.0008742544668938,
+          1.0128617294885116
+        ],
+        "within_5_percent": true,
+        "ci_upper_within_5_percent": true,
+        "nrmse": 0.0032171143609502147
+      },
+      {
+        "k": 1408,
+        "m": 2048,
+        "n": 128,
+        "baseline": "CPU_REPACK",
+        "samples": 512,
+        "native_us": 947.76,
+        "shared_us": 947.552,
+        "ratio": 0.9997805351565797,
+        "ratio_ci95": [
+          0.9996977167326186,
+          0.9999456553854985
+        ],
+        "within_5_percent": true,
+        "ci_upper_within_5_percent": true,
+        "nrmse": 0.003227406023274197
+      }
+    ],
+    "all_medians_within_5_percent": true,
+    "all_ci_upper_within_5_percent": true
+  },
+  {
+    "source": "task/handoff/handoff-2026-10-16-shared-weight-layout/evidence/shared-v41-cpu4x8-gpu-stable.json",
+    "backend": "GPUOpenCL",
+    "timing": "device operator",
+    "bootstrap_draws": 2000,
+    "bootstrap_block_size": 8,
+    "shared_storage": {
+      "layout": 2,
+      "weight_bytes": 1622016,
+      "allocation_bytes": 1622016,
+      "backend_bindings": 3,
+      "pointer_alias": true,
+      "roundtrip_exact": true,
+      "post_bind_alias_compute_verified": true
+    },
+    "cases": [
+      {
+        "k": 2048,
+        "m": 1408,
+        "n": 1,
+        "baseline": "OpenCL",
+        "samples": 512,
+        "native_us": 36.096000000000004,
+        "shared_us": 30.976,
+        "ratio": 0.8581560283687942,
+        "ratio_ci95": [
+          0.8581560283687942,
+          0.8642857142857142
+        ],
+        "within_5_percent": true,
+        "ci_upper_within_5_percent": true,
+        "nrmse": 1.3684227527468886e-07
+      },
+      {
+        "k": 2048,
+        "m": 1408,
+        "n": 32,
+        "baseline": "OpenCL",
+        "samples": 512,
+        "native_us": 248.064,
+        "shared_us": 253.184,
+        "ratio": 1.020639834881321,
+        "ratio_ci95": [
+          1.0196078431372548,
+          1.0237358101135192
+        ],
+        "within_5_percent": true,
+        "ci_upper_within_5_percent": true,
+        "nrmse": 0.003631785718207943
+      },
+      {
+        "k": 2048,
+        "m": 1408,
+        "n": 128,
+        "baseline": "OpenCL",
+        "samples": 512,
+        "native_us": 423.168,
+        "shared_us": 391.93600000000004,
+        "ratio": 0.9261947973381731,
+        "ratio_ci95": [
+          0.9243799153055051,
+          0.9267554479418886
+        ],
+        "within_5_percent": true,
+        "ci_upper_within_5_percent": true,
+        "nrmse": 0.003642721277381628
+      },
+      {
+        "k": 1408,
+        "m": 2048,
+        "n": 1,
+        "baseline": "OpenCL",
+        "samples": 512,
+        "native_us": 33.024,
+        "shared_us": 33.024,
+        "ratio": 1.0,
+        "ratio_ci95": [
+          1.0,
+          1.0
+        ],
+        "within_5_percent": true,
+        "ci_upper_within_5_percent": true,
+        "nrmse": 1.30269781293042e-07
+      },
+      {
+        "k": 1408,
+        "m": 2048,
+        "n": 32,
+        "baseline": "OpenCL",
+        "samples": 512,
+        "native_us": 189.184,
+        "shared_us": 171.776,
+        "ratio": 0.9079837618403248,
+        "ratio_ci95": [
+          0.9039242219215157,
+          0.9093369418132612
+        ],
+        "within_5_percent": true,
+        "ci_upper_within_5_percent": true,
+        "nrmse": 0.0036546448907729063
+      },
+      {
+        "k": 1408,
+        "m": 2048,
+        "n": 128,
+        "baseline": "OpenCL",
+        "samples": 512,
+        "native_us": 436.992,
+        "shared_us": 400.896,
+        "ratio": 0.9173989455184535,
+        "ratio_ci95": [
+          0.9157894736842106,
+          0.9179847685998828
+        ],
+        "within_5_percent": true,
+        "ci_upper_within_5_percent": true,
+        "nrmse": 0.0036730203949994654
+      }
+    ],
+    "all_medians_within_5_percent": true,
+    "all_ci_upper_within_5_percent": true
+  },
+  {
+    "source": "task/handoff/handoff-2026-10-16-shared-weight-layout/evidence/shared-v41-cpu4x8-htp-final.json",
+    "backend": "HTP0",
+    "timing": "device operator",
+    "bootstrap_draws": 2000,
+    "bootstrap_block_size": 8,
+    "shared_storage": {
+      "layout": 2,
+      "weight_bytes": 1622016,
+      "allocation_bytes": 1622016,
+      "backend_bindings": 3,
+      "pointer_alias": true,
+      "roundtrip_exact": true,
+      "post_bind_alias_compute_verified": true
+    },
+    "cases": [
+      {
+        "k": 2048,
+        "m": 1408,
+        "n": 1,
+        "baseline": "HTP0",
+        "samples": 128,
+        "native_us": 54.0,
+        "shared_us": 55.0,
+        "ratio": 1.0185185185185186,
+        "ratio_ci95": [
+          1.0185185185185186,
+          1.0377358490566038
+        ],
+        "within_5_percent": true,
+        "ci_upper_within_5_percent": true,
+        "nrmse": 0.003146134592924051
+      },
+      {
+        "k": 2048,
+        "m": 1408,
+        "n": 32,
+        "baseline": "HTP0",
+        "samples": 128,
+        "native_us": 92.0,
+        "shared_us": 85.0,
+        "ratio": 0.9239130434782609,
+        "ratio_ci95": [
+          0.9120879120879121,
+          0.9247311827956989
+        ],
+        "within_5_percent": true,
+        "ci_upper_within_5_percent": true,
+        "nrmse": 0.00028814065074916385
+      },
+      {
+        "k": 2048,
+        "m": 1408,
+        "n": 128,
+        "baseline": "HTP0",
+        "samples": 128,
+        "native_us": 114.0,
+        "shared_us": 118.0,
+        "ratio": 1.0350877192982457,
+        "ratio_ci95": [
+          1.0347826086956522,
+          1.0442477876106195
+        ],
+        "within_5_percent": true,
+        "ci_upper_within_5_percent": true,
+        "nrmse": 0.00028753869847576464
+      },
+      {
+        "k": 1408,
+        "m": 2048,
+        "n": 1,
+        "baseline": "HTP0",
+        "samples": 128,
+        "native_us": 52.0,
+        "shared_us": 52.0,
+        "ratio": 1.0,
+        "ratio_ci95": [
+          0.9807692307692307,
+          1.0
+        ],
+        "within_5_percent": true,
+        "ci_upper_within_5_percent": true,
+        "nrmse": 0.003228214297357769
+      },
+      {
+        "k": 1408,
+        "m": 2048,
+        "n": 32,
+        "baseline": "HTP0",
+        "samples": 128,
+        "native_us": 91.0,
+        "shared_us": 84.0,
+        "ratio": 0.9230769230769231,
+        "ratio_ci95": [
+          0.9120879120879121,
+          0.9230769230769231
+        ],
+        "within_5_percent": true,
+        "ci_upper_within_5_percent": true,
+        "nrmse": 0.0002877518991974021
+      },
+      {
+        "k": 1408,
+        "m": 2048,
+        "n": 128,
+        "baseline": "HTP0",
+        "samples": 128,
+        "native_us": 115.0,
+        "shared_us": 118.0,
+        "ratio": 1.0260869565217392,
+        "ratio_ci95": [
+          1.017391304347826,
+          1.0347826086956522
+        ],
+        "within_5_percent": true,
+        "ci_upper_within_5_percent": true,
+        "nrmse": 0.0002880637018184641
+      }
+    ],
+    "all_medians_within_5_percent": true,
+    "all_ci_upper_within_5_percent": true
+  }
+]

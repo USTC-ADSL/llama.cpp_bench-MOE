@@ -237,7 +237,6 @@ static const uint8_t __attribute__((aligned(VLEN))) kvalues_mxfp4_lut[] = {
 
 
 // hvx kernels first: the HMX Q6_K dequantizer reuses unpack_q6_k_group from there
-#include "shared-cpu4x8.h"
 #include "hvx-mm-kernels-tiled.h"
 #include "hvx-mm-kernels-float.h"
 #include "hmx-mm-kernels-tiled.h"
@@ -2741,7 +2740,31 @@ static int hmx_mm_2d_f32(struct htp_context *ctx,
     const size_t qweight_row_stride = is_quant ? (size_t)(n_k_tiles * aligned_tile_size) / 32 : 0;
 
     struct htp_mm_hmx_vtcm_layout L;
-    htp_mm_hmx_vtcm_layout_build(&L, HTP_MM_KERNEL_HMX_2D, weight_type, k, m_chunk_n_rows, n_chunk_n_cols, 1, pipeline, act_threads, aligned_tile_size, src2_bytes);
+    htp_mm_hmx_vtcm_layout_build_ex(&L, HTP_MM_KERNEL_HMX_2D, weight_type, k, m_chunk_n_rows, n_chunk_n_cols, 1, pipeline, act_threads, aligned_tile_size, src2_bytes,
+        cpu4x8 ? n_chunk_n_cols*(size_t)weight_stride+56 : 0);
+    if(cpu4x8 && n>=64) {
+        // CPU4x8 raw staging has no native per-K-tile padding. Account for
+        // exactly its packed bytes plus the final HVX load overhang. Three
+        // balanced chunks reduce the unhidden first dequantization stage.
+        // Search monotonically in tile units when that target does not fit.
+        uint32_t lower=1, upper=hex_align_up(hmx_ceil_div(n,3),32)/32;
+        while(lower<=upper) {
+            uint32_t tiles=lower+(upper-lower)/2;
+            size_t cols=(size_t)tiles*32;
+            struct htp_mm_hmx_vtcm_layout candidate;
+            htp_mm_hmx_vtcm_layout_build_ex(&candidate,HTP_MM_KERNEL_HMX_2D,weight_type,k,
+                m_chunk_n_rows,cols,1,true,act_threads,aligned_tile_size,src2_bytes,
+                cols*(size_t)weight_stride+56);
+            if(candidate.total_bytes<=vtcm_budget) {
+                L=candidate;
+                n_chunk_n_cols=cols;
+                pipeline=1;
+                lower=tiles+1;
+            } else {
+                upper=tiles-1;
+            }
+        }
+    }
 
     vtcm_used = L.total_bytes;
     if (vtcm_used > vtcm_budget) {

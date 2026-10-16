@@ -196,48 +196,59 @@ static void dequantize_tiled_weight_to_fp16_task_q4_0_canonical(
     }
 }
 
-static inline void cpu4x8_store_hmx_half(__fp16 *dst, HVX_Vector v0, HVX_Vector v1,
-        HVX_Vector v2, HVX_Vector v3, HVX_Vector v4, HVX_Vector v5, HVX_Vector v6, HVX_Vector v7) {
-    HVX_VectorPair a0=Q6_W_vshuff_VVR(v1,v0,-16);
-    HVX_VectorPair a1=Q6_W_vshuff_VVR(v3,v2,-16);
-    HVX_VectorPair a2=Q6_W_vshuff_VVR(v5,v4,-16);
-    HVX_VectorPair a3=Q6_W_vshuff_VVR(v7,v6,-16);
-    HVX_VectorPair b0=Q6_W_vshuff_VVR(Q6_V_lo_W(a1),Q6_V_lo_W(a0),-32);
-    HVX_VectorPair b1=Q6_W_vshuff_VVR(Q6_V_hi_W(a1),Q6_V_hi_W(a0),-32);
-    HVX_VectorPair b2=Q6_W_vshuff_VVR(Q6_V_lo_W(a3),Q6_V_lo_W(a2),-32);
-    HVX_VectorPair b3=Q6_W_vshuff_VVR(Q6_V_hi_W(a3),Q6_V_hi_W(a2),-32);
-    HVX_VectorPair c0=Q6_W_vshuff_VVR(Q6_V_lo_W(b2),Q6_V_lo_W(b0),-64);
-    HVX_VectorPair c1=Q6_W_vshuff_VVR(Q6_V_hi_W(b2),Q6_V_hi_W(b0),-64);
-    HVX_VectorPair c2=Q6_W_vshuff_VVR(Q6_V_lo_W(b3),Q6_V_lo_W(b1),-64);
-    HVX_VectorPair c3=Q6_W_vshuff_VVR(Q6_V_hi_W(b3),Q6_V_hi_W(b1),-64);
-    hvx_vmem(dst+0*64)=Q6_V_lo_W(c0); hvx_vmem(dst+1*64)=Q6_V_hi_W(c0);
-    hvx_vmem(dst+2*64)=Q6_V_lo_W(c1); hvx_vmem(dst+3*64)=Q6_V_hi_W(c1);
-    hvx_vmem(dst+4*64)=Q6_V_lo_W(c2); hvx_vmem(dst+5*64)=Q6_V_hi_W(c2);
-    hvx_vmem(dst+6*64)=Q6_V_lo_W(c3); hvx_vmem(dst+7*64)=Q6_V_hi_W(c3);
-}
-
 static void dequantize_tiled_weight_to_fp16_task_q4_0_cpu4x8(
         const tiled_dequantize_state_t *state, uint32_t start_tile, uint32_t end_tile) {
-    for(uint32_t t=start_tile;t<end_tile;++t) {
+    static const __fp16 signed_q4_lut[64] __attribute__((aligned(128))) = {
+        0,0,1,0,2,0,3,0,4,0,5,0,6,0,7,0,
+        -8,0,-7,0,-6,0,-5,0,-4,0,-3,0,-2,0,-1,0
+    };
+    const HVX_Vector lut=hvx_vmem(signed_q4_lut);
+    const size_t group_stride=4*(size_t)state->row_stride;
+    for(uint32_t t=start_tile;t<end_tile;) {
         uint32_t ct=fastdiv(t,&state->n_k_tiles_div),kb=t-ct*state->n_k_tiles;
+        const uint32_t count=hex_smin(end_tile-t,state->n_k_tiles-kb);
+        const uint8_t *base=state->src+ct*8*group_stride+kb*72;
+        // Walk consecutive K blocks without repeating division and eight
+        // row-stride multiplications for every tile.
+        for(uint32_t block=0;block<count;++block,++t,base+=72) {
         __fp16 *dst=state->dst+t*HTP_MM_HMX_TILE_N_ELMS;
-        HVX_Vector lo[8],hi[8];
+        HVX_Vector q[8];
+        HVX_Vector scales=Q6_V_vzero();
         #pragma unroll
         for(uint32_t group=0;group<8;++group) {
-            uint32_t row=group*4;
-            const uint8_t *p=state->src+(ct*32+row)*state->row_stride+kb*72;
+            const uint8_t *p=base+group*group_stride;
+            // Raw VTCM staging explicitly reserves the final 56-byte
+            // overhang of this 128-byte load from a 72-byte block.
             HVX_Vector raw=hvx_vmemu(p);
-            HVX_VectorPair q=Q6_Wh_vunpack_Vb(cpu4x8_decode_hmx(raw));
-            HVX_Vector scales=cpu4x8_hmx_scales(raw);
-            HVX_Vector f0=Q6_Vhf_equals_Vqf16(Q6_Vqf16_vmpy_VhfVhf(
-                Q6_Vhf_equals_Vh(Q6_V_lo_W(q)),scales));
-            HVX_Vector f1=Q6_Vhf_equals_Vqf16(Q6_Vqf16_vmpy_VhfVhf(
-                Q6_Vhf_equals_Vh(Q6_V_hi_W(q)),scales));
-            // Transpose in registers and store whole vectors: no VTCM scatter.
-            lo[group]=f0; hi[group]=f1;
+            q[group]=Q6_V_vror_VR(raw,8);
+            scales=Q6_V_valign_VVR(raw,scales,8);
         }
-        cpu4x8_store_hmx_half(dst,lo[0],lo[1],lo[2],lo[3],lo[4],lo[5],lo[6],lo[7]);
-        cpu4x8_store_hmx_half(dst+512,hi[0],hi[1],hi[2],hi[3],hi[4],hi[5],hi[6],hi[7]);
+        // Transpose 4-bit values before expansion to HMX halfword tiles.
+        HVX_Vector a0=Q6_V_lo_W(Q6_W_vshuff_VVR(q[1],q[0],-32));
+        HVX_Vector a1=Q6_V_lo_W(Q6_W_vshuff_VVR(q[3],q[2],-32));
+        HVX_Vector a2=Q6_V_lo_W(Q6_W_vshuff_VVR(q[5],q[4],-32));
+        HVX_Vector a3=Q6_V_lo_W(Q6_W_vshuff_VVR(q[7],q[6],-32));
+        HVX_VectorPair b0=Q6_W_vshuff_VVR(a1,a0,-64);
+        HVX_VectorPair b1=Q6_W_vshuff_VVR(a3,a2,-64);
+        HVX_VectorPair c0=Q6_W_vdeal_VVR(Q6_V_lo_W(b1),Q6_V_lo_W(b0),-2);
+        HVX_VectorPair c1=Q6_W_vdeal_VVR(Q6_V_hi_W(b1),Q6_V_hi_W(b0),-2);
+        HVX_Vector packed[4]={Q6_Vh_vdeal_Vh(Q6_V_lo_W(c0)),Q6_Vh_vdeal_Vh(Q6_V_hi_W(c0)),
+                              Q6_Vh_vdeal_Vh(Q6_V_lo_W(c1)),Q6_Vh_vdeal_Vh(Q6_V_hi_W(c1))};
+        scales=Q6_V_vror_VR(scales,64);
+        scales=Q6_V_lo_W(Q6_W_vshuff_VVR(scales,scales,-2));
+        #pragma unroll
+        for(uint32_t j=0;j<4;++j) {
+            HVX_Vector lo=packed[j];
+            HVX_Vector hi=Q6_Vub_vlsr_VubR(packed[j],4);
+            HVX_VectorPair qlo=Q6_Wh_vlut16_VbVhR_nomatch(Q6_Vb_vshuff_Vb(lo),lut,0);
+            HVX_VectorPair qhi=Q6_Wh_vlut16_VbVhR(Q6_Vb_vshuff_Vb(hi),lut,0);
+            const uint32_t off=(j/2)*256+(j%2)*64;
+            hvx_vmem(dst+off)=Q6_Vhf_equals_Vqf16(Q6_Vqf16_vmpy_VhfVhf(Q6_V_lo_W(qlo),scales));
+            hvx_vmem(dst+off+128)=Q6_Vhf_equals_Vqf16(Q6_Vqf16_vmpy_VhfVhf(Q6_V_hi_W(qlo),scales));
+            hvx_vmem(dst+512+off)=Q6_Vhf_equals_Vqf16(Q6_Vqf16_vmpy_VhfVhf(Q6_V_lo_W(qhi),scales));
+            hvx_vmem(dst+512+off+128)=Q6_Vhf_equals_Vqf16(Q6_Vqf16_vmpy_VhfVhf(Q6_V_hi_W(qhi),scales));
+        }
+        }
     }
 }
 

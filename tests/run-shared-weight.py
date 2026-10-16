@@ -24,10 +24,14 @@ def main():
     p.add_argument("--deploy", action="store_true")
     p.add_argument("--shared", action="store_true")
     p.add_argument("--edges", action="store_true", help="small shapes and tail batches; correctness only")
+    p.add_argument("--stress", action="store_true", help="two-tile and VTCM capacity boundaries; correctness only")
     p.add_argument("--profile", action="store_true", help="enable DSP counters; GPU counters require profiling build")
     p.add_argument("--model", action="store_true", help="read expert 7 weights from the designated device GGUF")
     p.add_argument("--layout", choices=["htp", "cpu4x8"], default="htp")
     p.add_argument("--gpu-dp4a", action="store_true", help="enable native dense DP4A for an additional baseline")
+    p.add_argument("--htp-trace", action="store_true", help="diagnostic DSP stage trace; not an acceptance timing run")
+    p.add_argument("--htp-mm-select", type=int, choices=[1, 2], help="native HVX-only or HMX/HVX dispatch")
+    p.add_argument("--htp-hvx-threads", type=int, choices=range(1, 7), help="DSP HVX worker count for baseline comparison")
     a = p.parse_args()
     if not a.tag or any(c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-" for c in a.tag):
         p.error("invalid tag")
@@ -71,8 +75,16 @@ def main():
         env.append("GGML_SHARED_WEIGHT_CPU4X8=1")
     if a.edges:
         env.append("GGML_SHARED_WEIGHT_EDGES=1")
+    if a.stress:
+        env.append("GGML_SHARED_WEIGHT_STRESS=1")
     if a.profile:
         env += ["GGML_HEXAGON_PROFILE=1", "GGML_HEXAGON_TIMING=1"]
+    if a.htp_trace:
+        env += ["GGML_HEXAGON_PROFILE=3", "GGML_HEXAGON_TIMING=0", "GGML_SHARED_TEST_TRACE=1"]
+    if a.htp_mm_select is not None:
+        env.append(f"GGML_HEXAGON_MM_SELECT={a.htp_mm_select}")
+    if a.htp_hvx_threads is not None:
+        env.append(f"GGML_HEXAGON_NHVX={a.htp_hvx_threads}")
     if a.model:
         env.append("GGML_SHARED_WEIGHT_MODEL=/data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf")
     if a.backend == "CPU":

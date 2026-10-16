@@ -39,11 +39,15 @@ GGML_BACKEND_API ggml_shared_weight_t ggml_shared_weight_create_with_layout(
 
 // Returns a cached, backend-compatible tensor referencing the same allocation.
 // Caller must not mutate/free the returned tensor or create arbitrary views.
-// V1 supports contiguous 2D Q4_0 x F32 MUL_MAT only (OpenCL: tested Adreno A8x).
-// Check supports_op before
-// execution. Bind/free require external serialization; compute on distinct
+// Both layouts support contiguous 2D Q4_0 x F32 MUL_MAT only (OpenCL: Adreno A8x).
+// Routing, expert prediction and model loading belong to the caller. Select a
+// layout once at load time, bind once per backend, then use the returned tensor
+// as MUL_MAT's weight input. Check supports_op before execution.
+// Bind/free require external serialization; compute on distinct
 // backends may overlap after binding because storage is immutable.
 GGML_BACKEND_API struct ggml_tensor * ggml_shared_weight_bind(ggml_shared_weight_t weight, ggml_backend_t backend);
+// The descriptor borrows the allocation and fd; it does not retain the handle.
+// Neither the descriptor nor an import made from it may outlive the handle.
 GGML_BACKEND_API bool ggml_shared_weight_describe(ggml_shared_weight_t weight, struct ggml_shared_weight_desc * desc);
 // Synchronizes bound backends, then releases imports before the DMA allocation.
 GGML_BACKEND_API void ggml_shared_weight_free(ggml_shared_weight_t weight);

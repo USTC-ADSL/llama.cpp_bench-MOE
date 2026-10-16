@@ -1,0 +1,319 @@
+{
+  "backend": "HTP0",
+  "threads": 4,
+  "reps": 4,
+  "persistent_cpu_pool": false,
+  "cpu_affinity": "default",
+  "timing": "single MUL_MAT graph + completion; weight loading/repack and activation upload excluded; invocation scratch included",
+  "input": {
+    "model": "/data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf",
+    "expert": 7,
+    "activation": "deterministic synthetic F32",
+    "routing": false
+  },
+  "cases": [
+    {
+      "k": 2048,
+      "m": 1408,
+      "n": 1,
+      "source_tensor": "blk.0.ffn_gate_exps.weight",
+      "variants": [
+        {
+          "buffer": "HTP0",
+          "nrmse": 0.003146134592924051,
+          "weight_buffer_bytes": 1622016,
+          "samples_us": [
+            306.146,
+            346.25,
+            388.125,
+            317.552
+          ],
+          "median_us": 331.901,
+          "device_samples_us": [
+            51.0,
+            50.0,
+            51.0,
+            51.0
+          ],
+          "device_median_us": 51.0,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        },
+        {
+          "buffer": "SHARED_Q4_0_CPU4X8_V2",
+          "nrmse": 0.003146134592924051,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 1622016,
+          "samples_us": [
+            324.062,
+            322.344,
+            322.968,
+            320.26
+          ],
+          "median_us": 322.656,
+          "device_samples_us": [
+            58.0,
+            58.0,
+            59.0,
+            58.0
+          ],
+          "device_median_us": 58.0,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        }
+      ]
+    },
+    {
+      "k": 2048,
+      "m": 1408,
+      "n": 32,
+      "source_tensor": "blk.0.ffn_gate_exps.weight",
+      "variants": [
+        {
+          "buffer": "HTP0",
+          "nrmse": 0.00028814065074916385,
+          "weight_buffer_bytes": 1622016,
+          "samples_us": [
+            294.583,
+            247.291,
+            249.011,
+            248.229
+          ],
+          "median_us": 248.62,
+          "device_samples_us": [
+            87.0,
+            86.0,
+            88.0,
+            87.0
+          ],
+          "device_median_us": 87.0,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        },
+        {
+          "buffer": "SHARED_Q4_0_CPU4X8_V2",
+          "nrmse": 0.00028814065074916385,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 1622016,
+          "samples_us": [
+            262.657,
+            262.447,
+            263.906,
+            261.875
+          ],
+          "median_us": 262.552,
+          "device_samples_us": [
+            101.0,
+            101.0,
+            101.0,
+            103.0
+          ],
+          "device_median_us": 101.0,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        }
+      ]
+    },
+    {
+      "k": 2048,
+      "m": 1408,
+      "n": 128,
+      "source_tensor": "blk.0.ffn_gate_exps.weight",
+      "variants": [
+        {
+          "buffer": "HTP0",
+          "nrmse": 0.00028753869847576464,
+          "weight_buffer_bytes": 1622016,
+          "samples_us": [
+            267.5,
+            279.375,
+            279.688,
+            277.23900000000003
+          ],
+          "median_us": 278.307,
+          "device_samples_us": [
+            111.0,
+            111.0,
+            110.0,
+            109.0
+          ],
+          "device_median_us": 110.5,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        },
+        {
+          "buffer": "SHARED_Q4_0_CPU4X8_V2",
+          "nrmse": 0.00028753869847576464,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 1622016,
+          "samples_us": [
+            291.615,
+            291.875,
+            294.73900000000003,
+            292.5
+          ],
+          "median_us": 292.1875,
+          "device_samples_us": [
+            126.0,
+            122.0,
+            127.0,
+            123.0
+          ],
+          "device_median_us": 124.5,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        }
+      ]
+    },
+    {
+      "k": 1408,
+      "m": 2048,
+      "n": 1,
+      "source_tensor": "blk.0.ffn_down_exps.weight",
+      "variants": [
+        {
+          "buffer": "HTP0",
+          "nrmse": 0.003228214297357769,
+          "weight_buffer_bytes": 1622016,
+          "samples_us": [
+            205.469,
+            213.125,
+            211.094,
+            277.187
+          ],
+          "median_us": 212.1095,
+          "device_samples_us": [
+            51.0,
+            51.0,
+            51.0,
+            51.0
+          ],
+          "device_median_us": 51.0,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        },
+        {
+          "buffer": "SHARED_Q4_0_CPU4X8_V2",
+          "nrmse": 0.003228214297357769,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 1622016,
+          "samples_us": [
+            214.68800000000002,
+            213.594,
+            216.927,
+            214.532
+          ],
+          "median_us": 214.61,
+          "device_samples_us": [
+            53.0,
+            54.0,
+            54.0,
+            54.0
+          ],
+          "device_median_us": 54.0,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        }
+      ]
+    },
+    {
+      "k": 1408,
+      "m": 2048,
+      "n": 32,
+      "source_tensor": "blk.0.ffn_down_exps.weight",
+      "variants": [
+        {
+          "buffer": "HTP0",
+          "nrmse": 0.0002877518991974021,
+          "weight_buffer_bytes": 1622016,
+          "samples_us": [
+            266.927,
+            243.43800000000002,
+            248.906,
+            249.531
+          ],
+          "median_us": 249.2185,
+          "device_samples_us": [
+            86.0,
+            85.0,
+            85.0,
+            88.0
+          ],
+          "device_median_us": 85.5,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        },
+        {
+          "buffer": "SHARED_Q4_0_CPU4X8_V2",
+          "nrmse": 0.0002877518991974021,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 1622016,
+          "samples_us": [
+            262.5,
+            259.271,
+            261.302,
+            262.708
+          ],
+          "median_us": 261.901,
+          "device_samples_us": [
+            100.0,
+            99.0,
+            101.0,
+            100.0
+          ],
+          "device_median_us": 100.0,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        }
+      ]
+    },
+    {
+      "k": 1408,
+      "m": 2048,
+      "n": 128,
+      "source_tensor": "blk.0.ffn_down_exps.weight",
+      "variants": [
+        {
+          "buffer": "HTP0",
+          "nrmse": 0.0002880637018184641,
+          "weight_buffer_bytes": 1622016,
+          "samples_us": [
+            330.937,
+            276.563,
+            313.698,
+            273.125
+          ],
+          "median_us": 295.1305,
+          "device_samples_us": [
+            110.0,
+            109.0,
+            111.0,
+            108.0
+          ],
+          "device_median_us": 109.5,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        },
+        {
+          "buffer": "SHARED_Q4_0_CPU4X8_V2",
+          "nrmse": 0.0002880637018184641,
+          "weight_buffer_bytes": 0,
+          "shared_owner_bytes": 1622016,
+          "samples_us": [
+            294.948,
+            292.344,
+            358.594,
+            288.75
+          ],
+          "median_us": 293.64599999999996,
+          "device_samples_us": [
+            123.0,
+            122.0,
+            121.0,
+            121.0
+          ],
+          "device_median_us": 121.5,
+          "device_timing": "DSP op usecs; includes DMA/decode"
+        }
+      ]
+    }
+  ],
+  "shared_storage": {
+    "layout": 2,
+    "weight_bytes": 1622016,
+    "allocation_bytes": 1622016,
+    "backend_bindings": 3,
+    "pointer_alias": true,
+    "roundtrip_exact": true,
+    "post_bind_alias_compute_verified": true
+  }
+}

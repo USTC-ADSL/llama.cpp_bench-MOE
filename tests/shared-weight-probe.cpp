@@ -25,7 +25,8 @@ static void check(bool value, const char * message) {
     if (!value) { throw std::runtime_error(message); }
 }
 static void quiet(enum ggml_log_level level, const char * text, void *) {
-    if (level >= GGML_LOG_LEVEL_WARN) { fputs(text, stderr); }
+    static const bool trace=std::getenv("GGML_SHARED_TEST_TRACE")!=nullptr;
+    if (trace || level >= GGML_LOG_LEVEL_WARN) { fputs(text, stderr); }
 }
 static double median(std::vector<double> v) {
     std::sort(v.begin(), v.end());
@@ -48,6 +49,7 @@ struct job {
         w = shared?shared:ggml_new_tensor_2d(wc.get(), GGML_TYPE_Q4_0, k, m);
         x = ggml_new_tensor_2d(gc.get(), GGML_TYPE_F32, k, n);
         y = ggml_mul_mat(gc.get(), w, x);
+        ggml_set_name(y,shared?"shared_result":"native_result");
         if (!shared) {
             wb.reset(ggml_backend_alloc_ctx_tensors_from_buft(wc.get(), wt));
             check(wb != nullptr, "weight allocation failed");
@@ -96,6 +98,15 @@ struct job {
         }
         check(s>0,"vacuous reference");
         double err=std::sqrt(e/s);
+        if(err>=0.02) {
+            fprintf(stderr,"validation NRMSE=%.9g, output elements=%zu\n",err,out.size());
+            for(size_t i=0,shown=0;i<out.size() && shown<8;++i) {
+                if(std::abs(double(out[i])-ref[i])>0.02*std::max(1.0,std::abs(double(ref[i])))) {
+                    fprintf(stderr,"  [%zu] got=%.9g reference=%.9g\n",i,double(out[i]),double(ref[i]));
+                    ++shown;
+                }
+            }
+        }
         check(err<0.02,"NRMSE exceeds 2% reference bound");
         return err;
     }
@@ -138,8 +149,9 @@ int main(int argc,char **argv) {
             GGML_SHARED_WEIGHT_Q4_0_CPU4X8_V2:GGML_SHARED_WEIGHT_Q4_0_32X32_V1;
         check(layout!=GGML_SHARED_WEIGHT_Q4_0_CPU4X8_V2 || shared_mode,"CPU4x8 requires shared mode");
         bool edges=std::getenv("GGML_SHARED_WEIGHT_EDGES")!=nullptr;
+        bool stress=std::getenv("GGML_SHARED_WEIGHT_STRESS")!=nullptr;
         const char * model=std::getenv("GGML_SHARED_WEIGHT_MODEL");
-        check(!model || !edges,"model and synthetic edge mode are separate suites");
+        check(!(model && (edges || stress)) && !(edges && stress),"model, edge and stress modes are separate suites");
         gguf_context_ptr model_gguf;
         ggml_context_ptr model_meta;
         std::ifstream model_file;
@@ -187,7 +199,10 @@ int main(int argc,char **argv) {
             {"timing","single MUL_MAT graph + completion; weight loading/repack and activation upload excluded; invocation scratch included"},
             {"input","deterministic synthetic Q4_0; Qwen representative matrix shapes; no MoE routing"}, {"cases",json::array()}};
         if(model) { result["input"]={{"model",model},{"expert",7},{"activation","deterministic synthetic F32"},{"routing",false}}; }
-        const std::vector<std::pair<int,int>> shapes=edges?std::vector<std::pair<int,int>>{{128,32},{256,96}}:
+        // Cover the two-output-tile pipeline boundary and a matrix requiring
+        // more than three VTCM chunks, including a non-power-of-two K stride.
+        const std::vector<std::pair<int,int>> shapes=stress?std::vector<std::pair<int,int>>{{384,64},{4096,1536}}:
+            edges?std::vector<std::pair<int,int>>{{128,32},{256,96}}:
             std::vector<std::pair<int,int>>{{2048,1408},{1408,2048}};
         for(auto dims:shapes) {
             int k=dims.first,m=dims.second;
@@ -254,7 +269,8 @@ int main(int argc,char **argv) {
             }
             auto to_float=ggml_get_type_traits(GGML_TYPE_Q4_0)->to_float;
             for(int r=0;r<m;++r) { to_float(raw.data()+ggml_row_size(GGML_TYPE_Q4_0,k)*r,dequant.data()+size_t(r)*k,k); }
-            const std::vector<int> batches=edges?std::vector<int>{1,2,3,4,5,7,8,9,31,33}:std::vector<int>{1,32,128};
+            const std::vector<int> batches=stress?std::vector<int>{1,33,128}:
+                edges?std::vector<int>{1,2,3,4,5,7,8,9,31,33}:std::vector<int>{1,32,128};
             for(int n:batches) {
                 std::vector<float> input(size_t(k)*n),ref(size_t(m)*n);
                 for(size_t i=0;i<input.size();++i) { input[i]=std::sin(float(i%10009)*0.13f)+0.1f*std::cos(float(i%997)*0.021f); }

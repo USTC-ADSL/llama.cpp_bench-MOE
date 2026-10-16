@@ -538,6 +538,13 @@ static inline HVX_Vector scale_q6_k_32x1(HVX_VectorPair v_sums, HVX_Vector v_sca
 
 static void cpu4x8_vec_dot_q4_0_32x1(const uint32_t n, float * restrict s, const void * restrict vx,
         const void * restrict vy, uint32_t valid_rows, const float * restrict sz) {
+    // vlut32 selects the low byte of a halfword, using the low five
+    // index bits with :nomatch. Repeat the signed nibble table for bit 4.
+    static const int16_t signed_nibble_lut[64] __attribute__((aligned(128))) = {
+        0,1,2,3,4,5,6,7,-8,-7,-6,-5,-4,-3,-2,-1,
+        0,1,2,3,4,5,6,7,-8,-7,-6,-5,-4,-3,-2,-1
+    };
+    const HVX_Vector lut=hvx_vmem(signed_nibble_lut);
     const uint32_t blocks=n/32;
     HVX_Vector sum=Q6_V_vzero();
     for(uint32_t b=0;b<blocks;++b) {
@@ -547,37 +554,37 @@ static void cpu4x8_vec_dot_q4_0_32x1(const uint32_t n, float * restrict s, const
         #pragma unroll
         for(uint32_t group=0;group<8;++group) {
             const uint8_t * p=(const uint8_t *)vx+(group*blocks+b)*72;
+            // Read VTCM only: the native 640-byte-per-tile staging budget
+            // covers 576 packed bytes and the last block's 56-byte overhang.
             HVX_Vector raw=hvx_vmemu(p);
-            q[group]=cpu4x8_decode_dot(raw);
+            q[group]=Q6_V_vror_VR(raw,8);
             // Scalar VTCM loads are expensive. Gather the scale prefix using
             // the vector already loaded for quants, without a stack roundtrip.
             scales=Q6_V_valign_VVR(raw,scales,8);
         }
-        // Transpose four-byte K groups into the native 32-row dot lanes.
-        // Accumulate integer partials first, then scale once per output row.
-        HVX_VectorPair a0=Q6_W_vshuff_VVR(q[1],q[0],-16);
-        HVX_VectorPair a1=Q6_W_vshuff_VVR(q[3],q[2],-16);
-        HVX_VectorPair a2=Q6_W_vshuff_VVR(q[5],q[4],-16);
-        HVX_VectorPair a3=Q6_W_vshuff_VVR(q[7],q[6],-16);
-        HVX_VectorPair b0=Q6_W_vshuff_VVR(Q6_V_lo_W(a1),Q6_V_lo_W(a0),-32);
-        HVX_VectorPair b1=Q6_W_vshuff_VVR(Q6_V_hi_W(a1),Q6_V_hi_W(a0),-32);
-        HVX_VectorPair b2=Q6_W_vshuff_VVR(Q6_V_lo_W(a3),Q6_V_lo_W(a2),-32);
-        HVX_VectorPair b3=Q6_W_vshuff_VVR(Q6_V_hi_W(a3),Q6_V_hi_W(a2),-32);
-        HVX_VectorPair c0=Q6_W_vshuff_VVR(Q6_V_lo_W(b2),Q6_V_lo_W(b0),-64);
-        HVX_VectorPair c1=Q6_W_vshuff_VVR(Q6_V_hi_W(b2),Q6_V_hi_W(b0),-64);
-        HVX_VectorPair c2=Q6_W_vshuff_VVR(Q6_V_lo_W(b3),Q6_V_lo_W(b1),-64);
-        HVX_VectorPair c3=Q6_W_vshuff_VVR(Q6_V_hi_W(b3),Q6_V_hi_W(b1),-64);
-        HVX_Vector dot=Q6_Vw_vrmpyacc_VwVbVb(Q6_V_vzero(),Q6_V_lo_W(c0),a[0]);
-        dot=Q6_Vw_vrmpyacc_VwVbVb(dot,Q6_V_hi_W(c0),a[1]);
-        dot=Q6_Vw_vrmpyacc_VwVbVb(dot,Q6_V_lo_W(c1),a[2]);
-        dot=Q6_Vw_vrmpyacc_VwVbVb(dot,Q6_V_hi_W(c1),a[3]);
-        dot=Q6_Vw_vrmpyacc_VwVbVb(dot,Q6_V_lo_W(c2),a[4]);
-        dot=Q6_Vw_vrmpyacc_VwVbVb(dot,Q6_V_hi_W(c2),a[5]);
-        dot=Q6_Vw_vrmpyacc_VwVbVb(dot,Q6_V_lo_W(c3),a[6]);
-        dot=Q6_Vw_vrmpyacc_VwVbVb(dot,Q6_V_hi_W(c3),a[7]);
+        // Transpose packed nibbles first: half as much data crosses the
+        // shuffle network. Low/high nibbles correspond to K and K+16.
+        HVX_Vector a0=Q6_V_lo_W(Q6_W_vshuff_VVR(q[1],q[0],-32));
+        HVX_Vector a1=Q6_V_lo_W(Q6_W_vshuff_VVR(q[3],q[2],-32));
+        HVX_Vector a2=Q6_V_lo_W(Q6_W_vshuff_VVR(q[5],q[4],-32));
+        HVX_Vector a3=Q6_V_lo_W(Q6_W_vshuff_VVR(q[7],q[6],-32));
+        HVX_VectorPair b0=Q6_W_vshuff_VVR(a1,a0,-64);
+        HVX_VectorPair b1=Q6_W_vshuff_VVR(a3,a2,-64);
+        HVX_VectorPair c0=Q6_W_vdeal_VVR(Q6_V_lo_W(b1),Q6_V_lo_W(b0),-4);
+        HVX_VectorPair c1=Q6_W_vdeal_VVR(Q6_V_hi_W(b1),Q6_V_hi_W(b0),-4);
+        HVX_Vector packed[4]={Q6_V_lo_W(c0),Q6_V_hi_W(c0),Q6_V_lo_W(c1),Q6_V_hi_W(c1)};
+        HVX_Vector dot=Q6_V_vzero();
+        #pragma unroll
+        for(uint32_t j=0;j<4;++j) {
+            HVX_Vector lo=Q6_Vb_vlut32_VbVbR_nomatch(packed[j],lut,0);
+            HVX_Vector hi=Q6_Vb_vlut32_VbVbR_nomatch(Q6_Vub_vlsr_VubR(packed[j],4),lut,0);
+            dot=Q6_Vw_vrmpyacc_VwVbVb(dot,lo,a[j]);
+            dot=Q6_Vw_vrmpyacc_VwVbVb(dot,hi,a[j+4]);
+        }
         HVX_Vector ds=hvx_vec_mul_f16_f16_to_f32_lower32(Q6_V_vror_VR(scales,64),a[8]);
-        sum=hvx_vec_add_f32_f32(sum,hvx_vec_mul_f32_f32(Q6_Vsf_equals_Vw(dot),ds));
+        sum=Q6_Vqf32_vadd_Vqf32Vqf32(sum,Q6_Vqf32_vmpy_VsfVsf(Q6_Vsf_equals_Vw(dot),ds));
     }
+    sum=Q6_Vsf_equals_Vqf32(sum);
     if(sz) { sum=hvx_vec_add_f32_f32(sum,hvx_vmemu(sz)); }
     hvx_vec_store_u(s,valid_rows*sizeof(float),sum);
 }
