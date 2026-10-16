@@ -166,13 +166,15 @@ class shared_extra final : public ggml::cpu::extra_buffer_type {
     bool supports_op(ggml_backend_dev_t, const ggml_tensor * op) override { return supported(op); }
     ggml::cpu::tensor_traits * get_tensor_traits(const ggml_tensor * op) override {
         static shared_traits traits;
-        return supported(op)?&traits:nullptr;
+        if(!supported(op)) { return nullptr; }
+        auto * d=static_cast<const ggml_shared_weight_desc *>(op->src[0]->buffer->context);
+        return d->layout==GGML_SHARED_WEIGHT_Q4_0_CPU4X8_V2?ggml_cpu_q4_0_4x8_shared_traits():&traits;
     }
 };
 ggml_backend_buffer_type_t ggml_backend_cpu_shared_weight_buffer_type() {
     static shared_extra extra;
     static ggml_backend_buffer_type type={
-        {[](ggml_backend_buffer_type_t) { return "CPU_SHARED_Q4_0_32X32"; },
+        {[](ggml_backend_buffer_type_t) { return "CPU_SHARED_Q4_0"; },
          [](ggml_backend_buffer_type_t,size_t)->ggml_backend_buffer_t { return nullptr; },
          [](ggml_backend_buffer_type_t)->size_t { return 128; },nullptr,nullptr,nullptr},
         ggml_backend_reg_dev_get(ggml_backend_cpu_reg(),0),&extra};
@@ -180,6 +182,7 @@ ggml_backend_buffer_type_t ggml_backend_cpu_shared_weight_buffer_type() {
 }
 ggml_backend_buffer_t ggml_backend_cpu_import_shared_weight(ggml_backend_t backend, const ggml_shared_weight_desc * desc) {
     if(!backend || !ggml_backend_is_cpu(backend) || !ggml_shared_weight_desc_valid(desc)) { return nullptr; }
+    if(desc->layout==GGML_SHARED_WEIGHT_Q4_0_CPU4X8_V2 && !ggml_cpu_q4_0_4x8_shared_traits()) { return nullptr; }
     // Static initialization is thread-safe; construction below does not mutate it.
     static const ggml_backend_buffer_i immutable_iface=[] {
         ggml_backend_buffer_i i={};
@@ -191,9 +194,10 @@ ggml_backend_buffer_t ggml_backend_cpu_import_shared_weight(ggml_backend_t backe
                 t->ne[2]==1 && t->ne[3]==1 && ggml_is_contiguous(t) &&
                 t->data==static_cast<char *>(d->storage.host_ptr)+d->offset?GGML_STATUS_SUCCESS:GGML_STATUS_FAILED;
         };
-        i.get_tensor=[](ggml_backend_buffer_t,const ggml_tensor * t,void * out,size_t off,size_t size) {
+        i.get_tensor=[](ggml_backend_buffer_t b,const ggml_tensor * t,void * out,size_t off,size_t size) {
             GGML_ASSERT(off<=ggml_nbytes(t) && size<=ggml_nbytes(t)-off);
-            ggml_shared_weight_get_canonical(t->data,t->ne[0],out,off,size);
+            ggml_shared_weight_get_canonical(t->data,t->ne[0],out,off,size,
+                static_cast<const ggml_shared_weight_desc *>(b->context)->layout);
         };
         return i;
     }();

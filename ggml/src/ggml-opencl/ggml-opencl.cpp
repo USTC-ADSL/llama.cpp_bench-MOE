@@ -13392,7 +13392,9 @@ static ggml_backend_buffer_t ggml_backend_opencl_import_shared_weight(
 #else
     const std::string source=read_file("shared_q4_0.cl");
 #endif
-    cl_program program=build_program_from_source(ctx,source.c_str(),"-cl-std=CL2.0 -cl-mad-enable");
+    const std::string options=std::string("-cl-std=CL2.0 -cl-mad-enable")+
+        (desc->layout==GGML_SHARED_WEIGHT_Q4_0_CPU4X8_V2?" -DSHARED_CPU4X8":"");
+    cl_program program=build_program_from_source(ctx,source.c_str(),options);
     cl_int error=CL_SUCCESS;
     bc->shared_mv=clCreateKernel(program,"shared_q4_0_mv",&error);
     if (error==CL_SUCCESS) { bc->shared_mm=clCreateKernel(program,"shared_q4_0_mm",&error); }
@@ -13407,9 +13409,10 @@ static ggml_backend_buffer_t ggml_backend_opencl_import_shared_weight(
     // Immutable import. Prevent set/clear/copy from creating private SoA state.
     buffer->iface.set_tensor=nullptr; buffer->iface.memset_tensor=nullptr;
     buffer->iface.set_tensor_2d=nullptr; buffer->iface.clear=nullptr;
-    buffer->iface.get_tensor=[](ggml_backend_buffer_t,const ggml_tensor * t,void * out,size_t off,size_t size) {
+    buffer->iface.get_tensor=[](ggml_backend_buffer_t b,const ggml_tensor * t,void * out,size_t off,size_t size) {
         GGML_ASSERT(off<=ggml_nbytes(t) && size<=ggml_nbytes(t)-off);
-        ggml_shared_weight_get_canonical(t->data,t->ne[0],out,off,size);
+        ggml_shared_weight_get_canonical(t->data,t->ne[0],out,off,size,
+            static_cast<const ggml_backend_opencl_buffer_context *>(b->context)->shared_weight.layout);
     };
     return buffer;
 }

@@ -15,6 +15,7 @@ struct shared_weight_binding {
 
 struct ggml_shared_weight {
     ggml_shared_weight_desc desc{};
+    ggml_backend_buffer_ptr raw_storage;
     std::vector<std::unique_ptr<shared_weight_binding>> bindings;
 };
 
@@ -35,6 +36,11 @@ static std::unique_ptr<shared_weight_binding> make_binding(ggml_backend_t backen
 
 ggml_shared_weight_t ggml_shared_weight_create(ggml_backend_t allocator, uint32_t k, uint32_t m,
                                              const void * canonical, size_t size) {
+    return ggml_shared_weight_create_with_layout(allocator,k,m,canonical,size,GGML_SHARED_WEIGHT_Q4_0_32X32_V1);
+}
+
+ggml_shared_weight_t ggml_shared_weight_create_with_layout(ggml_backend_t allocator, uint32_t k, uint32_t m,
+                                             const void * canonical, size_t size, ggml_shared_weight_layout layout) {
     if (!allocator || !canonical || !k || !m || k % 32 || m % 32 ||
         k > INT32_MAX || m > INT32_MAX || size_t(k/32) > SIZE_MAX / 18 / m || size != size_t(k/32)*m*18) {
         return nullptr;
@@ -43,6 +49,26 @@ ggml_shared_weight_t ggml_shared_weight_create(ggml_backend_t allocator, uint32_
     auto export_dma = reinterpret_cast<export_fn>(proc(allocator,"ggml_backend_hexagon_buffer_export_shared_dma"));
     if (!export_dma) { return nullptr; }
     auto w = std::unique_ptr<ggml_shared_weight>(new ggml_shared_weight);
+    if(layout==GGML_SHARED_WEIGHT_Q4_0_CPU4X8_V2) {
+        // Allocator supplies storage only. There is deliberately no HTP tensor:
+        // it must not interpret this candidate as the native tiled layout.
+        w->raw_storage.reset(ggml_backend_alloc_buffer(allocator,size));
+        if(!w->raw_storage || !export_dma(w->raw_storage.get(),&w->desc.storage)) { return nullptr; }
+        w->desc.layout=layout; w->desc.k=k; w->desc.m=m;
+        if(!ggml_shared_weight_desc_valid(&w->desc)) { return nullptr; }
+        auto * dst=static_cast<uint8_t *>(w->desc.storage.host_ptr);
+        const auto * src=static_cast<const uint8_t *>(canonical);
+        for(size_t group=0;group<m/4;++group) { for(size_t b=0;b<k/32;++b) {
+            auto * out=dst+(group*(k/32)+b)*72;
+            for(size_t r=0;r<4;++r) {
+                const auto * in=src+((group*4+r)*(k/32)+b)*18;
+                std::memcpy(out+r*2,in,2);
+                for(size_t j=0;j<16;++j) { out[8+(j/8)*32+r*8+j%8]=in[2+j]^0x88; }
+            }
+        } }
+        return w.release();
+    }
+    if(layout!=GGML_SHARED_WEIGHT_Q4_0_32X32_V1) { return nullptr; }
     auto b = make_binding(allocator,k,m);
     if (!b) { return nullptr; }
     b->buffer.reset(ggml_backend_alloc_ctx_tensors(b->ctx.get(),allocator));
@@ -68,6 +94,7 @@ ggml_tensor * ggml_shared_weight_bind(ggml_shared_weight_t w, ggml_backend_t bac
     if (!import) { return nullptr; }
     auto b=make_binding(backend,w->desc.k,w->desc.m);
     if (!b) { return nullptr; }
+    if(w->desc.layout==GGML_SHARED_WEIGHT_Q4_0_CPU4X8_V2) { ggml_set_name(b->tensor,"shared_weight_q4_0_cpu4x8_v2"); }
     b->buffer.reset(import(backend,&w->desc));
     if (!b->buffer) { return nullptr; }
     if (ggml_backend_tensor_alloc(b->buffer.get(),b->tensor,

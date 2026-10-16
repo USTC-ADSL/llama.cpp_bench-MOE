@@ -134,6 +134,10 @@ int main(int argc,char **argv) {
         auto reg=ggml_backend_dev_backend_reg(dev);
         cpu_pool pool(b.get(),reg,threads);
         bool shared_mode=std::getenv("GGML_SHARED_WEIGHT_TEST")!=nullptr;
+        const auto layout=std::getenv("GGML_SHARED_WEIGHT_CPU4X8")?
+            GGML_SHARED_WEIGHT_Q4_0_CPU4X8_V2:GGML_SHARED_WEIGHT_Q4_0_32X32_V1;
+        check(layout!=GGML_SHARED_WEIGHT_Q4_0_CPU4X8_V2 || (shared_mode && std::string(argv[1])!="HTP0"),
+            "CPU4x8 candidate does not yet support HTP compute");
         bool edges=std::getenv("GGML_SHARED_WEIGHT_EDGES")!=nullptr;
         const char * model=std::getenv("GGML_SHARED_WEIGHT_MODEL");
         check(!model || !edges,"model and synthetic edge mode are separate suites");
@@ -208,9 +212,13 @@ int main(int argc,char **argv) {
             ggml_tensor * shared=nullptr;
             ggml_shared_weight_desc desc{};
             if(shared_mode) {
-                owner.reset(ggml_shared_weight_create(htp,k,m,raw.data(),raw.size())); check(owner!=nullptr,"shared create failed");
+                owner.reset(ggml_shared_weight_create_with_layout(htp,k,m,raw.data(),raw.size(),layout)); check(owner!=nullptr,"shared create failed");
                 check(ggml_shared_weight_describe(owner.get(),&desc),"describe failed");
                 for(auto backend:{htp,cpu,gpu}) {
+                    if(layout==GGML_SHARED_WEIGHT_Q4_0_CPU4X8_V2 && backend==htp) {
+                        check(!ggml_shared_weight_bind(owner.get(),backend),"unsupported CPU4x8 backend accepted");
+                        continue;
+                    }
                     auto * t=ggml_shared_weight_bind(owner.get(),backend); check(t,"shared bind failed");
                     check(ggml_shared_weight_bind(owner.get(),backend)==t,"repeated bind creates new alias");
                     check(t->data==static_cast<char *>(desc.storage.host_ptr)+desc.offset,"shared pointer differs");
@@ -244,7 +252,8 @@ int main(int argc,char **argv) {
                 }
                 shared=ggml_shared_weight_bind(owner.get(),b.get()); check(shared,"target binding failed");
                 result["shared_storage"]={{"layout",desc.layout},{"weight_bytes",raw.size()},
-                    {"allocation_bytes",desc.storage.size},{"backend_bindings",3},{"pointer_alias",true},{"roundtrip_exact",true}};
+                    {"allocation_bytes",desc.storage.size},{"backend_bindings",layout==GGML_SHARED_WEIGHT_Q4_0_CPU4X8_V2?2:3},
+                    {"pointer_alias",true},{"roundtrip_exact",true}};
             }
             auto to_float=ggml_get_type_traits(GGML_TYPE_Q4_0)->to_float;
             for(int r=0;r<m;++r) { to_float(raw.data()+ggml_row_size(GGML_TYPE_Q4_0,k)*r,dequant.data()+size_t(r)*k,k); }
@@ -275,16 +284,21 @@ int main(int argc,char **argv) {
                         // old result. Restore before formal timing; never a public update API.
                         auto flip=[&] {
                             auto * packed=static_cast<uint8_t *>(desc.storage.host_ptr)+desc.offset;
-                            for(size_t tile=0;tile<raw.size()/576;++tile) {
+                            if(layout==GGML_SHARED_WEIGHT_Q4_0_CPU4X8_V2) {
+                                for(size_t block=0;block<raw.size()/72;++block) {
+                                    for(int row=0;row<4;++row) { packed[block*72+row*2+1]^=0x80; }
+                                }
+                            } else { for(size_t tile=0;tile<raw.size()/576;++tile) {
                                 for(int row=0;row<32;++row) { packed[tile*576+513+row*2]^=0x80; }
-                            }
+                            } }
                         };
                         std::vector<float> neg=ref; for(auto &v:neg) { v=-v; }
                         flip(); jobs.back()->run(); jobs.back()->validate(neg);
                         flip(); jobs.back()->run(); jobs.back()->validate(ref);
                         result["shared_storage"]["post_bind_alias_compute_verified"]=true;
                     }
-                    rows.push_back({{"buffer","SHARED_Q4_0_32X32_V1"},{"nrmse",jobs.back()->validate(ref)},
+                    rows.push_back({{"buffer",layout==GGML_SHARED_WEIGHT_Q4_0_CPU4X8_V2?"SHARED_Q4_0_CPU4X8_V2":"SHARED_Q4_0_32X32_V1"},
+                                    {"nrmse",jobs.back()->validate(ref)},
                                     {"weight_buffer_bytes",0},{"shared_owner_bytes",desc.storage.size}});
                     samples.emplace_back();
                     device_samples.emplace_back();

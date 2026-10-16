@@ -9,6 +9,7 @@
 // GGML internal header
 
 ggml_backend_buffer_type_t ggml_backend_cpu_repack_buffer_type(void);
+ggml::cpu::tensor_traits * ggml_cpu_q4_0_4x8_shared_traits(void);
 
 template <int K> constexpr int QK_0() {
     if constexpr (K == 1) {

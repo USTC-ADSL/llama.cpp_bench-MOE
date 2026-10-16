@@ -27,9 +27,14 @@ __kernel void shared_q4_0_mv(read_only image1d_buffer_t weights, ulong wo,
     __global float * y=(__global float *)(output+yo);
     float2 sum=0;
     for(uint b=part;b<kb;b+=4) {
+#ifdef SHARED_CPU4X8
+        uint tile=(uint)(wo/4)+((safe_row/4)*kb+b)*18;
+        float2 scale=convert_float2(as_half2(read_imageui(weights,tile+(safe_row%4)/2).x));
+#else
         uint tile=(uint)(wo/4)+((safe_row/32)*kb+b)*144;
         uint ri=(safe_row%32)/4, si=tile+128+(safe_row%32)/2, shift=(safe_row%4)*8;
         float2 scale=convert_float2(as_half2(read_imageui(weights,si).x));
+#endif
         float2 acc=0;
         float4 loaded=0;
         if(lane<8) loaded=read_imagef(input,b*8+lane);
@@ -37,14 +42,23 @@ __kernel void shared_q4_0_mv(read_only image1d_buffer_t weights, ulong wo,
         // multiply/add arithmetic. An explicit fma requests stricter rounding.
         #pragma unroll
         for(uint j=0;j<8;++j) {
+#ifdef SHARED_CPU4X8
+            uint c=j*4, shift=(c/16)*4;
+            uint word=tile+2+((c%16)/8)*8+(safe_row%4)*2+(c%8)/4;
+            uint2 bits=(uint2)(read_imageui(weights,word).x,read_imageui(weights,word+2).x)^0x88888888u;
+            uint2 q0=(bits>>shift)&15,q1=(bits>>(shift+8))&15;
+            uint2 q2=(bits>>(shift+16))&15,q3=(bits>>(shift+24))&15;
+#else
             uint2 p=convert_uint2(as_uchar2((ushort)(read_imageui(weights,tile+j*16+ri).x>>shift)));
             uint2 q=convert_uint2(as_uchar2((ushort)(read_imageui(weights,tile+j*16+8+ri).x>>shift)));
+            uint2 q0=p&15,q1=p>>4,q2=q&15,q3=q>>4;
+#endif
             float4 a=(float4)(sub_group_broadcast(loaded.s0,j),sub_group_broadcast(loaded.s1,j),
                 sub_group_broadcast(loaded.s2,j),sub_group_broadcast(loaded.s3,j));
-            acc+=convert_float2(convert_int2(p&15)-8)*a.s0;
-            acc+=convert_float2(convert_int2(p>>4)-8)*a.s1;
-            acc+=convert_float2(convert_int2(q&15)-8)*a.s2;
-            acc+=convert_float2(convert_int2(q>>4)-8)*a.s3;
+            acc+=convert_float2(convert_int2(q0)-8)*a.s0;
+            acc+=convert_float2(convert_int2(q1)-8)*a.s1;
+            acc+=convert_float2(convert_int2(q2)-8)*a.s2;
+            acc+=convert_float2(convert_int2(q3)-8)*a.s3;
         }
         sum+=scale*acc;
     }
@@ -67,13 +81,27 @@ __kernel void shared_q4_0_mm(read_only image1d_buffer_t weights, ulong wo,
     __global float * y=(__global float *)(output+yo);
     half8 c0=0,c1=0,c2=0,c3=0;
     for(uint b=0;b<k/32;++b) {
+#ifdef SHARED_CPU4X8
+        uint tile=(uint)(wo/4)+((row/4)*(k/32)+b)*18;
+        uint si=tile;
+#else
         uint tile=(uint)(wo/4)+((row/32)*(k/32)+b)*144;
         uint si=tile+128+(row%32)/2;
+#endif
         half4 scale=as_half4((uint2)(read_imageui(weights,si).x,read_imageui(weights,si+1).x));
         for(uint j=0;j<16;++j) {
+#ifdef SHARED_CPU4X8
+            uint c=j*2,shift=(c%4)*8+(c/16)*4;
+            uint word=tile+2+((c%16)/8)*8+(c%8)/4;
+            uint4 bits=(uint4)(read_imageui(weights,word).x,read_imageui(weights,word+2).x,
+                read_imageui(weights,word+4).x,read_imageui(weights,word+6).x)^0x88888888u;
+            uint4 loq=(bits>>shift)&15,hiq=(bits>>(shift+8))&15;
+#else
             uint4 q=convert_uint4(as_uchar4(read_imageui(weights,tile+j*8+(row%32)/4).x));
-            half4 lo=convert_half4(convert_int4(q&15)-8)*scale;
-            half4 hi=convert_half4(convert_int4(q>>4)-8)*scale;
+            uint4 loq=q&15,hiq=q>>4;
+#endif
+            half4 lo=convert_half4(convert_int4(loq)-8)*scale;
+            half4 hi=convert_half4(convert_int4(hiq)-8)*scale;
             uint index=(b*32+j*2)*(padded_n/4)+token/4;
             half8 a=(half8)(read_imageh(input,index),read_imageh(input,index+1));
             half8 z=(half8)(read_imageh(input,index+padded_n/4),read_imageh(input,index+padded_n/4+1));

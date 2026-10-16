@@ -4960,6 +4960,12 @@ template <typename BLOC_TYPE, int64_t INTER_SIZE, int64_t NB_COLS, ggml_type PAR
 
 }  // namespace ggml::cpu::repack
 
+ggml::cpu::tensor_traits * ggml_cpu_q4_0_4x8_shared_traits(void) {
+    if(!ggml_cpu_has_neon() || !ggml_cpu_has_matmul_int8()) { return nullptr; }
+    static ggml::cpu::repack::tensor_traits<block_q4_0,8,4,GGML_TYPE_Q8_0> traits;
+    return &traits;
+}
+
 static const ggml::cpu::tensor_traits * ggml_repack_get_optimal_repack_type(const struct ggml_tensor * cur) {
     // instance for Q1_0
     static const ggml::cpu::repack::tensor_traits<block_q1_0, 4, 4, GGML_TYPE_Q8_0> q1_0_4x4_q8_0;

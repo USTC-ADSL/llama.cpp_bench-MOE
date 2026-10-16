@@ -11,7 +11,12 @@ extern "C" {
 // V1: [M/32][K/32] tiles, each 576 bytes: 16 byte planes of 32 rows,
 // followed by 32 FP16 scales. Each quant byte packs adjacent K elements.
 // No persistent backend-specific weight copies are permitted.
-enum ggml_shared_weight_layout { GGML_SHARED_WEIGHT_Q4_0_32X32_V1 = 1 };
+enum ggml_shared_weight_layout {
+    GGML_SHARED_WEIGHT_Q4_0_32X32_V1 = 1,
+    // Candidate: CPU native four rows, eight-byte interleave, 72-byte blocks.
+    // CPU/OpenCL candidate; HTP compute binding is not yet supported.
+    GGML_SHARED_WEIGHT_Q4_0_CPU4X8_V2 = 2,
+};
 
 struct ggml_shared_weight_desc {
     struct ggml_backend_shared_dma_buffer_desc storage;
@@ -28,6 +33,9 @@ typedef struct ggml_shared_weight * ggml_shared_weight_t;
 // Returns NULL on invalid dimensions or unavailable backend capability.
 GGML_BACKEND_API ggml_shared_weight_t ggml_shared_weight_create(
         ggml_backend_t allocator, uint32_t k, uint32_t m, const void * canonical, size_t size);
+GGML_BACKEND_API ggml_shared_weight_t ggml_shared_weight_create_with_layout(
+        ggml_backend_t allocator, uint32_t k, uint32_t m, const void * canonical, size_t size,
+        enum ggml_shared_weight_layout layout);
 
 // Returns a cached, backend-compatible tensor referencing the same allocation.
 // Caller must not mutate/free the returned tensor or create arbitrary views.
