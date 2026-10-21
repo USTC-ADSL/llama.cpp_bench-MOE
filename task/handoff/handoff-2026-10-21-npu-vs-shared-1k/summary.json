@@ -1,0 +1,439 @@
+{
+  "tokens": 1024,
+  "placement": "c8-g15",
+  "protocol": "NPU/shared/shared/NPU per prompt; 2 warmups and 6 timed requests per process; 30s idle; mean of process medians",
+  "npu_definition": "standard HTP0 offload with normal unsupported-op CPU fallback",
+  "binary_hashes": {
+    "libc++_shared.so": "d523468d62d9b603cb3354294d70d4b2feabf2c3f1e43b0c96c9aabf32813708",
+    "libggml-base.so": "60670783ece0f46d11dcddf01d2c0cee35ef587405f400c93078bc9bb77b3c9b",
+    "libggml-cpu.so": "8d9e463981182d983577cb2fc7c3ff3c66dd7f6b0267703ee7b7218f65ea3d02",
+    "libggml-hexagon.so": "822aa4726b277fe140b9eb4539dacbcd90c18671e88bf9a9e34f1d5c7ea36375",
+    "libggml-htp-v79.so": "248d4f0cb347074ba9dbf6000ff75c39ee8eee19c22496a6f9237c693ffcfe8e",
+    "libggml-opencl.so": "536a39b2f8bc1b66c1b0a80c9dc77c0ce1d71f1c296425f9f46c2dbae99eb50d",
+    "libggml.so": "8e9818d20fc52a6c7d64f97415466c70fd510b7e2ff57a2fa7040fa9e4955d62",
+    "libllama.so": "2574d2195b81cca96785e5a702257d8f29029dffd5bbf91c55f34f70d02dced5",
+    "fullmodel-oracle": "58c345ef2b79fd97f146b4041df2fa7d7077af162c7473e9d1cda822f2ac6d42"
+  },
+  "comparisons": {
+    "wetland": {
+      "mean_process_median_ms": {
+        "npu": 1267.16789025,
+        "shared": 1207.40908825
+      },
+      "tokens_per_second": {
+        "npu": 808.1012846671601,
+        "shared": 848.0969788658538
+      },
+      "speedup": 1.0494934174187918,
+      "throughput_gain_percent": 4.949341741879176,
+      "latency_reduction_percent": 4.715934049450244,
+      "process_median_ranges_ms": {
+        "npu": [
+          1256.6312755,
+          1277.7045050000002
+        ],
+        "shared": [
+          1201.2961715000001,
+          1213.522005
+        ]
+      },
+      "same_condition_logits": {
+        "npu": {
+          "bitwise_equal": true,
+          "nrmse": 0.0,
+          "cosine": 1.0000000000000002,
+          "max_abs": 0.0,
+          "top1_equal": true,
+          "top10_overlap": 10
+        },
+        "shared": {
+          "bitwise_equal": true,
+          "nrmse": 0.0,
+          "cosine": 1.0000000000000002,
+          "max_abs": 0.0,
+          "top1_equal": true,
+          "top10_overlap": 10
+        }
+      },
+      "cross_condition_logits": {
+        "bitwise_equal": false,
+        "nrmse": 0.02923772891876842,
+        "cosine": 0.9995806048179209,
+        "max_abs": 0.3719139099121094,
+        "top1_equal": true,
+        "top10_overlap": 10
+      },
+      "shared_vs_previous_logits": {
+        "bitwise_equal": true,
+        "nrmse": 0.0,
+        "cosine": 1.0000000000000002,
+        "max_abs": 0.0,
+        "top1_equal": true,
+        "top10_overlap": 10
+      }
+    },
+    "foundry": {
+      "mean_process_median_ms": {
+        "npu": 1286.73088475,
+        "shared": 1221.42976525
+      },
+      "tokens_per_second": {
+        "npu": 795.8152028028408,
+        "shared": 838.3617536865983
+      },
+      "speedup": 1.0534628525993341,
+      "throughput_gain_percent": 5.346285259933414,
+      "latency_reduction_percent": 5.074963247865738,
+      "process_median_ranges_ms": {
+        "npu": [
+          1285.517968,
+          1287.9438015
+        ],
+        "shared": [
+          1220.792369,
+          1222.0671615
+        ]
+      },
+      "same_condition_logits": {
+        "npu": {
+          "bitwise_equal": true,
+          "nrmse": 0.0,
+          "cosine": 1.0,
+          "max_abs": 0.0,
+          "top1_equal": true,
+          "top10_overlap": 10
+        },
+        "shared": {
+          "bitwise_equal": true,
+          "nrmse": 0.0,
+          "cosine": 1.0000000000000002,
+          "max_abs": 0.0,
+          "top1_equal": true,
+          "top10_overlap": 10
+        }
+      },
+      "cross_condition_logits": {
+        "bitwise_equal": false,
+        "nrmse": 0.013373377073718818,
+        "cosine": 0.9999108309150075,
+        "max_abs": 0.18134546279907227,
+        "top1_equal": true,
+        "top10_overlap": 10
+      },
+      "shared_vs_previous_logits": {
+        "bitwise_equal": true,
+        "nrmse": 0.0,
+        "cosine": 1.0000000000000002,
+        "max_abs": 0.0,
+        "top1_equal": true,
+        "top10_overlap": 10
+      }
+    }
+  },
+  "runs": {
+    "wetland-npu-1024-a": {
+      "median_ms": 1256.6312755,
+      "samples_ms": [
+        1287.150989,
+        1258.981093,
+        1258.9138540000001,
+        1249.3698430000002,
+        1229.749531,
+        1254.348697
+      ],
+      "major_faults": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        212,
+        212,
+        213,
+        213,
+        215,
+        213
+      ],
+      "top1": 10342,
+      "scope": "native complete model prefill including last-token logits and retained KV; dynamic real routing; weights resident; context reset outside timing",
+      "htp_dsp_batch_ms": [
+        1194.976,
+        1190.007,
+        1188.96,
+        1179.34,
+        1155.483,
+        1186.366
+      ],
+      "report_sha256": "fcde68ffbeb0d9f8929e882e94a9b55d36f7a2d77e09fb6dff48d3088e78ad71"
+    },
+    "wetland-npu-1024-b": {
+      "median_ms": 1277.7045050000002,
+      "samples_ms": [
+        1278.6228119999998,
+        1276.8475,
+        1282.2956769999998,
+        1273.5446869999998,
+        1278.56151,
+        1222.1196869999999
+      ],
+      "major_faults": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        211,
+        212,
+        214,
+        214,
+        214,
+        214
+      ],
+      "top1": 10342,
+      "scope": "native complete model prefill including last-token logits and retained KV; dynamic real routing; weights resident; context reset outside timing",
+      "htp_dsp_batch_ms": [
+        1203.474,
+        1206.68,
+        1208.015,
+        1206.483,
+        1205.952,
+        1158.851
+      ],
+      "report_sha256": "49fc9b61d6c04625fa76abd91113e6f8e7be40d8e238c6c74429a0113f18be6f"
+    },
+    "wetland-shared-1024-a": {
+      "median_ms": 1201.2961715000001,
+      "samples_ms": [
+        1163.3039059999999,
+        1157.4345309999999,
+        1200.923125,
+        1201.669218,
+        1239.1277080000002,
+        1236.455885
+      ],
+      "major_faults": [
+        0,
+        8,
+        6,
+        6,
+        6,
+        6
+      ],
+      "minor_faults": [
+        542,
+        626,
+        383,
+        374,
+        414,
+        643
+      ],
+      "top1": 10342,
+      "scope": "native complete model prefill including last-token logits and retained KV; dynamic real routing; weights resident; context reset outside timing",
+      "htp_dsp_batch_ms": [
+        896.565,
+        898.838,
+        892.667,
+        897.033,
+        898.664,
+        897.66
+      ],
+      "report_sha256": "202b9f3883f57093fc5b06eea20a3266564889db5d6c7ffb5b246e80cc88ec33"
+    },
+    "wetland-shared-1024-b": {
+      "median_ms": 1213.522005,
+      "samples_ms": [
+        1208.715416,
+        1208.015937,
+        1218.797447,
+        1204.298906,
+        1236.688073,
+        1218.328594
+      ],
+      "major_faults": [
+        0,
+        14,
+        8,
+        6,
+        6,
+        6
+      ],
+      "minor_faults": [
+        541,
+        609,
+        383,
+        373,
+        378,
+        604
+      ],
+      "top1": 10342,
+      "scope": "native complete model prefill including last-token logits and retained KV; dynamic real routing; weights resident; context reset outside timing",
+      "htp_dsp_batch_ms": [
+        897.702,
+        900.82,
+        894.039,
+        896.025,
+        895.349,
+        897.403
+      ],
+      "report_sha256": "16190cdaaa28ed53f5c909582f002959d57bfd3932c59b1d3eb53114f122b1ad"
+    },
+    "foundry-npu-1024-a": {
+      "median_ms": 1287.9438015,
+      "samples_ms": [
+        1280.244635,
+        1286.775416,
+        1289.112187,
+        1291.065781,
+        1303.7267180000001,
+        1280.0482809999999
+      ],
+      "major_faults": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        209,
+        210,
+        212,
+        212,
+        213,
+        212
+      ],
+      "top1": 37319,
+      "scope": "native complete model prefill including last-token logits and retained KV; dynamic real routing; weights resident; context reset outside timing",
+      "htp_dsp_batch_ms": [
+        1207.697,
+        1210.032,
+        1209.981,
+        1209.741,
+        1214.984,
+        1210.877
+      ],
+      "report_sha256": "0c71fcff9e661373e496cb048c26e21ec815d3df9871840f993b91f66448f1a0"
+    },
+    "foundry-npu-1024-b": {
+      "median_ms": 1285.517968,
+      "samples_ms": [
+        1307.884999,
+        1295.551614,
+        1279.423437,
+        1251.735052,
+        1278.020156,
+        1291.612499
+      ],
+      "major_faults": [
+        0,
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      "minor_faults": [
+        210,
+        214,
+        207,
+        213,
+        207,
+        213
+      ],
+      "top1": 37319,
+      "scope": "native complete model prefill including last-token logits and retained KV; dynamic real routing; weights resident; context reset outside timing",
+      "htp_dsp_batch_ms": [
+        1218.163,
+        1212.677,
+        1211.324,
+        1179.853,
+        1206.57,
+        1214.214
+      ],
+      "report_sha256": "2b238ab3b353ebea299927903dca02ccd3044a6b059bdb1e17cab244c070cf28"
+    },
+    "foundry-shared-1024-a": {
+      "median_ms": 1220.792369,
+      "samples_ms": [
+        1214.79802,
+        1236.606823,
+        1162.582291,
+        1200.935,
+        1226.786718,
+        1235.262031
+      ],
+      "major_faults": [
+        1,
+        1,
+        2,
+        6,
+        6,
+        0
+      ],
+      "minor_faults": [
+        559,
+        577,
+        375,
+        375,
+        371,
+        606
+      ],
+      "top1": 37319,
+      "scope": "native complete model prefill including last-token logits and retained KV; dynamic real routing; weights resident; context reset outside timing",
+      "htp_dsp_batch_ms": [
+        899.589,
+        899.621,
+        900.007,
+        898.844,
+        897.345,
+        899.744
+      ],
+      "report_sha256": "f7af4214649c15b20d7667797394925595a437d79a21b9dc012447be4b4c447d"
+    },
+    "foundry-shared-1024-b": {
+      "median_ms": 1222.0671615,
+      "samples_ms": [
+        1237.7256240000002,
+        1206.365156,
+        1237.491094,
+        1216.476875,
+        1227.6574480000002,
+        1196.113645
+      ],
+      "major_faults": [
+        0,
+        10,
+        17,
+        6,
+        6,
+        6
+      ],
+      "minor_faults": [
+        533,
+        580,
+        377,
+        376,
+        377,
+        610
+      ],
+      "top1": 37319,
+      "scope": "native complete model prefill including last-token logits and retained KV; dynamic real routing; weights resident; context reset outside timing",
+      "htp_dsp_batch_ms": [
+        898.335,
+        898.424,
+        894.403,
+        897.407,
+        895.559,
+        898.318
+      ],
+      "report_sha256": "3244a9a8e35689610666cd7b0e9b39fd08d568152d381dcec43f6d7cf924379e"
+    }
+  }
+}
