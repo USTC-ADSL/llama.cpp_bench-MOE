@@ -161,6 +161,13 @@ struct partitioned_ffn {
         if(single_layout) {
             auto result=single_layout->run(x,probs,ids,plan,destination,allocations,last,il,expected_ids);
             last["gather_us"]=last["gather_us"].get<double>()+decision_us;
+            if(scheduler) {
+                last["scheduling"]={{"decision_us",decision_us},{"included_in_gather",true},
+                    {"evaluations",decision.evaluations},{"seed_us",decision.seed_us},
+                    {"predicted_backend_us",decision.predicted.backend},{"predicted_host_us",decision.predicted.host},
+                    {"predicted_total_us",decision.predicted.total},{"owner",plan.owner},{"shared",plan.shared},
+                    {"resident_width",resident_width}};
+            }
             return result;
         }
         std::vector<int> pairs[3];
@@ -604,7 +611,9 @@ int main(int argc,char ** argv) {
             require(mode=="custom" && !automatic && !std::getenv("MOE_FEEDBACK_MODEL"),"current-route model requires explicit custom mode");
             std::ifstream file(std::getenv("MOE_ROUTE_MODEL")); json parameters; file>>parameters;
             route_model=std::make_unique<resident_placement_model>(parameters);
-            route_scheduler=std::make_unique<moe_route_scheduler>(*route_model,parameters.value("search_budget",2048));
+            const auto algorithm=parameters.value("algorithm",std::string("generic"));
+            require(algorithm=="generic" || (algorithm=="shared_additive" && single_layout),"unsupported route search algorithm");
+            route_scheduler=std::make_unique<moe_route_scheduler>(*route_model,parameters.value("search_budget",2048),algorithm=="shared_additive");
         }
         if(automatic && plans.value("model_type",std::string())=="branch_critical_path") {
             for(const char * name:{"MOE_ALTERNATE_CALLBACK_IO","MOE_ALTERNATE_HOST_REDUCE","MOE_ALTERNATE_REDUCE_THREADS","MOE_ALTERNATE_OVERLAP_GATHER"}) {
@@ -776,7 +785,9 @@ int main(int argc,char ** argv) {
         capture_all capture;
         router_placement_trace router_trace;
         auto cp=llama_context_default_params(); cp.n_ctx=quality_steps?nt+quality_steps+32:nt; cp.n_batch=prefill_chunk; cp.n_ubatch=prefill_chunk;
-        cp.n_threads=4; cp.n_threads_batch=4; cp.type_k=GGML_TYPE_F16; cp.type_v=GGML_TYPE_F16;
+        int host_threads=std::getenv("MOE_HOST_THREADS")?std::stoi(std::getenv("MOE_HOST_THREADS")):4;
+        require(host_threads>=1 && host_threads<=8,"host threads must be in 1..8");
+        cp.n_threads=host_threads; cp.n_threads_batch=host_threads; cp.type_k=GGML_TYPE_F16; cp.type_v=GGML_TYPE_F16;
         cp.flash_attn_type=LLAMA_FLASH_ATTN_TYPE_ENABLED; cp.offload_kqv=accelerator; cp.op_offload=accelerator;
         if(mode=="capture") { cp.cb_eval=capture_all::callback; cp.cb_eval_user_data=&capture; }
         if(std::getenv("MOE_ROUTER_TRACE")) { require(custom,"router trace requires custom mode"); cp.cb_eval=router_placement_trace::callback; cp.cb_eval_user_data=&router_trace; }
@@ -787,6 +798,8 @@ int main(int argc,char ** argv) {
         json report={{"tokens",nt},{"token_ids",tokens},{"mode",mode},{"samples",json::array()},
             {"scope","native complete model prefill including last-token logits and retained KV; dynamic real routing; weights resident; context reset outside timing"}};
         report["shared_activations"]=shared_activations;
+        report["host_threads"]=host_threads;
+        report["expert_cpu_threads"]=custom?4:0;
         report["prefill_chunk"]=prefill_chunk;
         report["prefill_chunks"]=nt/prefill_chunk;
         report["expert_weight_layout"]=single_layout?"single CPU4x8 V2 + canonical F16 scalar gate":"backend native banks";

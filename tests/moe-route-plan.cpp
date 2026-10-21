@@ -23,7 +23,9 @@ int main(int argc,char ** argv) {
         require(argc==5,"usage: moe-route-plan MODEL ROUTES OUTPUT profile|provision");
         json parameters,routes; std::ifstream(argv[1])>>parameters; std::ifstream(argv[2])>>routes;
         resident_placement_model model(parameters);
-        moe_route_scheduler search(model,parameters.value("search_budget",2048));
+        const auto algorithm=parameters.value("algorithm",std::string("generic"));
+        require(algorithm=="generic" || algorithm=="shared_additive","unsupported route search algorithm");
+        moe_route_scheduler search(model,parameters.value("search_budget",2048),algorithm=="shared_additive");
         resident_placement_model::availability all;
         for(auto & row:all.experts) { row.fill(true); } all.shared.fill(true);
         std::string mode=argv[4]; require(mode=="profile" || mode=="provision","invalid plan utility mode");

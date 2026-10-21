@@ -6,14 +6,109 @@
 struct moe_route_scheduler {
     const resident_placement_model & model;
     int budget=2048;
+    bool additive=false;
     struct result {
         placement selected;
         resident_placement_model::prediction predicted;
         int evaluations=0;
         double seed_us=0;
     };
-    explicit moe_route_scheduler(const resident_placement_model & m,int limit=2048) : model(m),budget(limit) {
+    explicit moe_route_scheduler(const resident_placement_model & m,int limit=2048,bool fast=false) : model(m),budget(limit),additive(fast) {
         require(limit>=128 && limit<=16384,"invalid route search budget");
+        if(additive) {
+            for(const auto & row:model.coefficients) { for(size_t i=0;i<row.size();++i) {
+                require(row[i]>=0 && (i==0 || i==1 || i==2 || i==4 || i==12 || row[i]==0),
+                        "additive scheduler requires nonnegative additive coefficients");
+            } }
+            for(double w:model.host_coefficients) { require(w==0,"additive scheduler requires zero host coefficients"); }
+        }
+    }
+    result choose_additive(int nt,const std::vector<int> & counts,
+                           const resident_placement_model::availability & available,
+                           const std::array<int,3> * widths) const {
+        std::array<std::array<double,3>,60> costs{};
+        std::vector<int> order;
+        for(int e=0;e<60;++e) { if(counts[e]) {
+            order.push_back(e);
+            for(int b=0;b<3;++b) {
+                const auto & w=model.coefficients[b];
+                costs[e][b]=w[1]*counts[e]/1024.0+w[2]/60.0+w[4]*((counts[e]+31)/32)/32.0;
+            }
+        } }
+        auto fastest=[&](int e) {
+            double value=INFINITY;
+            for(int b=0;b<3;++b) { if(available.experts[e][b]) { value=std::min(value,costs[e][b]); } }
+            return value;
+        };
+        std::stable_sort(order.begin(),order.end(),[&](int a,int b) { return fastest(a)>fastest(b); });
+        using loads_type=std::array<double,3>;
+        auto score=[](const loads_type & loads) {
+            return std::make_pair(*std::max_element(loads.begin(),loads.end()),
+                                  std::accumulate(loads.begin(),loads.end(),0.0));
+        };
+        auto better=[](const auto & a,const auto & b) {
+            return a.first+1e-6<b.first || (std::abs(a.first-b.first)<=1e-6 && a.second+1e-6<b.second);
+        };
+        result best; best.predicted.total=INFINITY;
+        auto best_score=std::make_pair(double(INFINITY),double(INFINITY));
+        int shared_options=std::accumulate(available.shared.begin(),available.shared.end(),0);
+        for(int s=0;s<3;++s) { if(available.shared[s]) {
+            placement current{"current_route_additive",std::vector<int>(60,1),s};
+            for(int e=0;e<60;++e) { for(int b:{1,0,2}) {
+                if(available.experts[e][b]) { current.owner[e]=b; break; }
+            } }
+            loads_type loads{}; std::array<int,3> active{};
+            loads[s]=model.coefficients[s][0]+model.coefficients[s][12]; active[s]=1;
+            for(int e:order) {
+                int chosen=-1; loads_type chosen_loads{};
+                auto chosen_score=std::make_pair(double(INFINITY),double(INFINITY));
+                for(int b=0;b<3;++b) { if(available.experts[e][b]) {
+                    auto trial=loads; trial[b]+=costs[e][b]+(active[b]?0:model.coefficients[b][0]);
+                    auto candidate=score(trial);
+                    if(better(candidate,chosen_score)) { chosen=b; chosen_score=candidate; chosen_loads=trial; }
+                } }
+                require(chosen>=0,"no additive expert placement");
+                current.owner[e]=chosen; ++active[chosen]; loads=chosen_loads;
+            }
+            auto current_score=score(loads);
+            best.seed_us=best.seed_us?std::min(best.seed_us,current_score.first):current_score.first;
+            int evaluations=0,limit=budget/shared_options;
+            // Each move/swap updates three scalar loads; no feature-vector or
+            // placement allocation in the search loop. Strict descent is bounded.
+            for(int iteration=0;iteration<32 && evaluations<limit;++iteration) {
+                auto next_score=current_score; loads_type next_loads=loads;
+                int move_e=-1,move_b=-1,swap_f=-1;
+                for(int e:order) { for(int b=0;b<3 && evaluations<limit;++b) {
+                    int a=current.owner[e];
+                    if(a==b || !available.experts[e][b]) { continue; }
+                    auto trial=loads;
+                    trial[a]-=costs[e][a]+(active[a]==1?model.coefficients[a][0]:0);
+                    trial[b]+=costs[e][b]+(active[b]?0:model.coefficients[b][0]);
+                    ++evaluations; auto candidate=score(trial);
+                    if(better(candidate,next_score)) { next_score=candidate; next_loads=trial; move_e=e; move_b=b; }
+                } }
+                if(move_e<0) { for(size_t i=0;i<order.size() && evaluations<limit;++i) {
+                    int e=order[i],a=current.owner[e];
+                    for(size_t j=i+1;j<order.size() && evaluations<limit;++j) {
+                        int f=order[j],b=current.owner[f];
+                        if(a==b || !available.experts[e][b] || !available.experts[f][a]) { continue; }
+                        auto trial=loads; trial[a]+=costs[f][a]-costs[e][a]; trial[b]+=costs[e][b]-costs[f][b];
+                        ++evaluations; auto candidate=score(trial);
+                        if(better(candidate,next_score)) { next_score=candidate; next_loads=trial; move_e=e; move_b=b; swap_f=f; }
+                    }
+                } }
+                if(move_e<0) { break; }
+                int old=current.owner[move_e]; current.owner[move_e]=move_b;
+                if(swap_f>=0) { current.owner[swap_f]=old; }
+                else { --active[old]; ++active[move_b]; }
+                loads=next_loads; current_score=next_score;
+            }
+            best.evaluations+=evaluations;
+            if(better(current_score,best_score)) { best_score=current_score; best.selected=current; }
+        } }
+        require(feasible(best.selected,available),"additive search returned nonresident placement");
+        best.predicted=model.predict(nt,counts,best.selected,widths);
+        return best;
     }
     static bool feasible(const placement & p,const resident_placement_model::availability & a) {
         if(!a.shared[p.shared]) { return false; }
@@ -53,6 +148,7 @@ struct moe_route_scheduler {
             int count=0; for(const auto & row:available.experts) { count+=row[b]; }
             require((*widths)[b]==count,"resident bank width mismatch");
         } }
+        if(additive) { return choose_additive(nt,counts,available,widths); }
         result best; best.predicted.total=INFINITY;
         std::vector<std::pair<double,placement>> ranked;
         std::set<std::vector<int>> seen;

@@ -1,5 +1,6 @@
 #define MOE_ROUTE_PLAN_NO_MAIN
 #include "moe-route-plan.cpp"
+#include <random>
 
 int main() {
     // Six active experts allow exhaustive verification against 3^6 * 3
@@ -44,5 +45,41 @@ int main() {
     j["backends"][2][7]=600.; resident_placement_model wide_model(j);
     placement p{"width",std::vector<int>(60,1),2}; std::array<int,3> width={0,60,20};
     require(wide_model.predict(8,counts,p,&width).backend[2]-wide_model.predict(8,counts,p).backend[2]==200.,"bank width omitted");
+    // Additive mode must reject a model whose interactions it cannot update.
+    rejected=false;
+    try { moe_route_scheduler invalid(wide_model,2048,true); }
+    catch(const std::runtime_error &) { rejected=true; }
+    require(rejected,"nonadditive model accepted by fast scheduler");
+    for(int b=0;b<3;++b) {
+        j["backends"][b]=std::vector<double>(26);
+        j["backends"][b][0]=5.+b;
+        j["backends"][b][1]=(b==0?3.:b==1?1.:2.)*1024;
+        j["backends"][b][2]=60.*(b+1);
+        j["backends"][b][4]=32.*(b+1);
+        j["backends"][b][12]=10.*(b+1);
+    }
+    resident_placement_model additive_model(j); moe_route_scheduler fast(additive_model,2048,true);
+    std::mt19937 random(42);
+    for(int trial=0;trial<200;++trial) {
+        int nt=trial%2?1024:1; std::vector<int> routes(60);
+        for(int t=0;t<nt;++t) {
+            int start=random()%60;
+            for(int k=0;k<4;++k) { ++routes[(start+k*13)%60]; }
+        }
+        auto available=all;
+        for(auto & row:available.experts) { int mask=1+random()%7;
+            for(int b=0;b<3;++b) { row[b]=mask&(1<<b); }
+        }
+        int shared_mask=1+random()%7;
+        for(int b=0;b<3;++b) { available.shared[b]=shared_mask&(1<<b); }
+        auto chosen=fast.choose(nt,routes,available);
+        require(moe_route_scheduler::feasible(chosen.selected,available),"fast search returned unavailable weights");
+        require(chosen.evaluations<=fast.budget && chosen.predicted.total<=chosen.seed_us+1e-6,
+                "fast search exceeded budget or worsened seed");
+        auto repeat=fast.choose(nt,routes,available);
+        require(chosen.selected.owner==repeat.selected.owner && chosen.selected.shared==repeat.selected.shared,
+                "fast search is nondeterministic");
+    }
+    require(fast.choose(8,counts,npu).selected.owner[59]==0,"fast inactive metadata not resident");
     std::cout<<"route scheduler contracts passed; exhaustive optimum="<<optimal<<" evaluations="<<r.evaluations<<'\n';
 }

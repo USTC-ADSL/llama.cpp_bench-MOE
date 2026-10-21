@@ -1,5 +1,8 @@
 #pragma once
 #include "ggml-shared-weight.h"
+#if defined(__aarch64__)
+#include <arm_neon.h>
+#endif
 
 // MoE is a consumer of the model-independent 2D weight middleware. A bank
 // contains all experts once; retained row slices are metadata, not copies.
@@ -106,8 +109,17 @@ struct moe_shared_execution {
     moe_shared_weights weights;
     std::array<std::shared_ptr<shared_activation_buffer>,3> arenas;
     std::array<std::map<std::array<int,61>,std::unique_ptr<moe_shared_job>>,3> jobs;
+    bool vector_reduce=false;
     moe_shared_execution(device * d[3],source & src,int layer,const resident_placement_model::availability & resident)
-        : devs{d[0],d[1],d[2]},weights(d,src,layer,resident) {}
+        : devs{d[0],d[1],d[2]},weights(d,src,layer,resident) {
+        const std::string reduce=std::getenv("MOE_SHARED_REDUCE")?std::getenv("MOE_SHARED_REDUCE"):"scalar";
+        require(reduce=="scalar" || reduce=="neon","unknown shared reduction implementation");
+#if defined(__aarch64__)
+        vector_reduce=reduce=="neon";
+#else
+        require(reduce=="scalar","NEON shared reduction requires aarch64");
+#endif
+    }
 
     std::vector<float> run(const float * x,const float * probs,const std::vector<int32_t> & ids,
                           const placement & plan,float * dst,size_t & allocations,json & last,int il,
@@ -155,7 +167,21 @@ struct moe_shared_execution {
         } }
         std::vector<float> result; if(!dst) { result.resize(nt*2048); dst=result.data(); }
         auto * shared=static_cast<float *>(work[plan.shared]->outputs[60]->data);
-        for(int t=0;t<nt;++t) { for(int c=0;c<2048;++c) {
+        for(int t=0;t<nt;++t) {
+#if defined(__aarch64__)
+            if(vector_reduce) {
+                const float * o[4]; float p[4];
+                for(int k=0;k<4;++k) { o[k]=outputs[t*4+k]; p[k]=probs[t*60+ids[t*4+k]]; }
+                for(int c=0;c<2048;c+=4) {
+                    float32x4_t sum=vdupq_n_f32(0);
+                    // Preserve the scalar path's four ordered FMAs and final add.
+                    for(int k=0;k<4;++k) { sum=vfmaq_n_f32(sum,vld1q_f32(o[k]+c),p[k]); }
+                    vst1q_f32(dst+t*2048+c,vaddq_f32(sum,vld1q_f32(shared+t*2048+c)));
+                }
+                continue;
+            }
+#endif
+            for(int c=0;c<2048;++c) {
             float sum=0;
             for(int k=0;k<4;++k) { const int p=t*4+k; sum=std::fma(probs[t*60+ids[p]],outputs[p][c],sum); }
             dst[t*2048+c]=sum+shared[t*2048+c];
@@ -167,6 +193,7 @@ struct moe_shared_execution {
               {"backend_phases_us",phases},{"intervals_us",intervals},{"branch_origin_monotonic_us",origin},
               {"pairs",branch_pairs},{"changed_route_slots",changed},{"route_reference_available",expected.size()==ids.size()},
               {"reduce_threads",1},{"overlap_gather",true},{"backend_gather_us",branch_gather},{"expert_wall_includes_gather",true},
+              {"reduce_implementation",vector_reduce?"neon":"scalar"},
               {"npu_device_gather",false},{"backend_input_host_copy_bytes",copies},{"expert_token_counts",totals},
               {"allocations",allocations},{"shared_weight_matmuls",3*(active+1)},
               {"execution","grouped 2D expert graphs; one CPU4x8 bank per projection; host gather"}};

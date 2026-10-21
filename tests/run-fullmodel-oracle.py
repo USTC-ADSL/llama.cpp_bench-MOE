@@ -38,6 +38,7 @@ def main():
     p.add_argument("--gpu-sample-period-us", type=int, default=10000)
     p.add_argument("--profile-layers", help="Comma-separated layer indices for optimized compact candidate profiling")
     p.add_argument("--tokens", type=int, default=128)
+    p.add_argument("--host-threads", type=int, choices=range(1,9), help="Outer llama CPU graph threads; expert CPU backend remains at four")
     p.add_argument("--prefill-chunk", type=int, help="Fixed-placement prefill: retain full context and process equal chunks")
     p.add_argument("--router-backend", choices=["gpu"], help="Custom HTP dense path: place router projection weights on GPU")
     p.add_argument("--router-trace", action="store_true", help="Diagnostic scheduler buffer trace; not for formal timing")
@@ -47,6 +48,7 @@ def main():
     p.add_argument("--deploy", action="store_true")
     p.add_argument("--remote-dir", default=REMOTE)
     p.add_argument("--shared-weights", choices=["cpu4x8"], help="Single physical expert layout through shared-weight middleware")
+    p.add_argument("--shared-reduce", choices=["scalar","neon"], help="Shared-layout single-thread reduction implementation; scalar remains default")
     p.add_argument("--output-dir", type=pathlib.Path, default=OUT)
     p.add_argument("--plan-file", type=pathlib.Path)
     p.add_argument("--prompt-file", type=pathlib.Path)
@@ -130,6 +132,8 @@ def main():
     if args.plan_file:
         record["plan_source"] = str(args.plan_file.resolve())
     env = ["env", f"LD_LIBRARY_PATH={REMOTE}", f"ADSP_LIBRARY_PATH={REMOTE}", "GGML_HEXAGON_DEVICES=1", "GGML_HEXAGON_NHMX=1", "GGML_HEXAGON_MM_SELECT=3", f"GGML_HEXAGON_PROFILE={int(args.hexagon_op_profile)}"]
+    if args.host_threads is not None:
+        env.append(f"MOE_HOST_THREADS={args.host_threads}")
     if args.router_backend:
         assert args.mode == "custom" and not args.dense_backend
         env.append("MOE_ROUTER_BACKEND=" + args.router_backend)
@@ -139,6 +143,9 @@ def main():
     if args.shared_weights:
         assert args.mode == "custom"
         env.append("MOE_SHARED_WEIGHTS=" + args.shared_weights)
+    if args.shared_reduce:
+        assert args.shared_weights
+        env.append("MOE_SHARED_REDUCE=" + args.shared_reduce)
     if args.prefill_chunk is not None:
         assert args.mode == "custom" and args.transfer_placement
         assert 0 < args.prefill_chunk <= args.tokens and args.tokens % args.prefill_chunk == 0
