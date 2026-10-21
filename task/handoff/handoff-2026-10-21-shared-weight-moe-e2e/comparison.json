@@ -1,0 +1,405 @@
+{
+  "statistic": "mean of two process medians; each process has 2 warmups + 6 measured requests",
+  "scope": "resident 24-layer MoE prefill including last-token logits; 768 tokens; c8-g15; fixed real-routing inputs",
+  "limitations": [
+    "2 prompts, 2 processes per condition; no decode or general quality claim",
+    "new path uses grouped 2D expert graphs; improvement is not isolated layout/kernel causality",
+    "backend cumulative durations overlap; never sum them to claim E2E",
+    "RSS excludes or differently charges DMA mappings; owner bytes exclude driver metadata and kernel scratch"
+  ],
+  "prompts": {
+    "wetland": {
+      "native": {
+        "processes": [
+          {
+            "tag": "wetland-native-a",
+            "median_ms": 1039.422239,
+            "samples_ms": [
+              1033.560468,
+              1055.7926559999999,
+              1045.776719,
+              1037.056041,
+              1041.788437,
+              1032.528698
+            ],
+            "resident_preparation_seconds": 7.933060153,
+            "weight_payload_bytes": 7474348032,
+            "weight_allocation_bytes": 7474383360,
+            "activation_arena_bytes": 220274688,
+            "process_memory": [
+              "VmSize:\t28263824 kB",
+              "VmHWM:\t 7554508 kB",
+              "VmRSS:\t 1491836 kB"
+            ],
+            "top1": 11,
+            "stages_ms": {
+              "ffn_ms": 678.446432,
+              "outside_ffn_ms": 360.06166800000005,
+              "expert_wall_ms": 642.3353884999999,
+              "combine_ms": 38.020625499999994,
+              "cpu_cumulative_compute_ms": 369.9223695,
+              "htp_cumulative_compute_ms": 578.3891685000001,
+              "gpu_cumulative_compute_ms": 343.2905475
+            }
+          },
+          {
+            "tag": "wetland-native-b",
+            "median_ms": 985.9663015000001,
+            "samples_ms": [
+              975.4303639999999,
+              981.46276,
+              970.8370309999999,
+              990.469843,
+              1039.58526,
+              1035.85875
+            ],
+            "resident_preparation_seconds": 8.103407132000001,
+            "weight_payload_bytes": 7474348032,
+            "weight_allocation_bytes": 7474383360,
+            "activation_arena_bytes": 220274688,
+            "process_memory": [
+              "VmSize:\t28386704 kB",
+              "VmHWM:\t 7693052 kB",
+              "VmRSS:\t 1598588 kB"
+            ],
+            "top1": 11,
+            "stages_ms": {
+              "ffn_ms": 661.0973945000001,
+              "outside_ffn_ms": 326.675757,
+              "expert_wall_ms": 633.9584385,
+              "combine_ms": 27.638645,
+              "cpu_cumulative_compute_ms": 362.0972915,
+              "htp_cumulative_compute_ms": 580.0583584999999,
+              "gpu_cumulative_compute_ms": 344.02374899999995
+            }
+          }
+        ],
+        "median_ms": 1012.69427025,
+        "stages_ms": {
+          "ffn_ms": 669.77191325,
+          "outside_ffn_ms": 343.3687125,
+          "expert_wall_ms": 638.1469135,
+          "combine_ms": 32.829635249999995,
+          "cpu_cumulative_compute_ms": 366.0098305,
+          "htp_cumulative_compute_ms": 579.2237635,
+          "gpu_cumulative_compute_ms": 343.65714825
+        }
+      },
+      "shared": {
+        "processes": [
+          {
+            "tag": "wetland-shared-a",
+            "median_ms": 918.3132290000001,
+            "samples_ms": [
+              922.00125,
+              893.7929690000001,
+              881.1447909999999,
+              914.6252079999999,
+              950.385625,
+              966.268542
+            ],
+            "resident_preparation_seconds": 6.2396009359999995,
+            "weight_payload_bytes": 7474348032,
+            "weight_allocation_bytes": 7474348032,
+            "activation_arena_bytes": 380657664,
+            "process_memory": [
+              "VmSize:\t28621884 kB",
+              "VmHWM:\t 7737404 kB",
+              "VmRSS:\t  518544 kB"
+            ],
+            "top1": 11,
+            "stages_ms": {
+              "ffn_ms": 580.957529,
+              "outside_ffn_ms": 337.3557,
+              "expert_wall_ms": 549.3042694999999,
+              "combine_ms": 28.285755,
+              "cpu_cumulative_compute_ms": 229.86216000000002,
+              "htp_cumulative_compute_ms": 478.4295035,
+              "gpu_cumulative_compute_ms": 154.26208300000002
+            }
+          },
+          {
+            "tag": "wetland-shared-b",
+            "median_ms": 954.296719,
+            "samples_ms": [
+              927.956093,
+              958.818073,
+              942.400416,
+              955.347188,
+              953.24625,
+              966.1228120000001
+            ],
+            "resident_preparation_seconds": 7.015604477,
+            "weight_payload_bytes": 7474348032,
+            "weight_allocation_bytes": 7474348032,
+            "activation_arena_bytes": 380657664,
+            "process_memory": [
+              "VmSize:\t28382268 kB",
+              "VmHWM:\t 7244792 kB",
+              "VmRSS:\t  596600 kB"
+            ],
+            "top1": 11,
+            "stages_ms": {
+              "ffn_ms": 593.733201,
+              "outside_ffn_ms": 361.3520295,
+              "expert_wall_ms": 558.3870314999999,
+              "combine_ms": 30.2514065,
+              "cpu_cumulative_compute_ms": 214.526118,
+              "htp_cumulative_compute_ms": 479.5415625,
+              "gpu_cumulative_compute_ms": 142.4083855
+            }
+          }
+        ],
+        "median_ms": 936.3049740000001,
+        "stages_ms": {
+          "ffn_ms": 587.345365,
+          "outside_ffn_ms": 349.35386475,
+          "expert_wall_ms": 553.8456504999999,
+          "combine_ms": 29.26858075,
+          "cpu_cumulative_compute_ms": 222.194139,
+          "htp_cumulative_compute_ms": 478.98553300000003,
+          "gpu_cumulative_compute_ms": 148.33523425
+        }
+      },
+      "latency_change_percent": -7.54317452898613,
+      "speedup": 1.0815859131065557,
+      "prefill_tokens_per_second": {
+        "native": 758.3730080850628,
+        "shared": 820.245562425048
+      },
+      "logits": {
+        "nrmse": 0.01798580379106018,
+        "max_abs": 0.1910802125930786,
+        "cosine": 0.9998384100099229,
+        "top1_equal": true,
+        "top10_native": [
+          11,
+          345,
+          271,
+          3554,
+          198,
+          13,
+          323,
+          2572,
+          382,
+          3837
+        ],
+        "top10_shared": [
+          11,
+          345,
+          271,
+          3554,
+          198,
+          13,
+          323,
+          2572,
+          382,
+          3837
+        ]
+      },
+      "route_count_l1": 698
+    },
+    "foundry": {
+      "native": {
+        "processes": [
+          {
+            "tag": "foundry-native-a",
+            "median_ms": 1040.594114,
+            "samples_ms": [
+              1001.056666,
+              1053.306458,
+              1048.818176,
+              1027.031718,
+              1057.4109369999999,
+              1032.370052
+            ],
+            "resident_preparation_seconds": 7.761234633,
+            "weight_payload_bytes": 7474348032,
+            "weight_allocation_bytes": 7474383360,
+            "activation_arena_bytes": 220274688,
+            "process_memory": [
+              "VmSize:\t28332492 kB",
+              "VmHWM:\t 7766572 kB",
+              "VmRSS:\t 1666256 kB"
+            ],
+            "top1": 13,
+            "stages_ms": {
+              "ffn_ms": 682.5283855,
+              "outside_ffn_ms": 360.77484549999997,
+              "expert_wall_ms": 642.060599,
+              "combine_ms": 37.541926499999995,
+              "cpu_cumulative_compute_ms": 332.3080705,
+              "htp_cumulative_compute_ms": 579.5828395,
+              "gpu_cumulative_compute_ms": 341.87114399999996
+            }
+          },
+          {
+            "tag": "foundry-native-b",
+            "median_ms": 1051.3623435,
+            "samples_ms": [
+              1051.002812,
+              1046.549583,
+              1051.721875,
+              1058.078437,
+              1060.8146869999998,
+              1043.93901
+            ],
+            "resident_preparation_seconds": 8.046237029,
+            "weight_payload_bytes": 7474348032,
+            "weight_allocation_bytes": 7474383360,
+            "activation_arena_bytes": 220274688,
+            "process_memory": [
+              "VmSize:\t28355020 kB",
+              "VmHWM:\t 7852512 kB",
+              "VmRSS:\t 1463732 kB"
+            ],
+            "top1": 13,
+            "stages_ms": {
+              "ffn_ms": 685.092343,
+              "outside_ffn_ms": 367.7038274999999,
+              "expert_wall_ms": 641.8099745,
+              "combine_ms": 41.975961,
+              "cpu_cumulative_compute_ms": 325.37356650000004,
+              "htp_cumulative_compute_ms": 580.6397115,
+              "gpu_cumulative_compute_ms": 340.2087265
+            }
+          }
+        ],
+        "median_ms": 1045.97822875,
+        "stages_ms": {
+          "ffn_ms": 683.81036425,
+          "outside_ffn_ms": 364.2393364999999,
+          "expert_wall_ms": 641.9352867499999,
+          "combine_ms": 39.75894375,
+          "cpu_cumulative_compute_ms": 328.8408185,
+          "htp_cumulative_compute_ms": 580.1112754999999,
+          "gpu_cumulative_compute_ms": 341.03993525
+        }
+      },
+      "shared": {
+        "processes": [
+          {
+            "tag": "foundry-shared-a",
+            "median_ms": 914.7917190000001,
+            "samples_ms": [
+              902.952708,
+              915.88724,
+              914.8185940000001,
+              918.428593,
+              900.2175520000001,
+              914.764844
+            ],
+            "resident_preparation_seconds": 6.783674164,
+            "weight_payload_bytes": 7474348032,
+            "weight_allocation_bytes": 7474348032,
+            "activation_arena_bytes": 380657664,
+            "process_memory": [
+              "VmSize:\t28507672 kB",
+              "VmHWM:\t 7754604 kB",
+              "VmRSS:\t  703528 kB"
+            ],
+            "top1": 13,
+            "stages_ms": {
+              "ffn_ms": 579.854268,
+              "outside_ffn_ms": 329.923595,
+              "expert_wall_ms": 547.5742695,
+              "combine_ms": 29.8813545,
+              "cpu_cumulative_compute_ms": 223.091279,
+              "htp_cumulative_compute_ms": 481.2589855,
+              "gpu_cumulative_compute_ms": 152.67929550000002
+            }
+          },
+          {
+            "tag": "foundry-shared-b",
+            "median_ms": 928.3855205,
+            "samples_ms": [
+              928.306718,
+              928.4643229999999,
+              944.240416,
+              926.2901559999999,
+              897.2037489999999,
+              971.672343
+            ],
+            "resident_preparation_seconds": 7.041057654,
+            "weight_payload_bytes": 7474348032,
+            "weight_allocation_bytes": 7474348032,
+            "activation_arena_bytes": 380657664,
+            "process_memory": [
+              "VmSize:\t28425752 kB",
+              "VmHWM:\t 7587440 kB",
+              "VmRSS:\t  826772 kB"
+            ],
+            "top1": 13,
+            "stages_ms": {
+              "ffn_ms": 590.625962,
+              "outside_ffn_ms": 338.407788,
+              "expert_wall_ms": 558.6059634999999,
+              "combine_ms": 30.2984885,
+              "cpu_cumulative_compute_ms": 222.9934365,
+              "htp_cumulative_compute_ms": 481.3945575,
+              "gpu_cumulative_compute_ms": 149.6308335
+            }
+          }
+        ],
+        "median_ms": 921.58861975,
+        "stages_ms": {
+          "ffn_ms": 585.2401150000001,
+          "outside_ffn_ms": 334.1656915,
+          "expert_wall_ms": 553.0901165,
+          "combine_ms": 30.089921500000003,
+          "cpu_cumulative_compute_ms": 223.04235775,
+          "htp_cumulative_compute_ms": 481.3267715,
+          "gpu_cumulative_compute_ms": 151.1550645
+        }
+      },
+      "latency_change_percent": -11.892179548388137,
+      "speedup": 1.1349730306280728,
+      "prefill_tokens_per_second": {
+        "native": 734.2409037689065,
+        "shared": 833.3436237616909
+      },
+      "logits": {
+        "nrmse": 0.014175355163359686,
+        "max_abs": 0.17284655570983887,
+        "cosine": 0.9998995252667486,
+        "top1_equal": true,
+        "top10_native": [
+          13,
+          624,
+          1882,
+          198,
+          271,
+          8388,
+          576,
+          323,
+          382,
+          52573
+        ],
+        "top10_shared": [
+          13,
+          624,
+          1882,
+          198,
+          271,
+          8388,
+          576,
+          382,
+          323,
+          52573
+        ]
+      },
+      "route_count_l1": 648
+    }
+  },
+  "binary_hashes": {
+    "libc++_shared.so": "d523468d62d9b603cb3354294d70d4b2feabf2c3f1e43b0c96c9aabf32813708",
+    "libggml-base.so": "60670783ece0f46d11dcddf01d2c0cee35ef587405f400c93078bc9bb77b3c9b",
+    "libggml-cpu.so": "8d9e463981182d983577cb2fc7c3ff3c66dd7f6b0267703ee7b7218f65ea3d02",
+    "libggml-hexagon.so": "822aa4726b277fe140b9eb4539dacbcd90c18671e88bf9a9e34f1d5c7ea36375",
+    "libggml-htp-v79.so": "248d4f0cb347074ba9dbf6000ff75c39ee8eee19c22496a6f9237c693ffcfe8e",
+    "libggml-opencl.so": "536a39b2f8bc1b66c1b0a80c9dc77c0ce1d71f1c296425f9f46c2dbae99eb50d",
+    "libggml.so": "8e9818d20fc52a6c7d64f97415466c70fd510b7e2ff57a2fa7040fa9e4955d62",
+    "libllama.so": "2574d2195b81cca96785e5a702257d8f29029dffd5bbf91c55f34f70d02dced5",
+    "fullmodel-oracle": "6acd596e2ecef10be59c53c45c6d5390e1bf847328194f5dd7c98b87a3dd013d"
+  }
+}

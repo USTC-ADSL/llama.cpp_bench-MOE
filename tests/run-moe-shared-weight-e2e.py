@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Repeat the frozen threeway-768 resident MoE protocol with one weight layout."""
 import argparse
+import gzip
 import hashlib
 import json
 import pathlib
@@ -21,8 +22,10 @@ def main():
     evidence.mkdir(exist_ok=True)
     inputs = {}
     for prompt in ("wetland", "foundry"):
-        for path in (OLD / f"prompts/{prompt}.txt", TASK / f"inputs/{prompt}-c8-g15.json"):
-            inputs[str(path.relative_to(ROOT))] = hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in (OLD / f"prompts/{prompt}.txt", TASK / f"inputs/{prompt}-c8-g15.json.gz"):
+            data = gzip.decompress(path.read_bytes()) if path.suffix == ".gz" else path.read_bytes()
+            semantic_path = path.with_suffix("") if path.suffix == ".gz" else path
+            inputs[str(semantic_path.relative_to(ROOT))] = hashlib.sha256(data).hexdigest()
     manifest = TASK / "frozen-inputs.json"
     if manifest.exists():
         assert json.loads(manifest.read_text()) == inputs, "frozen input changed"
@@ -39,7 +42,7 @@ def main():
                    "--mode", "custom", "--tokens", "768", "--reps", "1" if args.phase == "smoke" else "6",
                    "--tag", tag, "--output-dir", str(evidence), "--remote-dir", REMOTE,
                    "--prompt-file", str(OLD / f"prompts/{prompt}.txt"),
-                   "--plan-file", str(TASK / f"inputs/{prompt}-c8-g15.json"),
+                   "--plan-file", str(TASK / f"inputs/{prompt}-c8-g15.json.gz"),
                    "--shared-activations", "--direct-callback-io", "--activation-arena",
                    "--activation-lifetimes", "--fused-host-reduce", "--overlap-gather", "--hexagon-timing"]
         if layout == "shared":
