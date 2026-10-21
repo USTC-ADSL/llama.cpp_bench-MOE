@@ -38,6 +38,9 @@ def main():
     p.add_argument("--gpu-sample-period-us", type=int, default=10000)
     p.add_argument("--profile-layers", help="Comma-separated layer indices for optimized compact candidate profiling")
     p.add_argument("--tokens", type=int, default=128)
+    p.add_argument("--prefill-chunk", type=int, help="Fixed-placement prefill: retain full context and process equal chunks")
+    p.add_argument("--router-backend", choices=["gpu"], help="Custom HTP dense path: place router projection weights on GPU")
+    p.add_argument("--router-trace", action="store_true", help="Diagnostic scheduler buffer trace; not for formal timing")
     p.add_argument("--tag", required=True)
     p.add_argument("--reference", default="-")
     p.add_argument("--reps", type=int, default=8)
@@ -127,9 +130,19 @@ def main():
     if args.plan_file:
         record["plan_source"] = str(args.plan_file.resolve())
     env = ["env", f"LD_LIBRARY_PATH={REMOTE}", f"ADSP_LIBRARY_PATH={REMOTE}", "GGML_HEXAGON_DEVICES=1", "GGML_HEXAGON_NHMX=1", "GGML_HEXAGON_MM_SELECT=3", f"GGML_HEXAGON_PROFILE={int(args.hexagon_op_profile)}"]
+    if args.router_backend:
+        assert args.mode == "custom" and not args.dense_backend
+        env.append("MOE_ROUTER_BACKEND=" + args.router_backend)
+    if args.router_trace:
+        assert args.mode == "custom"
+        env.append("MOE_ROUTER_TRACE=1")
     if args.shared_weights:
         assert args.mode == "custom"
         env.append("MOE_SHARED_WEIGHTS=" + args.shared_weights)
+    if args.prefill_chunk is not None:
+        assert args.mode == "custom" and args.transfer_placement
+        assert 0 < args.prefill_chunk <= args.tokens and args.tokens % args.prefill_chunk == 0
+        env.append(f"MOE_PREFILL_CHUNK={args.prefill_chunk}")
     assert not args.hexagon_op_profile or args.hexagon_timing
     if args.hexagon_timing:
         env.append("GGML_HEXAGON_TIMING=1")

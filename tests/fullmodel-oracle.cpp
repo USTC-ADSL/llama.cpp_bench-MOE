@@ -46,6 +46,19 @@ struct captured_layer {
     std::vector<int32_t> ids;
 };
 
+struct router_placement_trace {
+    json nodes=json::object();
+    static bool callback(ggml_tensor * t,bool ask,void * user) {
+        auto & self=*static_cast<router_placement_trace *>(user);
+        const std::string name=t->name;
+        if(ask && name.find("ffn_moe_")!=std::string::npos && self.nodes.count(name)==0) {
+            auto buffer_name=[](ggml_tensor * v) { return v && v->buffer?std::string(ggml_backend_buffer_name(v->buffer)):std::string("unbound/view"); };
+            self.nodes[name]={{"op",ggml_op_name(t->op)},{"buffer",buffer_name(t)},{"src0_buffer",buffer_name(t->src[0])}};
+        }
+        return false;
+    }
+};
+
 struct capture_all {
     std::array<captured_layer,24> layers;
     static bool callback(ggml_tensor * t,bool ask,void * opaque) {
@@ -655,16 +668,38 @@ int main(int argc,char ** argv) {
         require(!native_decode_graph || (mapped_experts && shared_activations && activation_lifetimes),"native decode graph requires mapped CPU/shared lifetime buffers");
         require(custom || mode=="capture" || mode=="cpu" || mode=="npu" || mode=="gpu","invalid mode");
         if(custom && !automatic) { std::ifstream in(argv[7]); in>>plans; require((transfer_placement || plans["tokens"].get<int>()==nt) && plans["layers"].size()==24,"plan shape mismatch"); }
+        int prefill_chunk=std::getenv("MOE_PREFILL_CHUNK")?std::stoi(std::getenv("MOE_PREFILL_CHUNK")):nt;
+        require(prefill_chunk>0 && prefill_chunk<=nt && nt%prefill_chunk==0,"prefill chunk must divide input length");
+        require(prefill_chunk==nt || (custom && transfer_placement && !automatic && !quality_steps && !route_scheduler && !std::getenv("MOE_FEEDBACK_MODEL")),
+                "chunked prefill requires fixed transferred custom placement without decode or feedback");
         std::unique_ptr<fullmodel_context_model> feedback;
         if(std::getenv("MOE_FEEDBACK_MODEL")) {
             require(custom && !transfer_placement,"shadow feedback requires custom mode with matching route reference");
             std::ifstream in(std::getenv("MOE_FEEDBACK_MODEL")); json parameters; in>>parameters;
             feedback=std::make_unique<fullmodel_context_model>(parameters,nt);
         }
-        ggml_backend_dev_t target[]={ggml_backend_dev_by_name(mode=="gpu"?"GPUOpenCL":"HTP0"),nullptr};
+        bool gpu_router=std::getenv("MOE_ROUTER_BACKEND") && std::string(std::getenv("MOE_ROUTER_BACKEND"))=="gpu";
+        require(!gpu_router || (custom && !automatic && dense_backend=="npu"),"GPU router requires explicit custom HTP dense mode");
+        ggml_backend_dev_t target[]={ggml_backend_dev_by_name(mode=="gpu"?"GPUOpenCL":"HTP0"),gpu_router?ggml_backend_dev_by_name("GPUOpenCL"):nullptr,nullptr};
+        require(!gpu_router || target[1],"router GPU unavailable");
+        ggml_backend_ptr router_loader;
+        if(gpu_router) {
+            // Explicit tensor splits bypass device-memory discovery. Initialize
+            // OpenCL before the loader queries its buffer alignment/size.
+            router_loader.reset(ggml_backend_dev_init(target[1],nullptr));
+            require(bool(router_loader),"router OpenCL initialization failed");
+        }
         require(!accelerator || target[0],"requested accelerator unavailable");
         auto mp=llama_model_default_params(); mp.n_gpu_layers=accelerator?99:0;
         mp.devices=accelerator?target:nullptr;
+        // Register both execution backends, while keeping all ordinary layers on HTP.
+        const float router_split[]={1.0f,0.0f};
+        if(gpu_router) {
+            mp.tensor_split=router_split;
+            // CPU overrides must remain canonical mmap sources, rather than
+            // selecting OpenCL's host buffer and preparing unused expert copies.
+            mp.no_host=true;
+        }
         llama_model_tensor_buft_override overrides[]={
             {"blk\\.[0-9]+\\.ffn_(gate|up|down)_exps\\.weight",ggml_backend_dev_buffer_type(ggml_backend_dev_by_name("CPU"))},
             {"blk\\.[0-9]+\\.ffn_(gate|up|down|gate_inp)_shexp\\.weight",ggml_backend_dev_buffer_type(ggml_backend_dev_by_name("CPU"))},
@@ -681,6 +716,7 @@ int main(int argc,char ** argv) {
             } }
             require(overrides[2].pattern!=nullptr,"CPU_REPACK unavailable");
         }
+        if(gpu_router) { overrides[2]={"blk\\.[0-9]+\\.ffn_gate_inp\\.weight",ggml_backend_dev_buffer_type(target[1])}; }
         if(custom) { mp.tensor_buft_overrides=overrides; mp.use_extra_bufts=false; mp.load_mode=LLAMA_LOAD_MODE_MMAP; }
         std::unique_ptr<llama_model,decltype(&llama_model_free)> model(llama_model_load_from_file(argv[1],mp),llama_model_free);
         require(model!=nullptr,"native model load failed");
@@ -714,7 +750,7 @@ int main(int argc,char ** argv) {
             for(int il=0;il<24;++il) {
                 placement p=mode=="custom-npu"?placement{"all_npu",std::vector<int>(60,1),1}:parse_plan(plans["layers"][il][mode=="branch"?"branch":"selected"]);
                 if(native_decode_graph) { require(std::all_of(p.owner.begin(),p.owner.end(),[](int owner) { return owner==0; }),"native decode graph requires all routed experts on CPU"); }
-                int layer_tokens=transfer_placement?(il==23?1:nt):plans["layers"][il]["tokens"].get<int>();
+                int layer_tokens=transfer_placement?(il==23?1:prefill_chunk):plans["layers"][il]["tokens"].get<int>();
                 resident_placement_model::availability prepared;
                 if(route_scheduler) { prepared=parse_resident(plans.at("layers").at(il).at("resident")); }
                 engine.layers.push_back(std::make_unique<partitioned_ffn>(devs,src,il,layer_tokens,p,true,shared_activations,route_scheduler?&prepared:nullptr));
@@ -738,10 +774,12 @@ int main(int argc,char ** argv) {
             resident_preparation_us=elapsed(preparation_start);
         }
         capture_all capture;
-        auto cp=llama_context_default_params(); cp.n_ctx=quality_steps?nt+quality_steps+32:nt; cp.n_batch=nt; cp.n_ubatch=nt;
+        router_placement_trace router_trace;
+        auto cp=llama_context_default_params(); cp.n_ctx=quality_steps?nt+quality_steps+32:nt; cp.n_batch=prefill_chunk; cp.n_ubatch=prefill_chunk;
         cp.n_threads=4; cp.n_threads_batch=4; cp.type_k=GGML_TYPE_F16; cp.type_v=GGML_TYPE_F16;
         cp.flash_attn_type=LLAMA_FLASH_ATTN_TYPE_ENABLED; cp.offload_kqv=accelerator; cp.op_offload=accelerator;
         if(mode=="capture") { cp.cb_eval=capture_all::callback; cp.cb_eval_user_data=&capture; }
+        if(std::getenv("MOE_ROUTER_TRACE")) { require(custom,"router trace requires custom mode"); cp.cb_eval=router_placement_trace::callback; cp.cb_eval_user_data=&router_trace; }
         std::unique_ptr<llama_context,decltype(&llama_free)> ctx(llama_init_from_model(model.get(),cp),llama_free);
         require(ctx!=nullptr,"native context init failed");
         int nv=llama_vocab_n_tokens(vocab);
@@ -749,6 +787,8 @@ int main(int argc,char ** argv) {
         json report={{"tokens",nt},{"token_ids",tokens},{"mode",mode},{"samples",json::array()},
             {"scope","native complete model prefill including last-token logits and retained KV; dynamic real routing; weights resident; context reset outside timing"}};
         report["shared_activations"]=shared_activations;
+        report["prefill_chunk"]=prefill_chunk;
+        report["prefill_chunks"]=nt/prefill_chunk;
         report["expert_weight_layout"]=single_layout?"single CPU4x8 V2 + canonical F16 scalar gate":"backend native banks";
         report["expert_execution"]=single_layout?"grouped 2D MUL_MAT graphs; host gather":"native MUL_MAT_ID graphs";
         report["npu_device_gather_effective"]=npu_device_gather && !single_layout;
@@ -765,6 +805,7 @@ int main(int argc,char ** argv) {
         report["transfer_placement"]=transfer_placement;
         report["requested_mode"]=argv[5];
         report["dense_backend"]=dense_backend;
+        report["router_backend_requested"]=gpu_router?"gpu":"default";
         report["cpu_mapped_experts"]=mapped_experts;
         report["model_extra_bufts"]=mp.use_extra_bufts;
         report["native_decode_graph"]=native_decode_graph;
@@ -867,12 +908,21 @@ int main(int argc,char ** argv) {
                 feedback_cost+=elapsed(start);
             }
             llama_memory_clear(llama_get_memory(ctx.get()),true);
-            auto batch=llama_batch_get_one(tokens.data(),nt);
+            json chunk_layers=json::array();
             auto state_before=runtime_state.sample();
             auto htp_before=device_timing.snapshot();
             rusage before{},after{}; getrusage(RUSAGE_SELF,&before);
             const double request_begin_us=runtime_state.enabled?moe_runtime_state::now_us():0;
-            auto start=timer::now(); int code=llama_decode(ctx.get(),batch); llama_synchronize(ctx.get());
+            auto start=timer::now(); int code=0;
+            for(int offset=0;offset<nt;offset+=prefill_chunk) {
+                auto batch=llama_batch_get_one(tokens.data()+offset,prefill_chunk);
+                code=llama_decode(ctx.get(),batch); llama_synchronize(ctx.get());
+                require(code==0,"prefill chunk failed");
+                if(prefill_chunk<nt) {
+                    json layers=json::array(); for(auto & l:engine.layers) { layers.push_back(l->last); }
+                    chunk_layers.push_back({{"offset",offset},{"layers",std::move(layers)}});
+                }
+            }
             auto * output=llama_get_logits_ith(ctx.get(),-1); require(code==0 && output,"native decode failed");
             logits.assign(output,output+nv); double us=elapsed(start);
             const double request_end_us=runtime_state.enabled?moe_runtime_state::now_us():0;
@@ -941,6 +991,7 @@ int main(int argc,char ** argv) {
                 if(device_timing.read) { row["htp_timing"]=device_timing.delta(htp_before,htp_after); }
                 if(feedback) { row["feedback_compute_us"]=feedback_cost; row["total_with_feedback_us"]=us+feedback_cost; }
                 if(custom) { row["layers"]=json::array(); for(auto & l:engine.layers) { row["layers"].push_back(l->last); } }
+                if(prefill_chunk<nt) { row["chunks"]=std::move(chunk_layers); row["layers_scope"]="last chunk only; use chunks for full-request phase totals"; }
                 report["samples"].push_back(row);
             }
         }
@@ -954,6 +1005,7 @@ int main(int argc,char ** argv) {
                 report["layers"].push_back({{"layer",il},{"tokens",l.nt}});
             }
         } else { report["timing"]=stats(times,nt); }
+        if(std::getenv("MOE_ROUTER_TRACE")) { report["router_placement_trace"]=router_trace.nodes; }
         for(float value:logits) { require(std::isfinite(value),"nonfinite prefill logits"); }
         { std::ifstream status("/proc/self/status"); std::string line;
           while(std::getline(status,line)) { if(line.rfind("VmRSS:",0)==0 || line.rfind("VmHWM:",0)==0 || line.rfind("VmSize:",0)==0) {
