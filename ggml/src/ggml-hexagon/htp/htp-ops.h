@@ -166,6 +166,7 @@ struct htp_buf_desc {
 enum htp_op_flags {
     HTP_OPFLAGS_STUB         = (1U << 0),
     HTP_OPFLAGS_MMID_ROWS     = (1U << 1), // HMX MMID: src[9] maps output rows to activation rows
+    HTP_OPFLAGS_MM_ROWS       = (1U << 2), // CPU4x8 HMX 2D: src[9] maps output rows to activation rows
 };
 
 // Op descriptor

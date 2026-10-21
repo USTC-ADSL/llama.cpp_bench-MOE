@@ -275,7 +275,7 @@ struct partitioned_ffn {
                   {"changed_route_slots",changed},{"route_reference_available",expected_ids.size()==ids.size()},
                   {"reduce_threads",parallel_reduce && reduce_workers && nt>=reduce_workers->count()?reduce_workers->count():1},
                   {"overlap_gather",overlap_gather},{"backend_gather_us",branch_gather},{"expert_wall_includes_gather",overlap_gather},
-                  {"npu_device_gather",npu_device_gather},{"backend_input_host_copy_bytes",input_copy_bytes},
+                  {"npu_device_gather",work[1] && work[1]->input_rows},{"backend_input_host_copy_bytes",input_copy_bytes},
                   {"expert_token_counts",counts},{"allocations",allocations}};
             if(scheduler) {
                 last["scheduling"]={{"decision_us",decision_us},{"included_in_gather",true},
@@ -319,6 +319,12 @@ struct full_engine {
                 size_t bytes=1024*1024;
                 if(l->resident_width[b]) { bytes+=size_t(4*l->nt)*4*(4096+3*w.hidden); }
                 if(l->resident.shared[b]) { bytes+=size_t(l->nt)*(4*(6144+3*w.shared_hidden)+32); }
+                if(b==1 && l->single_layout->npu_gather && l->resident_width[b] && l->nt>1) {
+                    bytes+=size_t(4*l->nt)*sizeof(int32_t); // expert token-row maps
+                    // When shared is eligible, its budget already contains the
+                    // complete input, now aliased by all routed GET_ROWS nodes.
+                    if(!l->resident.shared[b]) { bytes+=size_t(l->nt)*2048*sizeof(float); }
+                }
                 capacities[b]=std::max(capacities[b],bytes);
             } }
             for(int b=0;b<3;++b) {
@@ -808,8 +814,12 @@ int main(int argc,char ** argv) {
         report["prefill_chunk"]=prefill_chunk;
         report["prefill_chunks"]=nt/prefill_chunk;
         report["expert_weight_layout"]=single_layout?"single CPU4x8 V2 + canonical F16 scalar gate":"backend native banks";
-        report["expert_execution"]=single_layout?"grouped 2D MUL_MAT graphs; host gather":"native MUL_MAT_ID graphs";
-        report["npu_device_gather_effective"]=npu_device_gather && !single_layout;
+        const bool shared_htp_gather=single_layout && !engine.layers.empty() && engine.layers[0]->single_layout->npu_gather;
+        report["expert_execution"]=single_layout?"grouped 2D MUL_MAT graphs; host or HTP GET_ROWS gather":"native MUL_MAT_ID graphs";
+        report["shared_input_gather"]=shared_htp_gather?"htp":"host";
+        report["npu_device_gather_effective"]=false;
+        report["cpu4x8_gather_fusion_requested"]=shared_htp_gather && std::getenv("GGML_HEXAGON_FUSE_CPU4X8_GATHER") &&
+            std::string(std::getenv("GGML_HEXAGON_FUSE_CPU4X8_GATHER"))=="1";
         report["direct_callback_io"]=direct_callback_io;
         report["alternate_callback_io"]=alternate_callback_io;
         report["activation_arena"]=activation_arena;
@@ -1012,6 +1022,15 @@ int main(int argc,char ** argv) {
                 if(prefill_chunk<nt) { row["chunks"]=std::move(chunk_layers); row["layers_scope"]="last chunk only; use chunks for full-request phase totals"; }
                 report["samples"].push_back(row);
             }
+        }
+        for(const auto & sample:report["samples"]) {
+            auto observe=[&](const json & layers) {
+                for(const auto & layer:layers) {
+                    if(layer.value("npu_device_gather",false)) { report["npu_device_gather_effective"]=true; }
+                }
+            };
+            if(sample.contains("chunks")) { for(const auto & chunk:sample["chunks"]) { observe(chunk.at("layers")); } }
+            else if(sample.contains("layers")) { observe(sample["layers"]); }
         }
         if(mode=="capture") {
             report["layers"]=json::array();

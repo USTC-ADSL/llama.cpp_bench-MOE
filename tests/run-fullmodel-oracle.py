@@ -50,6 +50,8 @@ def main():
     p.add_argument("--shared-weights", choices=["cpu4x8"], help="Single physical expert layout through shared-weight middleware")
     p.add_argument("--shared-reduce", choices=["scalar","neon"], help="Shared-layout single-thread reduction implementation; scalar remains default")
     p.add_argument("--shared-dispatch", choices=["async","pool"], help="Shared-layout branch dispatch: per-layer async or two persistent workers")
+    p.add_argument("--shared-gather", choices=["host","htp"], help="Shared-layout input: host row copies or one HTP input plus device GET_ROWS")
+    p.add_argument("--shared-fused-gather", action="store_true", help="Fuse retained CPU4x8 GET_ROWS into HMX input tile preparation")
     p.add_argument("--output-dir", type=pathlib.Path, default=OUT)
     p.add_argument("--plan-file", type=pathlib.Path)
     p.add_argument("--prompt-file", type=pathlib.Path)
@@ -150,6 +152,12 @@ def main():
     if args.shared_dispatch:
         assert args.shared_weights
         env.append("MOE_SHARED_DISPATCH=" + args.shared_dispatch)
+    if args.shared_gather:
+        assert args.shared_weights
+        env.append("MOE_SHARED_GATHER=" + args.shared_gather)
+    if args.shared_fused_gather:
+        assert args.shared_weights and args.shared_gather == "htp"
+        env.append("GGML_HEXAGON_FUSE_CPU4X8_GATHER=1")
     if args.prefill_chunk is not None:
         assert args.mode == "custom" and args.transfer_placement
         assert 0 < args.prefill_chunk <= args.tokens and args.tokens % args.prefill_chunk == 0

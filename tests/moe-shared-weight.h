@@ -73,14 +73,30 @@ struct moe_shared_job {
     ggml_context_ptr ctx=context(600,512);
     ggml_cgraph * graph=nullptr;
     std::array<ggml_tensor *,61> inputs{}, outputs{};
+    ggml_tensor * full_input=nullptr;
+    std::array<ggml_tensor *,60> input_rows{};
     std::shared_ptr<shared_activation_buffer> arena;
     moe_shared_job(device & d,moe_shared_weights & weights,int backend,const std::array<int,61> & counts,
-                   std::shared_ptr<shared_activation_buffer> storage) : dev(d),arena(std::move(storage)) {
+                   std::shared_ptr<shared_activation_buffer> storage,int full_tokens=0) : dev(d),arena(std::move(storage)) {
         graph=ggml_new_graph_custom(ctx.get(),512,false);
+        if(full_tokens) {
+            require(backend==1 && full_tokens>1,"device gather requires HTP prefill");
+            full_input=ggml_new_tensor_2d(ctx.get(),GGML_TYPE_F32,2048,full_tokens);
+            ggml_set_output(full_input); // Retain storage through internal indexed matmuls.
+        }
         for(int e=0;e<61;++e) { if(counts[e]) {
             const auto & w=weights.weights[backend][e];
             require(w[0] && w[1] && w[2],"shared expert not bound on selected backend");
-            auto * x=inputs[e]=ggml_new_tensor_2d(ctx.get(),GGML_TYPE_F32,w[0]->ne[0],counts[e]);
+            ggml_tensor * x=nullptr;
+            if(full_input && e<60) {
+                input_rows[e]=ggml_new_tensor_1d(ctx.get(),GGML_TYPE_I32,counts[e]);
+                ggml_set_output(input_rows[e]);
+                x=ggml_get_rows(ctx.get(),full_input,input_rows[e]);
+            } else if(full_input) {
+                require(counts[e]==full_tokens,"shared input token count mismatch");
+                x=full_input;
+            } else { x=ggml_new_tensor_2d(ctx.get(),GGML_TYPE_F32,w[0]->ne[0],counts[e]); }
+            inputs[e]=x;
             auto * u=ggml_mul_mat(ctx.get(),w[1],x);
             auto * g=ggml_mul_mat(ctx.get(),w[0],x);
             auto * out=ggml_mul_mat(ctx.get(),w[2],ggml_swiglu_split(ctx.get(),g,u));
@@ -109,8 +125,12 @@ struct moe_shared_execution {
     std::array<device *,3> devs;
     moe_shared_weights weights;
     std::array<std::shared_ptr<shared_activation_buffer>,3> arenas;
-    std::array<std::map<std::array<int,61>,std::unique_ptr<moe_shared_job>>,3> jobs;
+    // A gathered branch may have the same expert counts at different full
+    // input lengths. Include that length; zero identifies the original graph.
+    using job_key=std::pair<int,std::array<int,61>>;
+    std::array<std::map<job_key,std::unique_ptr<moe_shared_job>>,3> jobs;
     bool vector_reduce=false;
+    bool npu_gather=false;
     moe_token_workers * branch_workers=nullptr; // One pool shared by sequential layers.
     moe_shared_execution(device * d[3],source & src,int layer,const resident_placement_model::availability & resident)
         : devs{d[0],d[1],d[2]},weights(d,src,layer,resident) {
@@ -121,6 +141,9 @@ struct moe_shared_execution {
 #else
         require(reduce=="scalar","NEON shared reduction requires aarch64");
 #endif
+        const std::string gather=std::getenv("MOE_SHARED_GATHER")?std::getenv("MOE_SHARED_GATHER"):"host";
+        require(gather=="host" || gather=="htp","unknown shared gather mode");
+        npu_gather=gather=="htp";
     }
 
     std::vector<float> run(const float * x,const float * probs,const std::vector<int32_t> & ids,
@@ -137,23 +160,36 @@ struct moe_shared_execution {
         counts[plan.shared][60]=nt;
         moe_shared_job * work[3]{};
         for(int b=0;b<3;++b) { if(branch_pairs[b] || b==plan.shared) {
-            auto & job=jobs[b][counts[b]];
-            if(!job) { job=std::make_unique<moe_shared_job>(*devs[b],weights,b,counts[b],arenas[b]); ++allocations; }
+            // Do not upload the full input for a sparse branch that would copy
+            // fewer rows on the host. A shared expert already needs all rows.
+            const int full_tokens=npu_gather && b==1 && nt>1 && branch_pairs[b] &&
+                branch_pairs[b]+size_t(counts[b][60])>size_t(nt) ? nt : 0;
+            auto & job=jobs[b][{full_tokens,counts[b]}];
+            if(!job) { job=std::make_unique<moe_shared_job>(*devs[b],weights,b,counts[b],arenas[b],full_tokens); ++allocations; }
             work[b]=job.get();
         } }
         const double gather=elapsed(start); start=timer::now();
         const double origin=std::chrono::duration<double,std::micro>(start.time_since_epoch()).count();
-        std::array<double,3> branch_gather{}; std::array<size_t,3> copies{};
+        std::array<double,3> branch_gather{}; std::array<size_t,3> copies{},index_writes{};
         std::array<std::array<double,3>,3> phases{}; std::array<std::array<double,2>,3> intervals{};
         auto execute=[&](int b) {
             intervals[b][0]=elapsed(start); auto begin=timer::now();
             auto & j=*work[b];
+            if(j.full_input) {
+                std::copy_n(x,nt*2048,static_cast<float *>(j.full_input->data)); copies[b]+=size_t(nt)*2048*sizeof(float);
+                for(int e=0;e<60;++e) { if(j.input_rows[e]) {
+                    auto * rows=static_cast<int32_t *>(j.input_rows[e]->data);
+                    for(size_t i=0;i<pairs[e].size();++i) { rows[i]=pairs[e][i]/4; }
+                    index_writes[b]+=pairs[e].size()*sizeof(int32_t);
+                } }
+            } else {
             for(int e=0;e<60;++e) { if(j.inputs[e]) {
                 auto * input=static_cast<float *>(j.inputs[e]->data);
                 for(size_t i=0;i<pairs[e].size();++i) { std::copy_n(x+(pairs[e][i]/4)*2048,2048,input+i*2048); }
                 copies[b]+=pairs[e].size()*2048*sizeof(float);
             } }
             if(j.inputs[60]) { std::copy_n(x,nt*2048,static_cast<float *>(j.inputs[60]->data)); copies[b]+=nt*2048*sizeof(float); }
+            }
             branch_gather[b]=elapsed(begin); begin=timer::now();
             devs[b]->compute(j.graph); phases[b][1]=elapsed(begin); intervals[b][1]=elapsed(start);
         };
@@ -205,9 +241,10 @@ struct moe_shared_execution {
               {"pairs",branch_pairs},{"changed_route_slots",changed},{"route_reference_available",expected.size()==ids.size()},
               {"reduce_threads",1},{"overlap_gather",true},{"backend_gather_us",branch_gather},{"expert_wall_includes_gather",true},
               {"reduce_implementation",vector_reduce?"neon":"scalar"},{"branch_dispatch",branch_workers?"pool":"async"},
-              {"npu_device_gather",false},{"backend_input_host_copy_bytes",copies},{"expert_token_counts",totals},
+              {"npu_device_gather",work[1] && work[1]->full_input},{"backend_input_host_copy_bytes",copies},
+              {"backend_index_host_write_bytes",index_writes},{"expert_token_counts",totals},
               {"allocations",allocations},{"shared_weight_matmuls",3*(active+1)},
-              {"execution","grouped 2D expert graphs; one CPU4x8 bank per projection; host gather"}};
+              {"execution","grouped 2D expert graphs; one CPU4x8 bank per projection; host or HTP GET_ROWS gather"}};
         return result;
     }
 };

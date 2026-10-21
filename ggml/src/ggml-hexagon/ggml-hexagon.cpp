@@ -2692,7 +2692,8 @@ struct ggml_hexagon_opbatch {
         memcpy(o.params,        node.node->op_params, sizeof(node.node->op_params));
         memcpy(o.kernel_params, node.kernel_params,   sizeof(o.kernel_params));
         o.opcode = node.opcode;
-        o.flags  = node.activation_rows ? HTP_OPFLAGS_MMID_ROWS : 0;
+        o.flags  = node.activation_rows ?
+            (node.opcode == HTP_OP_MUL_MAT ? HTP_OPFLAGS_MM_ROWS : HTP_OPFLAGS_MMID_ROWS) : 0;
 
         ggml_hexagon_dump_op_exec(sess->c_name(), ops[n], o.flags);
 
@@ -6965,12 +6966,59 @@ struct ggml_hexagon_gather_fusion {
     std::shared_ptr<ggml_tensor> activation;
 };
 
+// CPU4x8 retains the ordinary two-dimensional public graph. Only activation
+// preparation is indexed; weight bytes and the HMX multiply remain unchanged.
+static std::unordered_map<ggml_tensor *, ggml_hexagon_gather_fusion> ggml_hexagon_find_cpu4x8_gathers(
+        ggml_hexagon_session * sess, ggml_cgraph * graph) {
+    std::unordered_map<ggml_tensor *, ggml_hexagon_gather_fusion> result;
+    const char * enabled = getenv("GGML_HEXAGON_FUSE_CPU4X8_GATHER");
+    if (!enabled || strcmp(enabled, "1") != 0) { return result; }
+    std::unordered_map<ggml_tensor *, std::vector<ggml_tensor *>> users;
+    for (int i = 0; i < graph->n_nodes; ++i) {
+        for (auto * src : graph->nodes[i]->src) {
+            if (src) { users[src].push_back(graph->nodes[i]); }
+        }
+    }
+    for (int i = 0; i < graph->n_nodes; ++i) {
+        auto * g = graph->nodes[i];
+        if (g->op != GGML_OP_GET_ROWS || (g->flags & GGML_TENSOR_FLAG_OUTPUT) || users[g].empty()) { continue; }
+        auto * x = g->src[0]; auto * rows = g->src[1];
+        if (x->view_src || rows->view_src || x->type != GGML_TYPE_F32 || rows->type != GGML_TYPE_I32 ||
+            !ggml_is_contiguous(x) || !ggml_is_contiguous(rows) || !ggml_is_contiguous(g) ||
+            x->ne[2] != 1 || x->ne[3] != 1 || rows->ne[0] <= 1 ||
+            rows->ne[1] != 1 || rows->ne[2] != 1 || rows->ne[3] != 1 ||
+            !(x->flags & GGML_TENSOR_FLAG_OUTPUT) || !(rows->flags & GGML_TENSOR_FLAG_OUTPUT)) { continue; }
+        bool eligible = true;
+        for (auto * mm : users[g]) {
+            if (mm->op != GGML_OP_MUL_MAT || mm->src[1] != g ||
+                !ggml_hexagon_tensor_is_cpu4x8(mm->src[0]) || !ggml_hexagon_supported_mul_mat(sess, mm)) {
+                eligible = false; break;
+            }
+            struct htp_mm_kernel_params kp;
+            ggml_hexagon_precompute_matmul_params(sess, mm->src[0], g, mm, &kp);
+            if (!kp.n_hmx || kp.kernel_type != HTP_MM_KERNEL_HMX_2D) { eligible = false; break; }
+            for (int s = 2; s < GGML_MAX_SRC; ++s) {
+                if (mm->src[s]) { eligible = false; break; }
+            }
+        }
+        // In addition to allocator retention, reject intervening alias writes.
+        std::unordered_set<ggml_tensor *> pending(users[g].begin(), users[g].end());
+        for (int j = i + 1; eligible && !pending.empty() && j < graph->n_nodes; ++j) {
+            if (op_is_compute(graph->nodes[j]) && !pending.erase(graph->nodes[j])) { eligible = false; }
+        }
+        if (!eligible || !pending.empty()) { continue; }
+        auto activation = std::make_shared<ggml_tensor>(*x);
+        for (auto * mm : users[g]) { result.emplace(mm, ggml_hexagon_gather_fusion{g, rows, activation}); }
+    }
+    return result;
+}
+
 // Keep the public graph valid on every backend. This internal rewrite is opt-in
 // and requires retained source storage, so allocator reuse cannot invalidate a
 // source after the original GET_ROWS use. Unsupported graphs execute normally.
 static std::unordered_map<ggml_tensor *, ggml_hexagon_gather_fusion> ggml_hexagon_find_gather_fusions(
         ggml_hexagon_session * sess, ggml_cgraph * graph) {
-    std::unordered_map<ggml_tensor *, ggml_hexagon_gather_fusion> result;
+    auto result = ggml_hexagon_find_cpu4x8_gathers(sess, graph);
     const char * enabled = getenv("GGML_HEXAGON_FUSE_MOE_GATHER");
     if (!enabled || strcmp(enabled, "1") != 0) { return result; }
     std::unordered_map<ggml_tensor *, std::vector<ggml_tensor *>> users;
@@ -7087,8 +7135,11 @@ static ggml_status ggml_backend_hexagon_graph_compute(ggml_backend_t backend, gg
                 node.name += "+INDEXED_ROWS";
             }
             if (node.opcode == HTP_OP_MUL_MAT || node.opcode == HTP_OP_MUL_MAT_ID) {
+                // Indexed ordinary matmul still computes the gathered logical M,
+                // not the complete input length held by the internal descriptor.
+                auto * logical = node.activation_rows && node.opcode == HTP_OP_MUL_MAT ? n : node.node;
                 ggml_hexagon_precompute_matmul_params(sess,
-                    node.node->src[0], node.node->src[1], node.node,
+                    logical->src[0], logical->src[1], logical,
                     (struct htp_mm_kernel_params *)node.kernel_params
                 );
             } else if (node.opcode == HTP_OP_MUL || node.opcode == HTP_OP_ADD || node.opcode == HTP_OP_ADD_ID || node.opcode == HTP_OP_SUB || node.opcode == HTP_OP_DIV) {
