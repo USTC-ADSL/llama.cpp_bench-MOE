@@ -9,5 +9,5 @@
 - [x] 显式 GET_ROWS：完整 1K ABBA/BAAB 8 进程完成，全部样本保留；未证明稳定收益
 - [x] 备份原 host/DSP 内核，新增 opt-in CPU4x8 indexed activation preparation；直接 DDR 读取版负向结果已保存
 - [x] DMA 融合版：175 个 CPU4x8 guard case、3×20 native MMID case；28 个 MoE case / 172 samples 逐位一致；层0/12耗时降低4.95%/3.82%
-- [ ] 根据融合版阶段结果决定是否执行完整 1K 对照，保留全部结果
-- [ ] 检查差异、归档、清理设备自有产物并保存 Git 检查点
+- [x] 融合版完整 1K ABBA/BAAB：8进程48样本，吞吐wetland +4.614%、foundry +5.136%；所有慢样本保留
+- [x] 检查差异，代码封板62876447f；归档162成员逐项hash验证，清理设备自有目录；结果另存独立提交

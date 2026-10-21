@@ -1,0 +1,245 @@
+{
+  "explicit-htp": {
+    "cases": 19,
+    "timed_samples": 136,
+    "captured": [
+      {
+        "layer": 0,
+        "tokens": 1024,
+        "reference_check": {
+          "nrmse": 0.006703060374675706,
+          "worst_token_nrmse": 0.009703453094533054,
+          "passes_4percent_per_token": true,
+          "tokens_over_4percent": []
+        },
+        "modes": {
+          "0": {
+            "median_total_us": 22272.786500000002,
+            "median_expert_wall_us": 20827.1875,
+            "median_htp_compute_us": 18381.6145,
+            "median_htp_host_gather_us": 2352.4485
+          },
+          "1": {
+            "median_total_us": 21734.635000000002,
+            "median_expert_wall_us": 20295.235,
+            "median_htp_compute_us": 19566.3275,
+            "median_htp_host_gather_us": 648.828
+          }
+        },
+        "latency_reduction_percent": 2.416183983086262
+      },
+      {
+        "layer": 12,
+        "tokens": 1024,
+        "reference_check": {
+          "nrmse": 0.010051309573846036,
+          "worst_token_nrmse": 0.03526124413155808,
+          "passes_4percent_per_token": true,
+          "tokens_over_4percent": []
+        },
+        "modes": {
+          "0": {
+            "median_total_us": 22369.193,
+            "median_expert_wall_us": 20948.2025,
+            "median_htp_compute_us": 18455.703,
+            "median_htp_host_gather_us": 2350.5995000000003
+          },
+          "1": {
+            "median_total_us": 22017.9945,
+            "median_expert_wall_us": 20648.254500000003,
+            "median_htp_compute_us": 19624.271,
+            "median_htp_host_gather_us": 668.906
+          }
+        },
+        "latency_reduction_percent": 1.5700097003946367
+      },
+      {
+        "layer": 23,
+        "tokens": 1,
+        "reference_check": {
+          "nrmse": 0.00311781855666793,
+          "worst_token_nrmse": 0.00311781855666793,
+          "passes_4percent_per_token": true,
+          "tokens_over_4percent": []
+        },
+        "modes": {
+          "0": {
+            "median_total_us": 1453.4634999999998,
+            "median_expert_wall_us": 1382.5259999999998,
+            "median_htp_compute_us": 959.9995,
+            "median_htp_host_gather_us": 2.292
+          },
+          "1": {
+            "median_total_us": 1404.297,
+            "median_expert_wall_us": 1345.625,
+            "median_htp_compute_us": 957.942,
+            "median_htp_host_gather_us": 2.3434999999999997
+          }
+        },
+        "latency_reduction_percent": 3.3827130849862996
+      }
+    ]
+  },
+  "fused-captured": {
+    "cases": 28,
+    "timed_samples": 172,
+    "captured": [
+      {
+        "layer": 0,
+        "tokens": 1024,
+        "reference_check": {
+          "nrmse": 0.006703060374675706,
+          "worst_token_nrmse": 0.009703453094533054,
+          "passes_4percent_per_token": true,
+          "tokens_over_4percent": []
+        },
+        "modes": {
+          "0": {
+            "median_total_us": 23749.2445,
+            "median_expert_wall_us": 21231.1455,
+            "median_htp_compute_us": 18512.5,
+            "median_htp_host_gather_us": 2495.026
+          },
+          "1": {
+            "median_total_us": 24791.302,
+            "median_expert_wall_us": 22152.995499999997,
+            "median_htp_compute_us": 21153.5155,
+            "median_htp_host_gather_us": 791.953
+          }
+        },
+        "latency_reduction_percent": -4.387750102955912
+      },
+      {
+        "layer": 12,
+        "tokens": 1024,
+        "reference_check": {
+          "nrmse": 0.010051309573846036,
+          "worst_token_nrmse": 0.03526124413155808,
+          "passes_4percent_per_token": true,
+          "tokens_over_4percent": []
+        },
+        "modes": {
+          "0": {
+            "median_total_us": 24116.3015,
+            "median_expert_wall_us": 21491.5625,
+            "median_htp_compute_us": 18672.968999999997,
+            "median_htp_host_gather_us": 2528.6715
+          },
+          "1": {
+            "median_total_us": 25300.6505,
+            "median_expert_wall_us": 22409.375,
+            "median_htp_compute_us": 21369.765,
+            "median_htp_host_gather_us": 827.2919999999999
+          }
+        },
+        "latency_reduction_percent": -4.910989357136697
+      },
+      {
+        "layer": 23,
+        "tokens": 1,
+        "reference_check": {
+          "nrmse": 0.00311781855666793,
+          "worst_token_nrmse": 0.00311781855666793,
+          "passes_4percent_per_token": true,
+          "tokens_over_4percent": []
+        },
+        "modes": {
+          "0": {
+            "median_total_us": 1417.5,
+            "median_expert_wall_us": 1382.1875,
+            "median_htp_compute_us": 1027.9945,
+            "median_htp_host_gather_us": 2.5780000000000003
+          },
+          "1": {
+            "median_total_us": 1430.443,
+            "median_expert_wall_us": 1361.3539999999998,
+            "median_htp_compute_us": 989.844,
+            "median_htp_host_gather_us": 2.292
+          }
+        },
+        "latency_reduction_percent": -0.9130864197530952
+      }
+    ]
+  },
+  "fused-dma-captured": {
+    "cases": 28,
+    "timed_samples": 172,
+    "captured": [
+      {
+        "layer": 0,
+        "tokens": 1024,
+        "reference_check": {
+          "nrmse": 0.006703060374675706,
+          "worst_token_nrmse": 0.009703453094533054,
+          "passes_4percent_per_token": true,
+          "tokens_over_4percent": []
+        },
+        "modes": {
+          "0": {
+            "median_total_us": 22567.682,
+            "median_expert_wall_us": 20948.125,
+            "median_htp_compute_us": 18491.197500000002,
+            "median_htp_host_gather_us": 2301.901
+          },
+          "1": {
+            "median_total_us": 21451.5365,
+            "median_expert_wall_us": 19856.38,
+            "median_htp_compute_us": 19064.0625,
+            "median_htp_host_gather_us": 651.406
+          }
+        },
+        "latency_reduction_percent": 4.945769352829421
+      },
+      {
+        "layer": 12,
+        "tokens": 1024,
+        "reference_check": {
+          "nrmse": 0.010051309573846036,
+          "worst_token_nrmse": 0.03526124413155808,
+          "passes_4percent_per_token": true,
+          "tokens_over_4percent": []
+        },
+        "modes": {
+          "0": {
+            "median_total_us": 22676.901,
+            "median_expert_wall_us": 21086.745,
+            "median_htp_compute_us": 18538.932,
+            "median_htp_host_gather_us": 2347.7345
+          },
+          "1": {
+            "median_total_us": 21811.536500000002,
+            "median_expert_wall_us": 20260.963499999998,
+            "median_htp_compute_us": 19140.468500000003,
+            "median_htp_host_gather_us": 687.188
+          }
+        },
+        "latency_reduction_percent": 3.81606155091474
+      },
+      {
+        "layer": 23,
+        "tokens": 1,
+        "reference_check": {
+          "nrmse": 0.00311781855666793,
+          "worst_token_nrmse": 0.00311781855666793,
+          "passes_4percent_per_token": true,
+          "tokens_over_4percent": []
+        },
+        "modes": {
+          "0": {
+            "median_total_us": 1440.209,
+            "median_expert_wall_us": 1357.266,
+            "median_htp_compute_us": 1036.172,
+            "median_htp_host_gather_us": 2.344
+          },
+          "1": {
+            "median_total_us": 1543.203,
+            "median_expert_wall_us": 1452.8384999999998,
+            "median_htp_compute_us": 1015.8855,
+            "median_htp_host_gather_us": 2.448
+          }
+        },
+        "latency_reduction_percent": -7.151323176011259
+      }
+    ]
+  }
+}
