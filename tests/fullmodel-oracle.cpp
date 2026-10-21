@@ -293,6 +293,7 @@ struct partitioned_ffn {
 
 struct full_engine {
     std::unique_ptr<moe_token_workers> reduce_workers;
+    std::unique_ptr<moe_token_workers> expert_workers;
     std::shared_ptr<shared_activation_buffer> arenas[3];
     std::vector<std::unique_ptr<partitioned_ffn>> layers;
     std::unique_ptr<moe_branch_worker> shared_worker;
@@ -307,6 +308,10 @@ struct full_engine {
     void prepare_arenas(device * devs[3]) {
         std::array<size_t,3> capacities{};
         if(!layers.empty() && layers[0]->single_layout) {
+            const std::string dispatch=std::getenv("MOE_SHARED_DISPATCH")?std::getenv("MOE_SHARED_DISPATCH"):"async";
+            require(dispatch=="async" || dispatch=="pool","unknown shared branch dispatch");
+            if(dispatch=="pool") { expert_workers=std::make_unique<moe_token_workers>(3); }
+            for(auto & l:layers) { l->single_layout->branch_workers=expert_workers.get(); }
             for(auto & l:layers) { for(int b=0;b<3;++b) {
                 auto & w=l->single_layout->weights;
                 // A sum of all non-view tensor sizes bounds any lifetime layout,

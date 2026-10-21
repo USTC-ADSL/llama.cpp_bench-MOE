@@ -8,8 +8,9 @@
 #include <thread>
 #include <vector>
 
-// One synchronous caller; workers sleep between jobs and never share a token.
-// Backend completion precedes dispatch, and join precedes arena reuse.
+// One synchronous caller; workers sleep between jobs and own disjoint ranges.
+// For reduction, dispatch only after backend completion. For branch dispatch,
+// each range owns a backend. In both cases join precedes arena reuse.
 class moe_token_workers {
     std::mutex mutex_;
     std::condition_variable ready_, done_;

@@ -1,5 +1,6 @@
 #pragma once
 #include "ggml-shared-weight.h"
+#include "moe-token-workers.h"
 #if defined(__aarch64__)
 #include <arm_neon.h>
 #endif
@@ -110,6 +111,7 @@ struct moe_shared_execution {
     std::array<std::shared_ptr<shared_activation_buffer>,3> arenas;
     std::array<std::map<std::array<int,61>,std::unique_ptr<moe_shared_job>>,3> jobs;
     bool vector_reduce=false;
+    moe_token_workers * branch_workers=nullptr; // One pool shared by sequential layers.
     moe_shared_execution(device * d[3],source & src,int layer,const resident_placement_model::availability & resident)
         : devs{d[0],d[1],d[2]},weights(d,src,layer,resident) {
         const std::string reduce=std::getenv("MOE_SHARED_REDUCE")?std::getenv("MOE_SHARED_REDUCE"):"scalar";
@@ -157,8 +159,17 @@ struct moe_shared_execution {
         };
         std::future<void> futures[3]; int inline_b=-1;
         for(int b=0;b<3;++b) { if(work[b]) { inline_b=b; } }
-        for(int b=0;b<3;++b) { if(work[b] && b!=inline_b) { futures[b]=std::async(std::launch::async,execute,b); } }
-        execute(inline_b); for(auto & f:futures) { if(f.valid()) { f.get(); } }
+        int active_branches=0; for(auto * job:work) { active_branches+=job!=nullptr; }
+        if(branch_workers && active_branches>1) {
+            // Main caller owns GPU; the two sleeping workers own HTP and CPU.
+            // run() drains all branches even if one throws, before locals die.
+            branch_workers->run(3,[&](int begin,int end) {
+                for(int i=begin;i<end;++i) { if(work[2-i]) { execute(2-i); } }
+            });
+        } else {
+            for(int b=0;b<3;++b) { if(work[b] && b!=inline_b) { futures[b]=std::async(std::launch::async,execute,b); } }
+            execute(inline_b); for(auto & f:futures) { if(f.valid()) { f.get(); } }
+        }
         const double wall=elapsed(start); start=timer::now();
         std::vector<const float *> outputs(ids.size());
         for(int e=0;e<60;++e) { if(!pairs[e].empty()) {
@@ -193,7 +204,7 @@ struct moe_shared_execution {
               {"backend_phases_us",phases},{"intervals_us",intervals},{"branch_origin_monotonic_us",origin},
               {"pairs",branch_pairs},{"changed_route_slots",changed},{"route_reference_available",expected.size()==ids.size()},
               {"reduce_threads",1},{"overlap_gather",true},{"backend_gather_us",branch_gather},{"expert_wall_includes_gather",true},
-              {"reduce_implementation",vector_reduce?"neon":"scalar"},
+              {"reduce_implementation",vector_reduce?"neon":"scalar"},{"branch_dispatch",branch_workers?"pool":"async"},
               {"npu_device_gather",false},{"backend_input_host_copy_bytes",copies},{"expert_token_counts",totals},
               {"allocations",allocations},{"shared_weight_matmuls",3*(active+1)},
               {"execution","grouped 2D expert graphs; one CPU4x8 bank per projection; host gather"}};

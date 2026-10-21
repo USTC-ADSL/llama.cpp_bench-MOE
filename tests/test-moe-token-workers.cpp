@@ -5,7 +5,7 @@
 #include <iostream>
 
 int main() {
-    for (int threads : {2, 4, 8}) {
+    for (int threads : {2, 3, 4, 8}) {
         moe_token_workers workers(threads);
         for (int tokens : {1, 2, 3, 4, 5, 7, 8, 9, 17, 128, 768}) {
             std::vector<float> serial(tokens * 2048), parallel(serial.size());
@@ -35,6 +35,17 @@ int main() {
         catch (const std::runtime_error &) { caught = true; }
         if (!caught) { return 3; }
         workers.run(16, [](int, int) {});
+        // The caller owns the inline accelerator branch. Its failure must still
+        // drain workers before per-call buffers/closures can leave scope.
+        std::atomic<int> completed{0}; caught=false;
+        try {
+            workers.run(threads,[&](int begin,int) {
+                if(begin==0) { throw std::runtime_error("inline branch exception"); }
+                ++completed;
+            });
+        } catch(const std::runtime_error &) { caught=true; }
+        if(!caught || completed!=threads-1) { return 4; }
+        workers.run(threads,[](int,int) {});
     }
     std::cout << "PASS: token coverage, repeated dispatch, bitwise FMA order, exception recovery\n";
 }
