@@ -48,9 +48,12 @@
       }
     }
   },
+  "followups": {},
   "runs": {
     "foundry-native-1024-c1024-a": {
       "median_ms": 1279.5644785,
+      "repetitions": 6,
+      "diagnostic_trace": false,
       "tokens_per_second": 800.2722935857116,
       "samples_ms": [
         1243.646145,
@@ -108,6 +111,8 @@
     },
     "foundry-native-1024-c1024-b": {
       "median_ms": 1243.637969,
+      "repetitions": 6,
+      "diagnostic_trace": false,
       "tokens_per_second": 823.3907499811949,
       "samples_ms": [
         1232.15875,
@@ -165,6 +170,8 @@
     },
     "foundry-shared-1024-c1024-a": {
       "median_ms": 1152.20151,
+      "repetitions": 6,
+      "diagnostic_trace": false,
       "tokens_per_second": 888.7334299709432,
       "samples_ms": [
         1160.122343,
@@ -222,6 +229,8 @@
     },
     "foundry-shared-1024-c1024-b": {
       "median_ms": 1179.606198,
+      "repetitions": 6,
+      "diagnostic_trace": false,
       "tokens_per_second": 868.086317057483,
       "samples_ms": [
         1178.819427,
@@ -277,8 +286,160 @@
         "fullmodel-oracle": "58c345ef2b79fd97f146b4041df2fa7d7077af162c7473e9d1cda822f2ac6d42"
       }
     },
+    "wetland-c4-g30-explore": {
+      "median_ms": 1213.519999,
+      "repetitions": 3,
+      "diagnostic_trace": false,
+      "tokens_per_second": 843.8262252322386,
+      "samples_ms": [
+        1198.3816140000001,
+        1241.794531,
+        1213.519999
+      ],
+      "major_faults": [
+        750,
+        10,
+        7
+      ],
+      "minor_faults": [
+        617,
+        373,
+        861
+      ],
+      "phases": {
+        "gather_us": 2563.282,
+        "expert_wall_us": 656446.719,
+        "combine_us": 45166.563,
+        "backend_compute_us": [
+          152955.42,
+          571459.375,
+          321356.665
+        ],
+        "critical_backend_compute_us": 571459.375,
+        "outside_ffn_us": 509533.64300000004
+      },
+      "arena_bytes": 506494976,
+      "top1": 10342,
+      "tokens": 1024,
+      "chunk": 1024,
+      "layout": "single CPU4x8 V2 + canonical F16 scalar gate",
+      "router": "default",
+      "binary_hashes": {
+        "libc++_shared.so": "d523468d62d9b603cb3354294d70d4b2feabf2c3f1e43b0c96c9aabf32813708",
+        "libggml-base.so": "60670783ece0f46d11dcddf01d2c0cee35ef587405f400c93078bc9bb77b3c9b",
+        "libggml-cpu.so": "8d9e463981182d983577cb2fc7c3ff3c66dd7f6b0267703ee7b7218f65ea3d02",
+        "libggml-hexagon.so": "822aa4726b277fe140b9eb4539dacbcd90c18671e88bf9a9e34f1d5c7ea36375",
+        "libggml-htp-v79.so": "248d4f0cb347074ba9dbf6000ff75c39ee8eee19c22496a6f9237c693ffcfe8e",
+        "libggml-opencl.so": "536a39b2f8bc1b66c1b0a80c9dc77c0ce1d71f1c296425f9f46c2dbae99eb50d",
+        "libggml.so": "8e9818d20fc52a6c7d64f97415466c70fd510b7e2ff57a2fa7040fa9e4955d62",
+        "libllama.so": "2574d2195b81cca96785e5a702257d8f29029dffd5bbf91c55f34f70d02dced5",
+        "fullmodel-oracle": "58c345ef2b79fd97f146b4041df2fa7d7077af162c7473e9d1cda822f2ac6d42"
+      }
+    },
+    "wetland-c8-g30-explore": {
+      "median_ms": 1190.6084369999999,
+      "repetitions": 3,
+      "diagnostic_trace": false,
+      "tokens_per_second": 860.0644579507546,
+      "samples_ms": [
+        1190.6084369999999,
+        1172.442656,
+        1196.741041
+      ],
+      "major_faults": [
+        3,
+        121,
+        2566
+      ],
+      "minor_faults": [
+        384,
+        620,
+        771
+      ],
+      "phases": {
+        "gather_us": 3479.426,
+        "expert_wall_us": 649928.073,
+        "combine_us": 39348.491,
+        "backend_compute_us": [
+          262034.948,
+          554846.661,
+          324265.729
+        ],
+        "critical_backend_compute_us": 554846.661,
+        "outside_ffn_us": 500180.8309999999
+      },
+      "arena_bytes": 506494976,
+      "top1": 10342,
+      "tokens": 1024,
+      "chunk": 1024,
+      "layout": "single CPU4x8 V2 + canonical F16 scalar gate",
+      "router": "default",
+      "binary_hashes": {
+        "libc++_shared.so": "d523468d62d9b603cb3354294d70d4b2feabf2c3f1e43b0c96c9aabf32813708",
+        "libggml-base.so": "60670783ece0f46d11dcddf01d2c0cee35ef587405f400c93078bc9bb77b3c9b",
+        "libggml-cpu.so": "8d9e463981182d983577cb2fc7c3ff3c66dd7f6b0267703ee7b7218f65ea3d02",
+        "libggml-hexagon.so": "822aa4726b277fe140b9eb4539dacbcd90c18671e88bf9a9e34f1d5c7ea36375",
+        "libggml-htp-v79.so": "248d4f0cb347074ba9dbf6000ff75c39ee8eee19c22496a6f9237c693ffcfe8e",
+        "libggml-opencl.so": "536a39b2f8bc1b66c1b0a80c9dc77c0ce1d71f1c296425f9f46c2dbae99eb50d",
+        "libggml.so": "8e9818d20fc52a6c7d64f97415466c70fd510b7e2ff57a2fa7040fa9e4955d62",
+        "libllama.so": "2574d2195b81cca96785e5a702257d8f29029dffd5bbf91c55f34f70d02dced5",
+        "fullmodel-oracle": "58c345ef2b79fd97f146b4041df2fa7d7077af162c7473e9d1cda822f2ac6d42"
+      }
+    },
+    "wetland-c8-g45-explore": {
+      "median_ms": 1121.28677,
+      "repetitions": 3,
+      "diagnostic_trace": false,
+      "tokens_per_second": 913.2364952455472,
+      "samples_ms": [
+        1132.3817709999998,
+        1107.289375,
+        1121.28677
+      ],
+      "major_faults": [
+        2,
+        6,
+        6
+      ],
+      "minor_faults": [
+        738,
+        596,
+        1001
+      ],
+      "phases": {
+        "gather_us": 3780.107,
+        "expert_wall_us": 580197.813,
+        "combine_us": 37056.043,
+        "backend_compute_us": [
+          297230.262,
+          501057.346,
+          474008.75
+        ],
+        "critical_backend_compute_us": 507075.884,
+        "outside_ffn_us": 498449.21499999997
+      },
+      "arena_bytes": 506494976,
+      "top1": 10342,
+      "tokens": 1024,
+      "chunk": 1024,
+      "layout": "single CPU4x8 V2 + canonical F16 scalar gate",
+      "router": "default",
+      "binary_hashes": {
+        "libc++_shared.so": "d523468d62d9b603cb3354294d70d4b2feabf2c3f1e43b0c96c9aabf32813708",
+        "libggml-base.so": "60670783ece0f46d11dcddf01d2c0cee35ef587405f400c93078bc9bb77b3c9b",
+        "libggml-cpu.so": "8d9e463981182d983577cb2fc7c3ff3c66dd7f6b0267703ee7b7218f65ea3d02",
+        "libggml-hexagon.so": "822aa4726b277fe140b9eb4539dacbcd90c18671e88bf9a9e34f1d5c7ea36375",
+        "libggml-htp-v79.so": "248d4f0cb347074ba9dbf6000ff75c39ee8eee19c22496a6f9237c693ffcfe8e",
+        "libggml-opencl.so": "536a39b2f8bc1b66c1b0a80c9dc77c0ce1d71f1c296425f9f46c2dbae99eb50d",
+        "libggml.so": "8e9818d20fc52a6c7d64f97415466c70fd510b7e2ff57a2fa7040fa9e4955d62",
+        "libllama.so": "2574d2195b81cca96785e5a702257d8f29029dffd5bbf91c55f34f70d02dced5",
+        "fullmodel-oracle": "58c345ef2b79fd97f146b4041df2fa7d7077af162c7473e9d1cda822f2ac6d42"
+      }
+    },
     "wetland-native-1024-c1024-a": {
       "median_ms": 1260.08526,
+      "repetitions": 6,
+      "diagnostic_trace": false,
       "tokens_per_second": 812.6434238267337,
       "samples_ms": [
         1288.3710930000002,
@@ -336,6 +497,8 @@
     },
     "wetland-native-1024-c1024-b": {
       "median_ms": 1244.4602345,
+      "repetitions": 6,
+      "diagnostic_trace": false,
       "tokens_per_second": 822.8467022181896,
       "samples_ms": [
         1232.827916,
@@ -393,6 +556,8 @@
     },
     "wetland-router-gpu-trace-v3": {
       "median_ms": 1411.709062,
+      "repetitions": 1,
+      "diagnostic_trace": true,
       "tokens_per_second": 725.3619230504027,
       "samples_ms": [
         1411.709062
@@ -435,6 +600,8 @@
     },
     "wetland-shared-1024-c1024-a": {
       "median_ms": 1212.0773434999999,
+      "repetitions": 6,
+      "diagnostic_trace": false,
       "tokens_per_second": 844.8305757808268,
       "samples_ms": [
         1260.440625,
@@ -492,6 +659,8 @@
     },
     "wetland-shared-1024-c1024-b": {
       "median_ms": 1153.26664,
+      "repetitions": 6,
+      "diagnostic_trace": false,
       "tokens_per_second": 887.9126166347792,
       "samples_ms": [
         1161.173541,

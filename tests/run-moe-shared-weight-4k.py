@@ -18,7 +18,7 @@ REMOTE = "/data/local/tmp/llama-shared-weight-4k-20261021"
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("phase", choices=["baseline", "single", "plans"])
+    p.add_argument("phase", choices=["baseline", "single", "plans", "confirm", "router"])
     p.add_argument("--tokens", type=int, default=4096)
     p.add_argument("--chunk", type=int, default=1024)
     p.add_argument("--prompts", nargs="+", choices=["wetland", "foundry"], default=["wetland", "foundry"])
@@ -27,6 +27,7 @@ def main():
     p.add_argument("--layout", choices=["native", "shared"], default="shared")
     p.add_argument("--plan", type=pathlib.Path)
     p.add_argument("--tag")
+    p.add_argument("--candidate", choices=["c8-g30", "c8-g45", "c4-g30"])
     p.add_argument("--gpu-router", action="store_true")
     p.add_argument("--router-trace", action="store_true")
     p.add_argument("--cooldown", type=int, default=30, help="Idle seconds between complete-model processes")
@@ -58,6 +59,7 @@ def main():
         assert args.tag and len(args.prompts) == 1
     else:
         assert not args.plan and not args.gpu_router and not args.router_trace and not args.tag
+    assert args.phase != "confirm" or args.candidate
     (TASK / "evidence").mkdir(exist_ok=True)
     frozen = {}
     for prompt in args.prompts:
@@ -69,22 +71,30 @@ def main():
         (prompt, layout, f"{prompt}-{layout}-{args.tokens}-c{args.chunk}-{suffix}")
         for prompt in args.prompts
         for layout, suffix in [("native", "a"), ("shared", "a"), ("shared", "b"), ("native", "b")]]
+    if args.phase in ("confirm", "router"):
+        first,second=("control",args.candidate) if args.phase=="confirm" else ("htp","gpu")
+        runs=[(prompt,"shared",f"{prompt}-{args.phase}-{condition}-{suffix}")
+              for prompt in args.prompts
+              for condition,suffix in [(first,"a"),(second,"a"),(second,"b"),(first,"b")]]
     for index, (prompt, layout, tag) in enumerate(runs):
         if index and args.cooldown:
             print("COOLDOWN", args.cooldown, flush=True)
             time.sleep(args.cooldown)
+        plan=args.plan or OLD / f"{prompt}-c8-g15.json.gz"
+        if args.phase=="confirm" and f"-{args.candidate}-" in tag:
+            plan=TASK/f"inputs/{prompt}-{args.candidate}.json.gz"
         command = [sys.executable, str(ROOT / "tests/run-fullmodel-oracle.py"),
                    "--mode", "custom", "--tokens", str(args.tokens), "--prefill-chunk", str(args.chunk),
                    "--reps", str(args.reps), "--tag", tag, "--output-dir", str(TASK / "evidence"),
                    "--remote-dir", REMOTE, "--prompt-file", str(TASK / f"inputs/{prompt}-4k.txt"),
-                   "--plan-file", str(args.plan or OLD / f"{prompt}-c8-g15.json.gz"), "--transfer-placement",
+                   "--plan-file", str(plan), "--transfer-placement",
                    "--shared-activations", "--direct-callback-io", "--activation-arena",
                    "--activation-lifetimes", "--fused-host-reduce", "--overlap-gather", "--hexagon-timing"]
         if args.deploy and index == 0:
             command.append("--deploy")
         if layout == "shared":
             command += ["--shared-weights", "cpu4x8"]
-        if args.gpu_router:
+        if args.gpu_router or (args.phase=="router" and "-gpu-" in tag):
             command += ["--router-backend", "gpu"]
         if args.router_trace:
             command.append("--router-trace")
