@@ -5884,7 +5884,10 @@ static bool ggml_hexagon_supported_mul_mat(const struct ggml_hexagon_session * s
            src0->ne[0]!=src1->ne[0] || dst->ne[0]!=src0->ne[1] || dst->ne[1]!=src1->ne[1] ||
            src1->ne[1]<1) { return false; }
         auto * storage=static_cast<const ggml_hexagon_shared_buffer *>(src0->buffer->context);
-        if(storage->sess!=sess || src0->data!=storage->base()) { return false; }
+        const uintptr_t base=reinterpret_cast<uintptr_t>(storage->base());
+        const uintptr_t data=reinterpret_cast<uintptr_t>(src0->data);
+        if(storage->sess!=sess || data<base || (data-base)%128 ||
+           data-base>src0->buffer->size || ggml_nbytes(src0)>src0->buffer->size-(data-base)) { return false; }
         htp_mm_kernel_params params;
         ggml_hexagon_precompute_matmul_params(sess,src0,src1,dst,&params);
         return params.kernel_type!=HTP_MM_KERNEL_UNSUPPORTED && (size_t)params.vtcm_size<=sess->vtcm_size &&
@@ -8355,8 +8358,13 @@ static bool ggml_backend_hexagon_tensor_use_cpu4x8_q4_0(ggml_tensor * tensor) {
     if(!tensor || !tensor->buffer || !tensor->extra || tensor->view_src ||
        tensor->buffer->iface.free_buffer!=ggml_backend_hexagon_buffer_free_buffer ||
        tensor->type!=GGML_TYPE_Q4_0 || !ggml_is_contiguous(tensor) ||
-       tensor->ne[0]%128 || tensor->ne[1]%32 || tensor->ne[2]!=1 || tensor->ne[3]!=1 ||
-       tensor->data!=ggml_backend_buffer_get_base(tensor->buffer)) { return false; }
+       tensor->ne[0]%128 || tensor->ne[1]%32 || tensor->ne[2]!=1 || tensor->ne[3]!=1) { return false; }
+    // The RPC tensor descriptor already carries data-base. Permit bounded,
+    // aligned expert slices while keeping arbitrary ggml views unsupported.
+    const uintptr_t base=reinterpret_cast<uintptr_t>(ggml_backend_buffer_get_base(tensor->buffer));
+    const uintptr_t data=reinterpret_cast<uintptr_t>(tensor->data);
+    if(data<base || (data-base)%128 || data-base>tensor->buffer->size ||
+       ggml_nbytes(tensor)>tensor->buffer->size-(data-base)) { return false; }
     auto * extra=static_cast<ggml_hexagon_tensor_extra *>(tensor->extra);
     if(!extra->shadow_buf.empty() || (extra->flags & (GGML_HEXAGON_TENSOR_WRITTEN|GGML_HEXAGON_TENSOR_CANONICAL_Q4_0))) { return false; }
     extra->flags=GGML_HEXAGON_TENSOR_CPU4X8_Q4_0|GGML_HEXAGON_TENSOR_WEIGHT|GGML_HEXAGON_TENSOR_WRITTEN;

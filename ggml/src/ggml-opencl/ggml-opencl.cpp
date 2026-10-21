@@ -9796,7 +9796,7 @@ static enum ggml_status ggml_backend_opencl_buffer_init_tensor(ggml_backend_buff
         if (tensor->view_src || tensor->type!=GGML_TYPE_Q4_0 || tensor->ne[0]!=d.k || tensor->ne[1]!=d.m ||
             tensor->ne[2]!=1 || tensor->ne[3]!=1 || !ggml_is_contiguous(tensor) ||
             tensor->data!=static_cast<char *>(d.storage.host_ptr)+d.offset) { return GGML_STATUS_FAILED; }
-    } else if (ctx->shared_host_base && tensor->type != GGML_TYPE_F32 && tensor->type != GGML_TYPE_I32) {
+    } else if (ctx->shared_host_base && tensor->type != GGML_TYPE_F32 && tensor->type != GGML_TYPE_F16 && tensor->type != GGML_TYPE_I32) {
         return GGML_STATUS_FAILED;
     }
 

@@ -9,6 +9,7 @@
 #include "moe-runtime-state.h"
 #include "moe-state-correction.h"
 #include "moe-device-timing.h"
+#include "moe-shared-weight.h"
 
 #include <iomanip>
 #include <sys/resource.h>
@@ -74,6 +75,7 @@ struct partitioned_ffn {
     std::unique_ptr<shared_bank> shared;
     int primary_shared;
     std::unique_ptr<shared_bank> shared_variants[3];
+    std::unique_ptr<moe_shared_execution> single_layout;
     const moe_route_scheduler * scheduler=nullptr;
     resident_placement_model::availability resident;
     std::array<int,3> resident_width{};
@@ -98,6 +100,7 @@ struct partitioned_ffn {
     partitioned_ffn(device * devs[3],source & src,int layer,int tokens,const placement & p,bool compact,bool shared_buffers=false,
                     const resident_placement_model::availability * prepared=nullptr) : il(layer),nt(tokens),plan(p),primary_shared(p.shared),shared_activations(shared_buffers) {
         require(plan.owner.size()==60 && plan.shared>=0 && plan.shared<3,"invalid placement");
+        const bool single=std::getenv("MOE_SHARED_WEIGHTS") && std::string(std::getenv("MOE_SHARED_WEIGHTS"))=="cpu4x8";
         for(int b=0;b<3;++b) {
             local[b].fill(-1); std::vector<int> subset;
             for(int e=0;e<60;++e) {
@@ -107,16 +110,17 @@ struct partitioned_ffn {
                 }
             }
             resident_width[b]=int(subset.size());
-            banks[b]=std::make_unique<bank>(*devs[b],src,il,(compact || prepared) ? &subset : nullptr);
+            if(!single) { banks[b]=std::make_unique<bank>(*devs[b],src,il,(compact || prepared) ? &subset : nullptr); }
         }
-        shared=std::make_unique<shared_bank>(*devs[plan.shared],src,il);
+        if(!single) { shared=std::make_unique<shared_bank>(*devs[plan.shared],src,il); }
         resident.shared[plan.shared]=true;
         if(prepared) {
             require(moe_route_scheduler::feasible(plan,*prepared),"initial plan not resident");
             for(int b=0;b<3;++b) { if(b!=plan.shared && prepared->shared[b]) {
-                shared_variants[b]=std::make_unique<shared_bank>(*devs[b],src,il); resident.shared[b]=true;
+                if(!single) { shared_variants[b]=std::make_unique<shared_bank>(*devs[b],src,il); } resident.shared[b]=true;
             } }
         }
+        if(single) { single_layout=std::make_unique<moe_shared_execution>(devs,src,il,resident); }
     }
     void set_shared(device * devs[3],source & src,int backend) {
         if(backend!=plan.shared) { shared.reset(); shared=std::make_unique<shared_bank>(*devs[backend],src,il); }
@@ -140,6 +144,11 @@ struct partitioned_ffn {
             decision=scheduler->choose(nt,counts,resident,&resident_width);
             plan=decision.selected;
             decision_us=elapsed(start);
+        }
+        if(single_layout) {
+            auto result=single_layout->run(x,probs,ids,plan,destination,allocations,last,il,expected_ids);
+            last["gather_us"]=last["gather_us"].get<double>()+decision_us;
+            return result;
         }
         std::vector<int> pairs[3];
         for(int p=0;p<4*nt;++p) { require(ids[p]>=0 && ids[p]<60,"invalid route ID"); pairs[plan.owner[ids[p]]].push_back(p); }
@@ -277,6 +286,22 @@ struct full_engine {
     }
     void prepare_arenas(device * devs[3]) {
         std::array<size_t,3> capacities{};
+        if(!layers.empty() && layers[0]->single_layout) {
+            for(auto & l:layers) { for(int b=0;b<3;++b) {
+                auto & w=l->single_layout->weights;
+                // A sum of all non-view tensor sizes bounds any lifetime layout,
+                // including dynamic expert counts. Padding covers every tensor.
+                size_t bytes=1024*1024;
+                if(l->resident_width[b]) { bytes+=size_t(4*l->nt)*4*(4096+3*w.hidden); }
+                if(l->resident.shared[b]) { bytes+=size_t(l->nt)*(4*(6144+3*w.shared_hidden)+32); }
+                capacities[b]=std::max(capacities[b],bytes);
+            } }
+            for(int b=0;b<3;++b) {
+                arenas[b]=std::make_shared<shared_activation_buffer>(*devs[b],capacities[b]);
+                for(auto & l:layers) { l->single_layout->arenas[b]=arenas[b]; }
+            }
+            return;
+        }
         for(auto & l:layers) { for(int b=0;b<3;++b) {
             require(l->shared_activations,"arena requires shared layer");
             bool has_routed=bool(l->banks[b]->buf) || l->banks[b]->mapped_weights;
@@ -557,6 +582,9 @@ int main(int argc,char ** argv) {
             require(plans.at("tokens").get<int>()==nt && plans.at("layers").size()==24,"automatic plan shape mismatch");
         }
         bool custom=mode=="custom" || mode=="branch" || mode=="custom-npu";
+        const bool single_layout=std::getenv("MOE_SHARED_WEIGHTS") && std::string(std::getenv("MOE_SHARED_WEIGHTS"))=="cpu4x8";
+        require(!std::getenv("MOE_SHARED_WEIGHTS") || single_layout,"unknown shared weight layout");
+        require(!single_layout || mode=="custom","shared weights require explicit custom mode");
         std::unique_ptr<resident_placement_model> route_model;
         std::unique_ptr<moe_route_scheduler> route_scheduler;
         if(std::getenv("MOE_ROUTE_MODEL")) {
@@ -620,6 +648,9 @@ int main(int argc,char ** argv) {
         bool mapped_experts=std::getenv("MOE_CPU_MAPPED_EXPERTS") && std::string(std::getenv("MOE_CPU_MAPPED_EXPERTS"))=="1";
         require(!mapped_experts || (custom && !automatic && dense_backend=="cpu"),"mapped experts require custom CPU dense");
         bool native_decode_graph=std::getenv("MOE_NATIVE_DECODE_GRAPH") && std::string(std::getenv("MOE_NATIVE_DECODE_GRAPH"))=="1";
+        require(!single_layout || (shared_activations && activation_arena && activation_lifetimes && direct_callback_io &&
+                fused_host_reduce && overlap_gather && reduce_threads==1 && !native_decode_graph && !quality_steps && !automatic),
+                "shared weights require resident shared-arena direct/fused/overlap prefill without alternation or decode");
         require(!route_scheduler || !native_decode_graph,"current-route search is not supported by fixed native decode branch");
         require(!native_decode_graph || (mapped_experts && shared_activations && activation_lifetimes),"native decode graph requires mapped CPU/shared lifetime buffers");
         require(custom || mode=="capture" || mode=="cpu" || mode=="npu" || mode=="gpu","invalid mode");
@@ -718,6 +749,9 @@ int main(int argc,char ** argv) {
         json report={{"tokens",nt},{"token_ids",tokens},{"mode",mode},{"samples",json::array()},
             {"scope","native complete model prefill including last-token logits and retained KV; dynamic real routing; weights resident; context reset outside timing"}};
         report["shared_activations"]=shared_activations;
+        report["expert_weight_layout"]=single_layout?"single CPU4x8 V2 + canonical F16 scalar gate":"backend native banks";
+        report["expert_execution"]=single_layout?"grouped 2D MUL_MAT graphs; host gather":"native MUL_MAT_ID graphs";
+        report["npu_device_gather_effective"]=npu_device_gather && !single_layout;
         report["direct_callback_io"]=direct_callback_io;
         report["alternate_callback_io"]=alternate_callback_io;
         report["activation_arena"]=activation_arena;
@@ -753,6 +787,17 @@ int main(int argc,char ** argv) {
             report["placements"]=json::array();
             for(auto & l:engine.layers) {
                 auto p=plan_json(l->plan); p["layer"]=l->il;
+                if(l->single_layout) {
+                    auto & w=l->single_layout->weights;
+                    p["unique_weight_payload_bytes"]=w.payload_bytes;
+                    p["unique_weight_allocation_bytes"]=w.physical_bytes;
+                    p["weight_owner_allocations"]=w.owners.size()+1;
+                    p["weight_slice_handles"]=w.slices.size();
+                    p["alias_checks_passed"]=true;
+                    p["resident_width"]=l->resident_width;
+                    p["resident"]={{"experts",l->resident.experts},{"shared",l->resident.shared}};
+                    report["placements"].push_back(p); continue;
+                }
                 std::array<size_t,3> bytes{},allocated_bytes{};
                 for(int b=0;b<3;++b) { if(l->banks[b]->buf || l->banks[b]->mapped_weights) { for(auto * w:l->banks[b]->w) { bytes[b]+=ggml_nbytes(w); } } }
                 for(int b=0;b<3;++b) {
@@ -768,6 +813,10 @@ int main(int argc,char ** argv) {
                 p["resident"]={{"experts",l->resident.experts},{"shared",l->resident.shared}};
                 p["resident_weight_bytes"]=bytes; p["resident_buffer_bytes"]=allocated_bytes; report["placements"].push_back(p);
             }
+        }
+        if(custom) {
+            report["activation_arena_bytes"]=json::array();
+            for(auto & arena:engine.arenas) { report["activation_arena_bytes"].push_back(arena?arena->desc.size:0); }
         }
         std::vector<double> times; std::vector<float> logits,paired_reference;
         if(runtime_state.enabled) {
@@ -905,6 +954,11 @@ int main(int argc,char ** argv) {
                 report["layers"].push_back({{"layer",il},{"tokens",l.nt}});
             }
         } else { report["timing"]=stats(times,nt); }
+        for(float value:logits) { require(std::isfinite(value),"nonfinite prefill logits"); }
+        { std::ifstream status("/proc/self/status"); std::string line;
+          while(std::getline(status,line)) { if(line.rfind("VmRSS:",0)==0 || line.rfind("VmHWM:",0)==0 || line.rfind("VmSize:",0)==0) {
+              report["process_memory"].push_back(line);
+          } } }
         std::ofstream logits_file(std::string(argv[4])+".logits.bin",std::ios::binary); binary_write(logits_file,logits);
         report["top1"]=std::max_element(logits.begin(),logits.end())-logits.begin();
         if(quality_steps) {

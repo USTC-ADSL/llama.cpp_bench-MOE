@@ -28,7 +28,7 @@ struct ggml_opencl_compute_timing { uint64_t kernels, kernel_ns; };
 typedef bool (*ggml_backend_opencl_get_compute_timing_fn)(
         ggml_backend_t backend, struct ggml_opencl_compute_timing * out);
 
-// QCOM IO-coherent DMA import, restricted to F32/I32 activation tensors.
+// QCOM IO-coherent DMA import, restricted to plain F32/F16/I32 tensors.
 // Returns NULL when unsupported; callers must not silently claim zero-copy.
 GGML_BACKEND_API ggml_backend_buffer_t ggml_backend_opencl_import_shared_dma_compute_buffer(
         ggml_backend_t backend, const struct ggml_backend_shared_dma_buffer_desc * desc);

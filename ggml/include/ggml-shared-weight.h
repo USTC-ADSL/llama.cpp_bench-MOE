@@ -37,6 +37,13 @@ GGML_BACKEND_API ggml_shared_weight_t ggml_shared_weight_create_with_layout(
         ggml_backend_t allocator, uint32_t k, uint32_t m, const void * canonical, size_t size,
         enum ggml_shared_weight_layout layout);
 
+// Retained, immutable row slice of V2 storage (no payload copy). Both row
+// boundaries must be multiples of 32 and the byte offset must be 128-aligned.
+// The returned handle owns its backend bindings and retains the backing even
+// if the parent is freed. Use this for 2D experts within one physical bank.
+GGML_BACKEND_API ggml_shared_weight_t ggml_shared_weight_slice_rows(
+        ggml_shared_weight_t weight, uint32_t first_row, uint32_t rows);
+
 // Returns a cached, backend-compatible tensor referencing the same allocation.
 // Caller must not mutate/free the returned tensor or create arbitrary views.
 // Both layouts support contiguous 2D Q4_0 x F32 MUL_MAT only (OpenCL: Adreno A8x).

@@ -226,7 +226,22 @@ int main(int argc,char **argv) {
             ggml_tensor * shared=nullptr;
             ggml_shared_weight_desc desc{};
             if(shared_mode) {
-                owner.reset(ggml_shared_weight_create_with_layout(htp,k,m,raw.data(),raw.size(),layout)); check(owner!=nullptr,"shared create failed");
+                if(std::getenv("GGML_SHARED_WEIGHT_SLICES")) {
+                    check(layout==GGML_SHARED_WEIGHT_Q4_0_CPU4X8_V2,"slice test requires V2");
+                    std::vector<uint8_t> bank(raw.size()*3);
+                    for(int e=0;e<3;++e) { std::copy(raw.begin(),raw.end(),bank.begin()+e*raw.size()); }
+                    // Distinct adjacent experts expose accidentally ignored offsets.
+                    for(size_t i=0;i<raw.size();++i) { if(i%18>=2) { bank[i]^=0x55; bank[2*raw.size()+i]^=0xaa; } }
+                    auto parent=ggml_shared_weight_create_with_layout(htp,k,m*3,bank.data(),bank.size(),layout);
+                    check(parent,"bank create failed");
+                    check(!ggml_shared_weight_slice_rows(parent,1,m) && !ggml_shared_weight_slice_rows(parent,m,0) &&
+                          !ggml_shared_weight_slice_rows(parent,m*3,m),"invalid slice accepted");
+                    owner.reset(ggml_shared_weight_slice_rows(parent,m,m));
+                    ggml_shared_weight_free(parent); // Child must retain storage.
+                    check(owner!=nullptr,"retained bank slice failed");
+                } else {
+                    owner.reset(ggml_shared_weight_create_with_layout(htp,k,m,raw.data(),raw.size(),layout)); check(owner!=nullptr,"shared create failed");
+                }
                 check(ggml_shared_weight_describe(owner.get(),&desc),"describe failed");
                 for(auto backend:{htp,cpu,gpu}) {
                     auto * t=ggml_shared_weight_bind(owner.get(),backend); check(t,"shared bind failed");
@@ -265,6 +280,7 @@ int main(int argc,char **argv) {
                 shared=ggml_shared_weight_bind(owner.get(),b.get()); check(shared,"target binding failed");
                 result["shared_storage"]={{"layout",desc.layout},{"weight_bytes",raw.size()},
                     {"allocation_bytes",desc.storage.size},{"backend_bindings",3},
+                    {"offset",desc.offset},{"retained_slice",std::getenv("GGML_SHARED_WEIGHT_SLICES")!=nullptr},
                     {"pointer_alias",true},{"roundtrip_exact",true}};
             }
             auto to_float=ggml_get_type_traits(GGML_TYPE_Q4_0)->to_float;

@@ -21,6 +21,7 @@ def adb(*args, check=True):
     return subprocess.run(["adb", "-s", "fd8657d6", *args], capture_output=True, text=True, check=check)
 
 def main():
+    global REMOTE
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--mode", required=True, choices=["capture", "search", "profile", "predict", "auto", "cpu", "gpu", "npu", "custom", "branch", "custom-npu"])
     p.add_argument("--cost-model", type=pathlib.Path)
@@ -41,6 +42,8 @@ def main():
     p.add_argument("--reference", default="-")
     p.add_argument("--reps", type=int, default=8)
     p.add_argument("--deploy", action="store_true")
+    p.add_argument("--remote-dir", default=REMOTE)
+    p.add_argument("--shared-weights", choices=["cpu4x8"], help="Single physical expert layout through shared-weight middleware")
     p.add_argument("--output-dir", type=pathlib.Path, default=OUT)
     p.add_argument("--plan-file", type=pathlib.Path)
     p.add_argument("--prompt-file", type=pathlib.Path)
@@ -63,6 +66,8 @@ def main():
     p.add_argument("--cpu-mapped-experts", action="store_true", help="Custom CPU dense: identity CPU Expert bank borrows immutable GGUF pages")
     p.add_argument("--native-decode-graph", action="store_true", help="CPU routed nt1 graph with persistent asynchronous shared branch")
     args = p.parse_args()
+    assert args.remote_dir.startswith("/data/local/tmp/") and all(c.isalnum() or c in "/_-" for c in args.remote_dir)
+    REMOTE = args.remote_dir
     resolved_mode = args.mode
     if args.mode == "auto":
         assert args.plan_file and not args.transfer_placement
@@ -91,6 +96,7 @@ def main():
         names = ["fullmodel-oracle", "libllama.so", "libggml.so", "libggml-base.so", "libggml-cpu.so", "libggml-opencl.so", "libggml-hexagon.so"]
         paths = [BUILD / "bin" / name for name in names]
         paths.append(BUILD / "ggml/src/ggml-hexagon/libggml-htp-v79.so")
+        paths.append(BUILD / "ggml/src/ggml-hexagon/ship/libc++_shared.so")
         for path in paths:
             adb("push", str(path), f"{REMOTE}/{path.name}")
             assert adb("shell", f"sha256sum {REMOTE}/{path.name}").stdout.split()[0] == hashlib.sha256(path.read_bytes()).hexdigest()
@@ -121,6 +127,9 @@ def main():
     if args.plan_file:
         record["plan_source"] = str(args.plan_file.resolve())
     env = ["env", f"LD_LIBRARY_PATH={REMOTE}", f"ADSP_LIBRARY_PATH={REMOTE}", "GGML_HEXAGON_DEVICES=1", "GGML_HEXAGON_NHMX=1", "GGML_HEXAGON_MM_SELECT=3", f"GGML_HEXAGON_PROFILE={int(args.hexagon_op_profile)}"]
+    if args.shared_weights:
+        assert args.mode == "custom"
+        env.append("MOE_SHARED_WEIGHTS=" + args.shared_weights)
     assert not args.hexagon_op_profile or args.hexagon_timing
     if args.hexagon_timing:
         env.append("GGML_HEXAGON_TIMING=1")
