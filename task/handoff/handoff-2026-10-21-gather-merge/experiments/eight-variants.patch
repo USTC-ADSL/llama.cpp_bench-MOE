@@ -1,0 +1,171 @@
+diff --git a/tests/fullmodel-oracle.cpp b/tests/fullmodel-oracle.cpp
+index 086eefc18..3964002f0 100644
+--- a/tests/fullmodel-oracle.cpp
++++ b/tests/fullmodel-oracle.cpp
+@@ -293,6 +293,7 @@ struct partitioned_ffn {
+ 
+ struct full_engine {
+     std::unique_ptr<moe_token_workers> reduce_workers;
++    std::unique_ptr<moe_token_workers> expert_workers;
+     std::shared_ptr<shared_activation_buffer> arenas[3];
+     std::vector<std::unique_ptr<partitioned_ffn>> layers;
+     std::unique_ptr<moe_branch_worker> shared_worker;
+@@ -307,6 +308,10 @@ struct full_engine {
+     void prepare_arenas(device * devs[3]) {
+         std::array<size_t,3> capacities{};
+         if(!layers.empty() && layers[0]->single_layout) {
++            const std::string dispatch=std::getenv("MOE_SHARED_DISPATCH")?std::getenv("MOE_SHARED_DISPATCH"):"async";
++            require(dispatch=="async" || dispatch=="pool","unknown shared branch dispatch");
++            if(dispatch=="pool") { expert_workers=std::make_unique<moe_token_workers>(3); }
++            for(auto & l:layers) { l->single_layout->branch_workers=expert_workers.get(); }
+             for(auto & l:layers) { for(int b=0;b<3;++b) {
+                 auto & w=l->single_layout->weights;
+                 // A sum of all non-view tensor sizes bounds any lifetime layout,
+diff --git a/tests/moe-shared-weight.h b/tests/moe-shared-weight.h
+index f8f8a4f8d..03100aedf 100644
+--- a/tests/moe-shared-weight.h
++++ b/tests/moe-shared-weight.h
+@@ -1,5 +1,6 @@
+ #pragma once
+ #include "ggml-shared-weight.h"
++#include "moe-token-workers.h"
+ #if defined(__aarch64__)
+ #include <arm_neon.h>
+ #endif
+@@ -110,15 +111,21 @@ struct moe_shared_execution {
+     std::array<std::shared_ptr<shared_activation_buffer>,3> arenas;
+     std::array<std::map<std::array<int,61>,std::unique_ptr<moe_shared_job>>,3> jobs;
+     bool vector_reduce=false;
++    bool unroll_reduce=false, gather_runs=false;
++    moe_token_workers * branch_workers=nullptr; // One pool shared by sequential layers.
+     moe_shared_execution(device * d[3],source & src,int layer,const resident_placement_model::availability & resident)
+         : devs{d[0],d[1],d[2]},weights(d,src,layer,resident) {
+         const std::string reduce=std::getenv("MOE_SHARED_REDUCE")?std::getenv("MOE_SHARED_REDUCE"):"scalar";
+-        require(reduce=="scalar" || reduce=="neon","unknown shared reduction implementation");
++        require(reduce=="scalar" || reduce=="neon" || reduce=="neon16","unknown shared reduction implementation");
+ #if defined(__aarch64__)
+-        vector_reduce=reduce=="neon";
++        vector_reduce=reduce!="scalar";
++        unroll_reduce=reduce=="neon16";
+ #else
+         require(reduce=="scalar","NEON shared reduction requires aarch64");
+ #endif
++        const std::string gather=std::getenv("MOE_SHARED_GATHER")?std::getenv("MOE_SHARED_GATHER"):"rows";
++        require(gather=="rows" || gather=="runs","unknown shared gather implementation");
++        gather_runs=gather=="runs";
+     }
+ 
+     std::vector<float> run(const float * x,const float * probs,const std::vector<int32_t> & ids,
+@@ -148,7 +155,14 @@ struct moe_shared_execution {
+             auto & j=*work[b];
+             for(int e=0;e<60;++e) { if(j.inputs[e]) {
+                 auto * input=static_cast<float *>(j.inputs[e]->data);
+-                for(size_t i=0;i<pairs[e].size();++i) { std::copy_n(x+(pairs[e][i]/4)*2048,2048,input+i*2048); }
++                for(size_t i=0;i<pairs[e].size();) {
++                    size_t end=i+1;
++                    if(gather_runs) {
++                        while(end<pairs[e].size() && pairs[e][end]/4==pairs[e][end-1]/4+1) { ++end; }
++                        std::memcpy(input+i*2048,x+(pairs[e][i]/4)*2048,(end-i)*2048*sizeof(float));
++                    } else { std::copy_n(x+(pairs[e][i]/4)*2048,2048,input+i*2048); }
++                    i=end;
++                }
+                 copies[b]+=pairs[e].size()*2048*sizeof(float);
+             } }
+             if(j.inputs[60]) { std::copy_n(x,nt*2048,static_cast<float *>(j.inputs[60]->data)); copies[b]+=nt*2048*sizeof(float); }
+@@ -157,8 +171,17 @@ struct moe_shared_execution {
+         };
+         std::future<void> futures[3]; int inline_b=-1;
+         for(int b=0;b<3;++b) { if(work[b]) { inline_b=b; } }
+-        for(int b=0;b<3;++b) { if(work[b] && b!=inline_b) { futures[b]=std::async(std::launch::async,execute,b); } }
+-        execute(inline_b); for(auto & f:futures) { if(f.valid()) { f.get(); } }
++        int active_branches=0; for(auto * job:work) { active_branches+=job!=nullptr; }
++        if(branch_workers && active_branches>1) {
++            // Main caller owns GPU; the two sleeping workers own HTP and CPU.
++            // run() drains all branches even if one throws, before locals die.
++            branch_workers->run(3,[&](int begin,int end) {
++                for(int i=begin;i<end;++i) { if(work[2-i]) { execute(2-i); } }
++            });
++        } else {
++            for(int b=0;b<3;++b) { if(work[b] && b!=inline_b) { futures[b]=std::async(std::launch::async,execute,b); } }
++            execute(inline_b); for(auto & f:futures) { if(f.valid()) { f.get(); } }
++        }
+         const double wall=elapsed(start); start=timer::now();
+         std::vector<const float *> outputs(ids.size());
+         for(int e=0;e<60;++e) { if(!pairs[e].empty()) {
+@@ -172,6 +195,22 @@ struct moe_shared_execution {
+             if(vector_reduce) {
+                 const float * o[4]; float p[4];
+                 for(int k=0;k<4;++k) { o[k]=outputs[t*4+k]; p[k]=probs[t*60+ids[t*4+k]]; }
++                if(unroll_reduce) {
++                    for(int c=0;c<2048;c+=16) {
++                        float32x4_t s0=vdupq_n_f32(0),s1=s0,s2=s0,s3=s0;
++                        for(int k=0;k<4;++k) {
++                            s0=vfmaq_n_f32(s0,vld1q_f32(o[k]+c),p[k]);
++                            s1=vfmaq_n_f32(s1,vld1q_f32(o[k]+c+4),p[k]);
++                            s2=vfmaq_n_f32(s2,vld1q_f32(o[k]+c+8),p[k]);
++                            s3=vfmaq_n_f32(s3,vld1q_f32(o[k]+c+12),p[k]);
++                        }
++                        vst1q_f32(dst+t*2048+c,vaddq_f32(s0,vld1q_f32(shared+t*2048+c)));
++                        vst1q_f32(dst+t*2048+c+4,vaddq_f32(s1,vld1q_f32(shared+t*2048+c+4)));
++                        vst1q_f32(dst+t*2048+c+8,vaddq_f32(s2,vld1q_f32(shared+t*2048+c+8)));
++                        vst1q_f32(dst+t*2048+c+12,vaddq_f32(s3,vld1q_f32(shared+t*2048+c+12)));
++                    }
++                    continue;
++                }
+                 for(int c=0;c<2048;c+=4) {
+                     float32x4_t sum=vdupq_n_f32(0);
+                     // Preserve the scalar path's four ordered FMAs and final add.
+@@ -193,7 +232,8 @@ struct moe_shared_execution {
+               {"backend_phases_us",phases},{"intervals_us",intervals},{"branch_origin_monotonic_us",origin},
+               {"pairs",branch_pairs},{"changed_route_slots",changed},{"route_reference_available",expected.size()==ids.size()},
+               {"reduce_threads",1},{"overlap_gather",true},{"backend_gather_us",branch_gather},{"expert_wall_includes_gather",true},
+-              {"reduce_implementation",vector_reduce?"neon":"scalar"},
++              {"reduce_implementation",unroll_reduce?"neon16":vector_reduce?"neon":"scalar"},
++              {"gather_implementation",gather_runs?"runs":"rows"},{"branch_dispatch",branch_workers?"pool":"async"},
+               {"npu_device_gather",false},{"backend_input_host_copy_bytes",copies},{"expert_token_counts",totals},
+               {"allocations",allocations},{"shared_weight_matmuls",3*(active+1)},
+               {"execution","grouped 2D expert graphs; one CPU4x8 bank per projection; host gather"}};
+diff --git a/tests/moe-token-workers.h b/tests/moe-token-workers.h
+index 9be2937eb..bc4b7780a 100644
+--- a/tests/moe-token-workers.h
++++ b/tests/moe-token-workers.h
+@@ -8,8 +8,9 @@
+ #include <thread>
+ #include <vector>
+ 
+-// One synchronous caller; workers sleep between jobs and never share a token.
+-// Backend completion precedes dispatch, and join precedes arena reuse.
++// One synchronous caller; workers sleep between jobs and own disjoint ranges.
++// For reduction, dispatch only after backend completion. For branch dispatch,
++// each range owns a backend. In both cases join precedes arena reuse.
+ class moe_token_workers {
+     std::mutex mutex_;
+     std::condition_variable ready_, done_;
+diff --git a/tests/run-fullmodel-oracle.py b/tests/run-fullmodel-oracle.py
+index 7dd455b2d..c39befb60 100644
+--- a/tests/run-fullmodel-oracle.py
++++ b/tests/run-fullmodel-oracle.py
+@@ -48,7 +48,9 @@ def main():
+     p.add_argument("--deploy", action="store_true")
+     p.add_argument("--remote-dir", default=REMOTE)
+     p.add_argument("--shared-weights", choices=["cpu4x8"], help="Single physical expert layout through shared-weight middleware")
+-    p.add_argument("--shared-reduce", choices=["scalar","neon"], help="Shared-layout single-thread reduction implementation; scalar remains default")
++    p.add_argument("--shared-reduce", choices=["scalar","neon","neon16"], help="Shared-layout single-thread reduction implementation; scalar remains default")
++    p.add_argument("--shared-gather", choices=["rows","runs"], help="Shared-layout host gather: individual rows or consecutive token runs")
++    p.add_argument("--shared-dispatch", choices=["async","pool"], help="Shared-layout branch dispatch: per-layer async or two persistent workers")
+     p.add_argument("--output-dir", type=pathlib.Path, default=OUT)
+     p.add_argument("--plan-file", type=pathlib.Path)
+     p.add_argument("--prompt-file", type=pathlib.Path)
+@@ -146,6 +148,12 @@ def main():
+     if args.shared_reduce:
+         assert args.shared_weights
+         env.append("MOE_SHARED_REDUCE=" + args.shared_reduce)
++    if args.shared_gather:
++        assert args.shared_weights
++        env.append("MOE_SHARED_GATHER=" + args.shared_gather)
++    if args.shared_dispatch:
++        assert args.shared_weights
++        env.append("MOE_SHARED_DISPATCH=" + args.shared_dispatch)
+     if args.prefill_chunk is not None:
+         assert args.mode == "custom" and args.transfer_placement
+         assert 0 < args.prefill_chunk <= args.tokens and args.tokens % args.prefill_chunk == 0
