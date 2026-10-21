@@ -1,0 +1,606 @@
+{
+  "tokens": 1024,
+  "protocol": "NPU/shared/shared/NPU per prompt; 2 warmups+6 timed requests/process; 30s idle; mean process medians",
+  "candidate": "current-route additive greedy + bounded move/swap, 2048 evaluations, CPU cost penalty 1.5, shared HTP except terminal CPU, NEON ordered reduce",
+  "npu_definition": "standard mode=npu with normal unsupported-op CPU fallback",
+  "model_file_stat": "/data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf 8149865792 1788789392\n",
+  "binary_hashes": {
+    "libc++_shared.so": "d523468d62d9b603cb3354294d70d4b2feabf2c3f1e43b0c96c9aabf32813708",
+    "libggml-base.so": "8a3c78ffbeb29748d761936b13cbec0c194080950c0ccfcb980aa5b7ffc2a94e",
+    "libggml-cpu.so": "8d9e463981182d983577cb2fc7c3ff3c66dd7f6b0267703ee7b7218f65ea3d02",
+    "libggml-hexagon.so": "822aa4726b277fe140b9eb4539dacbcd90c18671e88bf9a9e34f1d5c7ea36375",
+    "libggml-htp-v79.so": "248d4f0cb347074ba9dbf6000ff75c39ee8eee19c22496a6f9237c693ffcfe8e",
+    "libggml-opencl.so": "4f167774b85044c56a42441c67f12c111d90997a9be2a565acf05ba438b44c66",
+    "libggml.so": "8e9818d20fc52a6c7d64f97415466c70fd510b7e2ff57a2fa7040fa9e4955d62",
+    "libllama.so": "2574d2195b81cca96785e5a702257d8f29029dffd5bbf91c55f34f70d02dced5",
+    "fullmodel-oracle": "843c4bca13dfd706f92d4d4af692f546e5186f61cf1582cf8ae13cbe9f4bc00c"
+  },
+  "comparisons": {
+    "wetland": {
+      "mean_process_median_ms": {
+        "npu": 1294.7420305,
+        "shared": 1055.6290747500002
+      },
+      "tokens_per_second": {
+        "npu": 790.8911396075977,
+        "shared": 970.0377002618171
+      },
+      "speedup": 1.226512286814976,
+      "throughput_gain_percent": 22.651228681497603,
+      "latency_reduction_percent": 18.467999811333836,
+      "process_median_ranges_ms": {
+        "npu": [
+          1292.2267960000001,
+          1297.257265
+        ],
+        "shared": [
+          1009.7462235,
+          1101.5119260000001
+        ]
+      },
+      "same_condition_logits": {
+        "npu": {
+          "bitwise_equal": true,
+          "nrmse": 0.0,
+          "cosine": 1.0000000000000002,
+          "top1_equal": true,
+          "top10_overlap": 10,
+          "max_abs": 0.0
+        },
+        "shared": {
+          "bitwise_equal": true,
+          "nrmse": 0.0,
+          "cosine": 1.0,
+          "top1_equal": true,
+          "top10_overlap": 10,
+          "max_abs": 0.0
+        }
+      },
+      "cross_condition_logits": {
+        "bitwise_equal": false,
+        "nrmse": 0.027255259065194472,
+        "cosine": 0.999634437398129,
+        "top1_equal": true,
+        "top10_overlap": 10,
+        "max_abs": 0.3552587032318115
+      },
+      "phases": {
+        "gather_ms": 5.0059285,
+        "expert_wall_ms": 542.3756415833334,
+        "combine_ms": 40.9829215,
+        "outside_ffn_ms": 456.22883249999995,
+        "scheduling_ms": 1.82459225,
+        "backend_compute_ms": [
+          415.4225471666667,
+          462.4228081666667,
+          450.84091133333334
+        ],
+        "backend_gather_ms": [
+          12.620455916666668,
+          64.69865916666667,
+          38.747092333333335
+        ],
+        "routed_pair_fraction": [
+          0.0934594319195007,
+          0.5546533350316308,
+          0.35188723304886854
+        ],
+        "backend_order": [
+          "CPU",
+          "HTP",
+          "GPU"
+        ],
+        "accounting": "scheduling is included in gather; backend gather is included in expert wall; backend times overlap"
+      }
+    },
+    "foundry": {
+      "mean_process_median_ms": {
+        "npu": 1292.5474992499999,
+        "shared": 1065.37466125
+      },
+      "tokens_per_second": {
+        "npu": 792.233941572109,
+        "shared": 961.1642150363749
+      },
+      "speedup": 1.213232814954937,
+      "throughput_gain_percent": 21.323281495493696,
+      "latency_reduction_percent": 17.575589147154503,
+      "process_median_ranges_ms": {
+        "npu": [
+          1288.2418484999998,
+          1296.85315
+        ],
+        "shared": [
+          1017.5150779999999,
+          1113.2342445
+        ]
+      },
+      "same_condition_logits": {
+        "npu": {
+          "bitwise_equal": true,
+          "nrmse": 0.0,
+          "cosine": 1.0,
+          "top1_equal": true,
+          "top10_overlap": 10,
+          "max_abs": 0.0
+        },
+        "shared": {
+          "bitwise_equal": true,
+          "nrmse": 0.0,
+          "cosine": 1.0,
+          "top1_equal": true,
+          "top10_overlap": 10,
+          "max_abs": 0.0
+        }
+      },
+      "cross_condition_logits": {
+        "bitwise_equal": false,
+        "nrmse": 0.013309610766980446,
+        "cosine": 0.9999114254298416,
+        "top1_equal": true,
+        "top10_overlap": 10,
+        "max_abs": 0.18497514724731445
+      },
+      "phases": {
+        "gather_ms": 5.97786375,
+        "expert_wall_ms": 548.5088193333333,
+        "combine_ms": 43.717842833333336,
+        "outside_ffn_ms": 468.5187853333333,
+        "scheduling_ms": 2.2039885,
+        "backend_compute_ms": [
+          412.2161935,
+          461.04509125,
+          451.89231225
+        ],
+        "backend_gather_ms": [
+          14.2994065,
+          68.35908483333333,
+          39.46217433333333
+        ],
+        "routed_pair_fraction": [
+          0.09317284422366577,
+          0.5588884643145245,
+          0.3479386914618096
+        ],
+        "backend_order": [
+          "CPU",
+          "HTP",
+          "GPU"
+        ],
+        "accounting": "scheduling is included in gather; backend gather is included in expert wall; backend times overlap"
+      }
+    }
+  },
+  "profile_candidates_passing_per_token_4percent": 81,
+  "scalar_neon_logits": {
+    "bitwise_equal": true,
+    "nrmse": 0.0,
+    "cosine": 1.0000000000000002,
+    "top1_equal": true,
+    "top10_overlap": 10,
+    "max_abs": 0.0
+  },
+  "runs": {
+    "confirm-wetland-npu-a": {
+      "median_ms": 1292.2267960000001,
+      "samples_ms": [
+        1291.2760930000002,
+        1296.651614,
+        1282.9904680000002,
+        1293.1774990000001,
+        1283.727343,
+        1293.238749
+      ],
+      "major_faults": [
+        0,
+        0,
+        0,
+        0,
+        1,
+        0
+      ],
+      "minor_faults": [
+        212,
+        207,
+        214,
+        207,
+        215,
+        207
+      ],
+      "report_sha256": "78030945452b4bca63c79d25c8019563d3db129d1f2229a36e4bb7b394729ab0",
+      "all_round_logits_bitwise_equal": null,
+      "process_memory": [
+        "VmSize:\t20366952 kB",
+        "VmHWM:\t  339920 kB",
+        "VmRSS:\t  248376 kB"
+      ]
+    },
+    "confirm-wetland-npu-b": {
+      "median_ms": 1297.257265,
+      "samples_ms": [
+        1280.970469,
+        1310.734062,
+        1297.21302,
+        1297.30151,
+        1301.97427,
+        1294.773125
+      ],
+      "major_faults": [
+        0,
+        0,
+        1,
+        1,
+        0,
+        0
+      ],
+      "minor_faults": [
+        209,
+        210,
+        212,
+        212,
+        213,
+        212
+      ],
+      "report_sha256": "d7c1b0c8e43ad340a873e5cc9d0267b92ad9c85b0df45a456fe13ea9d3b5f205",
+      "all_round_logits_bitwise_equal": null,
+      "process_memory": [
+        "VmSize:\t20440680 kB",
+        "VmHWM:\t  340636 kB",
+        "VmRSS:\t  227892 kB"
+      ]
+    },
+    "confirm-wetland-shared-a": {
+      "median_ms": 1009.7462235,
+      "samples_ms": [
+        1011.255468,
+        999.0859889999999,
+        1007.025677,
+        1027.0712489999999,
+        1009.6131770000001,
+        1009.87927
+      ],
+      "major_faults": [
+        0,
+        3,
+        7,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        719,
+        780,
+        473,
+        499,
+        498,
+        576
+      ],
+      "report_sha256": "02d20921c5426ca8719d85c8a1a152b6825ea5f5769908808467e38a977f10d6",
+      "all_round_logits_bitwise_equal": true,
+      "process_memory": [
+        "VmSize:\t29645924 kB",
+        "VmHWM:\t 8017216 kB",
+        "VmRSS:\t  362584 kB"
+      ],
+      "unique_payload_bytes": 7474348032,
+      "unique_allocation_bytes": 7474348032,
+      "activation_arena_bytes": [
+        137363456,
+        231768064,
+        137363456
+      ],
+      "phases": {
+        "gather_ms": 3.2612591666666666,
+        "expert_wall_ms": 536.206171,
+        "combine_ms": 35.054522999999996,
+        "outside_ffn_ms": 436.13318516666664,
+        "scheduling_ms": 1.181233,
+        "backend_compute_ms": [
+          439.07335866666665,
+          462.0686968333333,
+          449.97107616666665
+        ],
+        "backend_gather_ms": [
+          10.0848785,
+          58.85677166666667,
+          36.151902
+        ],
+        "routed_pair_fraction": [
+          0.0934594319195007,
+          0.5546533350316308,
+          0.3518872330488685
+        ],
+        "backend_order": [
+          "CPU",
+          "HTP",
+          "GPU"
+        ],
+        "accounting": "scheduling is included in gather; backend gather is included in expert wall; backend times overlap"
+      },
+      "graph_allocations_constant_after_warmup": true,
+      "cached_graph_count": 70
+    },
+    "confirm-wetland-shared-b": {
+      "median_ms": 1101.5119260000001,
+      "samples_ms": [
+        1112.7734369999998,
+        1121.936093,
+        1105.14328,
+        1014.766406,
+        1018.689271,
+        1097.880572
+      ],
+      "major_faults": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "minor_faults": [
+        718,
+        1074,
+        585,
+        597,
+        497,
+        1642
+      ],
+      "report_sha256": "99eecf05c1ac8cfb5989068d8e4c343f9cfabc80473a98411666447eee51685f",
+      "all_round_logits_bitwise_equal": true,
+      "process_memory": [
+        "VmSize:\t29555812 kB",
+        "VmHWM:\t 7393824 kB",
+        "VmRSS:\t  682380 kB"
+      ],
+      "unique_payload_bytes": 7474348032,
+      "unique_allocation_bytes": 7474348032,
+      "activation_arena_bytes": [
+        137363456,
+        231768064,
+        137363456
+      ],
+      "phases": {
+        "gather_ms": 6.750597833333334,
+        "expert_wall_ms": 548.5451121666667,
+        "combine_ms": 46.91132,
+        "outside_ffn_ms": 476.32447983333327,
+        "scheduling_ms": 2.4679515,
+        "backend_compute_ms": [
+          391.7717356666667,
+          462.7769195,
+          451.7107465
+        ],
+        "backend_gather_ms": [
+          15.156033333333333,
+          70.54054666666667,
+          41.34228266666666
+        ],
+        "routed_pair_fraction": [
+          0.0934594319195007,
+          0.5546533350316308,
+          0.3518872330488685
+        ],
+        "backend_order": [
+          "CPU",
+          "HTP",
+          "GPU"
+        ],
+        "accounting": "scheduling is included in gather; backend gather is included in expert wall; backend times overlap"
+      },
+      "graph_allocations_constant_after_warmup": true,
+      "cached_graph_count": 70
+    },
+    "confirm-foundry-npu-a": {
+      "median_ms": 1288.2418484999998,
+      "samples_ms": [
+        1293.9833330000001,
+        1273.855469,
+        1288.846771,
+        1280.532812,
+        1287.636926,
+        1288.992552
+      ],
+      "major_faults": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        210,
+        211,
+        213,
+        213,
+        214,
+        213
+      ],
+      "report_sha256": "f9220e84217625baf20c3094f15f083f1ab1c90c2c24b34127a640d229513b99",
+      "all_round_logits_bitwise_equal": null,
+      "process_memory": [
+        "VmSize:\t20319680 kB",
+        "VmHWM:\t  335868 kB",
+        "VmRSS:\t  227508 kB"
+      ]
+    },
+    "confirm-foundry-npu-b": {
+      "median_ms": 1296.85315,
+      "samples_ms": [
+        1287.400156,
+        1297.272812,
+        1293.911718,
+        1296.514166,
+        1297.1921340000001,
+        1300.9445309999999
+      ],
+      "major_faults": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        210,
+        211,
+        212,
+        207,
+        213,
+        212
+      ],
+      "report_sha256": "49179d58cc5711f0fc70b9e06983cf3fc41463f97085a6dd3a440631ce092050",
+      "all_round_logits_bitwise_equal": null,
+      "process_memory": [
+        "VmSize:\t20315584 kB",
+        "VmHWM:\t  340408 kB",
+        "VmRSS:\t  251176 kB"
+      ]
+    },
+    "confirm-foundry-shared-a": {
+      "median_ms": 1017.5150779999999,
+      "samples_ms": [
+        1015.1491149999999,
+        1014.2165620000001,
+        1024.647291,
+        1023.304583,
+        999.114062,
+        1019.881041
+      ],
+      "major_faults": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        719,
+        652,
+        492,
+        599,
+        496,
+        806
+      ],
+      "report_sha256": "f57f6cfaa379742245cad8782c73289833b61ed748b069aff03867706d96af7f",
+      "all_round_logits_bitwise_equal": true,
+      "process_memory": [
+        "VmSize:\t29618588 kB",
+        "VmHWM:\t 8022280 kB",
+        "VmRSS:\t  348020 kB"
+      ],
+      "unique_payload_bytes": 7474348032,
+      "unique_allocation_bytes": 7474348032,
+      "activation_arena_bytes": [
+        137363456,
+        231768064,
+        137363456
+      ],
+      "phases": {
+        "gather_ms": 3.285407166666667,
+        "expert_wall_ms": 537.6594618333334,
+        "combine_ms": 36.03452383333333,
+        "outside_ffn_ms": 439.0727161666666,
+        "scheduling_ms": 1.2053208333333334,
+        "backend_compute_ms": [
+          444.39323683333333,
+          459.172188,
+          452.558922
+        ],
+        "backend_gather_ms": [
+          10.368023,
+          59.01480133333334,
+          34.48895833333333
+        ],
+        "routed_pair_fraction": [
+          0.09317284422366577,
+          0.5588884643145247,
+          0.3479386914618096
+        ],
+        "backend_order": [
+          "CPU",
+          "HTP",
+          "GPU"
+        ],
+        "accounting": "scheduling is included in gather; backend gather is included in expert wall; backend times overlap"
+      },
+      "graph_allocations_constant_after_warmup": true,
+      "cached_graph_count": 70
+    },
+    "confirm-foundry-shared-b": {
+      "median_ms": 1113.2342445,
+      "samples_ms": [
+        1096.2021869999999,
+        1107.014062,
+        1106.8139059999999,
+        1119.454427,
+        1128.178593,
+        1146.703906
+      ],
+      "major_faults": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        720,
+        1069,
+        596,
+        603,
+        498,
+        1642
+      ],
+      "report_sha256": "a78b2b82ffed207054585006d2f1be41a7c53824982e7c20fb53ec972d008c3f",
+      "all_round_logits_bitwise_equal": true,
+      "process_memory": [
+        "VmSize:\t29446556 kB",
+        "VmHWM:\t 7404904 kB",
+        "VmRSS:\t  701136 kB"
+      ],
+      "unique_payload_bytes": 7474348032,
+      "unique_allocation_bytes": 7474348032,
+      "activation_arena_bytes": [
+        137363456,
+        231768064,
+        137363456
+      ],
+      "phases": {
+        "gather_ms": 8.670320333333333,
+        "expert_wall_ms": 559.3581768333333,
+        "combine_ms": 51.40116183333333,
+        "outside_ffn_ms": 497.9648544999999,
+        "scheduling_ms": 3.202656166666667,
+        "backend_compute_ms": [
+          380.0391501666667,
+          462.9179945,
+          451.2257025
+        ],
+        "backend_gather_ms": [
+          18.23079,
+          77.70336833333333,
+          44.43539033333333
+        ],
+        "routed_pair_fraction": [
+          0.09317284422366577,
+          0.5588884643145247,
+          0.3479386914618096
+        ],
+        "backend_order": [
+          "CPU",
+          "HTP",
+          "GPU"
+        ],
+        "accounting": "scheduling is included in gather; backend gather is included in expert wall; backend times overlap"
+      },
+      "graph_allocations_constant_after_warmup": true,
+      "cached_graph_count": 70
+    }
+  },
+  "statistical_limit": "two independent processes per condition/input; descriptive confirmation, not a broad workload guarantee"
+}

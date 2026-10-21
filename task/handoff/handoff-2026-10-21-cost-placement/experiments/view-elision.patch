@@ -1,0 +1,44 @@
+diff --git a/ggml/src/ggml-opencl/ggml-opencl.cpp b/ggml/src/ggml-opencl/ggml-opencl.cpp
+index 8ccdb99a7..244040192 100644
+--- a/ggml/src/ggml-opencl/ggml-opencl.cpp
++++ b/ggml/src/ggml-opencl/ggml-opencl.cpp
+@@ -23839,8 +23839,15 @@ static void ggml_cl_mul_mat(ggml_backend_t backend, const ggml_tensor * src0, co
+             cl_uint k=src0->ne[0],m=src0->ne[1],n=src1->ne[1];
+             cl_ulong xo=x->offset+src1->view_offs,yo=y->offset+dst->view_offs;
+             cl_int error;
+-            cl_buffer_region region={size_t(xo),size_t(k)*n*sizeof(float)};
+-            cl_mem input_buffer=clCreateSubBuffer(x->data_device,0,CL_BUFFER_CREATE_TYPE_REGION,&region,&error); CL_CHECK(error);
++            const bool use_dp4a=n>8 && bc->shared_dp4a;
++            // The general transpose reads the original buffer + offset directly.
++            // Its non-multiple-of-four shapes need no input view objects.
++            const bool input_view=use_dp4a || n==1 || n%4==0;
++            cl_mem input_buffer=nullptr;
++            if(input_view) {
++                cl_buffer_region region={size_t(xo),size_t(k)*n*sizeof(float)};
++                input_buffer=clCreateSubBuffer(x->data_device,0,CL_BUFFER_CREATE_TYPE_REGION,&region,&error); CL_CHECK(error);
++            }
+             if(n>8 && bc->shared_dp4a) {
+                 const size_t blocks=size_t(n)*(k/32);
+                 ctx->prealloc_moe_qa.allocate(ctx->context,size_t(n)*k);
+@@ -23874,7 +23881,10 @@ static void ggml_cl_mul_mat(ggml_backend_t backend, const ggml_tensor * src0, co
+             cl_image_format format={CL_RGBA,CL_FLOAT};
+             cl_image_desc image_desc={}; image_desc.image_type=CL_MEM_OBJECT_IMAGE1D_BUFFER;
+             image_desc.image_width=size_t(k)*n/4; image_desc.buffer=input_buffer;
+-            cl_mem input_image=clCreateImage(ctx->context,CL_MEM_READ_ONLY,&format,&image_desc,nullptr,&error); CL_CHECK(error);
++            cl_mem input_image=nullptr;
++            if(input_view) {
++                input_image=clCreateImage(ctx->context,CL_MEM_READ_ONLY,&format,&image_desc,nullptr,&error); CL_CHECK(error);
++            }
+             cl_mem trans_image=nullptr;
+             cl_uint padded_n=(n+7)/8*8;
+             if(n>1) {
+@@ -23926,7 +23936,8 @@ static void ggml_cl_mul_mat(ggml_backend_t backend, const ggml_tensor * src0, co
+                 ctx->enqueue_ndrange_kernel(kernel,2,global,local,dst);
+             }
+             if(trans_image) { CL_CHECK(clReleaseMemObject(trans_image)); }
+-            CL_CHECK(clReleaseMemObject(input_image)); CL_CHECK(clReleaseMemObject(input_buffer));
++            if(input_image) { CL_CHECK(clReleaseMemObject(input_image)); }
++            if(input_buffer) { CL_CHECK(clReleaseMemObject(input_buffer)); }
+             return;
+         }
+     }

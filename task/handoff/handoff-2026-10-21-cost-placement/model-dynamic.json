@@ -1,0 +1,99 @@
+{
+  "features": [
+    "active_branch",
+    "active_experts",
+    "routed_pairs_over_128",
+    "tiles_32",
+    "shared_expert"
+  ],
+  "backend_order": [
+    "CPU",
+    "HTP",
+    "GPU"
+  ],
+  "coefficients_us": [
+    [
+      2147.0446837853324,
+      145.78366687444955,
+      3667.4285799489094,
+      0.0,
+      119338.23503582049
+    ],
+    [
+      206.40940704706307,
+      214.58362570695178,
+      391.7836704126039,
+      0.7383029321350006,
+      7862.885110641019
+    ],
+    [
+      3989.917022944932,
+      0.0,
+      0.0,
+      358.5719368077077,
+      37787.05568746407
+    ]
+  ],
+  "validation": [
+    {
+      "backend": "CPU",
+      "rows": 38,
+      "training_mape": 0.03955680324539991,
+      "leave_layer_out_mape": 0.042272066620466356
+    },
+    {
+      "backend": "HTP",
+      "rows": 42,
+      "training_mape": 0.03735226298431888,
+      "leave_layer_out_mape": 0.037996968407817244
+    },
+    {
+      "backend": "GPU",
+      "rows": 38,
+      "training_mape": 0.07510246724704982,
+      "leave_layer_out_mape": 0.07504018264410842
+    }
+  ],
+  "profile_source": "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-10-21-cost-placement/evidence/technical-profile-expanded.json",
+  "profile_sha256": "1efa1e4eba57513d15530a9dd6c16ac63888bc02c2b2870d2c471f696020819f",
+  "objective": "minimize max(gather + backend compute); shared expert included; static offline planning",
+  "last_token_policy": "all routed and shared experts on CPU, supported by separate N=1 profile",
+  "isolated_coefficients_us": [
+    [
+      1811.6241729485537,
+      123.00871841437565,
+      3094.487188913167,
+      0.0,
+      100694.70513615277
+    ],
+    [
+      187.16779746380283,
+      194.58001052350144,
+      355.2613600439821,
+      0.6694778869127214,
+      7129.902211937725
+    ],
+    [
+      3292.4490605692545,
+      0.0,
+      0.0,
+      295.89082422011296,
+      31181.589813625127
+    ]
+  ],
+  "context_calibration": {
+    "report": "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-10-21-cost-placement/evidence/technical-context-calibration.json",
+    "sha256": "87967c047343ccadc26605089fc410d50d4ab797d42d1181eaefb28831f8b32f",
+    "median_observed_over_predicted": [
+      1.1851490589744431,
+      1.1028040605488316,
+      1.2118386494505362
+    ],
+    "samples_per_backend": [
+      92,
+      92,
+      92
+    ],
+    "scope": "global per-backend hardware/context correction; no expert identity or test route lookup"
+  }
+}

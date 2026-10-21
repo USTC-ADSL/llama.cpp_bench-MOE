@@ -1,0 +1,61 @@
+{
+  "features": [
+    "active_branch",
+    "active_experts",
+    "routed_pairs_over_128",
+    "tiles_32",
+    "shared_expert"
+  ],
+  "backend_order": [
+    "CPU",
+    "HTP",
+    "GPU"
+  ],
+  "coefficients_us": [
+    [
+      1811.6241729485537,
+      123.00871841437565,
+      3094.487188913167,
+      0.0,
+      100694.70513615277
+    ],
+    [
+      187.16779746380283,
+      194.58001052350144,
+      355.2613600439821,
+      0.6694778869127214,
+      7129.902211937725
+    ],
+    [
+      3292.4490605692545,
+      0.0,
+      0.0,
+      295.89082422011296,
+      31181.589813625127
+    ]
+  ],
+  "validation": [
+    {
+      "backend": "CPU",
+      "rows": 38,
+      "training_mape": 0.03955680324539991,
+      "leave_layer_out_mape": 0.042272066620466356
+    },
+    {
+      "backend": "HTP",
+      "rows": 42,
+      "training_mape": 0.03735226298431888,
+      "leave_layer_out_mape": 0.037996968407817244
+    },
+    {
+      "backend": "GPU",
+      "rows": 38,
+      "training_mape": 0.07510246724704982,
+      "leave_layer_out_mape": 0.07504018264410842
+    }
+  ],
+  "profile_source": "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-10-21-cost-placement/evidence/technical-profile-expanded.json",
+  "profile_sha256": "1efa1e4eba57513d15530a9dd6c16ac63888bc02c2b2870d2c471f696020819f",
+  "objective": "minimize max(gather + backend compute); shared expert included; static offline planning",
+  "last_token_policy": "all routed and shared experts on CPU, supported by separate N=1 profile"
+}

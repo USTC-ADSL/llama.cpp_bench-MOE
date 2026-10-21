@@ -1,0 +1,201 @@
+{
+  "version": 1,
+  "backends": [
+    [
+      3647.7001732843164,
+      44411.112839213354,
+      9056.253671374305,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      174365.12310315223,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      2880.5024471483903,
+      0.0,
+      4120.742515989174,
+      0.0,
+      3550.4364094873135,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      7032.730139479031,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      2957.901145148134,
+      0.0,
+      19100.742289286365,
+      0.0,
+      8380.253137161104,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      35340.13448549846,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "host": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "search_budget": 2048,
+  "algorithm": "shared_additive",
+  "source_model": {
+    "features": [
+      "active_branch",
+      "active_experts",
+      "routed_pairs_over_128",
+      "tiles_32",
+      "shared_expert"
+    ],
+    "backend_order": [
+      "CPU",
+      "HTP",
+      "GPU"
+    ],
+    "coefficients_us": [
+      [
+        2431.8001155228776,
+        100.62504079304783,
+        3700.9260699344463,
+        0.0,
+        116243.41540210148
+      ],
+      [
+        2880.5024471483903,
+        68.67904193315289,
+        0.0,
+        110.95113779647855,
+        7032.730139479031
+      ],
+      [
+        2957.901145148134,
+        318.3457048214394,
+        0.0,
+        261.8829105362845,
+        35340.13448549846
+      ]
+    ],
+    "validation": [
+      {
+        "backend": "CPU",
+        "rows": 48,
+        "training_mape": 0.08674476251064982,
+        "leave_layer_out_mape": 0.12239199979393756
+      },
+      {
+        "backend": "HTP",
+        "rows": 54,
+        "training_mape": 0.03932425397061214,
+        "leave_layer_out_mape": 0.04241289458698429
+      },
+      {
+        "backend": "GPU",
+        "rows": 50,
+        "training_mape": 0.06531987616405595,
+        "leave_layer_out_mape": 0.06633322646311827
+      }
+    ],
+    "profile_source": "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-10-21-cost-placement/evidence/technical-profile-complete.json",
+    "profile_sha256": "7a4ad709eb6ef691765f22960bc896c0c9fbcb3c25fa3d9c06b4371e4726deb4",
+    "objective": "minimize max(gather + backend compute); shared expert included; static offline planning",
+    "last_token_policy": "all routed and shared experts on CPU, supported by separate N=1 profile",
+    "isolated_coefficients_us": [
+      [
+        2020.997488252392,
+        83.62650918548778,
+        3075.7307082112225,
+        0.0,
+        96606.48054661893
+      ],
+      [
+        2715.871825091173,
+        64.7537984719151,
+        0.0,
+        104.60989866596746,
+        6630.785423629488
+      ],
+      [
+        2658.242466249979,
+        286.0947780126879,
+        0.0,
+        235.35210942211245,
+        31759.90056545065
+      ]
+    ],
+    "context_calibration": {
+      "report": "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-10-21-cost-placement/evidence/technical-context-calibration.json",
+      "sha256": "87967c047343ccadc26605089fc410d50d4ab797d42d1181eaefb28831f8b32f",
+      "median_observed_over_predicted": [
+        1.2032672626553915,
+        1.0606179645652793,
+        1.1127281211938835
+      ],
+      "samples_per_backend": [
+        92,
+        92,
+        92
+      ],
+      "scope": "global per-backend hardware/context correction; no expert identity or test route lookup"
+    }
+  },
+  "cpu_penalty": 1.5
+}

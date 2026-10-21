@@ -1,0 +1,316 @@
+{
+  "wetland-cost-explore": {
+    "median_ms": 1156.6041145000002,
+    "samples_ms": [
+      1166.894843,
+      1149.49802,
+      1163.1220309999999,
+      1150.0861980000002
+    ],
+    "phases": {
+      "gather_us": 1.74799525,
+      "expert_wall_us": 681.660207,
+      "combine_us": 34.46414
+    }
+  },
+  "wetland-cost-v2-explore": {
+    "median_ms": 1108.9686195,
+    "samples_ms": [
+      1108.271562,
+      1129.287031,
+      1109.665677,
+      1076.0302080000001
+    ],
+    "phases": {
+      "gather_us": 2.9889985,
+      "expert_wall_us": 617.67197625,
+      "combine_us": 34.58168
+    }
+  },
+  "wetland-cost-v2-gpu-router-explore": {
+    "median_ms": 1338.1732809999999,
+    "samples_ms": [
+      1349.839219,
+      1326.5073430000002,
+      1308.630156,
+      1364.999896
+    ],
+    "phases": {
+      "gather_us": 2.5602845000000003,
+      "expert_wall_us": 550.0781915,
+      "combine_us": 36.59349025
+    }
+  },
+  "wetland-cost-v2-host1-explore": {
+    "median_ms": 1123.682343,
+    "samples_ms": [
+      1109.8215619999999,
+      1128.193437,
+      1119.171249,
+      1132.0126559999999
+    ],
+    "phases": {
+      "gather_us": 2.1273165,
+      "expert_wall_us": 645.8325267499999,
+      "combine_us": 33.88660075
+    }
+  },
+  "wetland-cost-v3-explore": {
+    "median_ms": 1124.7949995,
+    "samples_ms": [
+      1132.254062,
+      1135.729687,
+      1117.3359369999998,
+      1116.425781
+    ],
+    "phases": {
+      "gather_us": 4.66850325,
+      "expert_wall_us": 612.567148,
+      "combine_us": 34.00714925
+    }
+  },
+  "wetland-dynamic-scalar-v2-explore": {
+    "median_ms": 1218.905156,
+    "samples_ms": [
+      1220.2875,
+      1217.522812,
+      1221.635,
+      1214.364374
+    ],
+    "phases": {
+      "gather_ms": 131.57605325,
+      "expert_wall_ms": 572.86498625,
+      "combine_ms": 35.644923,
+      "outside_ffn_ms": 478.36645899999985,
+      "scheduling_ms": 126.69094975,
+      "backend_compute_ms": [
+        377.6872925,
+        435.2250135,
+        509.11690175
+      ],
+      "backend_gather_ms": [
+        19.643764,
+        68.29343725,
+        36.2690355
+      ],
+      "routed_pair_fraction": [
+        0.11568589988536492,
+        0.5947968411667304,
+        0.2895172589479047
+      ],
+      "backend_order": [
+        "CPU",
+        "HTP",
+        "GPU"
+      ],
+      "accounting": "scheduling is included in gather; backend gather is included in expert wall; backend times overlap"
+    }
+  },
+  "wetland-fast-cpu150-explore": {
+    "median_ms": 1005.991041,
+    "samples_ms": [
+      994.205833,
+      1001.591093,
+      1010.390989,
+      1013.343906
+    ],
+    "phases": {
+      "gather_ms": 3.13820475,
+      "expert_wall_ms": 531.1863942499999,
+      "combine_ms": 35.055572,
+      "outside_ffn_ms": 435.5027842500001,
+      "scheduling_ms": 1.14876275,
+      "backend_compute_ms": [
+        427.58999950000003,
+        462.68688699999996,
+        452.33123725
+      ],
+      "backend_gather_ms": [
+        10.086238250000001,
+        57.375495,
+        32.5879415
+      ],
+      "routed_pair_fraction": [
+        0.09345943191950071,
+        0.5546533350316308,
+        0.3518872330488685
+      ],
+      "backend_order": [
+        "CPU",
+        "HTP",
+        "GPU"
+      ],
+      "accounting": "scheduling is included in gather; backend gather is included in expert wall; backend times overlap"
+    }
+  },
+  "wetland-fast-neon-explore": {
+    "median_ms": 1029.913046,
+    "samples_ms": [
+      1029.482343,
+      1030.343749,
+      1034.647603,
+      1021.019218
+    ],
+    "phases": {
+      "gather_ms": 3.05335925,
+      "expert_wall_ms": 556.70913975,
+      "combine_ms": 34.98773275,
+      "outside_ffn_ms": 434.1229965,
+      "scheduling_ms": 1.11456975,
+      "backend_compute_ms": [
+        514.0502074999999,
+        456.7268235,
+        448.15162725
+      ],
+      "backend_gather_ms": [
+        12.80364425,
+        59.3322145,
+        32.785768000000004
+      ],
+      "routed_pair_fraction": [
+        0.11474122192502016,
+        0.5387317963741349,
+        0.3465269817008449
+      ],
+      "backend_order": [
+        "CPU",
+        "HTP",
+        "GPU"
+      ],
+      "accounting": "scheduling is included in gather; backend gather is included in expert wall; backend times overlap"
+    }
+  },
+  "wetland-fast-scalar-explore": {
+    "median_ms": 1079.2936195,
+    "samples_ms": [
+      1024.467656,
+      1068.8203119999998,
+      1089.766927,
+      1099.3784369999998
+    ],
+    "phases": {
+      "gather_ms": 6.72447775,
+      "expert_wall_ms": 551.08358075,
+      "combine_ms": 40.44772075,
+      "outside_ffn_ms": 472.35255374999986,
+      "scheduling_ms": 2.448241,
+      "backend_compute_ms": [
+        428.89311224999994,
+        456.603788,
+        444.904648
+      ],
+      "backend_gather_ms": [
+        19.62360675,
+        75.25239575,
+        42.90358175
+      ],
+      "routed_pair_fraction": [
+        0.11474122192502016,
+        0.5387317963741349,
+        0.3465269817008449
+      ],
+      "backend_order": [
+        "CPU",
+        "HTP",
+        "GPU"
+      ],
+      "accounting": "scheduling is included in gather; backend gather is included in expert wall; backend times overlap"
+    }
+  },
+  "wetland-npu-current-explore": {
+    "median_ms": 1290.4954945,
+    "samples_ms": [
+      1288.54302,
+      1282.733021,
+      1292.608594,
+      1292.447969
+    ]
+  },
+  "wetland-fast-pin7-explore": {
+    "median_ms": 1553.90901,
+    "samples_ms": [
+      1555.629739,
+      1541.306874,
+      1611.897604,
+      1552.188281
+    ],
+    "phases": {
+      "gather_ms": 1.73829525,
+      "expert_wall_ms": 558.508385,
+      "combine_ms": 29.07937525,
+      "outside_ffn_ms": 975.9295690000001,
+      "scheduling_ms": 0.5761845,
+      "backend_compute_ms": [
+        338.718762,
+        455.690795,
+        485.14608225
+      ],
+      "backend_gather_ms": [
+        37.1293615,
+        35.96980575,
+        13.5828625
+      ],
+      "routed_pair_fraction": [
+        0.09345943191950071,
+        0.5546533350316308,
+        0.3518872330488685
+      ],
+      "backend_order": [
+        "CPU",
+        "HTP",
+        "GPU"
+      ],
+      "accounting": "scheduling is included in gather; backend gather is included in expert wall; backend times overlap"
+    },
+    "adopted": false,
+    "reason": "regressed fullmodel latency; never used to weaken NPU baseline"
+  },
+  "wetland-fast-callback7-explore": {
+    "median_ms": 1214.6252080000002,
+    "samples_ms": [
+      1225.14401,
+      1245.765468,
+      1204.1064059999999,
+      1201.7944790000001
+    ],
+    "phases": {
+      "gather_ms": 39.739337500000005,
+      "expert_wall_ms": 661.969947,
+      "combine_ms": 27.5933855,
+      "outside_ffn_ms": 489.8999207500001,
+      "scheduling_ms": 1.802241,
+      "backend_compute_ms": [
+        480.11398299999996,
+        454.38032525,
+        457.61769525
+      ],
+      "backend_gather_ms": [
+        21.44793075,
+        44.919635,
+        37.05936325
+      ],
+      "routed_pair_fraction": [
+        0.09345943191950071,
+        0.5546533350316308,
+        0.3518872330488685
+      ],
+      "backend_order": [
+        "CPU",
+        "HTP",
+        "GPU"
+      ],
+      "accounting": "scheduling is included in gather; backend gather is included in expert wall; backend times overlap"
+    },
+    "adopted": false,
+    "reason": "regressed fullmodel latency; never used to weaken NPU baseline"
+  },
+  "technical-context-v2": {
+    "completed": false,
+    "stage": "resident weight preparation, last completed layer14",
+    "exit": 255,
+    "device_reboot_confirmed": true,
+    "no_timing_samples": true,
+    "kernel_panic": true,
+    "code_adopted": false
+  }
+}
