@@ -1,0 +1,551 @@
+{
+  "tokens": 1024,
+  "backend_order": [
+    "CPU",
+    "HTP",
+    "GPU"
+  ],
+  "protocol": "ABBA; two process medians averaged per condition; two warmups + six timed requests; batch 1024; all chunks included; no causal separation of layout vs grouped execution",
+  "comparisons": {
+    "wetland": {
+      "process_mean_median_ms": {
+        "native": 1252.27274725,
+        "shared": 1182.67199175
+      },
+      "tokens_per_second": {
+        "native": 817.7132355940121,
+        "shared": 865.8360112889686
+      },
+      "throughput_gain_percent": 5.885043020001834,
+      "latency_reduction_percent": 5.557954978485624,
+      "logits": {
+        "bitwise_equal": false,
+        "nrmse": 0.01573375082586655,
+        "cosine": 0.9998831120590128,
+        "max_abs": 0.19989395141601562,
+        "top1_equal": true,
+        "top10_overlap": 10
+      }
+    },
+    "foundry": {
+      "process_mean_median_ms": {
+        "native": 1261.60122375,
+        "shared": 1165.9038540000001
+      },
+      "tokens_per_second": {
+        "native": 811.6669362100404,
+        "shared": 878.2885453949275
+      },
+      "throughput_gain_percent": 8.207998405844519,
+      "latency_reduction_percent": 7.585389737142744,
+      "logits": {
+        "bitwise_equal": false,
+        "nrmse": 0.010869339960585466,
+        "cosine": 0.9999410105719787,
+        "max_abs": 0.15346169471740723,
+        "top1_equal": true,
+        "top10_overlap": 10
+      }
+    }
+  },
+  "runs": {
+    "foundry-native-1024-c1024-a": {
+      "median_ms": 1279.5644785,
+      "tokens_per_second": 800.2722935857116,
+      "samples_ms": [
+        1243.646145,
+        1241.539478,
+        1243.5468740000001,
+        1316.841667,
+        1362.79151,
+        1315.482812
+      ],
+      "major_faults": [
+        0,
+        0,
+        7,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        553,
+        491,
+        581,
+        372,
+        447,
+        453
+      ],
+      "phases": {
+        "gather_us": 1247.5279999999998,
+        "expert_wall_us": 752389.115,
+        "combine_us": 52742.2375,
+        "backend_compute_us": [
+          509004.3495,
+          663533.9845,
+          394221.1445
+        ],
+        "critical_backend_compute_us": 680951.118,
+        "outside_ffn_us": 472986.6654999999
+      },
+      "arena_bytes": 293699584,
+      "top1": 37319,
+      "tokens": 1024,
+      "chunk": 1024,
+      "layout": "backend native banks",
+      "router": "default",
+      "binary_hashes": {
+        "libc++_shared.so": "d523468d62d9b603cb3354294d70d4b2feabf2c3f1e43b0c96c9aabf32813708",
+        "libggml-base.so": "60670783ece0f46d11dcddf01d2c0cee35ef587405f400c93078bc9bb77b3c9b",
+        "libggml-cpu.so": "8d9e463981182d983577cb2fc7c3ff3c66dd7f6b0267703ee7b7218f65ea3d02",
+        "libggml-hexagon.so": "822aa4726b277fe140b9eb4539dacbcd90c18671e88bf9a9e34f1d5c7ea36375",
+        "libggml-htp-v79.so": "248d4f0cb347074ba9dbf6000ff75c39ee8eee19c22496a6f9237c693ffcfe8e",
+        "libggml-opencl.so": "536a39b2f8bc1b66c1b0a80c9dc77c0ce1d71f1c296425f9f46c2dbae99eb50d",
+        "libggml.so": "8e9818d20fc52a6c7d64f97415466c70fd510b7e2ff57a2fa7040fa9e4955d62",
+        "libllama.so": "2574d2195b81cca96785e5a702257d8f29029dffd5bbf91c55f34f70d02dced5",
+        "fullmodel-oracle": "58c345ef2b79fd97f146b4041df2fa7d7077af162c7473e9d1cda822f2ac6d42"
+      }
+    },
+    "foundry-native-1024-c1024-b": {
+      "median_ms": 1243.637969,
+      "tokens_per_second": 823.3907499811949,
+      "samples_ms": [
+        1232.15875,
+        1250.503906,
+        1227.365937,
+        1237.265469,
+        1269.7973430000002,
+        1250.010469
+      ],
+      "major_faults": [
+        0,
+        0,
+        8,
+        1,
+        0,
+        0
+      ],
+      "minor_faults": [
+        552,
+        491,
+        568,
+        456,
+        449,
+        452
+      ],
+      "phases": {
+        "gather_us": 1149.2185,
+        "expert_wall_us": 747859.191,
+        "combine_us": 36992.7345,
+        "backend_compute_us": [
+          512521.0145,
+          660928.0215,
+          398530.62600000005
+        ],
+        "critical_backend_compute_us": 672564.219,
+        "outside_ffn_us": 455976.27599999995
+      },
+      "arena_bytes": 293699584,
+      "top1": 37319,
+      "tokens": 1024,
+      "chunk": 1024,
+      "layout": "backend native banks",
+      "router": "default",
+      "binary_hashes": {
+        "libc++_shared.so": "d523468d62d9b603cb3354294d70d4b2feabf2c3f1e43b0c96c9aabf32813708",
+        "libggml-base.so": "60670783ece0f46d11dcddf01d2c0cee35ef587405f400c93078bc9bb77b3c9b",
+        "libggml-cpu.so": "8d9e463981182d983577cb2fc7c3ff3c66dd7f6b0267703ee7b7218f65ea3d02",
+        "libggml-hexagon.so": "822aa4726b277fe140b9eb4539dacbcd90c18671e88bf9a9e34f1d5c7ea36375",
+        "libggml-htp-v79.so": "248d4f0cb347074ba9dbf6000ff75c39ee8eee19c22496a6f9237c693ffcfe8e",
+        "libggml-opencl.so": "536a39b2f8bc1b66c1b0a80c9dc77c0ce1d71f1c296425f9f46c2dbae99eb50d",
+        "libggml.so": "8e9818d20fc52a6c7d64f97415466c70fd510b7e2ff57a2fa7040fa9e4955d62",
+        "libllama.so": "2574d2195b81cca96785e5a702257d8f29029dffd5bbf91c55f34f70d02dced5",
+        "fullmodel-oracle": "58c345ef2b79fd97f146b4041df2fa7d7077af162c7473e9d1cda822f2ac6d42"
+      }
+    },
+    "foundry-shared-1024-c1024-a": {
+      "median_ms": 1152.20151,
+      "tokens_per_second": 888.7334299709432,
+      "samples_ms": [
+        1160.122343,
+        1134.608229,
+        1130.576614,
+        1144.280677,
+        1210.60125,
+        1166.70453
+      ],
+      "major_faults": [
+        2,
+        1,
+        0,
+        2,
+        6,
+        6
+      ],
+      "minor_faults": [
+        542,
+        581,
+        377,
+        371,
+        377,
+        612
+      ],
+      "phases": {
+        "gather_us": 3475.367,
+        "expert_wall_us": 645410.7035000001,
+        "combine_us": 38664.0355,
+        "backend_compute_us": [
+          319006.56149999995,
+          543878.1780000001,
+          175282.7335
+        ],
+        "critical_backend_compute_us": 545588.2585,
+        "outside_ffn_us": 465222.2385
+      },
+      "arena_bytes": 506494976,
+      "top1": 37319,
+      "tokens": 1024,
+      "chunk": 1024,
+      "layout": "single CPU4x8 V2 + canonical F16 scalar gate",
+      "router": "default",
+      "binary_hashes": {
+        "libc++_shared.so": "d523468d62d9b603cb3354294d70d4b2feabf2c3f1e43b0c96c9aabf32813708",
+        "libggml-base.so": "60670783ece0f46d11dcddf01d2c0cee35ef587405f400c93078bc9bb77b3c9b",
+        "libggml-cpu.so": "8d9e463981182d983577cb2fc7c3ff3c66dd7f6b0267703ee7b7218f65ea3d02",
+        "libggml-hexagon.so": "822aa4726b277fe140b9eb4539dacbcd90c18671e88bf9a9e34f1d5c7ea36375",
+        "libggml-htp-v79.so": "248d4f0cb347074ba9dbf6000ff75c39ee8eee19c22496a6f9237c693ffcfe8e",
+        "libggml-opencl.so": "536a39b2f8bc1b66c1b0a80c9dc77c0ce1d71f1c296425f9f46c2dbae99eb50d",
+        "libggml.so": "8e9818d20fc52a6c7d64f97415466c70fd510b7e2ff57a2fa7040fa9e4955d62",
+        "libllama.so": "2574d2195b81cca96785e5a702257d8f29029dffd5bbf91c55f34f70d02dced5",
+        "fullmodel-oracle": "58c345ef2b79fd97f146b4041df2fa7d7077af162c7473e9d1cda822f2ac6d42"
+      }
+    },
+    "foundry-shared-1024-c1024-b": {
+      "median_ms": 1179.606198,
+      "tokens_per_second": 868.086317057483,
+      "samples_ms": [
+        1178.819427,
+        1170.885416,
+        1184.800156,
+        1172.439844,
+        1189.7570830000002,
+        1180.392969
+      ],
+      "major_faults": [
+        3,
+        6,
+        6,
+        6,
+        6,
+        5
+      ],
+      "minor_faults": [
+        544,
+        583,
+        372,
+        376,
+        371,
+        610
+      ],
+      "phases": {
+        "gather_us": 4286.7195,
+        "expert_wall_us": 661980.913,
+        "combine_us": 39196.7435,
+        "backend_compute_us": [
+          304829.8675,
+          546223.3825000001,
+          177862.499
+        ],
+        "critical_backend_compute_us": 546738.593,
+        "outside_ffn_us": 472026.40150000004
+      },
+      "arena_bytes": 506494976,
+      "top1": 37319,
+      "tokens": 1024,
+      "chunk": 1024,
+      "layout": "single CPU4x8 V2 + canonical F16 scalar gate",
+      "router": "default",
+      "binary_hashes": {
+        "libc++_shared.so": "d523468d62d9b603cb3354294d70d4b2feabf2c3f1e43b0c96c9aabf32813708",
+        "libggml-base.so": "60670783ece0f46d11dcddf01d2c0cee35ef587405f400c93078bc9bb77b3c9b",
+        "libggml-cpu.so": "8d9e463981182d983577cb2fc7c3ff3c66dd7f6b0267703ee7b7218f65ea3d02",
+        "libggml-hexagon.so": "822aa4726b277fe140b9eb4539dacbcd90c18671e88bf9a9e34f1d5c7ea36375",
+        "libggml-htp-v79.so": "248d4f0cb347074ba9dbf6000ff75c39ee8eee19c22496a6f9237c693ffcfe8e",
+        "libggml-opencl.so": "536a39b2f8bc1b66c1b0a80c9dc77c0ce1d71f1c296425f9f46c2dbae99eb50d",
+        "libggml.so": "8e9818d20fc52a6c7d64f97415466c70fd510b7e2ff57a2fa7040fa9e4955d62",
+        "libllama.so": "2574d2195b81cca96785e5a702257d8f29029dffd5bbf91c55f34f70d02dced5",
+        "fullmodel-oracle": "58c345ef2b79fd97f146b4041df2fa7d7077af162c7473e9d1cda822f2ac6d42"
+      }
+    },
+    "wetland-native-1024-c1024-a": {
+      "median_ms": 1260.08526,
+      "tokens_per_second": 812.6434238267337,
+      "samples_ms": [
+        1288.3710930000002,
+        1283.184687,
+        1296.245103,
+        1236.9858330000002,
+        1209.1423430000002,
+        1236.013333
+      ],
+      "major_faults": [
+        0,
+        0,
+        7,
+        3,
+        5,
+        3
+      ],
+      "minor_faults": [
+        553,
+        492,
+        570,
+        452,
+        449,
+        454
+      ],
+      "phases": {
+        "gather_us": 1023.23,
+        "expert_wall_us": 742976.38,
+        "combine_us": 42398.3345,
+        "backend_compute_us": [
+          572988.594,
+          660248.7490000001,
+          395101.224
+        ],
+        "critical_backend_compute_us": 696145.8335,
+        "outside_ffn_us": 455854.26950000005
+      },
+      "arena_bytes": 293699584,
+      "top1": 10342,
+      "tokens": 1024,
+      "chunk": 1024,
+      "layout": "backend native banks",
+      "router": "default",
+      "binary_hashes": {
+        "libc++_shared.so": "d523468d62d9b603cb3354294d70d4b2feabf2c3f1e43b0c96c9aabf32813708",
+        "libggml-base.so": "60670783ece0f46d11dcddf01d2c0cee35ef587405f400c93078bc9bb77b3c9b",
+        "libggml-cpu.so": "8d9e463981182d983577cb2fc7c3ff3c66dd7f6b0267703ee7b7218f65ea3d02",
+        "libggml-hexagon.so": "822aa4726b277fe140b9eb4539dacbcd90c18671e88bf9a9e34f1d5c7ea36375",
+        "libggml-htp-v79.so": "248d4f0cb347074ba9dbf6000ff75c39ee8eee19c22496a6f9237c693ffcfe8e",
+        "libggml-opencl.so": "536a39b2f8bc1b66c1b0a80c9dc77c0ce1d71f1c296425f9f46c2dbae99eb50d",
+        "libggml.so": "8e9818d20fc52a6c7d64f97415466c70fd510b7e2ff57a2fa7040fa9e4955d62",
+        "libllama.so": "2574d2195b81cca96785e5a702257d8f29029dffd5bbf91c55f34f70d02dced5",
+        "fullmodel-oracle": "58c345ef2b79fd97f146b4041df2fa7d7077af162c7473e9d1cda822f2ac6d42"
+      }
+    },
+    "wetland-native-1024-c1024-b": {
+      "median_ms": 1244.4602345,
+      "tokens_per_second": 822.8467022181896,
+      "samples_ms": [
+        1232.827916,
+        1240.892344,
+        1247.86625,
+        1268.736979,
+        1297.140625,
+        1241.054219
+      ],
+      "major_faults": [
+        0,
+        0,
+        7,
+        2329,
+        53782,
+        15
+      ],
+      "minor_faults": [
+        557,
+        498,
+        571,
+        383,
+        461,
+        454
+      ],
+      "phases": {
+        "gather_us": 931.1195,
+        "expert_wall_us": 758833.75,
+        "combine_us": 38259.192500000005,
+        "backend_compute_us": [
+          604567.7585,
+          673877.8355,
+          400852.91500000004
+        ],
+        "critical_backend_compute_us": 703147.448,
+        "outside_ffn_us": 452706.19750000007
+      },
+      "arena_bytes": 293699584,
+      "top1": 10342,
+      "tokens": 1024,
+      "chunk": 1024,
+      "layout": "backend native banks",
+      "router": "default",
+      "binary_hashes": {
+        "libc++_shared.so": "d523468d62d9b603cb3354294d70d4b2feabf2c3f1e43b0c96c9aabf32813708",
+        "libggml-base.so": "60670783ece0f46d11dcddf01d2c0cee35ef587405f400c93078bc9bb77b3c9b",
+        "libggml-cpu.so": "8d9e463981182d983577cb2fc7c3ff3c66dd7f6b0267703ee7b7218f65ea3d02",
+        "libggml-hexagon.so": "822aa4726b277fe140b9eb4539dacbcd90c18671e88bf9a9e34f1d5c7ea36375",
+        "libggml-htp-v79.so": "248d4f0cb347074ba9dbf6000ff75c39ee8eee19c22496a6f9237c693ffcfe8e",
+        "libggml-opencl.so": "536a39b2f8bc1b66c1b0a80c9dc77c0ce1d71f1c296425f9f46c2dbae99eb50d",
+        "libggml.so": "8e9818d20fc52a6c7d64f97415466c70fd510b7e2ff57a2fa7040fa9e4955d62",
+        "libllama.so": "2574d2195b81cca96785e5a702257d8f29029dffd5bbf91c55f34f70d02dced5",
+        "fullmodel-oracle": "58c345ef2b79fd97f146b4041df2fa7d7077af162c7473e9d1cda822f2ac6d42"
+      }
+    },
+    "wetland-router-gpu-trace-v3": {
+      "median_ms": 1411.709062,
+      "tokens_per_second": 725.3619230504027,
+      "samples_ms": [
+        1411.709062
+      ],
+      "major_faults": [
+        2581
+      ],
+      "minor_faults": [
+        85005
+      ],
+      "phases": {
+        "gather_us": 2237.553,
+        "expert_wall_us": 667387.501,
+        "combine_us": 42615.416,
+        "backend_compute_us": [
+          231472.188,
+          552260.313,
+          175885.888
+        ],
+        "critical_backend_compute_us": 552260.313,
+        "outside_ffn_us": 699468.592
+      },
+      "arena_bytes": 506494976,
+      "top1": 10342,
+      "tokens": 1024,
+      "chunk": 1024,
+      "layout": "single CPU4x8 V2 + canonical F16 scalar gate",
+      "router": "gpu",
+      "binary_hashes": {
+        "libc++_shared.so": "d523468d62d9b603cb3354294d70d4b2feabf2c3f1e43b0c96c9aabf32813708",
+        "libggml-base.so": "60670783ece0f46d11dcddf01d2c0cee35ef587405f400c93078bc9bb77b3c9b",
+        "libggml-cpu.so": "8d9e463981182d983577cb2fc7c3ff3c66dd7f6b0267703ee7b7218f65ea3d02",
+        "libggml-hexagon.so": "822aa4726b277fe140b9eb4539dacbcd90c18671e88bf9a9e34f1d5c7ea36375",
+        "libggml-htp-v79.so": "248d4f0cb347074ba9dbf6000ff75c39ee8eee19c22496a6f9237c693ffcfe8e",
+        "libggml-opencl.so": "536a39b2f8bc1b66c1b0a80c9dc77c0ce1d71f1c296425f9f46c2dbae99eb50d",
+        "libggml.so": "8e9818d20fc52a6c7d64f97415466c70fd510b7e2ff57a2fa7040fa9e4955d62",
+        "libllama.so": "2574d2195b81cca96785e5a702257d8f29029dffd5bbf91c55f34f70d02dced5",
+        "fullmodel-oracle": "58c345ef2b79fd97f146b4041df2fa7d7077af162c7473e9d1cda822f2ac6d42"
+      }
+    },
+    "wetland-shared-1024-c1024-a": {
+      "median_ms": 1212.0773434999999,
+      "tokens_per_second": 844.8305757808268,
+      "samples_ms": [
+        1260.440625,
+        1193.38875,
+        1224.3065100000001,
+        1204.128125,
+        1220.026562,
+        1195.17703
+      ],
+      "major_faults": [
+        0,
+        2,
+        0,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        543,
+        595,
+        375,
+        376,
+        376,
+        610
+      ],
+      "phases": {
+        "gather_us": 5331.067,
+        "expert_wall_us": 658316.797,
+        "combine_us": 59359.558999999994,
+        "backend_compute_us": [
+          255408.41100000002,
+          543519.037,
+          160543.986
+        ],
+        "critical_backend_compute_us": 544954.115,
+        "outside_ffn_us": 494410.3339999999
+      },
+      "arena_bytes": 506494976,
+      "top1": 10342,
+      "tokens": 1024,
+      "chunk": 1024,
+      "layout": "single CPU4x8 V2 + canonical F16 scalar gate",
+      "router": "default",
+      "binary_hashes": {
+        "libc++_shared.so": "d523468d62d9b603cb3354294d70d4b2feabf2c3f1e43b0c96c9aabf32813708",
+        "libggml-base.so": "60670783ece0f46d11dcddf01d2c0cee35ef587405f400c93078bc9bb77b3c9b",
+        "libggml-cpu.so": "8d9e463981182d983577cb2fc7c3ff3c66dd7f6b0267703ee7b7218f65ea3d02",
+        "libggml-hexagon.so": "822aa4726b277fe140b9eb4539dacbcd90c18671e88bf9a9e34f1d5c7ea36375",
+        "libggml-htp-v79.so": "248d4f0cb347074ba9dbf6000ff75c39ee8eee19c22496a6f9237c693ffcfe8e",
+        "libggml-opencl.so": "536a39b2f8bc1b66c1b0a80c9dc77c0ce1d71f1c296425f9f46c2dbae99eb50d",
+        "libggml.so": "8e9818d20fc52a6c7d64f97415466c70fd510b7e2ff57a2fa7040fa9e4955d62",
+        "libllama.so": "2574d2195b81cca96785e5a702257d8f29029dffd5bbf91c55f34f70d02dced5",
+        "fullmodel-oracle": "58c345ef2b79fd97f146b4041df2fa7d7077af162c7473e9d1cda822f2ac6d42"
+      }
+    },
+    "wetland-shared-1024-c1024-b": {
+      "median_ms": 1153.26664,
+      "tokens_per_second": 887.9126166347792,
+      "samples_ms": [
+        1161.173541,
+        1145.359739,
+        1136.014426,
+        1167.006094,
+        1129.8851029999998,
+        1172.7424990000002
+      ],
+      "major_faults": [
+        3,
+        1,
+        0,
+        0,
+        3,
+        4
+      ],
+      "minor_faults": [
+        537,
+        595,
+        376,
+        372,
+        379,
+        613
+      ],
+      "phases": {
+        "gather_us": 3837.8914999999997,
+        "expert_wall_us": 642399.4775,
+        "combine_us": 38339.713,
+        "backend_compute_us": [
+          320899.7115,
+          541468.724,
+          175185.207
+        ],
+        "critical_backend_compute_us": 543156.2479999999,
+        "outside_ffn_us": 470904.533
+      },
+      "arena_bytes": 506494976,
+      "top1": 10342,
+      "tokens": 1024,
+      "chunk": 1024,
+      "layout": "single CPU4x8 V2 + canonical F16 scalar gate",
+      "router": "default",
+      "binary_hashes": {
+        "libc++_shared.so": "d523468d62d9b603cb3354294d70d4b2feabf2c3f1e43b0c96c9aabf32813708",
+        "libggml-base.so": "60670783ece0f46d11dcddf01d2c0cee35ef587405f400c93078bc9bb77b3c9b",
+        "libggml-cpu.so": "8d9e463981182d983577cb2fc7c3ff3c66dd7f6b0267703ee7b7218f65ea3d02",
+        "libggml-hexagon.so": "822aa4726b277fe140b9eb4539dacbcd90c18671e88bf9a9e34f1d5c7ea36375",
+        "libggml-htp-v79.so": "248d4f0cb347074ba9dbf6000ff75c39ee8eee19c22496a6f9237c693ffcfe8e",
+        "libggml-opencl.so": "536a39b2f8bc1b66c1b0a80c9dc77c0ce1d71f1c296425f9f46c2dbae99eb50d",
+        "libggml.so": "8e9818d20fc52a6c7d64f97415466c70fd510b7e2ff57a2fa7040fa9e4955d62",
+        "libllama.so": "2574d2195b81cca96785e5a702257d8f29029dffd5bbf91c55f34f70d02dced5",
+        "fullmodel-oracle": "58c345ef2b79fd97f146b4041df2fa7d7077af162c7473e9d1cda822f2ac6d42"
+      }
+    }
+  }
+}
