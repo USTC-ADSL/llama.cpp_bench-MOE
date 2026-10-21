@@ -37,6 +37,7 @@ typedef const void * (*get_adreno_bin_kernel_func_t)(
 #include <CL/cl_ext.h>
 #ifndef _WIN32
 #include <unistd.h>
+#include <sys/stat.h>
 #endif
 #include "ggml-opencl-budget.h"
 
@@ -56,6 +57,7 @@ typedef const void * (*get_adreno_bin_kernel_func_t)(
 #include <regex>
 #include <set>
 #include <unordered_set>
+#include <tuple>
 
 #undef MIN
 #undef MAX
@@ -9763,6 +9765,9 @@ struct ggml_backend_opencl_buffer_context {
     std::vector<cl_mem> img;
     std::string name;
     void * shared_host_base = nullptr;
+    // Imports of slices keep one DMA mapping alive per backing/context. Each
+    // buffer still owns its tensor descriptor and its own cl_mem reference.
+    std::shared_ptr<_cl_mem> shared_dma_owner;
     ggml_shared_weight_desc shared_weight = {};
     ggml_backend_buffer_type shared_weight_type = {};
     cl_kernel shared_mv = nullptr;
@@ -13290,24 +13295,47 @@ ggml_backend_buffer_t ggml_backend_opencl_import_shared_dma_compute_buffer(
         ctx->program_cache_initialized = true;
     }
     load_cl_kernels(ctx);
-    int fd = dup(desc->dma_buf_fd);
-    if (fd < 0) { return nullptr; }
-    // QCOM DMA-BUF and ION host-pointer descriptors have the same field layout.
-    // This mirrors the reference MOE demo's explicit IO-coherent fd import.
-    struct dma_host_ptr { cl_mem_ext_host_ptr ext; int fd; void * host; } imported{};
-    imported.ext.allocation_type = has("cl_qcom_dmabuf_host_ptr") ? 0x411D : CL_MEM_ION_HOST_PTR_QCOM;
-    imported.ext.host_cache_policy = CL_MEM_HOST_IOCOHERENT_QCOM;
-    imported.fd = fd; imported.host = desc->host_ptr;
-    cl_int error = CL_SUCCESS;
-    cl_mem memory = clCreateBuffer(ctx->context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR | CL_MEM_EXT_HOST_PTR_QCOM,
-                                  desc->size, &imported, &error);
-    if (error != CL_SUCCESS || !memory) { close(fd); return nullptr; }
-    auto * retained_fd = new int(fd);
-    error = clSetMemObjectDestructorCallback(memory, [](cl_mem, void * opaque) {
-        auto * saved = static_cast<int *>(opaque); close(*saved); delete saved;
-    }, retained_fd);
-    if (error != CL_SUCCESS) { clReleaseMemObject(memory); close(fd); delete retained_fd; return nullptr; }
-    auto * buffer_ctx = new ggml_backend_opencl_buffer_context(memory);
+    struct stat identity{};
+    if (fstat(desc->dma_buf_fd,&identity)!=0) { return nullptr; }
+    // Descriptor numbers can be reused while an older import remains alive.
+    // Use the DMA-BUF inode, mapping extent and OpenCL context as its identity.
+    using import_key = std::tuple<uintptr_t,uint64_t,uint64_t,uintptr_t,size_t>;
+    static std::mutex import_mutex;
+    static std::map<import_key,std::weak_ptr<_cl_mem>> imports;
+    const import_key key{reinterpret_cast<uintptr_t>(ctx->context),uint64_t(identity.st_dev),
+                         uint64_t(identity.st_ino),reinterpret_cast<uintptr_t>(desc->host_ptr),desc->size};
+    std::shared_ptr<_cl_mem> owner;
+    {
+        std::lock_guard<std::mutex> lock(import_mutex);
+        for (auto it=imports.begin();it!=imports.end();) {
+            if (it->second.expired()) { it=imports.erase(it); } else { ++it; }
+        }
+        auto found=imports.find(key);
+        if (found!=imports.end()) { owner=found->second.lock(); }
+        if (!owner) {
+            int fd = dup(desc->dma_buf_fd);
+            if (fd < 0) { return nullptr; }
+            // QCOM DMA-BUF and ION host-pointer descriptors share this layout.
+            struct dma_host_ptr { cl_mem_ext_host_ptr ext; int fd; void * host; } imported{};
+            imported.ext.allocation_type = has("cl_qcom_dmabuf_host_ptr") ? 0x411D : CL_MEM_ION_HOST_PTR_QCOM;
+            imported.ext.host_cache_policy = CL_MEM_HOST_IOCOHERENT_QCOM;
+            imported.fd = fd; imported.host = desc->host_ptr;
+            cl_int error = CL_SUCCESS;
+            cl_mem memory = clCreateBuffer(ctx->context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR | CL_MEM_EXT_HOST_PTR_QCOM,
+                                          desc->size, &imported, &error);
+            if (error != CL_SUCCESS || !memory) { close(fd); return nullptr; }
+            auto * retained_fd = new int(fd);
+            error = clSetMemObjectDestructorCallback(memory, [](cl_mem, void * opaque) {
+                auto * saved = static_cast<int *>(opaque); close(*saved); delete saved;
+            }, retained_fd);
+            if (error != CL_SUCCESS) { clReleaseMemObject(memory); close(fd); delete retained_fd; return nullptr; }
+            owner={memory,[](cl_mem memory) { CL_CHECK(clReleaseMemObject(memory)); }};
+            imports[key]=owner;
+        }
+    }
+    if (clRetainMemObject(owner.get())!=CL_SUCCESS) { return nullptr; }
+    auto * buffer_ctx = new ggml_backend_opencl_buffer_context(owner.get());
+    buffer_ctx->shared_dma_owner=std::move(owner);
     buffer_ctx->shared_host_base = desc->host_ptr;
     auto result = ggml_backend_buffer_init(ggml_backend_dev_buffer_type(backend->device),
         ggml_backend_opencl_buffer_interface, buffer_ctx, desc->size);
