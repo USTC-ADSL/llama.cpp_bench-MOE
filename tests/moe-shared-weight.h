@@ -76,15 +76,23 @@ struct moe_shared_job {
     ggml_tensor * full_input=nullptr;
     std::array<ggml_tensor *,60> input_rows{};
     std::shared_ptr<shared_activation_buffer> arena;
+    std::shared_ptr<shared_activation_buffer> shared_scratch;
+    size_t routed_layout_bytes=0,shared_layout_bytes=0;
     moe_shared_job(device & d,moe_shared_weights & weights,int backend,const std::array<int,61> & counts,
-                   std::shared_ptr<shared_activation_buffer> storage,int full_tokens=0) : dev(d),arena(std::move(storage)) {
+                   std::shared_ptr<shared_activation_buffer> storage,int full_tokens=0,
+                   std::shared_ptr<shared_activation_buffer> common={}) : dev(d),arena(std::move(storage)),shared_scratch(std::move(common)) {
         graph=ggml_new_graph_custom(ctx.get(),512,false);
+        std::unordered_set<ggml_tensor *> shared_roots;
         if(full_tokens) {
             require(backend==1 && full_tokens>1,"device gather requires HTP prefill");
             full_input=ggml_new_tensor_2d(ctx.get(),GGML_TYPE_F32,2048,full_tokens);
             ggml_set_output(full_input); // Retain storage through internal indexed matmuls.
         }
         for(int e=0;e<61;++e) { if(counts[e]) {
+            ggml_tensor * before_shared=nullptr;
+            if(e==60 && shared_scratch) {
+                for(auto * t=ggml_get_first_tensor(ctx.get());t;t=ggml_get_next_tensor(ctx.get(),t)) { before_shared=t; }
+            }
             const auto & w=weights.weights[backend][e];
             require(w[0] && w[1] && w[2],"shared expert not bound on selected backend");
             ggml_tensor * x=nullptr;
@@ -106,6 +114,14 @@ struct moe_shared_job {
             }
             outputs[e]=out; ggml_set_output(out);
             ggml_build_forward_expand(graph,out);
+            if(e==60 && shared_scratch) {
+                for(auto * t=before_shared?ggml_get_next_tensor(ctx.get(),before_shared):ggml_get_first_tensor(ctx.get());
+                    t;t=ggml_get_next_tensor(ctx.get(),t)) { shared_roots.insert(shared_activation_layout::root(t)); }
+                // Retained indexed-gather input may be read by routed work on
+                // this same branch. Only the selected shared owner uses this
+                // common region; other branches keep full_input private.
+                if(full_input) { shared_roots.insert(full_input); }
+            }
         } }
         for(int i=0;i<ggml_graph_n_nodes(graph);++i) {
             auto * node=ggml_graph_node(graph,i);
@@ -117,7 +133,16 @@ struct moe_shared_job {
         require(bool(arena),"shared MoE arena missing");
         // All inputs survive to their last consumers, all outputs to host
         // reduction. Intermediate projections reuse closed-lifetime regions.
-        arena->bind(dev,ctx.get(),graph);
+        if(shared_scratch) {
+            shared_activation_layout routed(dev,ctx.get(),graph,&shared_roots,true);
+            shared_activation_layout common_layout(dev,ctx.get(),graph,&shared_roots);
+            routed_layout_bytes=routed.bytes; shared_layout_bytes=common_layout.bytes;
+            require(bool(counts[60])==bool(common_layout.bytes),"shared scratch ownership mismatch");
+            arena->bind_layout(dev,routed); shared_scratch->bind_layout(dev,common_layout);
+            for(auto * t=ggml_get_first_tensor(ctx.get());t;t=ggml_get_next_tensor(ctx.get(),t)) {
+                if(t->view_src) { require(ggml_backend_view_init(t)==GGML_STATUS_SUCCESS,"partitioned view init failed"); }
+            }
+        } else { arena->bind(dev,ctx.get(),graph); }
     }
 };
 
@@ -125,6 +150,7 @@ struct moe_shared_execution {
     std::array<device *,3> devs;
     moe_shared_weights weights;
     std::array<std::shared_ptr<shared_activation_buffer>,3> arenas;
+    std::shared_ptr<shared_activation_buffer> shared_scratch;
     // A gathered branch may have the same expert counts at different full
     // input lengths. Include that length; zero identifies the original graph.
     using job_key=std::pair<int,std::array<int,61>>;
@@ -165,9 +191,14 @@ struct moe_shared_execution {
             const int full_tokens=npu_gather && b==1 && nt>1 && branch_pairs[b] &&
                 branch_pairs[b]+size_t(counts[b][60])>size_t(nt) ? nt : 0;
             auto & job=jobs[b][{full_tokens,counts[b]}];
-            if(!job) { job=std::make_unique<moe_shared_job>(*devs[b],weights,b,counts[b],arenas[b],full_tokens); ++allocations; }
+            if(!job) { job=std::make_unique<moe_shared_job>(*devs[b],weights,b,counts[b],arenas[b],full_tokens,shared_scratch); ++allocations; }
             work[b]=job.get();
         } }
+        if(shared_scratch) {
+            for(int b=0;b<3;++b) { if(work[b]) {
+                require(bool(work[b]->shared_layout_bytes)==(b==plan.shared),"multiple shared scratch writers");
+            } }
+        }
         const double gather=elapsed(start); start=timer::now();
         const double origin=std::chrono::duration<double,std::micro>(start.time_since_epoch()).count();
         std::array<double,3> branch_gather{}; std::array<size_t,3> copies{},index_writes{};
@@ -245,6 +276,11 @@ struct moe_shared_execution {
               {"backend_index_host_write_bytes",index_writes},{"expert_token_counts",totals},
               {"allocations",allocations},{"shared_weight_matmuls",3*(active+1)},
               {"execution","grouped 2D expert graphs; one CPU4x8 bank per projection; host or HTP GET_ROWS gather"}};
+        if(shared_scratch) {
+            last["shared_scratch_owner"]=plan.shared;
+            last["shared_scratch_layout_bytes"]=work[plan.shared]->shared_layout_bytes;
+            last["routed_layout_bytes"]={work[0]?work[0]->routed_layout_bytes:0,work[1]?work[1]->routed_layout_bytes:0,work[2]?work[2]->routed_layout_bytes:0};
+        }
         return result;
     }
 };

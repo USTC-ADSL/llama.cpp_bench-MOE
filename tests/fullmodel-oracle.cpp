@@ -296,6 +296,7 @@ struct full_engine {
     std::unique_ptr<moe_token_workers> expert_workers;
     std::shared_ptr<shared_activation_buffer> arenas[3];
     std::vector<std::unique_ptr<partitioned_ffn>> layers;
+    std::shared_ptr<shared_activation_buffer> shared_scratch;
     std::unique_ptr<moe_branch_worker> shared_worker;
     std::vector<std::unique_ptr<moe_decode_branch>> decode_branches;
     bool record=false;
@@ -308,6 +309,9 @@ struct full_engine {
     void prepare_arenas(device * devs[3]) {
         std::array<size_t,3> capacities{};
         if(!layers.empty() && layers[0]->single_layout) {
+            const std::string scratch=std::getenv("MOE_SHARED_SCRATCH")?std::getenv("MOE_SHARED_SCRATCH"):"private";
+            require(scratch=="private" || scratch=="common","unknown shared scratch mode");
+            size_t shared_capacity=0;
             const std::string dispatch=std::getenv("MOE_SHARED_DISPATCH")?std::getenv("MOE_SHARED_DISPATCH"):"async";
             require(dispatch=="async" || dispatch=="pool","unknown shared branch dispatch");
             if(dispatch=="pool") { expert_workers=std::make_unique<moe_token_workers>(3); }
@@ -318,18 +322,28 @@ struct full_engine {
                 // including dynamic expert counts. Padding covers every tensor.
                 size_t bytes=1024*1024;
                 if(l->resident_width[b]) { bytes+=size_t(4*l->nt)*4*(4096+3*w.hidden); }
-                if(l->resident.shared[b]) { bytes+=size_t(l->nt)*(4*(6144+3*w.shared_hidden)+32); }
+                if(l->resident.shared[b]) {
+                    size_t shared_bytes=size_t(l->nt)*(4*(6144+3*w.shared_hidden)+32);
+                    if(scratch=="common") { shared_capacity=std::max(shared_capacity,size_t(1024*1024)+shared_bytes); }
+                    else { bytes+=shared_bytes; }
+                }
                 if(b==1 && l->single_layout->npu_gather && l->resident_width[b] && l->nt>1) {
                     bytes+=size_t(4*l->nt)*sizeof(int32_t); // expert token-row maps
                     // When shared is eligible, its budget already contains the
                     // complete input, now aliased by all routed GET_ROWS nodes.
-                    if(!l->resident.shared[b]) { bytes+=size_t(l->nt)*2048*sizeof(float); }
+                    if(scratch=="common" || !l->resident.shared[b]) { bytes+=size_t(l->nt)*2048*sizeof(float); }
                 }
                 capacities[b]=std::max(capacities[b],bytes);
             } }
             for(int b=0;b<3;++b) {
                 arenas[b]=std::make_shared<shared_activation_buffer>(*devs[b],capacities[b]);
                 for(auto & l:layers) { l->single_layout->arenas[b]=arenas[b]; }
+            }
+            if(scratch=="common") {
+                require(shared_capacity>0,"common scratch has no eligible shared expert");
+                shared_scratch=std::make_shared<shared_activation_buffer>(*devs[1],shared_capacity);
+                for(int b=0;b<3;++b) { shared_scratch->view(*devs[b]); }
+                for(auto & l:layers) { l->single_layout->shared_scratch=shared_scratch; }
             }
             return;
         }
@@ -1146,6 +1160,8 @@ int main(int argc,char ** argv) {
         report["expert_activation_graph_bytes"]=logical_activation_bytes;
         report["arena_capacity_bytes"]=json::array();
         for(auto & arena:engine.arenas) { report["arena_capacity_bytes"].push_back(arena?arena->desc.size:0); }
+        report["shared_scratch_capacity_bytes"]=engine.shared_scratch?engine.shared_scratch->desc.size:0;
+        report["shared_scratch_physical_backings"]=engine.shared_scratch?1:0;
         std::ifstream status("/proc/self/status"); report["process_status"]=std::string((std::istreambuf_iterator<char>(status)),{});
         std::ofstream out(argv[4]); out<<report.dump(2)<<'\n'; require(out.good(),"full-model report write failed");
         if(mode!="capture") { fprintf(stderr,"FULL_RESULT %s nt=%d median_ms=%.3f tokens_s=%.3f\n",mode.c_str(),nt,report["timing"]["median_us"].get<double>()/1000,report["timing"]["expert_tokens_per_second"].get<double>()); }

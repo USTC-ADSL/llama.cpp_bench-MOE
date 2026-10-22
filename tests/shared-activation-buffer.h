@@ -25,12 +25,14 @@ struct shared_activation_layout {
         while(t && t->view_src) { t=t->view_src; }
         return t;
     }
-    shared_activation_layout(device & dev,ggml_context * ctx,ggml_cgraph * graph) {
+    shared_activation_layout(device & dev,ggml_context * ctx,ggml_cgraph * graph,
+                             const std::unordered_set<ggml_tensor *> * selected=nullptr,bool exclude=false) {
         const size_t alignment=std::max<size_t>(128,ggml_backend_buft_get_alignment(ggml_backend_dev_buffer_type(dev.dev)));
         auto align=[&](size_t n) { return (n+alignment-1)/alignment*alignment; };
         std::unordered_map<ggml_tensor *,size_t> index;
         for(auto * t=ggml_get_first_tensor(ctx);t;t=ggml_get_next_tensor(ctx,t)) {
             if(t->view_src) { continue; }
+            if(selected && (bool(selected->count(t))==exclude)) { continue; }
             index[t]=slots.size();
             size_t size=std::max(ggml_nbytes(t),ggml_backend_buft_get_alloc_size(ggml_backend_dev_buffer_type(dev.dev),t));
             slots.push_back({t,0,align(size),0,0});
@@ -90,6 +92,8 @@ struct shared_activation_buffer {
     // Imported views are destroyed before the backing and its host mapping.
     ggml_backend_buffer_ptr backing;
     ggml_backend_buffer_ptr imported;
+    std::map<std::string,ggml_backend_buffer_ptr> additional_views;
+    std::string primary_backend;
     ggml_backend_shared_dma_buffer_desc desc{};
     using export_fn = bool (*)(ggml_backend_buffer_t, ggml_backend_shared_dma_buffer_desc *);
     using import_fn = ggml_backend_buffer_t (*)(ggml_backend_t, const ggml_backend_shared_dma_buffer_desc *);
@@ -98,7 +102,7 @@ struct shared_activation_buffer {
         return reinterpret_cast<import_fn>(ggml_backend_reg_get_proc_address(
             ggml_backend_dev_backend_reg(gpu.dev), "ggml_backend_opencl_import_shared_dma_compute_buffer"));
     }
-    shared_activation_buffer(device & dev, size_t bytes) {
+    shared_activation_buffer(device & dev, size_t bytes) : primary_backend(dev.name) {
         auto htp=ggml_backend_dev_by_name("HTP0"); require(htp!=nullptr,"shared activation requires HTP0");
         auto export_dma=reinterpret_cast<export_fn>(ggml_backend_reg_get_proc_address(
             ggml_backend_dev_backend_reg(htp),"ggml_backend_hexagon_buffer_export_shared_dma"));
@@ -117,6 +121,33 @@ struct shared_activation_buffer {
         ggml_backend_buffer_set_usage(get(),GGML_BACKEND_BUFFER_USAGE_COMPUTE);
     }
     ggml_backend_buffer_t get() const { return imported?imported.get():backing.get(); }
+    // Views alias one allocation. Import before dispatch; imports do not provide
+    // synchronization, and callers must guarantee disjoint or exclusive writes.
+    ggml_backend_buffer_t view(device & dev) {
+        if(dev.name==primary_backend) { return get(); }
+        if(dev.name=="HTP0") { return backing.get(); }
+        auto & buffer=additional_views[dev.name];
+        if(!buffer) {
+            if(dev.name=="CPU") {
+                buffer.reset(ggml_backend_dev_buffer_from_host_ptr(dev.dev,desc.host_ptr,desc.size,desc.size));
+            } else if(dev.name=="GPUOpenCL") {
+                auto import=gpu_import(dev); require(import!=nullptr,"shared scratch GPU import API missing");
+                buffer.reset(import(dev.backend.get(),&desc));
+            } else { throw std::runtime_error("unsupported shared scratch view"); }
+            require(bool(buffer),"shared scratch import failed");
+            ggml_backend_buffer_set_usage(buffer.get(),GGML_BACKEND_BUFFER_USAGE_COMPUTE);
+        }
+        return buffer.get();
+    }
+    void bind_layout(device & dev,const shared_activation_layout & layout) {
+        require(layout.bytes<=desc.size,"partitioned activation capacity exceeded");
+        auto buffer=view(dev);
+        for(const auto & slot:layout.slots) {
+            require(!slot.tensor->data,"activation root bound twice");
+            require(ggml_backend_tensor_alloc(buffer,slot.tensor,static_cast<uint8_t *>(desc.host_ptr)+slot.offset)==GGML_STATUS_SUCCESS,
+                    "partitioned activation allocation failed");
+        }
+    }
     static size_t align(size_t bytes,size_t alignment) { return (bytes+alignment-1)/alignment*alignment; }
     static size_t required_size(device & dev,ggml_context * ctx,ggml_cgraph * graph=nullptr) {
         if(graph) { return shared_activation_layout(dev,ctx,graph).bytes; }
