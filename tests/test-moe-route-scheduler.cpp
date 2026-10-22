@@ -57,11 +57,14 @@ int main() {
         j["backends"][b][2]=60.*(b+1);
         j["backends"][b][4]=32.*(b+1);
         j["backends"][b][12]=10.*(b+1);
+        j["backends"][b][13]=25.*(3-b);
+        j["backends"][b][14]=7.*(b+1);
     }
     resident_placement_model additive_model(j); moe_route_scheduler fast(additive_model,2048,true);
     std::mt19937 random(42);
     for(int trial=0;trial<200;++trial) {
-        int nt=trial%2?1024:1; std::vector<int> routes(60);
+        const int lengths[]={1,31,32,33,128,256,512,1024};
+        int nt=lengths[trial%8]; std::vector<int> routes(60);
         for(int t=0;t<nt;++t) {
             int start=random()%60;
             for(int k=0;k<4;++k) { ++routes[(start+k*13)%60]; }
@@ -81,5 +84,26 @@ int main() {
                 "fast search is nondeterministic");
     }
     require(fast.choose(8,counts,npu).selected.owner[59]==0,"fast inactive metadata not resident");
+    // A shared-only GPU branch wins for short inputs, HTP for long inputs.
+    // Pin routed work to CPU so the optimum is exhaustively known, including
+    // tile boundaries and the shared branch startup cost counted exactly once.
+    json shaped={{"version",1},{"backends",std::vector<std::vector<double>>(3,std::vector<double>(26))},
+                 {"host",std::vector<double>(8)}};
+    shaped["backends"][0][1]=1.024;
+    shaped["backends"][1][0]=2.; shaped["backends"][1][12]=48.;
+    shaped["backends"][2][0]=3.; shaped["backends"][2][12]=7.;
+    shaped["backends"][2][13]=32.; shaped["backends"][2][14]=16.;
+    resident_placement_model shaped_model(shaped); moe_route_scheduler shaped_search(shaped_model,2048,true);
+    auto shared_choices=all;
+    for(auto & row:shared_choices.experts) { row={true,false,false}; }
+    shared_choices.shared={false,true,true};
+    for(int nt:{1,31,32,33,128,256,512,1024}) {
+        std::vector<int> route(60); for(int e=0;e<4;++e) { route[e]=nt; }
+        auto chosen=shaped_search.choose(nt,route,shared_choices);
+        double gpu=10.+32.*nt/512.+(nt+31)/32;
+        require(chosen.selected.shared==(gpu<50.?2:1),"shared choice ignored input length or tile rounding");
+        double expected=std::min(gpu,50.);
+        require(std::abs(chosen.predicted.total-expected)<1e-9,"shared-only cost or branch startup counted incorrectly");
+    }
     std::cout<<"route scheduler contracts passed; exhaustive optimum="<<optimal<<" evaluations="<<r.evaluations<<'\n';
 }

@@ -17,7 +17,7 @@ struct moe_route_scheduler {
         require(limit>=128 && limit<=16384,"invalid route search budget");
         if(additive) {
             for(const auto & row:model.coefficients) { for(size_t i=0;i<row.size();++i) {
-                require(row[i]>=0 && (i==0 || i==1 || i==2 || i==4 || i==12 || row[i]==0),
+                require(row[i]>=0 && (i==0 || i==1 || i==2 || i==4 || i==12 || i==13 || i==14 || row[i]==0),
                         "additive scheduler requires nonnegative additive coefficients");
             } }
             for(double w:model.host_coefficients) { require(w==0,"additive scheduler requires zero host coefficients"); }
@@ -58,7 +58,10 @@ struct moe_route_scheduler {
                 if(available.experts[e][b]) { current.owner[e]=b; break; }
             } }
             loads_type loads{}; std::array<int,3> active{};
-            loads[s]=model.coefficients[s][0]+model.coefficients[s][12]; active[s]=1;
+            // nt is fixed during this search. Shared length/tile terms are a
+            // constant for each shared-owner candidate, so moves stay O(1).
+            const auto & w=model.coefficients[s];
+            loads[s]=w[0]+w[12]+w[13]*nt/512.0+w[14]*((nt+31)/32)/16.0; active[s]=1;
             for(int e:order) {
                 int chosen=-1; loads_type chosen_loads{};
                 auto chosen_score=std::make_pair(double(INFINITY),double(INFINITY));
@@ -108,6 +111,8 @@ struct moe_route_scheduler {
         } }
         require(feasible(best.selected,available),"additive search returned nonresident placement");
         best.predicted=model.predict(nt,counts,best.selected,widths);
+        require(std::abs(best.predicted.total-std::max(1.,best_score.first))<=1e-6*std::max(1.,best.predicted.total),
+                "additive search score differs from full prediction");
         return best;
     }
     static bool feasible(const placement & p,const resident_placement_model::availability & a) {

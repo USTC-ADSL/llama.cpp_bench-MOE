@@ -144,7 +144,7 @@ def main():
         assert args.mode == "custom"
         env.append("MOE_ROUTER_TRACE=1")
     if args.shared_weights:
-        assert args.mode == "custom"
+        assert args.mode in ("custom", "profile")
         env.append("MOE_SHARED_WEIGHTS=" + args.shared_weights)
     if args.shared_reduce:
         assert args.shared_weights
