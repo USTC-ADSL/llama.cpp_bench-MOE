@@ -19,6 +19,9 @@ static std::vector<placement> model_candidates(const std::vector<int> & counts) 
 
 struct resident_placement_model {
     std::vector<double> coefficients[3],host_coefficients;
+    // Optional independent full-model context correction, interpolated by shape.
+    // This is not an expert-ID table or a request timing lookup.
+    std::vector<std::pair<int,std::array<double,3>>> context_scales;
     struct availability {
         std::array<std::array<bool,3>,60> experts{};
         std::array<bool,3> shared{};
@@ -35,6 +38,29 @@ struct resident_placement_model {
         host_coefficients=j.at("host").get<std::vector<double>>();
         require(host_coefficients.size()==8,"host coefficient shape mismatch");
         for(double w:host_coefficients) { require(std::isfinite(w),"nonfinite model coefficient"); }
+        if(j.contains("context_scales")) {
+            int previous=0;
+            for(const auto & knot:j.at("context_scales")) {
+                int nt=knot.at("tokens");
+                auto factors=knot.at("backends").get<std::array<double,3>>();
+                require(nt>previous,"context lengths must be positive and strictly increasing");
+                for(double f:factors) { require(std::isfinite(f) && f>0,"invalid context multiplier"); }
+                context_scales.push_back({nt,factors}); previous=nt;
+            }
+        }
+    }
+    std::array<double,3> context_scale(int nt) const {
+        if(context_scales.empty()) { return {1.,1.,1.}; }
+        if(nt<=context_scales.front().first) { return context_scales.front().second; }
+        for(size_t i=1;i<context_scales.size();++i) {
+            const auto & hi=context_scales[i]; const auto & lo=context_scales[i-1];
+            if(nt<=hi.first) {
+                double fraction=double(nt-lo.first)/(hi.first-lo.first); auto out=lo.second;
+                for(int b=0;b<3;++b) { out[b]+=(hi.second[b]-lo.second[b])*fraction; }
+                return out;
+            }
+        }
+        return context_scales.back().second;
     }
     template<class Features> static double dot(const Features & x,const std::vector<double> & w) {
         require(x.size()==w.size(),"model coefficient shape mismatch");
@@ -60,6 +86,7 @@ struct resident_placement_model {
         bool native=*std::max_element(pairs,pairs+3)==total_pairs;
         for(int b=0;b<3;++b) { active[b]=pairs[b]>0 || p.shared==b; }
         prediction out;
+        const auto scale=context_scale(nt);
         for(int b=0;b<3;++b) { if(active[b]) {
             double shared=p.shared==b,has=bool(pairs[b]),rows=native && has?nt:pairs[b];
             std::array<double,26> x={1,pairs[b]/1024,active_experts[b]/60,pad8[b]/1024,pad32[b]/1024,
@@ -71,7 +98,7 @@ struct resident_placement_model {
                 x[18+3*other]=other!=b?pairs[other]/1024:0;
                 x[19+3*other]=other!=b && p.shared==other?double(nt)/512:0;
             }
-            out.backend[b]=std::max(1.,dot(x,coefficients[b]));
+            out.backend[b]=std::max(1.,dot(x,coefficients[b])*scale[b]);
         } }
         std::array<double,8> x={1,double(nt)/512,double(native),double(native)*nt/512,
             double(active[0]+active[1]+active[2])/3,(active_experts[0]+active_experts[1]+active_experts[2])/60,

@@ -60,6 +60,8 @@ int main() {
         j["backends"][b][13]=25.*(3-b);
         j["backends"][b][14]=7.*(b+1);
     }
+    j["context_scales"]=json::array({{{"tokens",128},{"backends",{1.2,1.1,1.08}}},
+                                     {{"tokens",1024},{"backends",{1.44,1.09,1.05}}}});
     resident_placement_model additive_model(j); moe_route_scheduler fast(additive_model,2048,true);
     std::mt19937 random(42);
     for(int trial=0;trial<200;++trial) {
@@ -104,6 +106,23 @@ int main() {
         require(chosen.selected.shared==(gpu<50.?2:1),"shared choice ignored input length or tile rounding");
         double expected=std::min(gpu,50.);
         require(std::abs(chosen.predicted.total-expected)<1e-9,"shared-only cost or branch startup counted incorrectly");
+    }
+    shaped["context_scales"]=json::array({{{"tokens",128},{"backends",{1.,1.,3.}}},
+                                          {{"tokens",512},{"backends",{1.,1.,5.}}}});
+    resident_placement_model contextual(shaped); moe_route_scheduler contextual_search(contextual,2048,true);
+    require(contextual.context_scale(1)[2]==3. && contextual.context_scale(320)[2]==4. &&
+            contextual.context_scale(1024)[2]==5.,"context interpolation or endpoint clamp incorrect");
+    std::vector<int> route128(60); for(int e=0;e<4;++e) { route128[e]=128; }
+    require(shaped_search.choose(128,route128,shared_choices).selected.shared==2 &&
+            contextual_search.choose(128,route128,shared_choices).selected.shared==1,
+            "context correction did not affect fast scheduling");
+    for(const auto & invalid:std::vector<json>{
+        json::array({{{"tokens",0},{"backends",{1.,1.,1.}}}}),
+        json::array({{{"tokens",128},{"backends",{0.,1.,1.}}}}),
+        json::array({{{"tokens",128},{"backends",{1.,1.,1.}}},{{"tokens",128},{"backends",{1.,1.,1.}}}})}) {
+        shaped["context_scales"]=invalid; rejected=false;
+        try { resident_placement_model broken(shaped); } catch(const std::runtime_error &) { rejected=true; }
+        require(rejected,"invalid context calibration accepted");
     }
     std::cout<<"route scheduler contracts passed; exhaustive optimum="<<optimal<<" evaluations="<<r.evaluations<<'\n';
 }

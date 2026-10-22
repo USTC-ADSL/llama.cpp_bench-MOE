@@ -26,13 +26,14 @@ struct moe_route_scheduler {
     result choose_additive(int nt,const std::vector<int> & counts,
                            const resident_placement_model::availability & available,
                            const std::array<int,3> * widths) const {
+        const auto scale=model.context_scale(nt);
         std::array<std::array<double,3>,60> costs{};
         std::vector<int> order;
         for(int e=0;e<60;++e) { if(counts[e]) {
             order.push_back(e);
             for(int b=0;b<3;++b) {
                 const auto & w=model.coefficients[b];
-                costs[e][b]=w[1]*counts[e]/1024.0+w[2]/60.0+w[4]*((counts[e]+31)/32)/32.0;
+                costs[e][b]=(w[1]*counts[e]/1024.0+w[2]/60.0+w[4]*((counts[e]+31)/32)/32.0)*scale[b];
             }
         } }
         auto fastest=[&](int e) {
@@ -61,12 +62,12 @@ struct moe_route_scheduler {
             // nt is fixed during this search. Shared length/tile terms are a
             // constant for each shared-owner candidate, so moves stay O(1).
             const auto & w=model.coefficients[s];
-            loads[s]=w[0]+w[12]+w[13]*nt/512.0+w[14]*((nt+31)/32)/16.0; active[s]=1;
+            loads[s]=(w[0]+w[12]+w[13]*nt/512.0+w[14]*((nt+31)/32)/16.0)*scale[s]; active[s]=1;
             for(int e:order) {
                 int chosen=-1; loads_type chosen_loads{};
                 auto chosen_score=std::make_pair(double(INFINITY),double(INFINITY));
                 for(int b=0;b<3;++b) { if(available.experts[e][b]) {
-                    auto trial=loads; trial[b]+=costs[e][b]+(active[b]?0:model.coefficients[b][0]);
+                    auto trial=loads; trial[b]+=costs[e][b]+(active[b]?0:model.coefficients[b][0]*scale[b]);
                     auto candidate=score(trial);
                     if(better(candidate,chosen_score)) { chosen=b; chosen_score=candidate; chosen_loads=trial; }
                 } }
@@ -85,8 +86,8 @@ struct moe_route_scheduler {
                     int a=current.owner[e];
                     if(a==b || !available.experts[e][b]) { continue; }
                     auto trial=loads;
-                    trial[a]-=costs[e][a]+(active[a]==1?model.coefficients[a][0]:0);
-                    trial[b]+=costs[e][b]+(active[b]?0:model.coefficients[b][0]);
+                    trial[a]-=costs[e][a]+(active[a]==1?model.coefficients[a][0]*scale[a]:0);
+                    trial[b]+=costs[e][b]+(active[b]?0:model.coefficients[b][0]*scale[b]);
                     ++evaluations; auto candidate=score(trial);
                     if(better(candidate,next_score)) { next_score=candidate; next_loads=trial; move_e=e; move_b=b; }
                 } }

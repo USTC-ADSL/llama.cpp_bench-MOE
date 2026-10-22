@@ -11,3 +11,5 @@
 检查 logits、单份 weight payload、arena 与进程内存、major faults、决策时间和后端关键路径。shared 三端可选可能增加 activation 容量，不能声称总内存零增长。CPU expert 仍为原有四线程，本轮不声称满足 1–2 小核目标。最后一层 N=1 仍全 CPU，不从大形状数据外推。
 
 在线反馈仅在独立校准显示有必要时添加；本轮优先验证长度特征和 shared/routed 联合优化，不引入验证输入查表或专家 ID 特例。
+
+冻结前补充：独立 technical 完整模型校准发现 CPU observed/predicted 中位数在 128/256/512/1024 为 1.200/1.012/0.970/1.439，因此加入四个长度 knot 的三后端倍率校正。相邻 knot 按 nt 线性插值，区间外夹至端点；本轮只验证 128–1024，N=1 最后一层保持全 CPU，无 placement 变化。每 knot 使用所有六次请求的 23 层，不按速度筛选。只做一次校正，模型冻结为 runtime-joint-context.json；不迭代拟合留出输入。runtime-joint.json 为原始独立 FFN fit，保留供追溯。
