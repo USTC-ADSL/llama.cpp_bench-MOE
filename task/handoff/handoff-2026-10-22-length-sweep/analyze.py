@@ -17,6 +17,8 @@ def logits(a,b):
 
 def analyze(partial):
     frozen=json.loads((TASK/'frozen.json').read_text())
+    expected_remote={pathlib.PurePosixPath(p).name:h for p,h in frozen['sha256'].items()
+        if p.startswith('build-android-opencl-hexagon/')}
     records=json.loads((TASK/'runs.json').read_text())
     result={'protocol':'2 warmup + 6 timed/process; 2 processes/mode/input/length; all samples retained',
         'baseline':'native HTP0 backend with normal CPU fallback','comparisons':[],'runs':{},'complete':False}
@@ -33,6 +35,7 @@ def analyze(partial):
                 for row in selected:
                     tag=row['tag'];path=EVIDENCE/(tag+'.json');d=json.loads(path.read_text())
                     run=json.loads((EVIDENCE/(tag+'.run.json')).read_text());assert run['exit']==0
+                    assert run['model'].strip()==frozen['model_stat']
                     assert d['tokens']==nt and len(d['token_ids'])==nt and d['prefill_chunk']==nt and d['prefill_chunks']==1
                     assert len(d['samples'])==6 and d['host_threads']==4
                     assert d['router_backend_requested']=='default'
@@ -40,6 +43,7 @@ def analyze(partial):
                     if ids is None: ids=d['token_ids']
                     assert ids==d['token_ids']
                     hashes={pathlib.PurePosixPath(l.split()[1]).name:l.split()[0] for l in run['hashes'].splitlines() if not l.endswith('/prompt.txt')}
+                    assert hashes==expected_remote,(tag,'remote binary/library differs from frozen version')
                     if common_hashes is None: common_hashes=hashes
                     assert hashes==common_hashes
                     values=[s['total_us']/1000 for s in d['samples']]

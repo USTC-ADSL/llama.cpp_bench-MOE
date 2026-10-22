@@ -1,0 +1,9320 @@
+{
+  "protocol": "2 warmup + 6 timed/process; 2 processes/mode/input/length; all samples retained",
+  "baseline": "native HTP0 backend with normal CPU fallback",
+  "comparisons": [
+    {
+      "tokens": 128,
+      "prompt": "wetland",
+      "modes": {
+        "npu": {
+          "mean_process_median_ms": 511.1027865,
+          "process_medians_ms": [
+            508.52486999999996,
+            513.680703
+          ],
+          "all_sample_median_ms": 511.39648449999993,
+          "all_sample_mean_ms": 508.9659375,
+          "all_sample_stdev_ms": 10.389083745066142,
+          "major_faults_range": [
+            0,
+            1
+          ],
+          "same_condition_logits": {
+            "bitwise_equal": true,
+            "nrmse": 0.0,
+            "cosine": 1.0000000000000002,
+            "max_abs": 0.0,
+            "top1_equal": true,
+            "top10_overlap": 10
+          },
+          "tokens_per_second": 250.43886157721036
+        },
+        "hetero": {
+          "mean_process_median_ms": 441.143646,
+          "process_medians_ms": [
+            439.5883595,
+            442.6989325
+          ],
+          "all_sample_median_ms": 441.41080750000003,
+          "all_sample_mean_ms": 440.813012,
+          "all_sample_stdev_ms": 6.72914205224051,
+          "major_faults_range": [
+            0,
+            3
+          ],
+          "same_condition_logits": {
+            "bitwise_equal": true,
+            "nrmse": 0.0,
+            "cosine": 1.0,
+            "max_abs": 0.0,
+            "top1_equal": true,
+            "top10_overlap": 10
+          },
+          "tokens_per_second": 290.1549215558689
+        }
+      },
+      "throughput_gain_percent": 15.85858509679181,
+      "pooled_median_gain_percent": 15.85499852085064,
+      "cross_backend_logits": {
+        "bitwise_equal": false,
+        "nrmse": 0.044119943331457516,
+        "cosine": 0.9990263774501695,
+        "max_abs": 0.5903463363647461,
+        "top1_equal": true,
+        "top10_overlap": 10
+      }
+    },
+    {
+      "tokens": 128,
+      "prompt": "foundry",
+      "modes": {
+        "npu": {
+          "mean_process_median_ms": 513.922083,
+          "process_medians_ms": [
+            516.3197915000001,
+            511.5243745
+          ],
+          "all_sample_median_ms": 514.1004425,
+          "all_sample_mean_ms": 515.13521675,
+          "all_sample_stdev_ms": 4.869490007293419,
+          "major_faults_range": [
+            0,
+            1
+          ],
+          "same_condition_logits": {
+            "bitwise_equal": true,
+            "nrmse": 0.0,
+            "cosine": 1.0,
+            "max_abs": 0.0,
+            "top1_equal": true,
+            "top10_overlap": 10
+          },
+          "tokens_per_second": 249.0649929903868
+        },
+        "hetero": {
+          "mean_process_median_ms": 436.1397785,
+          "process_medians_ms": [
+            434.73953099999994,
+            437.540026
+          ],
+          "all_sample_median_ms": 436.7835155,
+          "all_sample_mean_ms": 436.728333,
+          "all_sample_stdev_ms": 4.946876603719518,
+          "major_faults_range": [
+            0,
+            0
+          ],
+          "same_condition_logits": {
+            "bitwise_equal": true,
+            "nrmse": 0.0,
+            "cosine": 0.9999999999999999,
+            "max_abs": 0.0,
+            "top1_equal": true,
+            "top10_overlap": 10
+          },
+          "tokens_per_second": 293.4838928020412
+        }
+      },
+      "throughput_gain_percent": 17.834260559198235,
+      "pooled_median_gain_percent": 17.701429714327197,
+      "cross_backend_logits": {
+        "bitwise_equal": false,
+        "nrmse": 0.034654451567417324,
+        "cosine": 0.9993994878848643,
+        "max_abs": 0.3862902522087097,
+        "top1_equal": true,
+        "top10_overlap": 10
+      }
+    },
+    {
+      "tokens": 256,
+      "prompt": "wetland",
+      "modes": {
+        "npu": {
+          "mean_process_median_ms": 611.00045525,
+          "process_medians_ms": [
+            610.3779425,
+            611.622968
+          ],
+          "all_sample_median_ms": 611.0824215,
+          "all_sample_mean_ms": 611.5475561666667,
+          "all_sample_stdev_ms": 4.858067126943136,
+          "major_faults_range": [
+            0,
+            1
+          ],
+          "same_condition_logits": {
+            "bitwise_equal": true,
+            "nrmse": 0.0,
+            "cosine": 1.0,
+            "max_abs": 0.0,
+            "top1_equal": true,
+            "top10_overlap": 10
+          },
+          "tokens_per_second": 418.98495786759077
+        },
+        "hetero": {
+          "mean_process_median_ms": 477.91070325,
+          "process_medians_ms": [
+            475.85960950000003,
+            479.961797
+          ],
+          "all_sample_median_ms": 477.081146,
+          "all_sample_mean_ms": 477.44009108333336,
+          "all_sample_stdev_ms": 5.844879195870177,
+          "major_faults_range": [
+            0,
+            0
+          ],
+          "same_condition_logits": {
+            "bitwise_equal": true,
+            "nrmse": 0.0,
+            "cosine": 0.9999999999999999,
+            "max_abs": 0.0,
+            "top1_equal": true,
+            "top10_overlap": 10
+          },
+          "tokens_per_second": 535.6649228801301
+        }
+      },
+      "throughput_gain_percent": 27.848246773912354,
+      "pooled_median_gain_percent": 28.087732374986807,
+      "cross_backend_logits": {
+        "bitwise_equal": false,
+        "nrmse": 0.018141084803447127,
+        "cosine": 0.9998354466752977,
+        "max_abs": 0.2781717777252197,
+        "top1_equal": true,
+        "top10_overlap": 10
+      }
+    },
+    {
+      "tokens": 256,
+      "prompt": "foundry",
+      "modes": {
+        "npu": {
+          "mean_process_median_ms": 614.33089825,
+          "process_medians_ms": [
+            614.4444530000001,
+            614.2173435
+          ],
+          "all_sample_median_ms": 614.2173435,
+          "all_sample_mean_ms": 615.79332875,
+          "all_sample_stdev_ms": 6.455456129259824,
+          "major_faults_range": [
+            0,
+            1
+          ],
+          "same_condition_logits": {
+            "bitwise_equal": true,
+            "nrmse": 0.0,
+            "cosine": 1.0000000000000002,
+            "max_abs": 0.0,
+            "top1_equal": true,
+            "top10_overlap": 10
+          },
+          "tokens_per_second": 416.7135345613393
+        },
+        "hetero": {
+          "mean_process_median_ms": 487.00348925000003,
+          "process_medians_ms": [
+            483.7021355,
+            490.304843
+          ],
+          "all_sample_median_ms": 488.333567,
+          "all_sample_mean_ms": 488.6720525833333,
+          "all_sample_stdev_ms": 6.4286297684860445,
+          "major_faults_range": [
+            0,
+            0
+          ],
+          "same_condition_logits": {
+            "bitwise_equal": true,
+            "nrmse": 0.0,
+            "cosine": 0.9999999999999998,
+            "max_abs": 0.0,
+            "top1_equal": true,
+            "top10_overlap": 10
+          },
+          "tokens_per_second": 525.663584863114
+        }
+      },
+      "throughput_gain_percent": 26.14507119776246,
+      "pooled_median_gain_percent": 25.778235412598605,
+      "cross_backend_logits": {
+        "bitwise_equal": false,
+        "nrmse": 0.06338702558681229,
+        "cosine": 0.997990621766422,
+        "max_abs": 0.6333045959472656,
+        "top1_equal": true,
+        "top10_overlap": 10
+      }
+    },
+    {
+      "tokens": 512,
+      "prompt": "wetland",
+      "modes": {
+        "npu": {
+          "mean_process_median_ms": 838.30632825,
+          "process_medians_ms": [
+            830.4784374999999,
+            846.134219
+          ],
+          "all_sample_median_ms": 840.8071090000001,
+          "all_sample_mean_ms": 838.0188323333333,
+          "all_sample_stdev_ms": 13.068553684535745,
+          "major_faults_range": [
+            0,
+            1
+          ],
+          "same_condition_logits": {
+            "bitwise_equal": true,
+            "nrmse": 0.0,
+            "cosine": 0.9999999999999999,
+            "max_abs": 0.0,
+            "top1_equal": true,
+            "top10_overlap": 10
+          },
+          "tokens_per_second": 610.755260632258
+        },
+        "hetero": {
+          "mean_process_median_ms": 646.5829555,
+          "process_medians_ms": [
+            649.962344,
+            643.203567
+          ],
+          "all_sample_median_ms": 645.3835935,
+          "all_sample_mean_ms": 645.5236499166667,
+          "all_sample_stdev_ms": 11.009344580676505,
+          "major_faults_range": [
+            0,
+            0
+          ],
+          "same_condition_logits": {
+            "bitwise_equal": true,
+            "nrmse": 0.0,
+            "cosine": 1.0,
+            "max_abs": 0.0,
+            "top1_equal": true,
+            "top10_overlap": 10
+          },
+          "tokens_per_second": 791.8550831641895
+        }
+      },
+      "throughput_gain_percent": 29.651782670599623,
+      "pooled_median_gain_percent": 30.280211252379807,
+      "cross_backend_logits": {
+        "bitwise_equal": false,
+        "nrmse": 0.025892865957990282,
+        "cosine": 0.9996703830305376,
+        "max_abs": 0.3595914840698242,
+        "top1_equal": true,
+        "top10_overlap": 10
+      }
+    },
+    {
+      "tokens": 512,
+      "prompt": "foundry",
+      "modes": {
+        "npu": {
+          "mean_process_median_ms": 844.382122,
+          "process_medians_ms": [
+            847.4719005,
+            841.2923435
+          ],
+          "all_sample_median_ms": 845.2453640000001,
+          "all_sample_mean_ms": 845.387799,
+          "all_sample_stdev_ms": 4.88048560747483,
+          "major_faults_range": [
+            0,
+            1
+          ],
+          "same_condition_logits": {
+            "bitwise_equal": true,
+            "nrmse": 0.0,
+            "cosine": 1.0,
+            "max_abs": 0.0,
+            "top1_equal": true,
+            "top10_overlap": 10
+          },
+          "tokens_per_second": 606.3605406368374
+        },
+        "hetero": {
+          "mean_process_median_ms": 612.1111325,
+          "process_medians_ms": [
+            612.9516925,
+            611.2705725000001
+          ],
+          "all_sample_median_ms": 612.8778125,
+          "all_sample_mean_ms": 613.5303425833333,
+          "all_sample_stdev_ms": 6.713181599786234,
+          "major_faults_range": [
+            0,
+            0
+          ],
+          "same_condition_logits": {
+            "bitwise_equal": true,
+            "nrmse": 0.0,
+            "cosine": 1.0,
+            "max_abs": 0.0,
+            "top1_equal": true,
+            "top10_overlap": 10
+          },
+          "tokens_per_second": 836.4494171325988
+        }
+      },
+      "throughput_gain_percent": 37.94588550470448,
+      "pooled_median_gain_percent": 37.91417257416219,
+      "cross_backend_logits": {
+        "bitwise_equal": false,
+        "nrmse": 0.025909484680015932,
+        "cosine": 0.9996643029871931,
+        "max_abs": 0.32531192898750305,
+        "top1_equal": true,
+        "top10_overlap": 10
+      }
+    },
+    {
+      "tokens": 1024,
+      "prompt": "wetland",
+      "modes": {
+        "npu": {
+          "mean_process_median_ms": 1300.906731,
+          "process_medians_ms": [
+            1296.6032544999998,
+            1305.2102075
+          ],
+          "all_sample_median_ms": 1304.331093,
+          "all_sample_mean_ms": 1298.832061,
+          "all_sample_stdev_ms": 13.62587792636497,
+          "major_faults_range": [
+            0,
+            1
+          ],
+          "same_condition_logits": {
+            "bitwise_equal": true,
+            "nrmse": 0.0,
+            "cosine": 1.0000000000000002,
+            "max_abs": 0.0,
+            "top1_equal": true,
+            "top10_overlap": 10
+          },
+          "tokens_per_second": 787.1432867541985
+        },
+        "hetero": {
+          "mean_process_median_ms": 1030.9700647500001,
+          "process_medians_ms": [
+            998.829166,
+            1063.1109635000003
+          ],
+          "all_sample_median_ms": 1040.8387755,
+          "all_sample_mean_ms": 1035.68987375,
+          "all_sample_stdev_ms": 43.79783889203645,
+          "major_faults_range": [
+            0,
+            1769
+          ],
+          "same_condition_logits": {
+            "bitwise_equal": true,
+            "nrmse": 0.0,
+            "cosine": 1.0,
+            "max_abs": 0.0,
+            "top1_equal": true,
+            "top10_overlap": 10
+          },
+          "tokens_per_second": 993.2393141291737
+        }
+      },
+      "throughput_gain_percent": 26.182784105904844,
+      "pooled_median_gain_percent": 25.315382526311335,
+      "cross_backend_logits": {
+        "bitwise_equal": false,
+        "nrmse": 0.027255259065194472,
+        "cosine": 0.999634437398129,
+        "max_abs": 0.3552587032318115,
+        "top1_equal": true,
+        "top10_overlap": 10
+      }
+    },
+    {
+      "tokens": 1024,
+      "prompt": "foundry",
+      "modes": {
+        "npu": {
+          "mean_process_median_ms": 1304.2511325,
+          "process_medians_ms": [
+            1306.5404165,
+            1301.9618485
+          ],
+          "all_sample_median_ms": 1305.7299735000001,
+          "all_sample_mean_ms": 1305.70048575,
+          "all_sample_stdev_ms": 6.8466329437693885,
+          "major_faults_range": [
+            0,
+            1
+          ],
+          "same_condition_logits": {
+            "bitwise_equal": true,
+            "nrmse": 0.0,
+            "cosine": 1.0,
+            "max_abs": 0.0,
+            "top1_equal": true,
+            "top10_overlap": 10
+          },
+          "tokens_per_second": 785.1248693471998
+        },
+        "hetero": {
+          "mean_process_median_ms": 1020.2661455,
+          "process_medians_ms": [
+            995.9811975,
+            1044.5510935
+          ],
+          "all_sample_median_ms": 1013.1522135,
+          "all_sample_mean_ms": 1027.3349909166666,
+          "all_sample_stdev_ms": 40.7949064508412,
+          "major_faults_range": [
+            0,
+            41
+          ],
+          "same_condition_logits": {
+            "bitwise_equal": true,
+            "nrmse": 0.0,
+            "cosine": 1.0,
+            "max_abs": 0.0,
+            "top1_equal": true,
+            "top10_overlap": 10
+          },
+          "tokens_per_second": 1003.6596867557241
+        }
+      },
+      "throughput_gain_percent": 27.83440264606918,
+      "pooled_median_gain_percent": 28.877966815003163,
+      "cross_backend_logits": {
+        "bitwise_equal": false,
+        "nrmse": 0.013309610766980446,
+        "cosine": 0.9999114254298416,
+        "max_abs": 0.18497514724731445,
+        "top1_equal": true,
+        "top10_overlap": 10
+      }
+    },
+    {
+      "tokens": 2048,
+      "prompt": "wetland",
+      "modes": {
+        "npu": {
+          "mean_process_median_ms": 2507.416757,
+          "process_medians_ms": [
+            2332.267265,
+            2682.566249
+          ],
+          "all_sample_median_ms": 2507.9941919999997,
+          "all_sample_mean_ms": 2505.8491916666667,
+          "all_sample_stdev_ms": 187.58796352362782,
+          "major_faults_range": [
+            0,
+            1
+          ],
+          "same_condition_logits": {
+            "bitwise_equal": true,
+            "nrmse": 0.0,
+            "cosine": 1.0,
+            "max_abs": 0.0,
+            "top1_equal": true,
+            "top10_overlap": 10
+          },
+          "tokens_per_second": 816.7768657852995
+        },
+        "hetero": {
+          "mean_process_median_ms": 15802.981035499999,
+          "process_medians_ms": [
+            15047.010774999999,
+            16558.951296
+          ],
+          "all_sample_median_ms": 15047.010774999999,
+          "all_sample_mean_ms": 15823.495532333334,
+          "all_sample_stdev_ms": 5269.9804363012945,
+          "major_faults_range": [
+            38456,
+            43793
+          ],
+          "same_condition_logits": {
+            "bitwise_equal": true,
+            "nrmse": 0.0,
+            "cosine": 1.0,
+            "max_abs": 0.0,
+            "top1_equal": true,
+            "top10_overlap": 10
+          },
+          "tokens_per_second": 129.59580191859683
+        }
+      },
+      "throughput_gain_percent": -84.13326731603796,
+      "pooled_median_gain_percent": -83.33227622746884,
+      "cross_backend_logits": {
+        "bitwise_equal": false,
+        "nrmse": 0.04525035859090601,
+        "cosine": 0.9989940658830675,
+        "max_abs": 0.4668149948120117,
+        "top1_equal": true,
+        "top10_overlap": 9
+      }
+    },
+    {
+      "tokens": 2048,
+      "prompt": "foundry",
+      "modes": {
+        "npu": {
+          "mean_process_median_ms": 2690.158046,
+          "process_medians_ms": [
+            2693.722968,
+            2686.593124
+          ],
+          "all_sample_median_ms": 2692.9896865,
+          "all_sample_mean_ms": 2687.041926,
+          "all_sample_stdev_ms": 12.15474537052288,
+          "major_faults_range": [
+            0,
+            1
+          ],
+          "same_condition_logits": {
+            "bitwise_equal": true,
+            "nrmse": 0.0,
+            "cosine": 1.0,
+            "max_abs": 0.0,
+            "top1_equal": true,
+            "top10_overlap": 10
+          },
+          "tokens_per_second": 761.2935615605091
+        },
+        "hetero": {
+          "mean_process_median_ms": 10532.315725,
+          "process_medians_ms": [
+            9281.872809,
+            11782.758641
+          ],
+          "all_sample_median_ms": 9281.872809,
+          "all_sample_mean_ms": 10389.6324915,
+          "all_sample_stdev_ms": 5895.717349091419,
+          "major_faults_range": [
+            25136,
+            44958
+          ],
+          "same_condition_logits": {
+            "bitwise_equal": true,
+            "nrmse": 0.0,
+            "cosine": 1.0,
+            "max_abs": 0.0,
+            "top1_equal": true,
+            "top10_overlap": 10
+          },
+          "tokens_per_second": 194.44916516685603
+        }
+      },
+      "throughput_gain_percent": -74.45805731388668,
+      "pooled_median_gain_percent": -70.98656982361587,
+      "cross_backend_logits": {
+        "bitwise_equal": false,
+        "nrmse": 0.020510997843387047,
+        "cosine": 0.9997901831430478,
+        "max_abs": 0.19856977462768555,
+        "top1_equal": true,
+        "top10_overlap": 9
+      }
+    }
+  ],
+  "runs": {
+    "n128-wetland-npu-0": {
+      "tag": "n128-wetland-npu-0",
+      "median_ms": 508.52486999999996,
+      "mean_ms": 503.60493916666667,
+      "samples_ms": [
+        509.29578100000003,
+        507.75395899999995,
+        509.868177,
+        513.9699469999999,
+        501.524375,
+        479.217396
+      ],
+      "major_faults": [
+        0,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        207,
+        207,
+        207,
+        207,
+        207,
+        207
+      ],
+      "arena_capacity_bytes": [
+        0,
+        0,
+        0
+      ],
+      "process_memory": [
+        "VmSize:\t19616484 kB",
+        "VmHWM:\t  336340 kB",
+        "VmRSS:\t  217516 kB"
+      ],
+      "top1": 13,
+      "report_sha256": "37d8ee815d5ece4881595d8a4dee48990b2380a8c9e27f1a19f13bdd3def7c3d",
+      "all_round_logits_bitwise_equal": null
+    },
+    "n128-wetland-npu-3": {
+      "tag": "n128-wetland-npu-3",
+      "median_ms": 513.680703,
+      "mean_ms": 514.3269358333333,
+      "samples_ms": [
+        510.702657,
+        512.0903119999999,
+        513.332031,
+        518.960938,
+        516.846302,
+        514.029375
+      ],
+      "major_faults": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        207,
+        207,
+        207,
+        207,
+        207,
+        207
+      ],
+      "arena_capacity_bytes": [
+        0,
+        0,
+        0
+      ],
+      "process_memory": [
+        "VmSize:\t19679972 kB",
+        "VmHWM:\t  337564 kB",
+        "VmRSS:\t  214492 kB"
+      ],
+      "top1": 13,
+      "report_sha256": "05d5fe6c23005420d376e80a6810299f6af8a5364317b05cc2f7c6866f3b12bd",
+      "all_round_logits_bitwise_equal": null
+    },
+    "n128-wetland-hetero-1": {
+      "tag": "n128-wetland-hetero-1",
+      "median_ms": 439.5883595,
+      "mean_ms": 440.4510588333333,
+      "samples_ms": [
+        443.807083,
+        434.603594,
+        440.29125,
+        429.652343,
+        455.466614,
+        438.885469
+      ],
+      "major_faults": [
+        3,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        836,
+        963,
+        491,
+        601,
+        717,
+        372
+      ],
+      "arena_capacity_bytes": [
+        18087936,
+        29890560,
+        18087936
+      ],
+      "process_memory": [
+        "VmSize:\t28326868 kB",
+        "VmHWM:\t 8055512 kB",
+        "VmRSS:\t  431636 kB"
+      ],
+      "top1": 13,
+      "report_sha256": "04ef906741b2fef4fb5a7787da31c71629d2b2b953781b70fa281c9464f693a1",
+      "stages_ms": {
+        "decision": [
+          1.297085,
+          1.136251,
+          0.957917,
+          1.0912,
+          1.2896869999999998,
+          1.2762
+        ],
+        "gather": [
+          2.4141640000000004,
+          2.122344,
+          1.781874,
+          2.025055,
+          2.41781,
+          2.3823960000000004
+        ],
+        "expert_wall": [
+          328.887395,
+          326.044528,
+          336.248856,
+          327.745938,
+          328.450625,
+          326.380988
+        ],
+        "combine": [
+          4.569062,
+          4.651981,
+          4.5464080000000004,
+          4.750263,
+          4.632396,
+          5.299063
+        ],
+        "backend_compute": [
+          [
+            186.778491,
+            166.575103,
+            320.988388
+          ],
+          [
+            186.248751,
+            165.302757,
+            318.62650799999994
+          ],
+          [
+            203.78422,
+            171.72635200000002,
+            319.496924
+          ],
+          [
+            187.607554,
+            165.624842,
+            318.91984399999996
+          ],
+          [
+            190.439061,
+            165.212655,
+            319.775935
+          ],
+          [
+            184.82343799999998,
+            161.790678,
+            318.727865
+          ]
+        ],
+        "backend_gather": [
+          [
+            3.2019290000000002,
+            2.623698,
+            4.332291000000001
+          ],
+          [
+            2.943695,
+            2.401198,
+            3.775313
+          ],
+          [
+            2.6174989999999996,
+            2.205366,
+            3.36219
+          ],
+          [
+            3.4484899999999996,
+            2.750419,
+            4.512553
+          ],
+          [
+            3.3636999999999997,
+            2.8264609999999997,
+            4.456668
+          ],
+          [
+            3.174687,
+            2.615208,
+            4.149741
+          ]
+        ]
+      },
+      "allocations": [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "owner_counts_by_layer": [
+        [
+          22,
+          20,
+          18
+        ],
+        [
+          25,
+          18,
+          17
+        ],
+        [
+          24,
+          19,
+          17
+        ],
+        [
+          23,
+          19,
+          18
+        ],
+        [
+          25,
+          18,
+          17
+        ],
+        [
+          25,
+          18,
+          17
+        ],
+        [
+          23,
+          20,
+          17
+        ],
+        [
+          22,
+          20,
+          18
+        ],
+        [
+          25,
+          18,
+          17
+        ],
+        [
+          24,
+          19,
+          17
+        ],
+        [
+          25,
+          18,
+          17
+        ],
+        [
+          25,
+          18,
+          17
+        ],
+        [
+          24,
+          19,
+          17
+        ],
+        [
+          21,
+          21,
+          18
+        ],
+        [
+          23,
+          19,
+          18
+        ],
+        [
+          23,
+          19,
+          18
+        ],
+        [
+          22,
+          20,
+          18
+        ],
+        [
+          23,
+          19,
+          18
+        ],
+        [
+          23,
+          20,
+          17
+        ],
+        [
+          21,
+          21,
+          18
+        ],
+        [
+          23,
+          19,
+          18
+        ],
+        [
+          26,
+          17,
+          17
+        ],
+        [
+          26,
+          17,
+          17
+        ],
+        [
+          60,
+          0,
+          0
+        ]
+      ],
+      "pairs_by_layer": [
+        [
+          137,
+          215,
+          160
+        ],
+        [
+          125,
+          204,
+          183
+        ],
+        [
+          121,
+          202,
+          189
+        ],
+        [
+          138,
+          197,
+          177
+        ],
+        [
+          126,
+          208,
+          178
+        ],
+        [
+          125,
+          208,
+          179
+        ],
+        [
+          124,
+          200,
+          188
+        ],
+        [
+          133,
+          161,
+          218
+        ],
+        [
+          128,
+          182,
+          202
+        ],
+        [
+          131,
+          211,
+          170
+        ],
+        [
+          129,
+          206,
+          177
+        ],
+        [
+          129,
+          175,
+          208
+        ],
+        [
+          127,
+          182,
+          203
+        ],
+        [
+          140,
+          192,
+          180
+        ],
+        [
+          129,
+          193,
+          190
+        ],
+        [
+          130,
+          177,
+          205
+        ],
+        [
+          144,
+          198,
+          170
+        ],
+        [
+          134,
+          235,
+          143
+        ],
+        [
+          132,
+          212,
+          168
+        ],
+        [
+          133,
+          185,
+          194
+        ],
+        [
+          125,
+          195,
+          192
+        ],
+        [
+          125,
+          184,
+          203
+        ],
+        [
+          126,
+          207,
+          179
+        ],
+        [
+          4,
+          0,
+          0
+        ]
+      ],
+      "all_round_logits_bitwise_equal": true
+    },
+    "n128-wetland-hetero-2": {
+      "tag": "n128-wetland-hetero-2",
+      "median_ms": 442.6989325,
+      "mean_ms": 441.17496516666665,
+      "samples_ms": [
+        442.530365,
+        445.105052,
+        439.807656,
+        444.23281199999997,
+        442.8675,
+        432.506406
+      ],
+      "major_faults": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        836,
+        950,
+        491,
+        601,
+        707,
+        374
+      ],
+      "arena_capacity_bytes": [
+        18087936,
+        29890560,
+        18087936
+      ],
+      "process_memory": [
+        "VmSize:\t28382680 kB",
+        "VmHWM:\t 7998996 kB",
+        "VmRSS:\t  753328 kB"
+      ],
+      "top1": 13,
+      "report_sha256": "75692312631a29a4c813935e9957d1a36701ebbbf8e7bf658638845837987902",
+      "stages_ms": {
+        "decision": [
+          1.119842,
+          1.2692180000000002,
+          1.331041,
+          1.430829,
+          1.318646,
+          1.2240090000000001
+        ],
+        "gather": [
+          2.086561,
+          2.365362,
+          2.447708,
+          2.6832260000000003,
+          2.4658870000000004,
+          2.346352
+        ],
+        "expert_wall": [
+          330.106876,
+          328.351562,
+          328.12083,
+          328.104064,
+          328.980885,
+          328.449169
+        ],
+        "combine": [
+          4.612865,
+          5.407760000000001,
+          4.53443,
+          4.692082,
+          4.83276,
+          4.639685999999999
+        ],
+        "backend_compute": [
+          [
+            185.410419,
+            165.37432199999998,
+            322.45187300000003
+          ],
+          [
+            183.155991,
+            165.787916,
+            319.824167
+          ],
+          [
+            183.89416599999998,
+            165.724063,
+            320.46541599999995
+          ],
+          [
+            185.15270900000002,
+            165.756044,
+            319.578645
+          ],
+          [
+            185.78869500000002,
+            165.271772,
+            320.991874
+          ],
+          [
+            187.357239,
+            161.858544,
+            320.33802299999996
+          ]
+        ],
+        "backend_gather": [
+          [
+            3.008335,
+            2.4050010000000004,
+            4.0583849999999995
+          ],
+          [
+            3.3530729999999997,
+            2.80219,
+            4.447706999999999
+          ],
+          [
+            3.298696,
+            2.512862,
+            4.243905
+          ],
+          [
+            3.965208,
+            2.9172860000000003,
+            4.782916
+          ],
+          [
+            3.3882849999999998,
+            2.747711,
+            4.449063
+          ],
+          [
+            3.608019,
+            3.007348,
+            4.784583
+          ]
+        ]
+      },
+      "allocations": [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "owner_counts_by_layer": [
+        [
+          22,
+          20,
+          18
+        ],
+        [
+          25,
+          18,
+          17
+        ],
+        [
+          24,
+          19,
+          17
+        ],
+        [
+          23,
+          19,
+          18
+        ],
+        [
+          25,
+          18,
+          17
+        ],
+        [
+          25,
+          18,
+          17
+        ],
+        [
+          23,
+          20,
+          17
+        ],
+        [
+          22,
+          20,
+          18
+        ],
+        [
+          25,
+          18,
+          17
+        ],
+        [
+          24,
+          19,
+          17
+        ],
+        [
+          25,
+          18,
+          17
+        ],
+        [
+          25,
+          18,
+          17
+        ],
+        [
+          24,
+          19,
+          17
+        ],
+        [
+          21,
+          21,
+          18
+        ],
+        [
+          23,
+          19,
+          18
+        ],
+        [
+          23,
+          19,
+          18
+        ],
+        [
+          22,
+          20,
+          18
+        ],
+        [
+          23,
+          19,
+          18
+        ],
+        [
+          23,
+          20,
+          17
+        ],
+        [
+          21,
+          21,
+          18
+        ],
+        [
+          23,
+          19,
+          18
+        ],
+        [
+          26,
+          17,
+          17
+        ],
+        [
+          26,
+          17,
+          17
+        ],
+        [
+          60,
+          0,
+          0
+        ]
+      ],
+      "pairs_by_layer": [
+        [
+          137,
+          215,
+          160
+        ],
+        [
+          125,
+          204,
+          183
+        ],
+        [
+          121,
+          202,
+          189
+        ],
+        [
+          138,
+          197,
+          177
+        ],
+        [
+          126,
+          208,
+          178
+        ],
+        [
+          125,
+          208,
+          179
+        ],
+        [
+          124,
+          200,
+          188
+        ],
+        [
+          133,
+          161,
+          218
+        ],
+        [
+          128,
+          182,
+          202
+        ],
+        [
+          131,
+          211,
+          170
+        ],
+        [
+          129,
+          206,
+          177
+        ],
+        [
+          129,
+          175,
+          208
+        ],
+        [
+          127,
+          182,
+          203
+        ],
+        [
+          140,
+          192,
+          180
+        ],
+        [
+          129,
+          193,
+          190
+        ],
+        [
+          130,
+          177,
+          205
+        ],
+        [
+          144,
+          198,
+          170
+        ],
+        [
+          134,
+          235,
+          143
+        ],
+        [
+          132,
+          212,
+          168
+        ],
+        [
+          133,
+          185,
+          194
+        ],
+        [
+          125,
+          195,
+          192
+        ],
+        [
+          125,
+          184,
+          203
+        ],
+        [
+          126,
+          207,
+          179
+        ],
+        [
+          4,
+          0,
+          0
+        ]
+      ],
+      "all_round_logits_bitwise_equal": true
+    },
+    "n128-foundry-npu-1": {
+      "tag": "n128-foundry-npu-1",
+      "median_ms": 516.3197915000001,
+      "mean_ms": 516.8921003333334,
+      "samples_ms": [
+        513.006302,
+        515.946875,
+        523.269843,
+        517.242291,
+        515.194583,
+        516.692708
+      ],
+      "major_faults": [
+        0,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        207,
+        207,
+        207,
+        207,
+        207,
+        207
+      ],
+      "arena_capacity_bytes": [
+        0,
+        0,
+        0
+      ],
+      "process_memory": [
+        "VmSize:\t19513916 kB",
+        "VmHWM:\t  339812 kB",
+        "VmRSS:\t  208824 kB"
+      ],
+      "top1": 13,
+      "report_sha256": "4866bbbd6c62b42fbc79dc6acd589942ab2b6ba7e1d6c39c7e185a081127300e",
+      "all_round_logits_bitwise_equal": null
+    },
+    "n128-foundry-npu-2": {
+      "tag": "n128-foundry-npu-2",
+      "median_ms": 511.5243745,
+      "mean_ms": 513.3783331666666,
+      "samples_ms": [
+        511.719688,
+        509.71119799999997,
+        510.819218,
+        511.702499,
+        524.971146,
+        511.34625
+      ],
+      "major_faults": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        207,
+        207,
+        207,
+        207,
+        207,
+        207
+      ],
+      "arena_capacity_bytes": [
+        0,
+        0,
+        0
+      ],
+      "process_memory": [
+        "VmSize:\t19628604 kB",
+        "VmHWM:\t  336248 kB",
+        "VmRSS:\t  213732 kB"
+      ],
+      "top1": 13,
+      "report_sha256": "e95c6fb4a76c3f101722514e2c7b9be84572d28aa1a1abda72f43eae8d22fe64",
+      "all_round_logits_bitwise_equal": null
+    },
+    "n128-foundry-hetero-0": {
+      "tag": "n128-foundry-hetero-0",
+      "median_ms": 434.73953099999994,
+      "mean_ms": 435.600859,
+      "samples_ms": [
+        443.889635,
+        433.20656199999996,
+        430.27906199999995,
+        436.2725,
+        439.249166,
+        430.708229
+      ],
+      "major_faults": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        833,
+        956,
+        486,
+        606,
+        804,
+        374
+      ],
+      "arena_capacity_bytes": [
+        18087936,
+        29890560,
+        18087936
+      ],
+      "process_memory": [
+        "VmSize:\t28429416 kB",
+        "VmHWM:\t 8021416 kB",
+        "VmRSS:\t  429332 kB"
+      ],
+      "top1": 13,
+      "report_sha256": "cd6f11343da55faf5dd7021c8d79f737ab8aa0d126147590dcc19bb0d37b2dcc",
+      "stages_ms": {
+        "decision": [
+          1.4528109999999999,
+          1.20729,
+          1.30198,
+          1.472394,
+          1.171769,
+          0.593179
+        ],
+        "gather": [
+          2.7060389999999996,
+          2.214111,
+          2.363129,
+          2.7202599999999997,
+          2.157445,
+          1.085421
+        ],
+        "expert_wall": [
+          328.209737,
+          323.205732,
+          323.004788,
+          326.835936,
+          323.904894,
+          318.804949
+        ],
+        "combine": [
+          4.330314,
+          4.443747,
+          4.2869790000000005,
+          4.389063,
+          4.842917000000001,
+          4.187813
+        ],
+        "backend_compute": [
+          [
+            185.41073,
+            163.87437599999998,
+            317.893649
+          ],
+          [
+            182.18937599999998,
+            163.48781200000002,
+            315.947553
+          ],
+          [
+            185.376564,
+            165.48192600000002,
+            315.358385
+          ],
+          [
+            183.673647,
+            164.285205,
+            318.096982
+          ],
+          [
+            182.237136,
+            163.705625,
+            316.246355
+          ],
+          [
+            175.659636,
+            160.20682,
+            314.24192800000003
+          ]
+        ],
+        "backend_gather": [
+          [
+            5.1107309999999995,
+            4.145991,
+            6.504014
+          ],
+          [
+            2.996768,
+            2.4166149999999997,
+            4.075313
+          ],
+          [
+            3.038069,
+            2.5966130000000005,
+            4.325939999999999
+          ],
+          [
+            3.825207,
+            2.964581,
+            5.219897
+          ],
+          [
+            3.302135,
+            2.543387,
+            4.331667
+          ],
+          [
+            1.858387,
+            1.416094,
+            2.382706
+          ]
+        ]
+      },
+      "allocations": [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "owner_counts_by_layer": [
+        [
+          23,
+          19,
+          18
+        ],
+        [
+          23,
+          19,
+          18
+        ],
+        [
+          25,
+          18,
+          17
+        ],
+        [
+          23,
+          19,
+          18
+        ],
+        [
+          24,
+          19,
+          17
+        ],
+        [
+          25,
+          18,
+          17
+        ],
+        [
+          26,
+          17,
+          17
+        ],
+        [
+          24,
+          19,
+          17
+        ],
+        [
+          25,
+          18,
+          17
+        ],
+        [
+          24,
+          19,
+          17
+        ],
+        [
+          25,
+          18,
+          17
+        ],
+        [
+          25,
+          18,
+          17
+        ],
+        [
+          24,
+          19,
+          17
+        ],
+        [
+          23,
+          20,
+          17
+        ],
+        [
+          22,
+          21,
+          17
+        ],
+        [
+          24,
+          19,
+          17
+        ],
+        [
+          23,
+          20,
+          17
+        ],
+        [
+          24,
+          19,
+          17
+        ],
+        [
+          24,
+          19,
+          17
+        ],
+        [
+          23,
+          20,
+          17
+        ],
+        [
+          24,
+          19,
+          17
+        ],
+        [
+          24,
+          19,
+          17
+        ],
+        [
+          25,
+          18,
+          17
+        ],
+        [
+          60,
+          0,
+          0
+        ]
+      ],
+      "pairs_by_layer": [
+        [
+          126,
+          205,
+          181
+        ],
+        [
+          133,
+          204,
+          175
+        ],
+        [
+          118,
+          180,
+          214
+        ],
+        [
+          145,
+          192,
+          175
+        ],
+        [
+          123,
+          208,
+          181
+        ],
+        [
+          128,
+          219,
+          165
+        ],
+        [
+          126,
+          208,
+          178
+        ],
+        [
+          123,
+          191,
+          198
+        ],
+        [
+          110,
+          220,
+          182
+        ],
+        [
+          122,
+          187,
+          203
+        ],
+        [
+          116,
+          219,
+          177
+        ],
+        [
+          113,
+          229,
+          170
+        ],
+        [
+          127,
+          189,
+          196
+        ],
+        [
+          128,
+          230,
+          154
+        ],
+        [
+          135,
+          187,
+          190
+        ],
+        [
+          126,
+          175,
+          211
+        ],
+        [
+          129,
+          220,
+          163
+        ],
+        [
+          131,
+          216,
+          165
+        ],
+        [
+          130,
+          181,
+          201
+        ],
+        [
+          130,
+          201,
+          181
+        ],
+        [
+          133,
+          164,
+          215
+        ],
+        [
+          112,
+          203,
+          197
+        ],
+        [
+          106,
+          188,
+          218
+        ],
+        [
+          4,
+          0,
+          0
+        ]
+      ],
+      "all_round_logits_bitwise_equal": true
+    },
+    "n128-foundry-hetero-3": {
+      "tag": "n128-foundry-hetero-3",
+      "median_ms": 437.540026,
+      "mean_ms": 437.855807,
+      "samples_ms": [
+        441.269635,
+        445.04901,
+        432.819687,
+        432.916458,
+        437.785521,
+        437.294531
+      ],
+      "major_faults": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        838,
+        957,
+        495,
+        607,
+        810,
+        373
+      ],
+      "arena_capacity_bytes": [
+        18087936,
+        29890560,
+        18087936
+      ],
+      "process_memory": [
+        "VmSize:\t28492904 kB",
+        "VmHWM:\t 8047936 kB",
+        "VmRSS:\t  634768 kB"
+      ],
+      "top1": 13,
+      "report_sha256": "859acafbffcad034b415f59ef2f05c4ef4df8ae509957dcf4858150172c47ae9",
+      "stages_ms": {
+        "decision": [
+          1.318386,
+          1.125831,
+          1.2742159999999998,
+          1.167029,
+          1.325467,
+          1.2150519999999998
+        ],
+        "gather": [
+          2.443801,
+          2.082288,
+          2.361664,
+          2.160364,
+          2.4632799999999997,
+          2.19875
+        ],
+        "expert_wall": [
+          328.436665,
+          325.299948,
+          323.90557299999995,
+          327.49640899999997,
+          326.28541600000005,
+          323.384011
+        ],
+        "combine": [
+          4.403493,
+          4.860575,
+          4.312657,
+          4.4192730000000005,
+          4.325106,
+          4.544741
+        ],
+        "backend_compute": [
+          [
+            185.873853,
+            164.198126,
+            319.476408
+          ],
+          [
+            182.696094,
+            166.324793,
+            318.395779
+          ],
+          [
+            181.885933,
+            164.30895999999998,
+            315.72942800000004
+          ],
+          [
+            185.504117,
+            165.453384,
+            319.889793
+          ],
+          [
+            182.936719,
+            164.232655,
+            318.239425
+          ],
+          [
+            182.648073,
+            160.94974,
+            315.801352
+          ]
+        ],
+        "backend_gather": [
+          [
+            3.6704160000000003,
+            3.150783,
+            4.938385
+          ],
+          [
+            2.842757,
+            2.366409,
+            3.893021
+          ],
+          [
+            3.2974479999999997,
+            2.789324,
+            4.569947
+          ],
+          [
+            3.065106,
+            2.5984900000000004,
+            4.290159
+          ],
+          [
+            3.113435,
+            2.680885,
+            4.40922
+          ],
+          [
+            3.1741669999999997,
+            2.552917,
+            4.4458329999999995
+          ]
+        ]
+      },
+      "allocations": [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "owner_counts_by_layer": [
+        [
+          23,
+          19,
+          18
+        ],
+        [
+          23,
+          19,
+          18
+        ],
+        [
+          25,
+          18,
+          17
+        ],
+        [
+          23,
+          19,
+          18
+        ],
+        [
+          24,
+          19,
+          17
+        ],
+        [
+          25,
+          18,
+          17
+        ],
+        [
+          26,
+          17,
+          17
+        ],
+        [
+          24,
+          19,
+          17
+        ],
+        [
+          25,
+          18,
+          17
+        ],
+        [
+          24,
+          19,
+          17
+        ],
+        [
+          25,
+          18,
+          17
+        ],
+        [
+          25,
+          18,
+          17
+        ],
+        [
+          24,
+          19,
+          17
+        ],
+        [
+          23,
+          20,
+          17
+        ],
+        [
+          22,
+          21,
+          17
+        ],
+        [
+          24,
+          19,
+          17
+        ],
+        [
+          23,
+          20,
+          17
+        ],
+        [
+          24,
+          19,
+          17
+        ],
+        [
+          24,
+          19,
+          17
+        ],
+        [
+          23,
+          20,
+          17
+        ],
+        [
+          24,
+          19,
+          17
+        ],
+        [
+          24,
+          19,
+          17
+        ],
+        [
+          25,
+          18,
+          17
+        ],
+        [
+          60,
+          0,
+          0
+        ]
+      ],
+      "pairs_by_layer": [
+        [
+          126,
+          205,
+          181
+        ],
+        [
+          133,
+          204,
+          175
+        ],
+        [
+          118,
+          180,
+          214
+        ],
+        [
+          145,
+          192,
+          175
+        ],
+        [
+          123,
+          208,
+          181
+        ],
+        [
+          128,
+          219,
+          165
+        ],
+        [
+          126,
+          208,
+          178
+        ],
+        [
+          123,
+          191,
+          198
+        ],
+        [
+          110,
+          220,
+          182
+        ],
+        [
+          122,
+          187,
+          203
+        ],
+        [
+          116,
+          219,
+          177
+        ],
+        [
+          113,
+          229,
+          170
+        ],
+        [
+          127,
+          189,
+          196
+        ],
+        [
+          128,
+          230,
+          154
+        ],
+        [
+          135,
+          187,
+          190
+        ],
+        [
+          126,
+          175,
+          211
+        ],
+        [
+          129,
+          220,
+          163
+        ],
+        [
+          131,
+          216,
+          165
+        ],
+        [
+          130,
+          181,
+          201
+        ],
+        [
+          130,
+          201,
+          181
+        ],
+        [
+          133,
+          164,
+          215
+        ],
+        [
+          112,
+          203,
+          197
+        ],
+        [
+          106,
+          188,
+          218
+        ],
+        [
+          4,
+          0,
+          0
+        ]
+      ],
+      "all_round_logits_bitwise_equal": true
+    },
+    "n256-wetland-npu-0": {
+      "tag": "n256-wetland-npu-0",
+      "median_ms": 610.3779425,
+      "mean_ms": 610.6885589999999,
+      "samples_ms": [
+        607.203437,
+        620.432813,
+        611.11625,
+        611.602031,
+        609.639635,
+        604.1371879999999
+      ],
+      "major_faults": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "minor_faults": [
+        208,
+        207,
+        207,
+        207,
+        207,
+        207
+      ],
+      "arena_capacity_bytes": [
+        0,
+        0,
+        0
+      ],
+      "process_memory": [
+        "VmSize:\t19589184 kB",
+        "VmHWM:\t  340364 kB",
+        "VmRSS:\t  216608 kB"
+      ],
+      "top1": 2083,
+      "report_sha256": "de3934620c43f72e9d8139eed5a77458a52b23694e584679d4f2eccf42a8c7b6",
+      "all_round_logits_bitwise_equal": null
+    },
+    "n256-wetland-npu-3": {
+      "tag": "n256-wetland-npu-3",
+      "median_ms": 611.622968,
+      "mean_ms": 612.4065533333332,
+      "samples_ms": [
+        607.3947909999999,
+        608.5204679999999,
+        618.575625,
+        616.7025,
+        612.197343,
+        611.048593
+      ],
+      "major_faults": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        207,
+        207,
+        207,
+        207,
+        207,
+        207
+      ],
+      "arena_capacity_bytes": [
+        0,
+        0,
+        0
+      ],
+      "process_memory": [
+        "VmSize:\t19816512 kB",
+        "VmHWM:\t  340224 kB",
+        "VmRSS:\t  217356 kB"
+      ],
+      "top1": 2083,
+      "report_sha256": "7b1bc5eaec90774f0ceaee5ccc57386df52dc0b910d6a461e1d7e961ff2fb995",
+      "all_round_logits_bitwise_equal": null
+    },
+    "n256-wetland-hetero-1": {
+      "tag": "n256-wetland-hetero-1",
+      "median_ms": 475.85960950000003,
+      "mean_ms": 476.55577266666666,
+      "samples_ms": [
+        475.281875,
+        471.818802,
+        477.724948,
+        472.216511,
+        485.855156,
+        476.437344
+      ],
+      "major_faults": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        836,
+        664,
+        369,
+        611,
+        474,
+        487
+      ],
+      "arena_capacity_bytes": [
+        35127296,
+        58732544,
+        35127296
+      ],
+      "process_memory": [
+        "VmSize:\t28567556 kB",
+        "VmHWM:\t 8018544 kB",
+        "VmRSS:\t  917596 kB"
+      ],
+      "top1": 2083,
+      "report_sha256": "c620890f65f2dedea9a75535d3d6ac92365722f4c70e7158ce4bb6c33f318e9f",
+      "stages_ms": {
+        "decision": [
+          0.621614,
+          0.64568,
+          0.6709879999999999,
+          0.611252,
+          0.635418,
+          0.6119779999999999
+        ],
+        "gather": [
+          1.3933319999999998,
+          1.386145,
+          1.430153,
+          1.3011469999999998,
+          1.367294,
+          1.319631
+        ],
+        "expert_wall": [
+          321.815783,
+          319.804687,
+          318.542189,
+          318.18156300000004,
+          321.253277,
+          319.689586
+        ],
+        "combine": [
+          8.575102000000001,
+          8.550522,
+          8.483173,
+          8.274059999999999,
+          8.533492,
+          8.376667
+        ],
+        "backend_compute": [
+          [
+            193.80604300000002,
+            219.144014,
+            312.303231
+          ],
+          [
+            201.218125,
+            220.849686,
+            310.861924
+          ],
+          [
+            199.14026199999998,
+            219.751043,
+            309.75255400000003
+          ],
+          [
+            194.739221,
+            219.58812400000002,
+            310.37140700000003
+          ],
+          [
+            199.066611,
+            219.03625,
+            312.44958399999996
+          ],
+          [
+            194.596979,
+            216.173385,
+            312.047292
+          ]
+        ],
+        "backend_gather": [
+          [
+            2.968696,
+            3.287081,
+            5.717549
+          ],
+          [
+            2.905471,
+            3.142136,
+            5.69167
+          ],
+          [
+            2.7276,
+            3.056199,
+            5.997497999999999
+          ],
+          [
+            2.809947,
+            3.012708,
+            5.528231
+          ],
+          [
+            2.689322,
+            2.970418,
+            5.502814
+          ],
+          [
+            2.628543,
+            3.016455,
+            5.361983
+          ]
+        ]
+      },
+      "allocations": [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "owner_counts_by_layer": [
+        [
+          17,
+          25,
+          18
+        ],
+        [
+          20,
+          23,
+          17
+        ],
+        [
+          19,
+          25,
+          16
+        ],
+        [
+          17,
+          25,
+          18
+        ],
+        [
+          17,
+          25,
+          18
+        ],
+        [
+          20,
+          23,
+          17
+        ],
+        [
+          17,
+          26,
+          17
+        ],
+        [
+          17,
+          25,
+          18
+        ],
+        [
+          18,
+          24,
+          18
+        ],
+        [
+          19,
+          24,
+          17
+        ],
+        [
+          19,
+          24,
+          17
+        ],
+        [
+          18,
+          25,
+          17
+        ],
+        [
+          17,
+          25,
+          18
+        ],
+        [
+          17,
+          24,
+          19
+        ],
+        [
+          19,
+          24,
+          17
+        ],
+        [
+          18,
+          24,
+          18
+        ],
+        [
+          17,
+          25,
+          18
+        ],
+        [
+          18,
+          24,
+          18
+        ],
+        [
+          17,
+          25,
+          18
+        ],
+        [
+          17,
+          25,
+          18
+        ],
+        [
+          19,
+          24,
+          17
+        ],
+        [
+          18,
+          25,
+          17
+        ],
+        [
+          20,
+          23,
+          17
+        ],
+        [
+          60,
+          0,
+          0
+        ]
+      ],
+      "pairs_by_layer": [
+        [
+          174,
+          454,
+          396
+        ],
+        [
+          169,
+          455,
+          400
+        ],
+        [
+          165,
+          432,
+          427
+        ],
+        [
+          183,
+          427,
+          414
+        ],
+        [
+          177,
+          419,
+          428
+        ],
+        [
+          160,
+          453,
+          411
+        ],
+        [
+          170,
+          421,
+          433
+        ],
+        [
+          171,
+          450,
+          403
+        ],
+        [
+          160,
+          467,
+          397
+        ],
+        [
+          160,
+          442,
+          422
+        ],
+        [
+          174,
+          436,
+          414
+        ],
+        [
+          165,
+          445,
+          414
+        ],
+        [
+          171,
+          448,
+          405
+        ],
+        [
+          166,
+          489,
+          369
+        ],
+        [
+          181,
+          420,
+          423
+        ],
+        [
+          171,
+          474,
+          379
+        ],
+        [
+          178,
+          455,
+          391
+        ],
+        [
+          162,
+          509,
+          353
+        ],
+        [
+          163,
+          464,
+          397
+        ],
+        [
+          167,
+          460,
+          397
+        ],
+        [
+          165,
+          397,
+          462
+        ],
+        [
+          181,
+          423,
+          420
+        ],
+        [
+          171,
+          405,
+          448
+        ],
+        [
+          4,
+          0,
+          0
+        ]
+      ],
+      "all_round_logits_bitwise_equal": true
+    },
+    "n256-wetland-hetero-2": {
+      "tag": "n256-wetland-hetero-2",
+      "median_ms": 479.961797,
+      "mean_ms": 478.3244095,
+      "samples_ms": [
+        487.652031,
+        471.895312,
+        480.23625,
+        468.80546899999996,
+        481.670051,
+        479.687344
+      ],
+      "major_faults": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        838,
+        622,
+        375,
+        650,
+        1418,
+        525
+      ],
+      "arena_capacity_bytes": [
+        35127296,
+        58732544,
+        35127296
+      ],
+      "process_memory": [
+        "VmSize:\t28530692 kB",
+        "VmHWM:\t 7726412 kB",
+        "VmRSS:\t 1276360 kB"
+      ],
+      "top1": 2083,
+      "report_sha256": "40189172903a67e66e95eecd862e1ef58c3a1ab839d6a45dd562c43cd0f28c35",
+      "stages_ms": {
+        "decision": [
+          0.627294,
+          0.631093,
+          0.5961470000000001,
+          0.6199479999999999,
+          0.6316649999999999,
+          0.639427
+        ],
+        "gather": [
+          1.330886,
+          1.344272,
+          1.2861980000000002,
+          1.330211,
+          1.3507799999999999,
+          1.419689
+        ],
+        "expert_wall": [
+          321.140311,
+          319.71499900000003,
+          321.64880200000005,
+          320.386927,
+          323.24906300000004,
+          320.398903
+        ],
+        "combine": [
+          10.469637,
+          8.439999,
+          8.427136,
+          8.380104,
+          8.396039,
+          8.247085
+        ],
+        "backend_compute": [
+          [
+            195.72244899999998,
+            220.047237,
+            311.710002
+          ],
+          [
+            198.485623,
+            219.42463400000003,
+            310.360054
+          ],
+          [
+            193.465573,
+            221.430311,
+            311.82057199999997
+          ],
+          [
+            192.33421900000002,
+            221.332606,
+            312.221147
+          ],
+          [
+            197.796302,
+            221.56854499999997,
+            314.278751
+          ],
+          [
+            193.462026,
+            215.948071,
+            312.465886
+          ]
+        ],
+        "backend_gather": [
+          [
+            2.789429,
+            2.9519290000000002,
+            5.499634
+          ],
+          [
+            2.7098940000000002,
+            3.231202,
+            5.588799
+          ],
+          [
+            2.58974,
+            2.935887,
+            5.348125
+          ],
+          [
+            2.864377,
+            3.073333,
+            5.672031
+          ],
+          [
+            2.885262,
+            3.731876,
+            5.707497999999999
+          ],
+          [
+            2.7903629999999997,
+            3.071358,
+            5.717186
+          ]
+        ]
+      },
+      "allocations": [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "owner_counts_by_layer": [
+        [
+          17,
+          25,
+          18
+        ],
+        [
+          20,
+          23,
+          17
+        ],
+        [
+          19,
+          25,
+          16
+        ],
+        [
+          17,
+          25,
+          18
+        ],
+        [
+          17,
+          25,
+          18
+        ],
+        [
+          20,
+          23,
+          17
+        ],
+        [
+          17,
+          26,
+          17
+        ],
+        [
+          17,
+          25,
+          18
+        ],
+        [
+          18,
+          24,
+          18
+        ],
+        [
+          19,
+          24,
+          17
+        ],
+        [
+          19,
+          24,
+          17
+        ],
+        [
+          18,
+          25,
+          17
+        ],
+        [
+          17,
+          25,
+          18
+        ],
+        [
+          17,
+          24,
+          19
+        ],
+        [
+          19,
+          24,
+          17
+        ],
+        [
+          18,
+          24,
+          18
+        ],
+        [
+          17,
+          25,
+          18
+        ],
+        [
+          18,
+          24,
+          18
+        ],
+        [
+          17,
+          25,
+          18
+        ],
+        [
+          17,
+          25,
+          18
+        ],
+        [
+          19,
+          24,
+          17
+        ],
+        [
+          18,
+          25,
+          17
+        ],
+        [
+          20,
+          23,
+          17
+        ],
+        [
+          60,
+          0,
+          0
+        ]
+      ],
+      "pairs_by_layer": [
+        [
+          174,
+          454,
+          396
+        ],
+        [
+          169,
+          455,
+          400
+        ],
+        [
+          165,
+          432,
+          427
+        ],
+        [
+          183,
+          427,
+          414
+        ],
+        [
+          177,
+          419,
+          428
+        ],
+        [
+          160,
+          453,
+          411
+        ],
+        [
+          170,
+          421,
+          433
+        ],
+        [
+          171,
+          450,
+          403
+        ],
+        [
+          160,
+          467,
+          397
+        ],
+        [
+          160,
+          442,
+          422
+        ],
+        [
+          174,
+          436,
+          414
+        ],
+        [
+          165,
+          445,
+          414
+        ],
+        [
+          171,
+          448,
+          405
+        ],
+        [
+          166,
+          489,
+          369
+        ],
+        [
+          181,
+          420,
+          423
+        ],
+        [
+          171,
+          474,
+          379
+        ],
+        [
+          178,
+          455,
+          391
+        ],
+        [
+          162,
+          509,
+          353
+        ],
+        [
+          163,
+          464,
+          397
+        ],
+        [
+          167,
+          460,
+          397
+        ],
+        [
+          165,
+          397,
+          462
+        ],
+        [
+          181,
+          423,
+          420
+        ],
+        [
+          171,
+          405,
+          448
+        ],
+        [
+          4,
+          0,
+          0
+        ]
+      ],
+      "all_round_logits_bitwise_equal": true
+    },
+    "n256-foundry-npu-1": {
+      "tag": "n256-foundry-npu-1",
+      "median_ms": 614.4444530000001,
+      "mean_ms": 615.158602,
+      "samples_ms": [
+        620.520364,
+        623.787812,
+        616.173125,
+        610.276093,
+        612.715781,
+        607.478437
+      ],
+      "major_faults": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        208,
+        207,
+        207,
+        207,
+        207,
+        207
+      ],
+      "arena_capacity_bytes": [
+        0,
+        0,
+        0
+      ],
+      "process_memory": [
+        "VmSize:\t19664792 kB",
+        "VmHWM:\t  340028 kB",
+        "VmRSS:\t  217740 kB"
+      ],
+      "top1": 19,
+      "report_sha256": "cbd46cf79cdb1cf0937ed3b0e0df4ed933007740c287682b46812246d81242d4",
+      "all_round_logits_bitwise_equal": null
+    },
+    "n256-foundry-npu-2": {
+      "tag": "n256-foundry-npu-2",
+      "median_ms": 614.2173435,
+      "mean_ms": 616.4280555,
+      "samples_ms": [
+        614.065052,
+        612.478073,
+        614.369635,
+        630.824844,
+        615.616719,
+        611.21401
+      ],
+      "major_faults": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        208,
+        207,
+        207,
+        207,
+        207,
+        207
+      ],
+      "arena_capacity_bytes": [
+        0,
+        0,
+        0
+      ],
+      "process_memory": [
+        "VmSize:\t19707800 kB",
+        "VmHWM:\t  336200 kB",
+        "VmRSS:\t  215012 kB"
+      ],
+      "top1": 19,
+      "report_sha256": "74f1f3cc5fbe2af368cdf58140e6d7d96c6d48cb78cbb7be889ad11adc45ea55",
+      "all_round_logits_bitwise_equal": null
+    },
+    "n256-foundry-hetero-0": {
+      "tag": "n256-foundry-hetero-0",
+      "median_ms": 483.7021355,
+      "mean_ms": 486.5847915,
+      "samples_ms": [
+        492.66468699999996,
+        480.924947,
+        485.17375,
+        499.75,
+        478.764844,
+        482.230521
+      ],
+      "major_faults": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        833,
+        675,
+        371,
+        609,
+        490,
+        482
+      ],
+      "arena_capacity_bytes": [
+        35127296,
+        58732544,
+        35127296
+      ],
+      "process_memory": [
+        "VmSize:\t28493396 kB",
+        "VmHWM:\t 8051092 kB",
+        "VmRSS:\t  624372 kB"
+      ],
+      "top1": 19,
+      "report_sha256": "1c42e428ddc08dfb3961589ce4b8f5b52fc26e8467462982c945d0cf664a9e7b",
+      "stages_ms": {
+        "decision": [
+          1.5004680000000001,
+          1.350989,
+          1.613123,
+          1.404374,
+          1.080779,
+          0.607913
+        ],
+        "gather": [
+          3.224062,
+          2.968697,
+          3.510256,
+          2.935677,
+          2.322602,
+          1.291247
+        ],
+        "expert_wall": [
+          324.328179,
+          322.743696,
+          323.073804,
+          330.65432400000003,
+          319.262658,
+          316.023594
+        ],
+        "combine": [
+          9.518072,
+          9.064949,
+          8.587241,
+          9.420523000000001,
+          8.215519,
+          8.332499
+        ],
+        "backend_compute": [
+          [
+            210.556249,
+            222.168177,
+            308.219948
+          ],
+          [
+            205.847812,
+            219.265991,
+            307.09135399999997
+          ],
+          [
+            208.14547,
+            217.98359299999998,
+            304.52848800000004
+          ],
+          [
+            217.11765499999998,
+            218.687761,
+            306.630001
+          ],
+          [
+            199.57552299999998,
+            217.081355,
+            306.70906099999996
+          ],
+          [
+            200.154321,
+            213.57067800000002,
+            307.74640600000004
+          ]
+        ],
+        "backend_gather": [
+          [
+            4.962763,
+            5.697759,
+            10.421249
+          ],
+          [
+            4.88297,
+            5.809481,
+            9.519896000000001
+          ],
+          [
+            6.803852,
+            6.949376,
+            12.269062
+          ],
+          [
+            4.681407,
+            5.217185000000001,
+            9.343126
+          ],
+          [
+            3.936614,
+            4.308539,
+            7.862604999999999
+          ],
+          [
+            2.834531,
+            3.229842,
+            5.381819
+          ]
+        ]
+      },
+      "allocations": [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "owner_counts_by_layer": [
+        [
+          20,
+          23,
+          17
+        ],
+        [
+          18,
+          24,
+          18
+        ],
+        [
+          20,
+          24,
+          16
+        ],
+        [
+          17,
+          25,
+          18
+        ],
+        [
+          19,
+          24,
+          17
+        ],
+        [
+          19,
+          23,
+          18
+        ],
+        [
+          16,
+          26,
+          18
+        ],
+        [
+          18,
+          25,
+          17
+        ],
+        [
+          18,
+          25,
+          17
+        ],
+        [
+          22,
+          23,
+          15
+        ],
+        [
+          20,
+          23,
+          17
+        ],
+        [
+          20,
+          24,
+          16
+        ],
+        [
+          19,
+          24,
+          17
+        ],
+        [
+          19,
+          24,
+          17
+        ],
+        [
+          20,
+          24,
+          16
+        ],
+        [
+          19,
+          23,
+          18
+        ],
+        [
+          20,
+          23,
+          17
+        ],
+        [
+          19,
+          24,
+          17
+        ],
+        [
+          19,
+          23,
+          18
+        ],
+        [
+          20,
+          23,
+          17
+        ],
+        [
+          17,
+          25,
+          18
+        ],
+        [
+          18,
+          24,
+          18
+        ],
+        [
+          21,
+          23,
+          16
+        ],
+        [
+          60,
+          0,
+          0
+        ]
+      ],
+      "pairs_by_layer": [
+        [
+          156,
+          444,
+          424
+        ],
+        [
+          166,
+          456,
+          402
+        ],
+        [
+          175,
+          401,
+          448
+        ],
+        [
+          174,
+          486,
+          364
+        ],
+        [
+          160,
+          477,
+          387
+        ],
+        [
+          162,
+          478,
+          384
+        ],
+        [
+          167,
+          461,
+          396
+        ],
+        [
+          170,
+          428,
+          426
+        ],
+        [
+          168,
+          461,
+          395
+        ],
+        [
+          163,
+          436,
+          425
+        ],
+        [
+          156,
+          415,
+          453
+        ],
+        [
+          172,
+          434,
+          418
+        ],
+        [
+          177,
+          441,
+          406
+        ],
+        [
+          158,
+          472,
+          394
+        ],
+        [
+          160,
+          411,
+          453
+        ],
+        [
+          176,
+          452,
+          396
+        ],
+        [
+          159,
+          427,
+          438
+        ],
+        [
+          181,
+          477,
+          366
+        ],
+        [
+          175,
+          450,
+          399
+        ],
+        [
+          168,
+          459,
+          397
+        ],
+        [
+          164,
+          437,
+          423
+        ],
+        [
+          176,
+          477,
+          371
+        ],
+        [
+          165,
+          404,
+          455
+        ],
+        [
+          4,
+          0,
+          0
+        ]
+      ],
+      "all_round_logits_bitwise_equal": true
+    },
+    "n256-foundry-hetero-3": {
+      "tag": "n256-foundry-hetero-3",
+      "median_ms": 490.304843,
+      "mean_ms": 490.7593136666667,
+      "samples_ms": [
+        487.09963500000003,
+        491.04218699999996,
+        489.567499,
+        496.28968699999996,
+        494.275624,
+        486.28125
+      ],
+      "major_faults": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        833,
+        966,
+        484,
+        724,
+        616,
+        485
+      ],
+      "arena_capacity_bytes": [
+        35127296,
+        58732544,
+        35127296
+      ],
+      "process_memory": [
+        "VmSize:\t28542548 kB",
+        "VmHWM:\t 8105372 kB",
+        "VmRSS:\t  642304 kB"
+      ],
+      "top1": 19,
+      "report_sha256": "5a5f819928892b33d1cf2b04f1db963abeeb6d69619543ac7a98ca438408d87e",
+      "stages_ms": {
+        "decision": [
+          1.3107280000000001,
+          1.361667,
+          1.527082,
+          1.4855209999999999,
+          1.5266140000000001,
+          1.459268
+        ],
+        "gather": [
+          2.9160909999999998,
+          2.931143,
+          3.2819760000000002,
+          3.204273,
+          3.332812,
+          3.1144760000000002
+        ],
+        "expert_wall": [
+          320.25609499999996,
+          322.047707,
+          321.425366,
+          321.55625,
+          322.40265600000004,
+          322.434479
+        ],
+        "combine": [
+          9.327238,
+          10.536145000000001,
+          8.536406999999999,
+          8.576300999999999,
+          9.106247999999999,
+          8.215257
+        ],
+        "backend_compute": [
+          [
+            203.76317699999998,
+            216.645365,
+            306.37073
+          ],
+          [
+            205.535624,
+            218.355209,
+            306.873388
+          ],
+          [
+            204.566305,
+            217.34130199999998,
+            304.987136
+          ],
+          [
+            203.289843,
+            218.572812,
+            305.622137
+          ],
+          [
+            208.539274,
+            217.724843,
+            307.271202
+          ],
+          [
+            202.535781,
+            215.987861,
+            307.599579
+          ]
+        ],
+        "backend_gather": [
+          [
+            4.4384369999999995,
+            5.161251,
+            8.955988999999999
+          ],
+          [
+            4.379013,
+            5.166353,
+            9.421875
+          ],
+          [
+            4.965154,
+            5.726616,
+            10.098232
+          ],
+          [
+            5.320309999999999,
+            5.660102,
+            10.147084000000001
+          ],
+          [
+            4.979532,
+            5.351768,
+            9.725832
+          ],
+          [
+            5.680886,
+            5.724633,
+            10.234217999999998
+          ]
+        ]
+      },
+      "allocations": [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "owner_counts_by_layer": [
+        [
+          20,
+          23,
+          17
+        ],
+        [
+          18,
+          24,
+          18
+        ],
+        [
+          20,
+          24,
+          16
+        ],
+        [
+          17,
+          25,
+          18
+        ],
+        [
+          19,
+          24,
+          17
+        ],
+        [
+          19,
+          23,
+          18
+        ],
+        [
+          16,
+          26,
+          18
+        ],
+        [
+          18,
+          25,
+          17
+        ],
+        [
+          18,
+          25,
+          17
+        ],
+        [
+          22,
+          23,
+          15
+        ],
+        [
+          20,
+          23,
+          17
+        ],
+        [
+          20,
+          24,
+          16
+        ],
+        [
+          19,
+          24,
+          17
+        ],
+        [
+          19,
+          24,
+          17
+        ],
+        [
+          20,
+          24,
+          16
+        ],
+        [
+          19,
+          23,
+          18
+        ],
+        [
+          20,
+          23,
+          17
+        ],
+        [
+          19,
+          24,
+          17
+        ],
+        [
+          19,
+          23,
+          18
+        ],
+        [
+          20,
+          23,
+          17
+        ],
+        [
+          17,
+          25,
+          18
+        ],
+        [
+          18,
+          24,
+          18
+        ],
+        [
+          21,
+          23,
+          16
+        ],
+        [
+          60,
+          0,
+          0
+        ]
+      ],
+      "pairs_by_layer": [
+        [
+          156,
+          444,
+          424
+        ],
+        [
+          166,
+          456,
+          402
+        ],
+        [
+          175,
+          401,
+          448
+        ],
+        [
+          174,
+          486,
+          364
+        ],
+        [
+          160,
+          477,
+          387
+        ],
+        [
+          162,
+          478,
+          384
+        ],
+        [
+          167,
+          461,
+          396
+        ],
+        [
+          170,
+          428,
+          426
+        ],
+        [
+          168,
+          461,
+          395
+        ],
+        [
+          163,
+          436,
+          425
+        ],
+        [
+          156,
+          415,
+          453
+        ],
+        [
+          172,
+          434,
+          418
+        ],
+        [
+          177,
+          441,
+          406
+        ],
+        [
+          158,
+          472,
+          394
+        ],
+        [
+          160,
+          411,
+          453
+        ],
+        [
+          176,
+          452,
+          396
+        ],
+        [
+          159,
+          427,
+          438
+        ],
+        [
+          181,
+          477,
+          366
+        ],
+        [
+          175,
+          450,
+          399
+        ],
+        [
+          168,
+          459,
+          397
+        ],
+        [
+          164,
+          437,
+          423
+        ],
+        [
+          176,
+          477,
+          371
+        ],
+        [
+          165,
+          404,
+          455
+        ],
+        [
+          4,
+          0,
+          0
+        ]
+      ],
+      "all_round_logits_bitwise_equal": true
+    },
+    "n512-wetland-npu-0": {
+      "tag": "n512-wetland-npu-0",
+      "median_ms": 830.4784374999999,
+      "mean_ms": 829.2883418333333,
+      "samples_ms": [
+        827.750781,
+        846.058802,
+        833.206094,
+        810.859062,
+        821.123594,
+        836.731718
+      ],
+      "major_faults": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        209,
+        207,
+        210,
+        207,
+        207,
+        207
+      ],
+      "arena_capacity_bytes": [
+        0,
+        0,
+        0
+      ],
+      "process_memory": [
+        "VmSize:\t19883004 kB",
+        "VmHWM:\t  340332 kB",
+        "VmRSS:\t  215508 kB"
+      ],
+      "top1": 504,
+      "report_sha256": "b8ca6471ce3de2ea177f972f791f30b3dde93a218bc59c6b34c13c2fa5bf0200",
+      "all_round_logits_bitwise_equal": null
+    },
+    "n512-wetland-npu-3": {
+      "tag": "n512-wetland-npu-3",
+      "median_ms": 846.134219,
+      "mean_ms": 846.7493228333334,
+      "samples_ms": [
+        844.8192190000001,
+        847.4492190000001,
+        844.326093,
+        850.32875,
+        856.284531,
+        837.288125
+      ],
+      "major_faults": [
+        0,
+        0,
+        0,
+        0,
+        1,
+        0
+      ],
+      "minor_faults": [
+        208,
+        207,
+        207,
+        209,
+        207,
+        207
+      ],
+      "arena_capacity_bytes": [
+        0,
+        0,
+        0
+      ],
+      "process_memory": [
+        "VmSize:\t19903484 kB",
+        "VmHWM:\t  340368 kB",
+        "VmRSS:\t  245120 kB"
+      ],
+      "top1": 504,
+      "report_sha256": "8ea9bdf018694f01669b2baac47651776edb7d9f39c1438f301be189be5da898",
+      "all_round_logits_bitwise_equal": null
+    },
+    "n512-wetland-hetero-1": {
+      "tag": "n512-wetland-hetero-1",
+      "median_ms": 649.962344,
+      "mean_ms": 650.723203,
+      "samples_ms": [
+        640.709687,
+        661.4665620000001,
+        645.956719,
+        643.0255209999999,
+        659.21276,
+        653.967969
+      ],
+      "major_faults": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        730,
+        1070,
+        583,
+        519,
+        1548,
+        608
+      ],
+      "arena_capacity_bytes": [
+        69206016,
+        116416512,
+        69206016
+      ],
+      "process_memory": [
+        "VmSize:\t28804232 kB",
+        "VmHWM:\t 8017276 kB",
+        "VmRSS:\t  583472 kB"
+      ],
+      "top1": 504,
+      "report_sha256": "f0c86cae7c1234bd37ac3ca096113c311878d168cf3e7c8f9e6c9fd5b4b5ed38",
+      "stages_ms": {
+        "decision": [
+          1.905987,
+          1.810312,
+          1.905367,
+          1.996298,
+          2.023126,
+          1.8529179999999998
+        ],
+        "gather": [
+          4.475618000000001,
+          4.301457999999999,
+          4.5649489999999995,
+          4.718743000000001,
+          4.881043,
+          4.409534
+        ],
+        "expert_wall": [
+          371.49838300000005,
+          376.04411,
+          372.03932199999997,
+          372.738436,
+          379.60546999999997,
+          382.392343
+        ],
+        "combine": [
+          17.047919,
+          18.50318,
+          17.269064,
+          17.360519,
+          18.131404,
+          17.778802
+        ],
+        "backend_compute": [
+          [
+            262.929322,
+            317.794218,
+            338.448131
+          ],
+          [
+            276.677913,
+            323.334847,
+            341.394842
+          ],
+          [
+            263.94625099999996,
+            319.184999,
+            339.8463
+          ],
+          [
+            263.443172,
+            318.88942499999996,
+            338.63208000000003
+          ],
+          [
+            263.444011,
+            320.552293,
+            342.829844
+          ],
+          [
+            270.95406199999996,
+            326.480835,
+            338.909008
+          ]
+        ],
+        "backend_gather": [
+          [
+            9.259898999999999,
+            12.069374,
+            20.181456999999998
+          ],
+          [
+            8.996300999999999,
+            12.097290999999998,
+            19.879845
+          ],
+          [
+            9.08703,
+            12.529427,
+            19.959166
+          ],
+          [
+            9.098074,
+            11.96167,
+            19.815261
+          ],
+          [
+            9.394529,
+            12.038170000000001,
+            20.071876
+          ],
+          [
+            8.906509,
+            12.196614,
+            23.65849
+          ]
+        ]
+      },
+      "allocations": [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "owner_counts_by_layer": [
+        [
+          11,
+          32,
+          17
+        ],
+        [
+          12,
+          31,
+          17
+        ],
+        [
+          12,
+          32,
+          16
+        ],
+        [
+          11,
+          32,
+          17
+        ],
+        [
+          11,
+          31,
+          18
+        ],
+        [
+          13,
+          31,
+          16
+        ],
+        [
+          13,
+          31,
+          16
+        ],
+        [
+          11,
+          33,
+          16
+        ],
+        [
+          11,
+          32,
+          17
+        ],
+        [
+          12,
+          32,
+          16
+        ],
+        [
+          12,
+          31,
+          17
+        ],
+        [
+          10,
+          33,
+          17
+        ],
+        [
+          10,
+          33,
+          17
+        ],
+        [
+          10,
+          33,
+          17
+        ],
+        [
+          11,
+          32,
+          17
+        ],
+        [
+          13,
+          30,
+          17
+        ],
+        [
+          11,
+          32,
+          17
+        ],
+        [
+          12,
+          31,
+          17
+        ],
+        [
+          10,
+          33,
+          17
+        ],
+        [
+          11,
+          32,
+          17
+        ],
+        [
+          10,
+          33,
+          17
+        ],
+        [
+          13,
+          31,
+          16
+        ],
+        [
+          14,
+          31,
+          15
+        ],
+        [
+          60,
+          0,
+          0
+        ]
+      ],
+      "pairs_by_layer": [
+        [
+          243,
+          1019,
+          786
+        ],
+        [
+          252,
+          1033,
+          763
+        ],
+        [
+          249,
+          979,
+          820
+        ],
+        [
+          254,
+          1040,
+          754
+        ],
+        [
+          262,
+          1055,
+          731
+        ],
+        [
+          249,
+          998,
+          801
+        ],
+        [
+          252,
+          987,
+          809
+        ],
+        [
+          271,
+          974,
+          803
+        ],
+        [
+          253,
+          1004,
+          791
+        ],
+        [
+          241,
+          989,
+          818
+        ],
+        [
+          253,
+          1045,
+          750
+        ],
+        [
+          262,
+          1016,
+          770
+        ],
+        [
+          257,
+          959,
+          832
+        ],
+        [
+          249,
+          999,
+          800
+        ],
+        [
+          256,
+          1020,
+          772
+        ],
+        [
+          259,
+          1046,
+          743
+        ],
+        [
+          243,
+          1008,
+          797
+        ],
+        [
+          248,
+          1006,
+          794
+        ],
+        [
+          244,
+          1013,
+          791
+        ],
+        [
+          250,
+          1048,
+          750
+        ],
+        [
+          242,
+          961,
+          845
+        ],
+        [
+          254,
+          1007,
+          787
+        ],
+        [
+          235,
+          959,
+          854
+        ],
+        [
+          4,
+          0,
+          0
+        ]
+      ],
+      "all_round_logits_bitwise_equal": true
+    },
+    "n512-wetland-hetero-2": {
+      "tag": "n512-wetland-hetero-2",
+      "median_ms": 643.203567,
+      "mean_ms": 640.3240968333333,
+      "samples_ms": [
+        650.109375,
+        636.869062,
+        619.683906,
+        644.810468,
+        641.5966659999999,
+        648.8751040000001
+      ],
+      "major_faults": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        720,
+        1068,
+        578,
+        515,
+        1540,
+        601
+      ],
+      "arena_capacity_bytes": [
+        69206016,
+        116416512,
+        69206016
+      ],
+      "process_memory": [
+        "VmSize:\t28894344 kB",
+        "VmHWM:\t 7702308 kB",
+        "VmRSS:\t 1100484 kB"
+      ],
+      "top1": 504,
+      "report_sha256": "63961d427dc06aac1363bd906094c23ef634143185208c477757be37d320c51b",
+      "stages_ms": {
+        "decision": [
+          2.099638,
+          1.566251,
+          1.29245,
+          1.971405,
+          1.4322940000000002,
+          2.001458
+        ],
+        "gather": [
+          4.98693,
+          3.710159,
+          3.0363569999999998,
+          4.666407,
+          3.428858,
+          4.756198
+        ],
+        "expert_wall": [
+          373.632501,
+          371.66202799999996,
+          365.23083399999996,
+          375.03198499999996,
+          367.864008,
+          371.803022
+        ],
+        "combine": [
+          18.075002,
+          17.092238000000002,
+          16.667343000000002,
+          17.582345,
+          18.474949000000002,
+          17.508333999999998
+        ],
+        "backend_compute": [
+          [
+            249.971407,
+            320.864634,
+            338.684846
+          ],
+          [
+            267.940154,
+            321.51671799999997,
+            339.453646
+          ],
+          [
+            264.244527,
+            319.93926799999997,
+            340.089948
+          ],
+          [
+            261.60598999999996,
+            321.10713799999996,
+            338.87281
+          ],
+          [
+            261.287032,
+            319.646303,
+            340.617499
+          ],
+          [
+            259.844114,
+            322.002914,
+            340.03916499999997
+          ]
+        ],
+        "backend_gather": [
+          [
+            9.694582,
+            12.770988000000001,
+            20.591352
+          ],
+          [
+            7.019583,
+            9.614014,
+            16.534740000000003
+          ],
+          [
+            6.575367,
+            9.18328,
+            16.081875
+          ],
+          [
+            8.175467,
+            10.538227999999998,
+            18.354999
+          ],
+          [
+            6.403069,
+            9.444113,
+            15.73516
+          ],
+          [
+            9.014846,
+            12.031407999999999,
+            19.100208
+          ]
+        ]
+      },
+      "allocations": [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "owner_counts_by_layer": [
+        [
+          11,
+          32,
+          17
+        ],
+        [
+          12,
+          31,
+          17
+        ],
+        [
+          12,
+          32,
+          16
+        ],
+        [
+          11,
+          32,
+          17
+        ],
+        [
+          11,
+          31,
+          18
+        ],
+        [
+          13,
+          31,
+          16
+        ],
+        [
+          13,
+          31,
+          16
+        ],
+        [
+          11,
+          33,
+          16
+        ],
+        [
+          11,
+          32,
+          17
+        ],
+        [
+          12,
+          32,
+          16
+        ],
+        [
+          12,
+          31,
+          17
+        ],
+        [
+          10,
+          33,
+          17
+        ],
+        [
+          10,
+          33,
+          17
+        ],
+        [
+          10,
+          33,
+          17
+        ],
+        [
+          11,
+          32,
+          17
+        ],
+        [
+          13,
+          30,
+          17
+        ],
+        [
+          11,
+          32,
+          17
+        ],
+        [
+          12,
+          31,
+          17
+        ],
+        [
+          10,
+          33,
+          17
+        ],
+        [
+          11,
+          32,
+          17
+        ],
+        [
+          10,
+          33,
+          17
+        ],
+        [
+          13,
+          31,
+          16
+        ],
+        [
+          14,
+          31,
+          15
+        ],
+        [
+          60,
+          0,
+          0
+        ]
+      ],
+      "pairs_by_layer": [
+        [
+          243,
+          1019,
+          786
+        ],
+        [
+          252,
+          1033,
+          763
+        ],
+        [
+          249,
+          979,
+          820
+        ],
+        [
+          254,
+          1040,
+          754
+        ],
+        [
+          262,
+          1055,
+          731
+        ],
+        [
+          249,
+          998,
+          801
+        ],
+        [
+          252,
+          987,
+          809
+        ],
+        [
+          271,
+          974,
+          803
+        ],
+        [
+          253,
+          1004,
+          791
+        ],
+        [
+          241,
+          989,
+          818
+        ],
+        [
+          253,
+          1045,
+          750
+        ],
+        [
+          262,
+          1016,
+          770
+        ],
+        [
+          257,
+          959,
+          832
+        ],
+        [
+          249,
+          999,
+          800
+        ],
+        [
+          256,
+          1020,
+          772
+        ],
+        [
+          259,
+          1046,
+          743
+        ],
+        [
+          243,
+          1008,
+          797
+        ],
+        [
+          248,
+          1006,
+          794
+        ],
+        [
+          244,
+          1013,
+          791
+        ],
+        [
+          250,
+          1048,
+          750
+        ],
+        [
+          242,
+          961,
+          845
+        ],
+        [
+          254,
+          1007,
+          787
+        ],
+        [
+          235,
+          959,
+          854
+        ],
+        [
+          4,
+          0,
+          0
+        ]
+      ],
+      "all_round_logits_bitwise_equal": true
+    },
+    "n512-foundry-npu-1": {
+      "tag": "n512-foundry-npu-1",
+      "median_ms": 847.4719005,
+      "mean_ms": 848.1520828333333,
+      "samples_ms": [
+        845.0509370000001,
+        845.439791,
+        851.032812,
+        846.522031,
+        852.445156,
+        848.42177
+      ],
+      "major_faults": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        208,
+        207,
+        207,
+        209,
+        207,
+        207
+      ],
+      "arena_capacity_bytes": [
+        0,
+        0,
+        0
+      ],
+      "process_memory": [
+        "VmSize:\t19934036 kB",
+        "VmHWM:\t  340408 kB",
+        "VmRSS:\t  222724 kB"
+      ],
+      "top1": 14616,
+      "report_sha256": "89268b07cab0cff91717cba7d7fb4d1fb444e0b1a26699d5927b7e40c4d0b558",
+      "all_round_logits_bitwise_equal": null
+    },
+    "n512-foundry-npu-2": {
+      "tag": "n512-foundry-npu-2",
+      "median_ms": 841.2923435,
+      "mean_ms": 842.6235151666666,
+      "samples_ms": [
+        841.710781,
+        838.201718,
+        840.8739059999999,
+        851.998958,
+        839.2516139999999,
+        843.7041139999999
+      ],
+      "major_faults": [
+        0,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        208,
+        207,
+        208,
+        207,
+        207,
+        207
+      ],
+      "arena_capacity_bytes": [
+        0,
+        0,
+        0
+      ],
+      "process_memory": [
+        "VmSize:\t19895124 kB",
+        "VmHWM:\t  336324 kB",
+        "VmRSS:\t  221904 kB"
+      ],
+      "top1": 14616,
+      "report_sha256": "38ba733a168e5358efc039b4981ac6396c500929e2cc505898c302eda5108a7d",
+      "all_round_logits_bitwise_equal": null
+    },
+    "n512-foundry-hetero-0": {
+      "tag": "n512-foundry-hetero-0",
+      "median_ms": 612.9516925,
+      "mean_ms": 616.1282288333333,
+      "samples_ms": [
+        612.677656,
+        613.225729,
+        611.7769790000001,
+        608.9979159999999,
+        618.404375,
+        631.686718
+      ],
+      "major_faults": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        717,
+        1074,
+        566,
+        534,
+        1536,
+        611
+      ],
+      "arena_capacity_bytes": [
+        69206016,
+        116416512,
+        69206016
+      ],
+      "process_memory": [
+        "VmSize:\t28844700 kB",
+        "VmHWM:\t 8016684 kB",
+        "VmRSS:\t  393124 kB"
+      ],
+      "top1": 14616,
+      "report_sha256": "0e1b640a78249aaa43f8c198af50a47bea8e53aaf9d3c51767d9c3a92a81f577",
+      "stages_ms": {
+        "decision": [
+          0.714581,
+          0.719635,
+          0.70443,
+          0.700159,
+          0.7446370000000001,
+          1.299637
+        ],
+        "gather": [
+          1.664112,
+          1.6895850000000001,
+          1.704377,
+          1.6379169999999998,
+          1.743906,
+          3.061876
+        ],
+        "expert_wall": [
+          363.177186,
+          360.227342,
+          359.949738,
+          359.969114,
+          362.388127,
+          370.896408
+        ],
+        "combine": [
+          16.728907,
+          16.751929,
+          16.889218,
+          16.733124,
+          17.358071,
+          17.797241
+        ],
+        "backend_compute": [
+          [
+            253.976979,
+            313.033545,
+            341.217552
+          ],
+          [
+            256.292446,
+            316.869428,
+            336.12051899999994
+          ],
+          [
+            249.499582,
+            314.882916,
+            337.623644
+          ],
+          [
+            255.833908,
+            313.332448,
+            336.558596
+          ],
+          [
+            253.057864,
+            313.73999599999996,
+            339.426352
+          ],
+          [
+            273.14572999999996,
+            320.169947,
+            341.304999
+          ]
+        ],
+        "backend_gather": [
+          [
+            5.2919279999999995,
+            7.26302,
+            13.209169
+          ],
+          [
+            5.159685,
+            7.289737,
+            13.164691000000001
+          ],
+          [
+            5.2503139999999995,
+            7.189166,
+            12.869063
+          ],
+          [
+            5.254841000000001,
+            7.177295,
+            12.847968000000002
+          ],
+          [
+            5.15224,
+            7.222292,
+            12.995421
+          ],
+          [
+            7.685467,
+            10.501927,
+            17.648646
+          ]
+        ]
+      },
+      "allocations": [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "owner_counts_by_layer": [
+        [
+          12,
+          32,
+          16
+        ],
+        [
+          10,
+          32,
+          18
+        ],
+        [
+          13,
+          31,
+          16
+        ],
+        [
+          11,
+          31,
+          18
+        ],
+        [
+          13,
+          31,
+          16
+        ],
+        [
+          13,
+          30,
+          17
+        ],
+        [
+          12,
+          32,
+          16
+        ],
+        [
+          10,
+          33,
+          17
+        ],
+        [
+          12,
+          31,
+          17
+        ],
+        [
+          11,
+          32,
+          17
+        ],
+        [
+          13,
+          30,
+          17
+        ],
+        [
+          13,
+          31,
+          16
+        ],
+        [
+          11,
+          33,
+          16
+        ],
+        [
+          11,
+          32,
+          17
+        ],
+        [
+          15,
+          29,
+          16
+        ],
+        [
+          13,
+          30,
+          17
+        ],
+        [
+          13,
+          31,
+          16
+        ],
+        [
+          12,
+          31,
+          17
+        ],
+        [
+          13,
+          30,
+          17
+        ],
+        [
+          12,
+          31,
+          17
+        ],
+        [
+          14,
+          30,
+          16
+        ],
+        [
+          13,
+          31,
+          16
+        ],
+        [
+          13,
+          31,
+          16
+        ],
+        [
+          60,
+          0,
+          0
+        ]
+      ],
+      "pairs_by_layer": [
+        [
+          245,
+          977,
+          826
+        ],
+        [
+          262,
+          1044,
+          742
+        ],
+        [
+          255,
+          979,
+          814
+        ],
+        [
+          271,
+          1018,
+          759
+        ],
+        [
+          232,
+          1038,
+          778
+        ],
+        [
+          258,
+          1027,
+          763
+        ],
+        [
+          263,
+          956,
+          829
+        ],
+        [
+          270,
+          979,
+          799
+        ],
+        [
+          262,
+          1007,
+          779
+        ],
+        [
+          266,
+          986,
+          796
+        ],
+        [
+          231,
+          1048,
+          769
+        ],
+        [
+          268,
+          949,
+          831
+        ],
+        [
+          239,
+          1007,
+          802
+        ],
+        [
+          250,
+          1018,
+          780
+        ],
+        [
+          235,
+          1029,
+          784
+        ],
+        [
+          254,
+          1039,
+          755
+        ],
+        [
+          257,
+          974,
+          817
+        ],
+        [
+          246,
+          983,
+          819
+        ],
+        [
+          254,
+          1016,
+          778
+        ],
+        [
+          255,
+          1043,
+          750
+        ],
+        [
+          250,
+          1004,
+          794
+        ],
+        [
+          246,
+          1042,
+          760
+        ],
+        [
+          248,
+          955,
+          845
+        ],
+        [
+          4,
+          0,
+          0
+        ]
+      ],
+      "all_round_logits_bitwise_equal": true
+    },
+    "n512-foundry-hetero-3": {
+      "tag": "n512-foundry-hetero-3",
+      "median_ms": 611.2705725000001,
+      "mean_ms": 610.9324563333333,
+      "samples_ms": [
+        608.112031,
+        614.324479,
+        605.288958,
+        609.463176,
+        615.328125,
+        613.077969
+      ],
+      "major_faults": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        721,
+        1074,
+        555,
+        531,
+        1539,
+        610
+      ],
+      "arena_capacity_bytes": [
+        69206016,
+        116416512,
+        69206016
+      ],
+      "process_memory": [
+        "VmSize:\t28832412 kB",
+        "VmHWM:\t 8029524 kB",
+        "VmRSS:\t  387336 kB"
+      ],
+      "top1": 14616,
+      "report_sha256": "8d6a05dd03fbb884da97d7ff56ab8c3d859c94abb7564e35645019c38e6d4f5d",
+      "stages_ms": {
+        "decision": [
+          0.7188,
+          0.729636,
+          0.7005220000000001,
+          0.7140639999999999,
+          0.715105,
+          0.704846
+        ],
+        "gather": [
+          1.6920309999999998,
+          1.744271,
+          1.656774,
+          1.722136,
+          1.6981789999999999,
+          1.6757829999999998
+        ],
+        "expert_wall": [
+          360.840883,
+          359.969839,
+          358.337186,
+          359.466357,
+          363.210469,
+          362.151926
+        ],
+        "combine": [
+          16.590416,
+          16.678441,
+          16.659168,
+          16.606928,
+          16.902394,
+          18.240470000000002
+        ],
+        "backend_compute": [
+          [
+            255.141404,
+            315.882499,
+            337.395001
+          ],
+          [
+            252.126352,
+            318.443852,
+            335.64609499999995
+          ],
+          [
+            246.14551999999998,
+            313.49541600000003,
+            335.05411300000003
+          ],
+          [
+            246.622864,
+            314.233177,
+            335.255466
+          ],
+          [
+            250.394427,
+            314.320575,
+            340.370313
+          ],
+          [
+            242.11916300000001,
+            316.63953100000003,
+            336.550987
+          ]
+        ],
+        "backend_gather": [
+          [
+            5.5464579999999994,
+            7.498749,
+            13.877656
+          ],
+          [
+            5.269326,
+            7.496613999999999,
+            13.654217000000001
+          ],
+          [
+            5.18313,
+            7.273386,
+            13.319742
+          ],
+          [
+            5.207812,
+            7.330051999999999,
+            13.030106
+          ],
+          [
+            5.23172,
+            7.310887,
+            13.26443
+          ],
+          [
+            5.391877,
+            7.278125,
+            13.52552
+          ]
+        ]
+      },
+      "allocations": [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "owner_counts_by_layer": [
+        [
+          12,
+          32,
+          16
+        ],
+        [
+          10,
+          32,
+          18
+        ],
+        [
+          13,
+          31,
+          16
+        ],
+        [
+          11,
+          31,
+          18
+        ],
+        [
+          13,
+          31,
+          16
+        ],
+        [
+          13,
+          30,
+          17
+        ],
+        [
+          12,
+          32,
+          16
+        ],
+        [
+          10,
+          33,
+          17
+        ],
+        [
+          12,
+          31,
+          17
+        ],
+        [
+          11,
+          32,
+          17
+        ],
+        [
+          13,
+          30,
+          17
+        ],
+        [
+          13,
+          31,
+          16
+        ],
+        [
+          11,
+          33,
+          16
+        ],
+        [
+          11,
+          32,
+          17
+        ],
+        [
+          15,
+          29,
+          16
+        ],
+        [
+          13,
+          30,
+          17
+        ],
+        [
+          13,
+          31,
+          16
+        ],
+        [
+          12,
+          31,
+          17
+        ],
+        [
+          13,
+          30,
+          17
+        ],
+        [
+          12,
+          31,
+          17
+        ],
+        [
+          14,
+          30,
+          16
+        ],
+        [
+          13,
+          31,
+          16
+        ],
+        [
+          13,
+          31,
+          16
+        ],
+        [
+          60,
+          0,
+          0
+        ]
+      ],
+      "pairs_by_layer": [
+        [
+          245,
+          977,
+          826
+        ],
+        [
+          262,
+          1044,
+          742
+        ],
+        [
+          255,
+          979,
+          814
+        ],
+        [
+          271,
+          1018,
+          759
+        ],
+        [
+          232,
+          1038,
+          778
+        ],
+        [
+          258,
+          1027,
+          763
+        ],
+        [
+          263,
+          956,
+          829
+        ],
+        [
+          270,
+          979,
+          799
+        ],
+        [
+          262,
+          1007,
+          779
+        ],
+        [
+          266,
+          986,
+          796
+        ],
+        [
+          231,
+          1048,
+          769
+        ],
+        [
+          268,
+          949,
+          831
+        ],
+        [
+          239,
+          1007,
+          802
+        ],
+        [
+          250,
+          1018,
+          780
+        ],
+        [
+          235,
+          1029,
+          784
+        ],
+        [
+          254,
+          1039,
+          755
+        ],
+        [
+          257,
+          974,
+          817
+        ],
+        [
+          246,
+          983,
+          819
+        ],
+        [
+          254,
+          1016,
+          778
+        ],
+        [
+          255,
+          1043,
+          750
+        ],
+        [
+          250,
+          1004,
+          794
+        ],
+        [
+          246,
+          1042,
+          760
+        ],
+        [
+          248,
+          955,
+          845
+        ],
+        [
+          4,
+          0,
+          0
+        ]
+      ],
+      "all_round_logits_bitwise_equal": true
+    },
+    "n1024-wetland-npu-0": {
+      "tag": "n1024-wetland-npu-0",
+      "median_ms": 1296.6032544999998,
+      "mean_ms": 1292.9623866666666,
+      "samples_ms": [
+        1312.639479,
+        1285.699374,
+        1261.620521,
+        1292.5190619999998,
+        1300.687447,
+        1304.6084369999999
+      ],
+      "major_faults": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "minor_faults": [
+        210,
+        212,
+        213,
+        213,
+        214,
+        213
+      ],
+      "arena_capacity_bytes": [
+        0,
+        0,
+        0
+      ],
+      "process_memory": [
+        "VmSize:\t20303476 kB",
+        "VmHWM:\t  340584 kB",
+        "VmRSS:\t  233660 kB"
+      ],
+      "top1": 10342,
+      "report_sha256": "1ab89ab9f1c0e8d2dbd0369797e863be45329df75b7b43d3db0fb84ad86ec4e2",
+      "all_round_logits_bitwise_equal": null
+    },
+    "n1024-wetland-npu-3": {
+      "tag": "n1024-wetland-npu-3",
+      "median_ms": 1305.2102075,
+      "mean_ms": 1304.7017353333333,
+      "samples_ms": [
+        1305.647187,
+        1305.0761969999999,
+        1306.092343,
+        1305.3442180000002,
+        1301.996718,
+        1304.0537490000002
+      ],
+      "major_faults": [
+        0,
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      "minor_faults": [
+        210,
+        212,
+        212,
+        212,
+        213,
+        212
+      ],
+      "arena_capacity_bytes": [
+        0,
+        0,
+        0
+      ],
+      "process_memory": [
+        "VmSize:\t20264564 kB",
+        "VmHWM:\t  340456 kB",
+        "VmRSS:\t  239712 kB"
+      ],
+      "top1": 10342,
+      "report_sha256": "d2ce009801a1f9ae299ac1f862ab34d450ffdfe9ba3612e76805a2fb24f54b8d",
+      "all_round_logits_bitwise_equal": null
+    },
+    "n1024-wetland-hetero-1": {
+      "tag": "n1024-wetland-hetero-1",
+      "median_ms": 998.829166,
+      "mean_ms": 1023.0145306666667,
+      "samples_ms": [
+        994.440833,
+        978.218698,
+        983.97177,
+        1003.217499,
+        1072.472291,
+        1105.7660930000002
+      ],
+      "major_faults": [
+        0,
+        1,
+        0,
+        499,
+        1769,
+        0
+      ],
+      "minor_faults": [
+        720,
+        1088,
+        613,
+        619,
+        496,
+        1664
+      ],
+      "arena_capacity_bytes": [
+        137363456,
+        231784448,
+        137363456
+      ],
+      "process_memory": [
+        "VmSize:\t29449304 kB",
+        "VmHWM:\t 8018560 kB",
+        "VmRSS:\t  496380 kB"
+      ],
+      "top1": 10342,
+      "report_sha256": "556186bf940d202525c7163e0c2876fdad77f0e7ed158dbe4e18be031dbd5e21",
+      "stages_ms": {
+        "decision": [
+          1.229842,
+          1.092603,
+          1.178696,
+          1.097915,
+          2.6637489999999997,
+          3.167184
+        ],
+        "gather": [
+          3.619478,
+          3.313333,
+          3.610521,
+          3.310308,
+          8.600781,
+          9.593956
+        ],
+        "expert_wall": [
+          521.504167,
+          505.853331,
+          509.941612,
+          523.70974,
+          530.342916,
+          537.175262
+        ],
+        "combine": [
+          32.201823,
+          32.698803,
+          33.078491,
+          35.774009,
+          46.170154000000004,
+          52.665004
+        ],
+        "backend_compute": [
+          [
+            424.143229,
+            482.187916,
+            443.118231
+          ],
+          [
+            409.559426,
+            477.776665,
+            445.76270500000004
+          ],
+          [
+            408.169165,
+            479.090625,
+            446.41974200000004
+          ],
+          [
+            397.695988,
+            485.97817599999996,
+            458.473228
+          ],
+          [
+            361.070831,
+            484.351407,
+            447.821354
+          ],
+          [
+            358.121146,
+            489.501613,
+            450.18244599999997
+          ]
+        ],
+        "backend_gather": [
+          [
+            11.337084999999998,
+            18.563332,
+            31.374166000000002
+          ],
+          [
+            11.668906000000002,
+            19.344012,
+            32.503802
+          ],
+          [
+            11.460937,
+            19.190208,
+            35.639996
+          ],
+          [
+            12.771252,
+            20.645473000000003,
+            39.235887000000005
+          ],
+          [
+            18.035207,
+            32.560573,
+            46.092344
+          ],
+          [
+            18.475728,
+            30.182501,
+            46.765678
+          ]
+        ]
+      },
+      "allocations": [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "owner_counts_by_layer": [
+        [
+          8,
+          35,
+          17
+        ],
+        [
+          7,
+          36,
+          17
+        ],
+        [
+          9,
+          35,
+          16
+        ],
+        [
+          8,
+          35,
+          17
+        ],
+        [
+          7,
+          36,
+          17
+        ],
+        [
+          7,
+          37,
+          16
+        ],
+        [
+          9,
+          36,
+          15
+        ],
+        [
+          7,
+          37,
+          16
+        ],
+        [
+          8,
+          35,
+          17
+        ],
+        [
+          8,
+          36,
+          16
+        ],
+        [
+          9,
+          35,
+          16
+        ],
+        [
+          9,
+          35,
+          16
+        ],
+        [
+          8,
+          36,
+          16
+        ],
+        [
+          8,
+          36,
+          16
+        ],
+        [
+          9,
+          34,
+          17
+        ],
+        [
+          7,
+          37,
+          16
+        ],
+        [
+          6,
+          37,
+          17
+        ],
+        [
+          8,
+          35,
+          17
+        ],
+        [
+          7,
+          37,
+          16
+        ],
+        [
+          8,
+          35,
+          17
+        ],
+        [
+          9,
+          36,
+          15
+        ],
+        [
+          9,
+          35,
+          16
+        ],
+        [
+          8,
+          36,
+          16
+        ],
+        [
+          60,
+          0,
+          0
+        ]
+      ],
+      "pairs_by_layer": [
+        [
+          392,
+          2320,
+          1384
+        ],
+        [
+          399,
+          2299,
+          1398
+        ],
+        [
+          346,
+          2311,
+          1439
+        ],
+        [
+          388,
+          2265,
+          1443
+        ],
+        [
+          384,
+          2360,
+          1352
+        ],
+        [
+          383,
+          2215,
+          1498
+        ],
+        [
+          390,
+          2171,
+          1535
+        ],
+        [
+          380,
+          2256,
+          1460
+        ],
+        [
+          365,
+          2313,
+          1418
+        ],
+        [
+          373,
+          2260,
+          1463
+        ],
+        [
+          388,
+          2260,
+          1448
+        ],
+        [
+          389,
+          2241,
+          1466
+        ],
+        [
+          371,
+          2231,
+          1494
+        ],
+        [
+          393,
+          2253,
+          1450
+        ],
+        [
+          363,
+          2294,
+          1439
+        ],
+        [
+          386,
+          2249,
+          1461
+        ],
+        [
+          404,
+          2296,
+          1396
+        ],
+        [
+          390,
+          2363,
+          1343
+        ],
+        [
+          396,
+          2252,
+          1448
+        ],
+        [
+          372,
+          2292,
+          1432
+        ],
+        [
+          390,
+          2244,
+          1462
+        ],
+        [
+          386,
+          2253,
+          1457
+        ],
+        [
+          373,
+          2257,
+          1466
+        ],
+        [
+          4,
+          0,
+          0
+        ]
+      ],
+      "all_round_logits_bitwise_equal": true
+    },
+    "n1024-wetland-hetero-2": {
+      "tag": "n1024-wetland-hetero-2",
+      "median_ms": 1063.1109635000003,
+      "mean_ms": 1048.3652168333333,
+      "samples_ms": [
+        1070.039531,
+        1066.9048440000001,
+        1075.867656,
+        1059.3170830000001,
+        995.701719,
+        1022.360468
+      ],
+      "major_faults": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        723,
+        1081,
+        609,
+        620,
+        501,
+        1665
+      ],
+      "arena_capacity_bytes": [
+        137363456,
+        231784448,
+        137363456
+      ],
+      "process_memory": [
+        "VmSize:\t29451352 kB",
+        "VmHWM:\t 7335040 kB",
+        "VmRSS:\t  470776 kB"
+      ],
+      "top1": 10342,
+      "report_sha256": "d379fc8762d74e6f405d95e4702c09b791336228ed2e2f6fc4611dfd5c92fae5",
+      "stages_ms": {
+        "decision": [
+          3.051041,
+          2.859839,
+          3.147451,
+          2.8320320000000003,
+          1.3617750000000002,
+          1.1589079999999998
+        ],
+        "gather": [
+          8.12021,
+          7.993329,
+          8.473754999999999,
+          7.443853,
+          3.736152,
+          3.213022
+        ],
+        "expert_wall": [
+          528.07901,
+          527.6434409999999,
+          530.0421899999999,
+          518.476665,
+          518.8206759999999,
+          537.246979
+        ],
+        "combine": [
+          51.793749000000005,
+          42.53328,
+          40.320206,
+          44.546980000000005,
+          34.570887,
+          35.605830999999995
+        ],
+        "backend_compute": [
+          [
+            364.26619900000003,
+            483.45552000000004,
+            451.154064
+          ],
+          [
+            370.424793,
+            482.260419,
+            445.55692999999997
+          ],
+          [
+            350.413646,
+            484.004168,
+            448.385518
+          ],
+          [
+            351.563695,
+            479.972811,
+            447.2863
+          ],
+          [
+            423.993072,
+            480.038073,
+            444.31932399999994
+          ],
+          [
+            433.22109600000005,
+            490.584945,
+            466.018491
+          ]
+        ],
+        "backend_gather": [
+          [
+            20.224528999999997,
+            31.893280999999998,
+            46.633542
+          ],
+          [
+            18.940055,
+            28.857915000000002,
+            44.629584
+          ],
+          [
+            19.440571,
+            29.053748,
+            44.910519
+          ],
+          [
+            17.579894,
+            26.598959999999998,
+            41.018229
+          ],
+          [
+            12.708959,
+            20.613594000000003,
+            38.642238
+          ],
+          [
+            13.566616,
+            21.756721000000002,
+            35.48724
+          ]
+        ]
+      },
+      "allocations": [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "owner_counts_by_layer": [
+        [
+          8,
+          35,
+          17
+        ],
+        [
+          7,
+          36,
+          17
+        ],
+        [
+          9,
+          35,
+          16
+        ],
+        [
+          8,
+          35,
+          17
+        ],
+        [
+          7,
+          36,
+          17
+        ],
+        [
+          7,
+          37,
+          16
+        ],
+        [
+          9,
+          36,
+          15
+        ],
+        [
+          7,
+          37,
+          16
+        ],
+        [
+          8,
+          35,
+          17
+        ],
+        [
+          8,
+          36,
+          16
+        ],
+        [
+          9,
+          35,
+          16
+        ],
+        [
+          9,
+          35,
+          16
+        ],
+        [
+          8,
+          36,
+          16
+        ],
+        [
+          8,
+          36,
+          16
+        ],
+        [
+          9,
+          34,
+          17
+        ],
+        [
+          7,
+          37,
+          16
+        ],
+        [
+          6,
+          37,
+          17
+        ],
+        [
+          8,
+          35,
+          17
+        ],
+        [
+          7,
+          37,
+          16
+        ],
+        [
+          8,
+          35,
+          17
+        ],
+        [
+          9,
+          36,
+          15
+        ],
+        [
+          9,
+          35,
+          16
+        ],
+        [
+          8,
+          36,
+          16
+        ],
+        [
+          60,
+          0,
+          0
+        ]
+      ],
+      "pairs_by_layer": [
+        [
+          392,
+          2320,
+          1384
+        ],
+        [
+          399,
+          2299,
+          1398
+        ],
+        [
+          346,
+          2311,
+          1439
+        ],
+        [
+          388,
+          2265,
+          1443
+        ],
+        [
+          384,
+          2360,
+          1352
+        ],
+        [
+          383,
+          2215,
+          1498
+        ],
+        [
+          390,
+          2171,
+          1535
+        ],
+        [
+          380,
+          2256,
+          1460
+        ],
+        [
+          365,
+          2313,
+          1418
+        ],
+        [
+          373,
+          2260,
+          1463
+        ],
+        [
+          388,
+          2260,
+          1448
+        ],
+        [
+          389,
+          2241,
+          1466
+        ],
+        [
+          371,
+          2231,
+          1494
+        ],
+        [
+          393,
+          2253,
+          1450
+        ],
+        [
+          363,
+          2294,
+          1439
+        ],
+        [
+          386,
+          2249,
+          1461
+        ],
+        [
+          404,
+          2296,
+          1396
+        ],
+        [
+          390,
+          2363,
+          1343
+        ],
+        [
+          396,
+          2252,
+          1448
+        ],
+        [
+          372,
+          2292,
+          1432
+        ],
+        [
+          390,
+          2244,
+          1462
+        ],
+        [
+          386,
+          2253,
+          1457
+        ],
+        [
+          373,
+          2257,
+          1466
+        ],
+        [
+          4,
+          0,
+          0
+        ]
+      ],
+      "all_round_logits_bitwise_equal": true
+    },
+    "n1024-foundry-npu-1": {
+      "tag": "n1024-foundry-npu-1",
+      "median_ms": 1306.5404165,
+      "mean_ms": 1308.3027775,
+      "samples_ms": [
+        1303.919635,
+        1305.098489,
+        1306.719375,
+        1318.820937,
+        1308.896771,
+        1306.361458
+      ],
+      "major_faults": [
+        0,
+        0,
+        1,
+        0,
+        0,
+        1
+      ],
+      "minor_faults": [
+        210,
+        213,
+        207,
+        213,
+        207,
+        213
+      ],
+      "arena_capacity_bytes": [
+        0,
+        0,
+        0
+      ],
+      "process_memory": [
+        "VmSize:\t20374988 kB",
+        "VmHWM:\t  340000 kB",
+        "VmRSS:\t  251864 kB"
+      ],
+      "top1": 37319,
+      "report_sha256": "581015c1a8710bc508f9c90121c08c51a3dbc84e16c58217bdeec651b35ac2ef",
+      "all_round_logits_bitwise_equal": null
+    },
+    "n1024-foundry-npu-2": {
+      "tag": "n1024-foundry-npu-2",
+      "median_ms": 1301.9618485,
+      "mean_ms": 1303.098194,
+      "samples_ms": [
+        1296.991875,
+        1294.220625,
+        1300.234218,
+        1314.380937,
+        1303.6894790000001,
+        1309.07203
+      ],
+      "major_faults": [
+        0,
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      "minor_faults": [
+        210,
+        214,
+        207,
+        212,
+        207,
+        212
+      ],
+      "arena_capacity_bytes": [
+        0,
+        0,
+        0
+      ],
+      "process_memory": [
+        "VmSize:\t20362700 kB",
+        "VmHWM:\t  335920 kB",
+        "VmRSS:\t  226996 kB"
+      ],
+      "top1": 37319,
+      "report_sha256": "85cee23d3dc7259c9ef7cbc46e22898c34658a9562b1a9f92760214f8c6e1c44",
+      "all_round_logits_bitwise_equal": null
+    },
+    "n1024-foundry-hetero-0": {
+      "tag": "n1024-foundry-hetero-0",
+      "median_ms": 995.9811975,
+      "mean_ms": 1011.0375256666666,
+      "samples_ms": [
+        1063.193542,
+        1032.499999,
+        997.851302,
+        984.526927,
+        994.111093,
+        994.042291
+      ],
+      "major_faults": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        719,
+        1083,
+        609,
+        612,
+        500,
+        1657
+      ],
+      "arena_capacity_bytes": [
+        137363456,
+        231784448,
+        137363456
+      ],
+      "process_memory": [
+        "VmSize:\t29630864 kB",
+        "VmHWM:\t 7924612 kB",
+        "VmRSS:\t  380968 kB"
+      ],
+      "top1": 37319,
+      "report_sha256": "6df63dca5776aa14743d23f17776d2733cacf56562eba5e0808970a8f9efffc0",
+      "stages_ms": {
+        "decision": [
+          3.2851559999999997,
+          1.694741,
+          1.016149,
+          1.069268,
+          0.976197,
+          0.931458
+        ],
+        "gather": [
+          8.921826999999999,
+          4.65297,
+          2.788647,
+          2.933018,
+          2.697239,
+          2.559687
+        ],
+        "expert_wall": [
+          523.798491,
+          530.689478,
+          525.8739109999999,
+          507.979842,
+          514.987133,
+          522.041249
+        ],
+        "combine": [
+          43.898074,
+          41.248906000000005,
+          33.936923,
+          35.058125999999994,
+          34.783179000000004,
+          33.236355
+        ],
+        "backend_compute": [
+          [
+            367.315623,
+            478.252551,
+            446.95906
+          ],
+          [
+            442.489846,
+            481.622814,
+            447.680835
+          ],
+          [
+            438.835625,
+            476.05879999999996,
+            445.025885
+          ],
+          [
+            437.935831,
+            478.302708,
+            450.027031
+          ],
+          [
+            444.67942999999997,
+            475.282861,
+            444.17698099999996
+          ],
+          [
+            437.626719,
+            474.401407,
+            456.746873
+          ]
+        ],
+        "backend_gather": [
+          [
+            20.767815,
+            29.633851999999997,
+            44.939424
+          ],
+          [
+            14.631197,
+            23.462187999999998,
+            38.632605000000005
+          ],
+          [
+            11.783439,
+            18.946147,
+            31.277345
+          ],
+          [
+            11.410471,
+            18.387655,
+            30.701094
+          ],
+          [
+            11.272708,
+            18.666511999999997,
+            39.258176
+          ],
+          [
+            11.073073,
+            17.685523,
+            29.975415
+          ]
+        ]
+      },
+      "allocations": [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "owner_counts_by_layer": [
+        [
+          9,
+          35,
+          16
+        ],
+        [
+          7,
+          36,
+          17
+        ],
+        [
+          8,
+          35,
+          17
+        ],
+        [
+          8,
+          35,
+          17
+        ],
+        [
+          8,
+          36,
+          16
+        ],
+        [
+          7,
+          36,
+          17
+        ],
+        [
+          8,
+          36,
+          16
+        ],
+        [
+          9,
+          35,
+          16
+        ],
+        [
+          8,
+          35,
+          17
+        ],
+        [
+          10,
+          34,
+          16
+        ],
+        [
+          8,
+          35,
+          17
+        ],
+        [
+          7,
+          37,
+          16
+        ],
+        [
+          8,
+          36,
+          16
+        ],
+        [
+          9,
+          35,
+          16
+        ],
+        [
+          8,
+          35,
+          17
+        ],
+        [
+          7,
+          36,
+          17
+        ],
+        [
+          8,
+          36,
+          16
+        ],
+        [
+          9,
+          35,
+          16
+        ],
+        [
+          8,
+          36,
+          16
+        ],
+        [
+          7,
+          36,
+          17
+        ],
+        [
+          9,
+          36,
+          15
+        ],
+        [
+          9,
+          35,
+          16
+        ],
+        [
+          8,
+          36,
+          16
+        ],
+        [
+          60,
+          0,
+          0
+        ]
+      ],
+      "pairs_by_layer": [
+        [
+          366,
+          2286,
+          1444
+        ],
+        [
+          401,
+          2228,
+          1467
+        ],
+        [
+          376,
+          2294,
+          1426
+        ],
+        [
+          385,
+          2359,
+          1352
+        ],
+        [
+          395,
+          2291,
+          1410
+        ],
+        [
+          377,
+          2332,
+          1387
+        ],
+        [
+          395,
+          2208,
+          1493
+        ],
+        [
+          379,
+          2316,
+          1401
+        ],
+        [
+          388,
+          2321,
+          1387
+        ],
+        [
+          370,
+          2263,
+          1463
+        ],
+        [
+          377,
+          2315,
+          1404
+        ],
+        [
+          391,
+          2250,
+          1455
+        ],
+        [
+          382,
+          2254,
+          1460
+        ],
+        [
+          377,
+          2314,
+          1405
+        ],
+        [
+          366,
+          2311,
+          1419
+        ],
+        [
+          385,
+          2327,
+          1384
+        ],
+        [
+          376,
+          2286,
+          1434
+        ],
+        [
+          388,
+          2296,
+          1412
+        ],
+        [
+          376,
+          2295,
+          1425
+        ],
+        [
+          389,
+          2317,
+          1390
+        ],
+        [
+          387,
+          2278,
+          1431
+        ],
+        [
+          372,
+          2269,
+          1455
+        ],
+        [
+          376,
+          2244,
+          1476
+        ],
+        [
+          4,
+          0,
+          0
+        ]
+      ],
+      "all_round_logits_bitwise_equal": true
+    },
+    "n1024-foundry-hetero-3": {
+      "tag": "n1024-foundry-hetero-3",
+      "median_ms": 1044.5510935,
+      "mean_ms": 1043.6324561666665,
+      "samples_ms": [
+        1028.453125,
+        997.674375,
+        990.76052,
+        1060.649062,
+        1105.449895,
+        1078.80776
+      ],
+      "major_faults": [
+        41,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        721,
+        1079,
+        609,
+        610,
+        501,
+        1655
+      ],
+      "arena_capacity_bytes": [
+        137363456,
+        231784448,
+        137363456
+      ],
+      "process_memory": [
+        "VmSize:\t29589904 kB",
+        "VmHWM:\t 8024452 kB",
+        "VmRSS:\t  342096 kB"
+      ],
+      "top1": 37319,
+      "report_sha256": "660b1cc1073b8b21fb628f8c0ef15621431e8ac5bae021184e9501cbfcfb52a5",
+      "stages_ms": {
+        "decision": [
+          1.297708,
+          1.075784,
+          1.224011,
+          2.427447,
+          2.699739,
+          2.827815
+        ],
+        "gather": [
+          3.33156,
+          2.927395,
+          3.3030720000000002,
+          6.555731,
+          7.851873,
+          7.651828999999999
+        ],
+        "expert_wall": [
+          537.328851,
+          524.150212,
+          516.850939,
+          539.259323,
+          541.4429660000001,
+          530.415419
+        ],
+        "combine": [
+          34.456824999999995,
+          33.885934999999996,
+          33.253125,
+          39.539687,
+          61.259164,
+          45.967290999999996
+        ],
+        "backend_compute": [
+          [
+            409.224481,
+            486.375624,
+            456.727551
+          ],
+          [
+            431.43473800000004,
+            476.370156,
+            446.29229200000003
+          ],
+          [
+            415.72614799999997,
+            474.269479,
+            446.539948
+          ],
+          [
+            397.02557,
+            487.950364,
+            456.70807199999996
+          ],
+          [
+            365.53145400000005,
+            488.981718,
+            455.429531
+          ],
+          [
+            364.148333,
+            482.694059,
+            454.644011
+          ]
+        ],
+        "backend_gather": [
+          [
+            13.044165999999999,
+            22.551147,
+            37.722398
+          ],
+          [
+            11.516512,
+            19.24953,
+            32.64526
+          ],
+          [
+            11.779950000000001,
+            19.879794999999998,
+            37.334165
+          ],
+          [
+            18.648855,
+            30.308593000000002,
+            46.327237999999994
+          ],
+          [
+            20.128539,
+            29.018488,
+            46.984320999999994
+          ],
+          [
+            18.366926,
+            27.970779,
+            43.292812
+          ]
+        ]
+      },
+      "allocations": [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "owner_counts_by_layer": [
+        [
+          9,
+          35,
+          16
+        ],
+        [
+          7,
+          36,
+          17
+        ],
+        [
+          8,
+          35,
+          17
+        ],
+        [
+          8,
+          35,
+          17
+        ],
+        [
+          8,
+          36,
+          16
+        ],
+        [
+          7,
+          36,
+          17
+        ],
+        [
+          8,
+          36,
+          16
+        ],
+        [
+          9,
+          35,
+          16
+        ],
+        [
+          8,
+          35,
+          17
+        ],
+        [
+          10,
+          34,
+          16
+        ],
+        [
+          8,
+          35,
+          17
+        ],
+        [
+          7,
+          37,
+          16
+        ],
+        [
+          8,
+          36,
+          16
+        ],
+        [
+          9,
+          35,
+          16
+        ],
+        [
+          8,
+          35,
+          17
+        ],
+        [
+          7,
+          36,
+          17
+        ],
+        [
+          8,
+          36,
+          16
+        ],
+        [
+          9,
+          35,
+          16
+        ],
+        [
+          8,
+          36,
+          16
+        ],
+        [
+          7,
+          36,
+          17
+        ],
+        [
+          9,
+          36,
+          15
+        ],
+        [
+          9,
+          35,
+          16
+        ],
+        [
+          8,
+          36,
+          16
+        ],
+        [
+          60,
+          0,
+          0
+        ]
+      ],
+      "pairs_by_layer": [
+        [
+          366,
+          2286,
+          1444
+        ],
+        [
+          401,
+          2228,
+          1467
+        ],
+        [
+          376,
+          2294,
+          1426
+        ],
+        [
+          385,
+          2359,
+          1352
+        ],
+        [
+          395,
+          2291,
+          1410
+        ],
+        [
+          377,
+          2332,
+          1387
+        ],
+        [
+          395,
+          2208,
+          1493
+        ],
+        [
+          379,
+          2316,
+          1401
+        ],
+        [
+          388,
+          2321,
+          1387
+        ],
+        [
+          370,
+          2263,
+          1463
+        ],
+        [
+          377,
+          2315,
+          1404
+        ],
+        [
+          391,
+          2250,
+          1455
+        ],
+        [
+          382,
+          2254,
+          1460
+        ],
+        [
+          377,
+          2314,
+          1405
+        ],
+        [
+          366,
+          2311,
+          1419
+        ],
+        [
+          385,
+          2327,
+          1384
+        ],
+        [
+          376,
+          2286,
+          1434
+        ],
+        [
+          388,
+          2296,
+          1412
+        ],
+        [
+          376,
+          2295,
+          1425
+        ],
+        [
+          389,
+          2317,
+          1390
+        ],
+        [
+          387,
+          2278,
+          1431
+        ],
+        [
+          372,
+          2269,
+          1455
+        ],
+        [
+          376,
+          2244,
+          1476
+        ],
+        [
+          4,
+          0,
+          0
+        ]
+      ],
+      "all_round_logits_bitwise_equal": true
+    },
+    "n2048-wetland-npu-0": {
+      "tag": "n2048-wetland-npu-0",
+      "median_ms": 2332.267265,
+      "mean_ms": 2326.984677833333,
+      "samples_ms": [
+        2330.784374,
+        2348.0874989999998,
+        2291.7052590000003,
+        2321.3864049999997,
+        2336.1943739999997,
+        2333.750156
+      ],
+      "major_faults": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        236,
+        238,
+        239,
+        240,
+        239,
+        240
+      ],
+      "arena_capacity_bytes": [
+        0,
+        0,
+        0
+      ],
+      "process_memory": [
+        "VmSize:\t21270420 kB",
+        "VmHWM:\t  340456 kB",
+        "VmRSS:\t  258628 kB"
+      ],
+      "top1": 7402,
+      "report_sha256": "b495ee20c9564d2218c5158e0147e4a28774bc0b21a93e0f3bd6377f98c828ea",
+      "all_round_logits_bitwise_equal": null
+    },
+    "n2048-wetland-npu-3": {
+      "tag": "n2048-wetland-npu-3",
+      "median_ms": 2682.566249,
+      "mean_ms": 2684.7137055,
+      "samples_ms": [
+        2667.9008849999996,
+        2672.61427,
+        2670.747394,
+        2700.66203,
+        2692.518228,
+        2703.839426
+      ],
+      "major_faults": [
+        0,
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      "minor_faults": [
+        235,
+        238,
+        238,
+        238,
+        237,
+        240
+      ],
+      "arena_capacity_bytes": [
+        0,
+        0,
+        0
+      ],
+      "process_memory": [
+        "VmSize:\t21503892 kB",
+        "VmHWM:\t  340428 kB",
+        "VmRSS:\t  240416 kB"
+      ],
+      "top1": 7402,
+      "report_sha256": "1ad2d2f33532122555b23403b53c25be4a353ccf41f4408eeb80a9315859d68e",
+      "all_round_logits_bitwise_equal": null
+    },
+    "n2048-wetland-hetero-1": {
+      "tag": "n2048-wetland-hetero-1",
+      "median_ms": 15047.010774999999,
+      "mean_ms": 14736.066435333332,
+      "samples_ms": [
+        11091.690517,
+        14202.600462999999,
+        9041.603955,
+        15891.421086999999,
+        18614.417962,
+        19574.664628
+      ],
+      "major_faults": [
+        41630,
+        43793,
+        38456,
+        39006,
+        39882,
+        42117
+      ],
+      "minor_faults": [
+        1329,
+        1815,
+        1053,
+        1252,
+        1276,
+        2120
+      ],
+      "arena_capacity_bytes": [
+        273678336,
+        462520320,
+        273678336
+      ],
+      "process_memory": [
+        "VmSize:\t31001824 kB",
+        "VmHWM:\t 8031284 kB",
+        "VmRSS:\t  279808 kB"
+      ],
+      "top1": 7402,
+      "report_sha256": "4c6a50896e75c4f476f034675f552c0f45b03bb377b4e03b6abaa5e38d45c4ef",
+      "stages_ms": {
+        "decision": [
+          1.881872,
+          4.131718,
+          2.042397,
+          3.199585,
+          1.8479199999999998,
+          2.489064
+        ],
+        "gather": [
+          6.649216999999999,
+          13.273124,
+          10.571513000000001,
+          12.362083,
+          6.295836,
+          10.791876
+        ],
+        "expert_wall": [
+          2520.764376,
+          2629.509841,
+          2374.5354709999997,
+          2029.931825,
+          1779.955208,
+          2662.03073
+        ],
+        "combine": [
+          196.963593,
+          185.49134899999999,
+          186.18338500000002,
+          143.981403,
+          159.41844,
+          141.286511
+        ],
+        "backend_compute": [
+          [
+            2334.862139,
+            1007.0699490000001,
+            1047.888122
+          ],
+          [
+            2333.356406,
+            1026.873023,
+            1318.104584
+          ],
+          [
+            2269.640673,
+            1019.4495330000001,
+            985.7488020000001
+          ],
+          [
+            1914.9784849999999,
+            1016.8521850000001,
+            947.221304
+          ],
+          [
+            1646.583072,
+            1033.114534,
+            873.19974
+          ],
+          [
+            2443.264792,
+            1112.033908,
+            1030.820834
+          ]
+        ],
+        "backend_gather": [
+          [
+            104.29786499999999,
+            105.811874,
+            146.316148
+          ],
+          [
+            47.976248,
+            90.183278,
+            146.589894
+          ],
+          [
+            56.279063,
+            108.281096,
+            107.101719
+          ],
+          [
+            44.649063000000005,
+            79.52880400000001,
+            114.15697800000001
+          ],
+          [
+            35.648286,
+            98.926095,
+            114.299739
+          ],
+          [
+            59.208383999999995,
+            100.977966,
+            129.42646
+          ]
+        ]
+      },
+      "allocations": [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "owner_counts_by_layer": [
+        [
+          6,
+          37,
+          17
+        ],
+        [
+          6,
+          37,
+          17
+        ],
+        [
+          8,
+          36,
+          16
+        ],
+        [
+          6,
+          37,
+          17
+        ],
+        [
+          6,
+          37,
+          17
+        ],
+        [
+          7,
+          37,
+          16
+        ],
+        [
+          5,
+          39,
+          16
+        ],
+        [
+          6,
+          38,
+          16
+        ],
+        [
+          6,
+          37,
+          17
+        ],
+        [
+          6,
+          38,
+          16
+        ],
+        [
+          6,
+          38,
+          16
+        ],
+        [
+          6,
+          38,
+          16
+        ],
+        [
+          6,
+          38,
+          16
+        ],
+        [
+          6,
+          38,
+          16
+        ],
+        [
+          6,
+          37,
+          17
+        ],
+        [
+          5,
+          38,
+          17
+        ],
+        [
+          5,
+          38,
+          17
+        ],
+        [
+          6,
+          37,
+          17
+        ],
+        [
+          6,
+          37,
+          17
+        ],
+        [
+          5,
+          38,
+          17
+        ],
+        [
+          7,
+          38,
+          15
+        ],
+        [
+          8,
+          37,
+          15
+        ],
+        [
+          7,
+          38,
+          15
+        ],
+        [
+          60,
+          0,
+          0
+        ]
+      ],
+      "pairs_by_layer": [
+        [
+          609,
+          5020,
+          2563
+        ],
+        [
+          600,
+          4996,
+          2596
+        ],
+        [
+          590,
+          4979,
+          2623
+        ],
+        [
+          607,
+          4962,
+          2623
+        ],
+        [
+          616,
+          5040,
+          2536
+        ],
+        [
+          607,
+          4948,
+          2637
+        ],
+        [
+          605,
+          4938,
+          2649
+        ],
+        [
+          597,
+          4917,
+          2678
+        ],
+        [
+          612,
+          4980,
+          2600
+        ],
+        [
+          590,
+          4920,
+          2682
+        ],
+        [
+          607,
+          4929,
+          2656
+        ],
+        [
+          611,
+          4982,
+          2599
+        ],
+        [
+          623,
+          4953,
+          2616
+        ],
+        [
+          608,
+          4970,
+          2614
+        ],
+        [
+          628,
+          4986,
+          2578
+        ],
+        [
+          602,
+          5022,
+          2568
+        ],
+        [
+          619,
+          4974,
+          2599
+        ],
+        [
+          603,
+          4986,
+          2603
+        ],
+        [
+          606,
+          4977,
+          2609
+        ],
+        [
+          625,
+          4977,
+          2590
+        ],
+        [
+          597,
+          4951,
+          2644
+        ],
+        [
+          581,
+          4912,
+          2699
+        ],
+        [
+          611,
+          4905,
+          2676
+        ],
+        [
+          4,
+          0,
+          0
+        ]
+      ],
+      "all_round_logits_bitwise_equal": true
+    },
+    "n2048-wetland-hetero-2": {
+      "tag": "n2048-wetland-hetero-2",
+      "median_ms": 16558.951296,
+      "mean_ms": 16910.924629333334,
+      "samples_ms": [
+        19767.528118000002,
+        9969.556403,
+        24698.530981,
+        22998.144158,
+        13350.374474,
+        10681.413642000001
+      ],
+      "major_faults": [
+        43026,
+        42518,
+        39867,
+        38840,
+        39283,
+        41446
+      ],
+      "minor_faults": [
+        1496,
+        1588,
+        1093,
+        1336,
+        1048,
+        1955
+      ],
+      "arena_capacity_bytes": [
+        273678336,
+        462520320,
+        273678336
+      ],
+      "process_memory": [
+        "VmSize:\t30952672 kB",
+        "VmHWM:\t 6694420 kB",
+        "VmRSS:\t  290364 kB"
+      ],
+      "top1": 7402,
+      "report_sha256": "740702e93f041178b1dcaf9e647d05871a1ea2fc69c4f32b401a2ad6c146254f",
+      "stages_ms": {
+        "decision": [
+          2.420942,
+          2.523129,
+          2.22594,
+          2.104219,
+          4.43093,
+          3.9558850000000003
+        ],
+        "gather": [
+          10.897608,
+          9.035007,
+          7.230416,
+          6.507917,
+          10.011033,
+          8.819840000000001
+        ],
+        "expert_wall": [
+          3578.0008820000003,
+          2662.076662,
+          3512.17234,
+          2676.8521880000003,
+          2562.744373,
+          1895.35953
+        ],
+        "combine": [
+          201.136043,
+          209.083176,
+          253.08421900000002,
+          177.866769,
+          171.697965,
+          175.109118
+        ],
+        "backend_compute": [
+          [
+            3284.283957,
+            1296.059845,
+            1207.3984380000002
+          ],
+          [
+            2530.230727,
+            1071.2739069999998,
+            1171.909009
+          ],
+          [
+            3280.374269,
+            1097.928798,
+            1158.8473969999998
+          ],
+          [
+            2533.876145,
+            1094.5307790000002,
+            971.867705
+          ],
+          [
+            2355.032552,
+            1090.263073,
+            954.587762
+          ],
+          [
+            1765.762082,
+            1157.396455,
+            1071.827552
+          ]
+        ],
+        "backend_gather": [
+          [
+            46.763331,
+            107.00150899999998,
+            114.822082
+          ],
+          [
+            32.933803,
+            81.231823,
+            121.658282
+          ],
+          [
+            39.626353,
+            99.84702899999999,
+            179.850155
+          ],
+          [
+            50.071927,
+            126.699893,
+            125.05572899999999
+          ],
+          [
+            74.96624899999999,
+            86.20625100000001,
+            172.364587
+          ],
+          [
+            52.834790999999996,
+            83.21781200000001,
+            122.776978
+          ]
+        ]
+      },
+      "allocations": [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "owner_counts_by_layer": [
+        [
+          6,
+          37,
+          17
+        ],
+        [
+          6,
+          37,
+          17
+        ],
+        [
+          8,
+          36,
+          16
+        ],
+        [
+          6,
+          37,
+          17
+        ],
+        [
+          6,
+          37,
+          17
+        ],
+        [
+          7,
+          37,
+          16
+        ],
+        [
+          5,
+          39,
+          16
+        ],
+        [
+          6,
+          38,
+          16
+        ],
+        [
+          6,
+          37,
+          17
+        ],
+        [
+          6,
+          38,
+          16
+        ],
+        [
+          6,
+          38,
+          16
+        ],
+        [
+          6,
+          38,
+          16
+        ],
+        [
+          6,
+          38,
+          16
+        ],
+        [
+          6,
+          38,
+          16
+        ],
+        [
+          6,
+          37,
+          17
+        ],
+        [
+          5,
+          38,
+          17
+        ],
+        [
+          5,
+          38,
+          17
+        ],
+        [
+          6,
+          37,
+          17
+        ],
+        [
+          6,
+          37,
+          17
+        ],
+        [
+          5,
+          38,
+          17
+        ],
+        [
+          7,
+          38,
+          15
+        ],
+        [
+          8,
+          37,
+          15
+        ],
+        [
+          7,
+          38,
+          15
+        ],
+        [
+          60,
+          0,
+          0
+        ]
+      ],
+      "pairs_by_layer": [
+        [
+          609,
+          5020,
+          2563
+        ],
+        [
+          600,
+          4996,
+          2596
+        ],
+        [
+          590,
+          4979,
+          2623
+        ],
+        [
+          607,
+          4962,
+          2623
+        ],
+        [
+          616,
+          5040,
+          2536
+        ],
+        [
+          607,
+          4948,
+          2637
+        ],
+        [
+          605,
+          4938,
+          2649
+        ],
+        [
+          597,
+          4917,
+          2678
+        ],
+        [
+          612,
+          4980,
+          2600
+        ],
+        [
+          590,
+          4920,
+          2682
+        ],
+        [
+          607,
+          4929,
+          2656
+        ],
+        [
+          611,
+          4982,
+          2599
+        ],
+        [
+          623,
+          4953,
+          2616
+        ],
+        [
+          608,
+          4970,
+          2614
+        ],
+        [
+          628,
+          4986,
+          2578
+        ],
+        [
+          602,
+          5022,
+          2568
+        ],
+        [
+          619,
+          4974,
+          2599
+        ],
+        [
+          603,
+          4986,
+          2603
+        ],
+        [
+          606,
+          4977,
+          2609
+        ],
+        [
+          625,
+          4977,
+          2590
+        ],
+        [
+          597,
+          4951,
+          2644
+        ],
+        [
+          581,
+          4912,
+          2699
+        ],
+        [
+          611,
+          4905,
+          2676
+        ],
+        [
+          4,
+          0,
+          0
+        ]
+      ],
+      "all_round_logits_bitwise_equal": true
+    },
+    "n2048-foundry-npu-1": {
+      "tag": "n2048-foundry-npu-1",
+      "median_ms": 2693.722968,
+      "mean_ms": 2690.393957333333,
+      "samples_ms": [
+        2692.676562,
+        2675.850415,
+        2681.3324989999996,
+        2700.043385,
+        2694.769374,
+        2697.691509
+      ],
+      "major_faults": [
+        0,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        234,
+        238,
+        236,
+        238,
+        236,
+        239
+      ],
+      "arena_capacity_bytes": [
+        0,
+        0,
+        0
+      ],
+      "process_memory": [
+        "VmSize:\t21340056 kB",
+        "VmHWM:\t  340396 kB",
+        "VmRSS:\t  236544 kB"
+      ],
+      "top1": 37852,
+      "report_sha256": "432c78bd0526e5fad2cd6a798e91fac8d6cb7803f45455ff98372075674b5ed1",
+      "all_round_logits_bitwise_equal": null
+    },
+    "n2048-foundry-npu-2": {
+      "tag": "n2048-foundry-npu-2",
+      "median_ms": 2686.593124,
+      "mean_ms": 2683.6898946666665,
+      "samples_ms": [
+        2693.302811,
+        2679.883437,
+        2669.638019,
+        2665.184322,
+        2693.800312,
+        2700.330467
+      ],
+      "major_faults": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "minor_faults": [
+        234,
+        238,
+        236,
+        238,
+        237,
+        240
+      ],
+      "arena_capacity_bytes": [
+        0,
+        0,
+        0
+      ],
+      "process_memory": [
+        "VmSize:\t21524376 kB",
+        "VmHWM:\t  336300 kB",
+        "VmRSS:\t  239520 kB"
+      ],
+      "top1": 37852,
+      "report_sha256": "6345983d49f6a0aa74f2de38b82bdb13a4f3e39432eb970b3ecac04ea930994b",
+      "all_round_logits_bitwise_equal": null
+    },
+    "n2048-foundry-hetero-0": {
+      "tag": "n2048-foundry-hetero-0",
+      "median_ms": 9281.872809,
+      "mean_ms": 8765.267270833334,
+      "samples_ms": [
+        3844.850884,
+        14010.427182,
+        4715.611196000001,
+        11456.968744999998,
+        8612.779528000001,
+        9950.96609
+      ],
+      "major_faults": [
+        26135,
+        43797,
+        25136,
+        38261,
+        37256,
+        43152
+      ],
+      "minor_faults": [
+        934,
+        1863,
+        680,
+        976,
+        848,
+        2219
+      ],
+      "arena_capacity_bytes": [
+        273678336,
+        462520320,
+        273678336
+      ],
+      "process_memory": [
+        "VmSize:\t30931336 kB",
+        "VmHWM:\t 7982036 kB",
+        "VmRSS:\t  297448 kB"
+      ],
+      "top1": 37852,
+      "report_sha256": "3adc833925143176d9c542c4a3c0ed87c097c19ad419213eee4a8d532a1d5283",
+      "stages_ms": {
+        "decision": [
+          1.679425,
+          3.003386,
+          2.107761,
+          2.09344,
+          3.5658849999999997,
+          3.445728
+        ],
+        "gather": [
+          5.882549,
+          9.088436,
+          8.264271999999998,
+          10.973909,
+          10.242607,
+          9.186354999999999
+        ],
+        "expert_wall": [
+          2135.736876,
+          2041.116664,
+          2856.767659,
+          2488.726251,
+          2583.600985,
+          1695.8556740000001
+        ],
+        "combine": [
+          150.24276,
+          187.408959,
+          184.389272,
+          188.491612,
+          181.662761,
+          164.027915
+        ],
+        "backend_compute": [
+          [
+            2021.822914,
+            1104.802085,
+            911.5968710000001
+          ],
+          [
+            1891.399324,
+            1048.554165,
+            975.695364
+          ],
+          [
+            2686.527082,
+            1163.584689,
+            1088.772031
+          ],
+          [
+            2273.3438029999998,
+            1152.833644,
+            1080.76151
+          ],
+          [
+            2421.3529169999997,
+            1172.377189,
+            962.315417
+          ],
+          [
+            1534.348853,
+            1093.337556,
+            1139.74484
+          ]
+        ],
+        "backend_gather": [
+          [
+            47.986976999999996,
+            83.42667,
+            87.282239
+          ],
+          [
+            40.769114,
+            94.24630499999999,
+            97.23291800000001
+          ],
+          [
+            59.600156000000005,
+            87.468383,
+            128.518489
+          ],
+          [
+            59.561618,
+            108.227818,
+            135.806718
+          ],
+          [
+            64.662762,
+            79.95948,
+            130.370261
+          ],
+          [
+            34.930628,
+            63.056089,
+            102.047241
+          ]
+        ]
+      },
+      "allocations": [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "owner_counts_by_layer": [
+        [
+          6,
+          38,
+          16
+        ],
+        [
+          6,
+          37,
+          17
+        ],
+        [
+          8,
+          36,
+          16
+        ],
+        [
+          6,
+          37,
+          17
+        ],
+        [
+          6,
+          37,
+          17
+        ],
+        [
+          6,
+          37,
+          17
+        ],
+        [
+          8,
+          37,
+          15
+        ],
+        [
+          7,
+          37,
+          16
+        ],
+        [
+          6,
+          38,
+          16
+        ],
+        [
+          6,
+          38,
+          16
+        ],
+        [
+          6,
+          38,
+          16
+        ],
+        [
+          5,
+          39,
+          16
+        ],
+        [
+          5,
+          38,
+          17
+        ],
+        [
+          6,
+          38,
+          16
+        ],
+        [
+          8,
+          36,
+          16
+        ],
+        [
+          6,
+          37,
+          17
+        ],
+        [
+          6,
+          38,
+          16
+        ],
+        [
+          6,
+          37,
+          17
+        ],
+        [
+          5,
+          38,
+          17
+        ],
+        [
+          5,
+          38,
+          17
+        ],
+        [
+          7,
+          38,
+          15
+        ],
+        [
+          7,
+          38,
+          15
+        ],
+        [
+          7,
+          37,
+          16
+        ],
+        [
+          60,
+          0,
+          0
+        ]
+      ],
+      "pairs_by_layer": [
+        [
+          603,
+          4962,
+          2627
+        ],
+        [
+          594,
+          5000,
+          2598
+        ],
+        [
+          572,
+          4977,
+          2643
+        ],
+        [
+          605,
+          5021,
+          2566
+        ],
+        [
+          619,
+          4997,
+          2576
+        ],
+        [
+          606,
+          5029,
+          2557
+        ],
+        [
+          598,
+          4950,
+          2644
+        ],
+        [
+          600,
+          4963,
+          2629
+        ],
+        [
+          604,
+          4941,
+          2647
+        ],
+        [
+          599,
+          4973,
+          2620
+        ],
+        [
+          609,
+          4964,
+          2619
+        ],
+        [
+          624,
+          4941,
+          2627
+        ],
+        [
+          634,
+          4959,
+          2599
+        ],
+        [
+          610,
+          4936,
+          2646
+        ],
+        [
+          608,
+          5028,
+          2556
+        ],
+        [
+          606,
+          4970,
+          2616
+        ],
+        [
+          593,
+          5015,
+          2584
+        ],
+        [
+          604,
+          4981,
+          2607
+        ],
+        [
+          637,
+          4971,
+          2584
+        ],
+        [
+          617,
+          5011,
+          2564
+        ],
+        [
+          581,
+          4989,
+          2622
+        ],
+        [
+          592,
+          4969,
+          2631
+        ],
+        [
+          605,
+          4929,
+          2658
+        ],
+        [
+          4,
+          0,
+          0
+        ]
+      ],
+      "all_round_logits_bitwise_equal": true
+    },
+    "n2048-foundry-hetero-3": {
+      "tag": "n2048-foundry-hetero-3",
+      "median_ms": 11782.758641,
+      "mean_ms": 12013.997712166667,
+      "samples_ms": [
+        4403.3001540000005,
+        18336.524524,
+        7417.733955,
+        16147.783327,
+        4635.474946,
+        21143.169367
+      ],
+      "major_faults": [
+        31309,
+        42800,
+        40465,
+        44401,
+        25617,
+        44958
+      ],
+      "minor_faults": [
+        955,
+        1782,
+        765,
+        1162,
+        672,
+        2387
+      ],
+      "arena_capacity_bytes": [
+        273678336,
+        462520320,
+        273678336
+      ],
+      "process_memory": [
+        "VmSize:\t30992776 kB",
+        "VmHWM:\t 8020184 kB",
+        "VmRSS:\t  290428 kB"
+      ],
+      "top1": 37852,
+      "report_sha256": "486d0ee00459a8bb9082632a5824b3226d81ca99a2ad24eb39122ab387afc416",
+      "stages_ms": {
+        "decision": [
+          2.05125,
+          2.993493,
+          2.122346,
+          5.617133,
+          1.898697,
+          4.469842
+        ],
+        "gather": [
+          7.8732299999999995,
+          7.40907,
+          10.721147,
+          12.388957,
+          9.604479999999999,
+          10.880673
+        ],
+        "expert_wall": [
+          2234.529948,
+          1766.043331,
+          4175.7904690000005,
+          2831.499424,
+          2681.1039029999997,
+          1691.4128130000001
+        ],
+        "combine": [
+          185.69213399999998,
+          165.32656400000002,
+          355.975261,
+          277.28385499999996,
+          172.51260399999998,
+          148.896043
+        ],
+        "backend_compute": [
+          [
+            2015.694635,
+            1048.136926,
+            1006.238129
+          ],
+          [
+            1634.1081769999998,
+            1048.177183,
+            928.993383
+          ],
+          [
+            3970.4824980000003,
+            1180.1233829999999,
+            1282.725
+          ],
+          [
+            2744.33,
+            1107.320469,
+            1111.7952639999999
+          ],
+          [
+            2555.239535,
+            1154.760939,
+            896.37104
+          ],
+          [
+            1360.590051,
+            1156.35396,
+            1110.3603640000001
+          ]
+        ],
+        "backend_gather": [
+          [
+            29.829373,
+            78.66781200000001,
+            94.841405
+          ],
+          [
+            37.715417,
+            71.797399,
+            106.616303
+          ],
+          [
+            47.248854,
+            93.678333,
+            124.666873
+          ],
+          [
+            43.719481,
+            69.76682400000001,
+            130.09703
+          ],
+          [
+            48.068227,
+            105.882187,
+            142.37078
+          ],
+          [
+            40.255156,
+            82.092966,
+            92.053125
+          ]
+        ]
+      },
+      "allocations": [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "owner_counts_by_layer": [
+        [
+          6,
+          38,
+          16
+        ],
+        [
+          6,
+          37,
+          17
+        ],
+        [
+          8,
+          36,
+          16
+        ],
+        [
+          6,
+          37,
+          17
+        ],
+        [
+          6,
+          37,
+          17
+        ],
+        [
+          6,
+          37,
+          17
+        ],
+        [
+          8,
+          37,
+          15
+        ],
+        [
+          7,
+          37,
+          16
+        ],
+        [
+          6,
+          38,
+          16
+        ],
+        [
+          6,
+          38,
+          16
+        ],
+        [
+          6,
+          38,
+          16
+        ],
+        [
+          5,
+          39,
+          16
+        ],
+        [
+          5,
+          38,
+          17
+        ],
+        [
+          6,
+          38,
+          16
+        ],
+        [
+          8,
+          36,
+          16
+        ],
+        [
+          6,
+          37,
+          17
+        ],
+        [
+          6,
+          38,
+          16
+        ],
+        [
+          6,
+          37,
+          17
+        ],
+        [
+          5,
+          38,
+          17
+        ],
+        [
+          5,
+          38,
+          17
+        ],
+        [
+          7,
+          38,
+          15
+        ],
+        [
+          7,
+          38,
+          15
+        ],
+        [
+          7,
+          37,
+          16
+        ],
+        [
+          60,
+          0,
+          0
+        ]
+      ],
+      "pairs_by_layer": [
+        [
+          603,
+          4962,
+          2627
+        ],
+        [
+          594,
+          5000,
+          2598
+        ],
+        [
+          572,
+          4977,
+          2643
+        ],
+        [
+          605,
+          5021,
+          2566
+        ],
+        [
+          619,
+          4997,
+          2576
+        ],
+        [
+          606,
+          5029,
+          2557
+        ],
+        [
+          598,
+          4950,
+          2644
+        ],
+        [
+          600,
+          4963,
+          2629
+        ],
+        [
+          604,
+          4941,
+          2647
+        ],
+        [
+          599,
+          4973,
+          2620
+        ],
+        [
+          609,
+          4964,
+          2619
+        ],
+        [
+          624,
+          4941,
+          2627
+        ],
+        [
+          634,
+          4959,
+          2599
+        ],
+        [
+          610,
+          4936,
+          2646
+        ],
+        [
+          608,
+          5028,
+          2556
+        ],
+        [
+          606,
+          4970,
+          2616
+        ],
+        [
+          593,
+          5015,
+          2584
+        ],
+        [
+          604,
+          4981,
+          2607
+        ],
+        [
+          637,
+          4971,
+          2584
+        ],
+        [
+          617,
+          5011,
+          2564
+        ],
+        [
+          581,
+          4989,
+          2622
+        ],
+        [
+          592,
+          4969,
+          2631
+        ],
+        [
+          605,
+          4929,
+          2658
+        ],
+        [
+          4,
+          0,
+          0
+        ]
+      ],
+      "all_round_logits_bitwise_equal": true
+    }
+  },
+  "complete": true,
+  "binary_hashes": {
+    "libc++_shared.so": "d523468d62d9b603cb3354294d70d4b2feabf2c3f1e43b0c96c9aabf32813708",
+    "libggml-base.so": "97f75fce8199fc2cebfad107e78808ea8ba2d16cd9f9d421e30cd5e84e930f98",
+    "libggml-cpu.so": "8d9e463981182d983577cb2fc7c3ff3c66dd7f6b0267703ee7b7218f65ea3d02",
+    "libggml-hexagon.so": "63e71e746c10fdd63bdcdd5458072357b801e08bde1bcd3548e9787974e6ba88",
+    "libggml-htp-v79.so": "45985e8d6b1fa02004d6fc9cc7820b982011960b95e87b58159c984eb93ad478",
+    "libggml-opencl.so": "4f167774b85044c56a42441c67f12c111d90997a9be2a565acf05ba438b44c66",
+    "libggml.so": "8e9818d20fc52a6c7d64f97415466c70fd510b7e2ff57a2fa7040fa9e4955d62",
+    "libllama.so": "2574d2195b81cca96785e5a702257d8f29029dffd5bbf91c55f34f70d02dced5",
+    "fullmodel-oracle": "9646cdbc0a075cef87cfac91437d029bac4d1631b593ab65bf399a509ddec2dc"
+  }
+}
