@@ -164,5 +164,44 @@ int main() {
     try { moe_route_scheduler invalid(prefill_cost,2048,true,&wide_model); }
     catch(const std::runtime_error &) { rejected=true; }
     require(rejected,"nonadditive N=1 model accepted by fast scheduler");
+    // Shape costs can include nonadditive dispatch/shared interactions. Check
+    // exact search against all assignments under arbitrary resident masks.
+    json table=decode; table["calibration_tokens"]=1; table["single_token_costs"]=json::array();
+    for(int c=0;c<=4;++c) { for(int n=0;n<=4-c;++n) { for(int s=0;s<3;++s) {
+        std::array<int,3> pairs={c,n,4-c-n}; std::array<double,3> branches{};
+        for(int b=0;b<3;++b) { branches[b]=pairs[b]>0 || b==s?1.:0.; }
+        double wall=c==1 && n==2 && s==2?37.:100.+c*9+n*3+s;
+        table["single_token_costs"].push_back({{"pairs",pairs},{"shared",s},{"backend_us",branches},{"total_us",wall}});
+    } } }
+    resident_placement_model table_cost(table); moe_route_scheduler exact(prefill_cost,128,true,&table_cost);
+    std::vector<int> one(60); for(int e:{3,17,29,58}) { one[e]=1; }
+    require(exact.choose(1,one,all).predicted.total==37.,"N=1 joint three-way optimum missed");
+    for(int trial=0;trial<100;++trial) {
+        auto eligible=all;
+        for(auto & row:eligible.experts) { int mask=1+random()%7; for(int b=0;b<3;++b) { row[b]=bool(mask&(1<<b)); } }
+        int mask=1+random()%7; for(int b=0;b<3;++b) { eligible.shared[b]=bool(mask&(1<<b)); }
+        auto got=exact.choose(1,one,eligible); double expected=INFINITY;
+        placement p{"reference",got.selected.owner,0};
+        for(int code=0;code<81;++code) { int value=code;
+            for(int e:{3,17,29,58}) { p.owner[e]=value%3; value/=3; }
+            for(int s=0;s<3;++s) { p.shared=s;
+                if(moe_route_scheduler::feasible(p,eligible)) { expected=std::min(expected,table_cost.predict(1,one,p).total); }
+            }
+        }
+        require(got.predicted.total==expected && got.evaluations<=45 && got.evaluations<=exact.budget,"N=1 exact shape search or bound failed");
+        require(got.predicted.total==table_cost.predict(1,one,got.selected).total,"N=1 placement differs from prediction");
+    }
+    auto unchanged=exact.choose(128,route128,all);
+    auto original=moe_route_scheduler(prefill_cost,128,true).choose(128,route128,all);
+    require(unchanged.selected.owner==original.selected.owner && unchanged.selected.shared==original.selected.shared &&
+            unchanged.predicted.total==original.predicted.total,"shape table changed N>1 search");
+    for(int invalid=0;invalid<3;++invalid) {
+        json broken=table;
+        if(invalid==0) { broken["single_token_costs"].erase(0); }
+        if(invalid==1) { broken["single_token_costs"][1]=broken["single_token_costs"][0]; }
+        if(invalid==2) { broken["single_token_costs"][0]["total_us"]=.5; }
+        rejected=false; try { resident_placement_model bad(broken); } catch(const std::runtime_error &) { rejected=true; }
+        require(rejected,"invalid N=1 shape table accepted");
+    }
     std::cout<<"route scheduler contracts passed; exhaustive optimum="<<optimal<<" evaluations="<<r.evaluations<<'\n';
 }

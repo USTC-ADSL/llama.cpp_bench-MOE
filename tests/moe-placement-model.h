@@ -18,7 +18,13 @@ static std::vector<placement> model_candidates(const std::vector<int> & counts) 
 }
 
 struct resident_placement_model {
+    struct prediction { std::array<double,3> backend{}; double host=0,total=0; };
     std::vector<double> coefficients[3],host_coefficients;
+    // N=1 has four distinct routed experts: 15 load splits x 3 shared owners.
+    // These are shape costs, independent of expert IDs and prompt identity.
+    bool has_single_token_costs=false;
+    std::array<prediction,75> single_token_costs{};
+    static int single_token_index(int cpu,int npu,int shared) { return (cpu*5+npu)*3+shared; }
     // Optional independent full-model context correction, interpolated by shape.
     // This is not an expert-ID table or a request timing lookup.
     std::vector<std::pair<int,std::array<double,3>>> context_scales;
@@ -48,6 +54,27 @@ struct resident_placement_model {
                 context_scales.push_back({nt,factors}); previous=nt;
             }
         }
+        if(j.contains("single_token_costs")) {
+            require(j.at("calibration_tokens")==1 && context_scales.empty(),"shape table requires standalone N=1 calibration");
+            std::array<bool,75> seen{};
+            require(j.at("single_token_costs").size()==45,"N=1 table must cover all 45 shapes");
+            for(const auto & row:j.at("single_token_costs")) {
+                auto pairs=row.at("pairs").get<std::array<int,3>>(); int shared=row.at("shared");
+                require(shared>=0 && shared<3 && pairs[0]>=0 && pairs[1]>=0 && pairs[2]>=0 &&
+                        pairs[0]+pairs[1]+pairs[2]==4,"invalid N=1 shape");
+                int index=single_token_index(pairs[0],pairs[1],shared);
+                require(!seen[index],"duplicate N=1 shape"); seen[index]=true;
+                prediction p; p.backend=row.at("backend_us").get<std::array<double,3>>(); p.total=row.at("total_us");
+                require(std::isfinite(p.total) && p.total>0,"invalid N=1 wall cost");
+                for(int b=0;b<3;++b) {
+                    require(std::isfinite(p.backend[b]) && (pairs[b]>0 || shared==b?p.backend[b]>0:p.backend[b]==0),"invalid N=1 branch cost");
+                }
+                double branch=*std::max_element(p.backend.begin(),p.backend.end());
+                require(p.total+1e-6>=branch,"N=1 wall cost smaller than branch");
+                p.host=std::max(0.,p.total-branch); single_token_costs[index]=p;
+            }
+            has_single_token_costs=true;
+        }
     }
     std::array<double,3> context_scale(int nt) const {
         if(context_scales.empty()) { return {1.,1.,1.}; }
@@ -66,7 +93,6 @@ struct resident_placement_model {
         require(x.size()==w.size(),"model coefficient shape mismatch");
         double sum=0; for(size_t i=0;i<x.size();++i) { sum+=x[i]*w[i]; } return sum;
     }
-    struct prediction { std::array<double,3> backend{}; double host=0,total=0; };
     prediction predict(int nt,const std::vector<int> & counts,const placement & p,
                        const std::array<int,3> * resident_width=nullptr) const {
         require(counts.size()==60 && p.owner.size()==60 && p.shared>=0 && p.shared<3,"invalid model input");
@@ -80,6 +106,10 @@ struct resident_placement_model {
                 max_count[b]=std::max(max_count[b],double(n)); squares[b]+=double(n)*n; }
         }
         require(nt>0 && total_pairs==4.0*nt,"invalid top-k load accounting");
+        if(has_single_token_costs) {
+            require(nt==1 && *std::max_element(counts.begin(),counts.end())==1,"shape table only supports four distinct N=1 experts");
+            return single_token_costs[single_token_index(int(pairs[0]),int(pairs[1]),p.shared)];
+        }
         // A reusable union bank can be wider than the currently assigned group.
         // OpenCL index padding/reorder uses this physical width, not ownership.
         if(resident_width) { for(int b=0;b<3;++b) { bank[b]=(*resident_width)[b]; } }

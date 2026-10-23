@@ -1,5 +1,5 @@
-// Whole-expert search on the current route. No timing lookup, weight IO or
-// backend calls here. Backend order: CPU, HTP, OpenCL.
+// Whole-expert search on the current route. Optional N=1 shape costs include
+// dispatch/join overhead; no expert-ID lookup, weight IO or backend calls here.
 #pragma once
 #include <set>
 
@@ -32,6 +32,38 @@ struct moe_route_scheduler {
     }
     const resident_placement_model & model_for(int nt) const {
         return nt==1 && single_token_model?*single_token_model:model;
+    }
+    result choose_single_token(const std::vector<int> & counts,
+                               const resident_placement_model::availability & available) const {
+        const auto & cost=model_for(1);
+        placement current{"single_token_exhaustive",std::vector<int>(60,1),0};
+        std::array<int,4> experts{}; int used=0;
+        for(int e=0;e<60;++e) {
+            if(counts[e]) { require(used<4,"too many N=1 experts"); experts[used++]=e; }
+            for(int b:{1,0,2}) { if(available.experts[e][b]) { current.owner[e]=b; break; } }
+        }
+        require(used==4,"N=1 requires four experts");
+        result best; best.predicted.total=INFINITY; std::array<bool,75> seen{};
+        // Enumerate at most 81 assignments, but evaluate each feasible shape
+        // once (<=45). This finds the exact shape optimum even with per-expert
+        // resident masks, without migration or greedy-search local minima.
+        for(int code=0;code<81;++code) {
+            int value=code; bool ready=true; std::array<int,3> pairs{};
+            for(int e:experts) {
+                int b=value%3; value/=3; current.owner[e]=b; ++pairs[b];
+                ready=ready && available.experts[e][b];
+            }
+            if(!ready) { continue; }
+            for(int s=0;s<3;++s) { if(available.shared[s]) {
+                int index=resident_placement_model::single_token_index(pairs[0],pairs[1],s);
+                if(seen[index]) { continue; } seen[index]=true; ++best.evaluations;
+                const auto & p=cost.single_token_costs[index];
+                if(best.evaluations==1) { best.seed_us=p.total; }
+                if(p.total<best.predicted.total) { current.shared=s; best.selected=current; best.predicted=p; }
+            } }
+        }
+        require(best.evaluations>0 && feasible(best.selected,available),"no resident N=1 placement");
+        return best;
     }
     result choose_additive(int nt,const std::vector<int> & counts,
                            const resident_placement_model::availability & available,
@@ -165,6 +197,7 @@ struct moe_route_scheduler {
             int count=0; for(const auto & row:available.experts) { count+=row[b]; }
             require((*widths)[b]==count,"resident bank width mismatch");
         } }
+        if(nt==1 && model_for(nt).has_single_token_costs) { return choose_single_token(counts,available); }
         if(additive) { return choose_additive(nt,counts,available,widths); }
         const auto & model=model_for(nt);
         result best; best.predicted.total=INFINITY;

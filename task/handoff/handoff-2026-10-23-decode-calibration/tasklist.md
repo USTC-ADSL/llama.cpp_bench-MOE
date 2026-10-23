@@ -5,12 +5,13 @@
 - [x] 核对 N=1 模型接入、profile 入口和 CPU 回退限制
 - [x] 接入可选 N=1 模型，宿主逻辑测试验证旧模型兼容、N>1 隔离和驻留约束
 - [x] 准备独立 technical 输入的 45 种 routed/shared 分配及标定/拟合入口
-- [ ] Android 增量构建与模型选择回归（当前无在线设备）
-- [ ] 在 K80 Pro 实测、拟合并检查留出层排序
+- [x] Android 增量构建与调度模型选择契约回归
+- [x] 在 K80 Pro 实测 360 候选、拟合并检查开发留出层排序
+- [x] N=1 数量表精确搜索的 Android 回归及独立 technical 连续 decode 验证
 - [ ] 冻结模型，在 wetland/foundry 的 128/1024 连续 decode 上对比纯 CPU
 - [ ] 记录数值、内存、缺页和分支开销，归档并封板
 
-当前 adb devices -l 无在线设备，设备构建/部署/测试暂停；仅推进源码准备和宿主逻辑检查，不能以此替代 Android 验证。
+设备 fd8657d6 已恢复在线，360 个候选均完成（1800 个计时 sample），数值检查通过、无 major faults。三项分支模型漏掉 dispatch/join 且存在非加性交互，开发留出平均 regret 78.8%；改用 45 种数量组合的完整 FFN 墙钟表后为 5.9%。模型只从训练层汇总，原三项模型和全部证据保留。Android 精确搜索回归通过，technical旧/新分别49.71/43.07 ms（128）和57.94/52.25 ms（1K），prefill logits逐位一致。正式对照即将冻结运行，不再修改模型。
 
 范围：N=1 只需估计 backend 启动、每个活跃 expert 和 shared 成本；这三个自变量可以独立测量，不把 N=1 共线的 pair/tiles/active 特征一起拟合。45 种组合为 4 个 expert 在 CPU/NPU/GPU 上的 15 种数量分配 × shared 的 3 个位置；假设同尺寸专家成本可按数量泛化，需在独立层/不同 expert IDs 上核验。优先使用现有 captured FFN profile，训练层 0/12、留出层 6/18；全模型独立 technical 运行核验并发/驻留偏差后才冻结，wetland/foundry 不参与拟合。
 

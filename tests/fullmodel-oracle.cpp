@@ -639,13 +639,17 @@ int main(int argc,char ** argv) {
             require(mode=="custom" && !automatic && !std::getenv("MOE_FEEDBACK_MODEL"),"current-route model requires explicit custom mode");
             std::ifstream file(std::getenv("MOE_ROUTE_MODEL")); json parameters; file>>parameters;
             route_model=std::make_unique<resident_placement_model>(parameters);
+            require(!route_model->has_single_token_costs,"N=1 table must use the separate decode model option");
             const auto algorithm=parameters.value("algorithm",std::string("generic"));
             require(algorithm=="generic" || (algorithm=="shared_additive" && single_layout),"unsupported route search algorithm");
             if(std::getenv("MOE_DECODE_ROUTE_MODEL")) {
                 std::ifstream decode_file(std::getenv("MOE_DECODE_ROUTE_MODEL")); json decode_parameters; decode_file>>decode_parameters;
                 require(decode_parameters.at("calibration_tokens")==1,"decode route model must be calibrated for N=1");
-                require(decode_parameters.value("algorithm",std::string("generic"))==algorithm,"decode and prefill search algorithms must match");
                 decode_route_model=std::make_unique<resident_placement_model>(decode_parameters);
+                auto decode_algorithm=decode_parameters.value("algorithm",std::string("generic"));
+                require(decode_route_model->has_single_token_costs?
+                        single_layout && decode_algorithm=="single_token_exhaustive":decode_algorithm==algorithm,
+                        "unsupported decode search algorithm or layout");
             }
             route_scheduler=std::make_unique<moe_route_scheduler>(*route_model,parameters.value("search_budget",2048),algorithm=="shared_additive",decode_route_model.get());
         }

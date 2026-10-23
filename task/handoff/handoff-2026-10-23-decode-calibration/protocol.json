@@ -1,0 +1,21 @@
+{
+  "comparison": ["cpu", "custom"],
+  "prefix_lengths": [128, 1024],
+  "prompts": ["wetland", "foundry"],
+  "decode_steps": 32,
+  "processes_per_configuration": 2,
+  "warmup_sequences": 2,
+  "timed_sequences": 4,
+  "cooldown_seconds": 20,
+  "calibration": "Independent technical activation rows; N=1; train layers 0/12 and development held layers 6/18; full-model technical verification before confirmation",
+  "decode_model": "45 shape costs: three-backend counts summing to four, times shared owner; full FFN wall median across training contexts; no expert or prompt identity",
+  "model_revision": "Three-term additive branch fit retained as failed attempt; dispatch/join overhead motivated shape model; held layers were inspected during development, wetland/foundry remain confirmation only",
+  "validation_refit": false,
+  "teacher_source": "Previous CPU/current experiment: same fixed teacher token sequences; actual router and scheduler execute each step",
+  "host_threads": 4,
+  "expert_cpu_threads": 4,
+  "preserve_resident_availability": true,
+  "shared_scratch": "common",
+  "timer": "llama_decode + synchronize; excludes prefix rebuild, model loading and logits saving",
+  "native_cpu_migration": false
+}
