@@ -124,5 +124,45 @@ int main() {
         try { resident_placement_model broken(shaped); } catch(const std::runtime_error &) { rejected=true; }
         require(rejected,"invalid context calibration accepted");
     }
+    // An independently calibrated N=1 model may prefer CPU while prefill
+    // prefers NPU. Both search algorithms must use it for scoring and final
+    // prediction, without changing any N>1 placement or resident constraint.
+    json prefill={{"version",1},{"backends",std::vector<std::vector<double>>(3,std::vector<double>(26))},
+                  {"host",std::vector<double>(8)}};
+    json decode=prefill;
+    for(int b=0;b<3;++b) {
+        prefill["backends"][b][0]=b==1?1.:1000.;
+        decode["backends"][b][0]=b==0?1.:1000.;
+        prefill["backends"][b][2]=decode["backends"][b][2]=60.;
+        prefill["backends"][b][12]=decode["backends"][b][12]=1.;
+    }
+    resident_placement_model prefill_cost(prefill),decode_cost(decode);
+    for(bool additive:{false,true}) {
+        moe_route_scheduler original(prefill_cost,2048,additive);
+        moe_route_scheduler phased(prefill_cost,2048,additive,&decode_cost);
+        for(int nt:{1,2,128,1024}) {
+            std::vector<int> routes(60); for(int e:{3,17,29,58}) { routes[e]=nt; }
+            auto before=original.choose(nt,routes,all),after=phased.choose(nt,routes,all);
+            require(before.selected.shared==1,"fixture must prefer NPU without N=1 calibration");
+            if(nt==1) {
+                require(after.selected.shared==0,"N=1 shared ignored decode model");
+                for(int e:{3,17,29,58}) { require(after.selected.owner[e]==0,"N=1 routed CPU candidate missing"); }
+                auto expected=decode_cost.predict(nt,routes,after.selected);
+                require(after.predicted.backend==expected.backend && after.predicted.total==expected.total,
+                        "N=1 final prediction used prefill model");
+                auto restricted=phased.choose(nt,routes,npu);
+                require(restricted.selected.shared==1 && restricted.selected.owner[3]==1 && restricted.selected.owner[59]==0,
+                        "N=1 model bypassed residency");
+            } else {
+                require(after.selected.owner==before.selected.owner && after.selected.shared==before.selected.shared &&
+                        after.predicted.backend==before.predicted.backend && after.predicted.total==before.predicted.total &&
+                        after.evaluations==before.evaluations,"N=1 calibration changed N>1 search");
+            }
+        }
+    }
+    rejected=false;
+    try { moe_route_scheduler invalid(prefill_cost,2048,true,&wide_model); }
+    catch(const std::runtime_error &) { rejected=true; }
+    require(rejected,"nonadditive N=1 model accepted by fast scheduler");
     std::cout<<"route scheduler contracts passed; exhaustive optimum="<<optimal<<" evaluations="<<r.evaluations<<'\n';
 }

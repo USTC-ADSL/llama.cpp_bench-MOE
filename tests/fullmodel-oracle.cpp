@@ -164,6 +164,7 @@ struct partitioned_ffn {
             if(scheduler) {
                 last["scheduling"]={{"decision_us",decision_us},{"included_in_gather",true},
                     {"evaluations",decision.evaluations},{"seed_us",decision.seed_us},
+                    {"single_token_model",nt==1 && scheduler->single_token_model!=nullptr},
                     {"predicted_backend_us",decision.predicted.backend},{"predicted_host_us",decision.predicted.host},
                     {"predicted_total_us",decision.predicted.total},{"owner",plan.owner},{"shared",plan.shared},
                     {"resident_width",resident_width}};
@@ -280,6 +281,7 @@ struct partitioned_ffn {
             if(scheduler) {
                 last["scheduling"]={{"decision_us",decision_us},{"included_in_gather",true},
                     {"evaluations",decision.evaluations},{"seed_us",decision.seed_us},
+                    {"single_token_model",nt==1 && scheduler->single_token_model!=nullptr},
                     {"predicted_backend_us",decision.predicted.backend},{"predicted_host_us",decision.predicted.host},
                     {"predicted_total_us",decision.predicted.total},{"owner",plan.owner},{"shared",plan.shared},
                     {"resident_width",resident_width}};
@@ -630,15 +632,22 @@ int main(int argc,char ** argv) {
         const bool single_layout=std::getenv("MOE_SHARED_WEIGHTS") && std::string(std::getenv("MOE_SHARED_WEIGHTS"))=="cpu4x8";
         require(!std::getenv("MOE_SHARED_WEIGHTS") || single_layout,"unknown shared weight layout");
         require(!single_layout || mode=="custom","shared weights require explicit custom mode");
-        std::unique_ptr<resident_placement_model> route_model;
+        std::unique_ptr<resident_placement_model> route_model,decode_route_model;
         std::unique_ptr<moe_route_scheduler> route_scheduler;
+        require(!std::getenv("MOE_DECODE_ROUTE_MODEL") || std::getenv("MOE_ROUTE_MODEL"),"decode route model requires prefill route model");
         if(std::getenv("MOE_ROUTE_MODEL")) {
             require(mode=="custom" && !automatic && !std::getenv("MOE_FEEDBACK_MODEL"),"current-route model requires explicit custom mode");
             std::ifstream file(std::getenv("MOE_ROUTE_MODEL")); json parameters; file>>parameters;
             route_model=std::make_unique<resident_placement_model>(parameters);
             const auto algorithm=parameters.value("algorithm",std::string("generic"));
             require(algorithm=="generic" || (algorithm=="shared_additive" && single_layout),"unsupported route search algorithm");
-            route_scheduler=std::make_unique<moe_route_scheduler>(*route_model,parameters.value("search_budget",2048),algorithm=="shared_additive");
+            if(std::getenv("MOE_DECODE_ROUTE_MODEL")) {
+                std::ifstream decode_file(std::getenv("MOE_DECODE_ROUTE_MODEL")); json decode_parameters; decode_file>>decode_parameters;
+                require(decode_parameters.at("calibration_tokens")==1,"decode route model must be calibrated for N=1");
+                require(decode_parameters.value("algorithm",std::string("generic"))==algorithm,"decode and prefill search algorithms must match");
+                decode_route_model=std::make_unique<resident_placement_model>(decode_parameters);
+            }
+            route_scheduler=std::make_unique<moe_route_scheduler>(*route_model,parameters.value("search_budget",2048),algorithm=="shared_additive",decode_route_model.get());
         }
         if(automatic && plans.value("model_type",std::string())=="branch_critical_path") {
             for(const char * name:{"MOE_ALTERNATE_CALLBACK_IO","MOE_ALTERNATE_HOST_REDUCE","MOE_ALTERNATE_REDUCE_THREADS","MOE_ALTERNATE_OVERLAP_GATHER"}) {
@@ -853,6 +862,8 @@ int main(int argc,char ** argv) {
         report["native_decode_graph"]=native_decode_graph;
         report["shadow_feedback"]=bool(feedback);
         report["current_route_scheduler"]=bool(route_scheduler);
+        report["single_token_route_model"]=bool(decode_route_model);
+        if(decode_route_model) { report["single_token_route_model_scope"]="actual FFN N=1, including a single-row prefill layer; N>1 uses the original model; no weight or KV migration"; }
         report["resident_preparation_us"]=resident_preparation_us;
         report["resident_preparation_scope"]="custom backend initialization, weight bank import/layout conversion and activation arena preparation; outside llama_decode timing";
         if(route_scheduler) { report["scheduler_contract"]="current actual IDs; immutable explicitly prepared union banks; whole-expert move/swap search; planning included in llama_decode and layer gather; missing layouts ineligible; resident preparation excluded"; }

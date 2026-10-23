@@ -5,6 +5,7 @@
 
 struct moe_route_scheduler {
     const resident_placement_model & model;
+    const resident_placement_model * single_token_model=nullptr;
     int budget=2048;
     bool additive=false;
     struct result {
@@ -13,19 +14,29 @@ struct moe_route_scheduler {
         int evaluations=0;
         double seed_us=0;
     };
-    explicit moe_route_scheduler(const resident_placement_model & m,int limit=2048,bool fast=false) : model(m),budget(limit),additive(fast) {
+    explicit moe_route_scheduler(const resident_placement_model & m,int limit=2048,bool fast=false,
+                                 const resident_placement_model * nt1=nullptr)
+        : model(m),single_token_model(nt1),budget(limit),additive(fast) {
         require(limit>=128 && limit<=16384,"invalid route search budget");
         if(additive) {
-            for(const auto & row:model.coefficients) { for(size_t i=0;i<row.size();++i) {
-                require(row[i]>=0 && (i==0 || i==1 || i==2 || i==4 || i==12 || i==13 || i==14 || row[i]==0),
-                        "additive scheduler requires nonnegative additive coefficients");
-            } }
-            for(double w:model.host_coefficients) { require(w==0,"additive scheduler requires zero host coefficients"); }
+            validate_additive(model);
+            if(single_token_model) { validate_additive(*single_token_model); }
         }
+    }
+    static void validate_additive(const resident_placement_model & m) {
+        for(const auto & row:m.coefficients) { for(size_t i=0;i<row.size();++i) {
+            require(row[i]>=0 && (i==0 || i==1 || i==2 || i==4 || i==12 || i==13 || i==14 || row[i]==0),
+                    "additive scheduler requires nonnegative additive coefficients");
+        } }
+        for(double w:m.host_coefficients) { require(w==0,"additive scheduler requires zero host coefficients"); }
+    }
+    const resident_placement_model & model_for(int nt) const {
+        return nt==1 && single_token_model?*single_token_model:model;
     }
     result choose_additive(int nt,const std::vector<int> & counts,
                            const resident_placement_model::availability & available,
                            const std::array<int,3> * widths) const {
+        const auto & model=model_for(nt);
         const auto scale=model.context_scale(nt);
         std::array<std::array<double,3>,60> costs{};
         std::vector<int> order;
@@ -155,6 +166,7 @@ struct moe_route_scheduler {
             require((*widths)[b]==count,"resident bank width mismatch");
         } }
         if(additive) { return choose_additive(nt,counts,available,widths); }
+        const auto & model=model_for(nt);
         result best; best.predicted.total=INFINITY;
         std::vector<std::pair<double,placement>> ranked;
         std::set<std::vector<int>> seen;

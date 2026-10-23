@@ -26,6 +26,7 @@ def main():
     p.add_argument("--mode", required=True, choices=["capture", "search", "profile", "predict", "auto", "cpu", "gpu", "npu", "custom", "branch", "custom-npu"])
     p.add_argument("--cost-model", type=pathlib.Path)
     p.add_argument("--route-model", type=pathlib.Path, help="Custom: search on each current route within explicit resident union banks")
+    p.add_argument("--decode-route-model", type=pathlib.Path, help="Optional N=1 model; requires --route-model, preserves N>1 model")
     p.add_argument("--profile-candidates", type=pathlib.Path, help="Profile: per-layer arbitrary placements and optional resident unions")
     p.add_argument("--feedback-model", type=pathlib.Path, help="Causal shadow cost updates; does not move weights or change ownership")
     p.add_argument("--runtime-state", action="store_true", help="Read-only pre-load and per-request state/CPU-time telemetry; reports observation overhead")
@@ -75,6 +76,8 @@ def main():
     p.add_argument("--cpu-mapped-experts", action="store_true", help="Custom CPU dense: identity CPU Expert bank borrows immutable GGUF pages")
     p.add_argument("--native-decode-graph", action="store_true", help="CPU routed nt1 graph with persistent asynchronous shared branch")
     args = p.parse_args()
+    if args.decode_route_model and (args.mode != "custom" or not args.route_model):
+        p.error("--decode-route-model requires --mode custom and --route-model")
     assert args.remote_dir.startswith("/data/local/tmp/") and all(c.isalnum() or c in "/_-" for c in args.remote_dir)
     REMOTE = args.remote_dir
     resolved_mode = args.mode
@@ -213,6 +216,7 @@ def main():
         env.append(f"MOE_PLACEMENT_MODEL={REMOTE}/cost-model.json")
     for field, variable, filename, required in (
             ("route_model", "MOE_ROUTE_MODEL", "route-model.json", "custom"),
+            ("decode_route_model", "MOE_DECODE_ROUTE_MODEL", "decode-route-model.json", "custom"),
             ("profile_candidates", "MOE_PROFILE_CANDIDATES", "profile-candidates.json", "profile")):
         path = getattr(args, field)
         if path:
