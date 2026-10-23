@@ -8,10 +8,10 @@
 - [x] Android 增量构建与调度模型选择契约回归
 - [x] 在 K80 Pro 实测 360 候选、拟合并检查开发留出层排序
 - [x] N=1 数量表精确搜索的 Android 回归及独立 technical 连续 decode 验证
-- [ ] 冻结模型，在 wetland/foundry 的 128/1024 连续 decode 上对比纯 CPU
-- [ ] 记录数值、内存、缺页和分支开销，归档并封板
+- [x] 冻结模型，在 wetland/foundry 的 128/1024 连续 decode 上对比纯 CPU
+- [x] 记录数值、内存、缺页和分支开销，归档并封板（结果独立提交）
 
-设备 fd8657d6 已恢复在线，360 个候选均完成（1800 个计时 sample），数值检查通过、无 major faults。三项分支模型漏掉 dispatch/join 且存在非加性交互，开发留出平均 regret 78.8%；改用 45 种数量组合的完整 FFN 墙钟表后为 5.9%。模型只从训练层汇总，原三项模型和全部证据保留。Android 精确搜索回归通过，technical旧/新分别49.71/43.07 ms（128）和57.94/52.25 ms（1K），prefill logits逐位一致。正式对照即将冻结运行，不再修改模型。
+设备 fd8657d6 已恢复在线，360 个候选均完成（1800 个计时 sample），数值检查通过、无 major faults。三项分支模型漏掉 dispatch/join 且存在非加性交互，开发留出平均 regret 78.8%；改用 45 种数量组合的完整 FFN 墙钟表后为 5.9%。模型只从训练层汇总，原三项模型和全部证据保留。实现/technical检查点a6772132d。16个正式进程已全部完成且严格分析通过：128相对CPU吞吐-21.97%/-19.80%，1K为+12.06%/+9.10%；详细数值/波动/限制见results.md。进入归档和清理，不再需要性能测试。
 
 范围：N=1 只需估计 backend 启动、每个活跃 expert 和 shared 成本；这三个自变量可以独立测量，不把 N=1 共线的 pair/tiles/active 特征一起拟合。45 种组合为 4 个 expert 在 CPU/NPU/GPU 上的 15 种数量分配 × shared 的 3 个位置；假设同尺寸专家成本可按数量泛化，需在独立层/不同 expert IDs 上核验。优先使用现有 captured FFN profile，训练层 0/12、留出层 6/18；全模型独立 technical 运行核验并发/驻留偏差后才冻结，wetland/foundry 不参与拟合。
 

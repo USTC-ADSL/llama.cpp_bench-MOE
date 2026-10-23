@@ -31,7 +31,7 @@ Android回归包含随机resident masks下与完整穷举对比、N>1不变、CP
 
 ## 正式对照与恢复
 
-下一步（执行前检查driver/进程/现存tags，不覆盖）：
+实现及technical验证已提交 a6772132d。正式进程已启动（统一执行session 36168），当前正在运行，不能再次启动入口。进度直接读取runs.json和evidence/formal-driver.log；不要修改formal-frozen.json中任何文件。启动入口及完成后的复算命令如下：
 
 ```sh
 python3 task/handoff/handoff-2026-10-23-decode-calibration/run.py formal > task/handoff/handoff-2026-10-23-decode-calibration/evidence/formal-driver.log 2>&1
