@@ -696,8 +696,8 @@ int main(int argc,char ** argv) {
         require(!mapped_experts || (custom && !automatic && dense_backend=="cpu"),"mapped experts require custom CPU dense");
         bool native_decode_graph=std::getenv("MOE_NATIVE_DECODE_GRAPH") && std::string(std::getenv("MOE_NATIVE_DECODE_GRAPH"))=="1";
         require(!single_layout || (shared_activations && activation_arena && activation_lifetimes && direct_callback_io &&
-                fused_host_reduce && overlap_gather && reduce_threads==1 && !native_decode_graph && !quality_steps && !automatic),
-                "shared weights require resident shared-arena direct/fused/overlap prefill without alternation or decode");
+                fused_host_reduce && overlap_gather && reduce_threads==1 && !native_decode_graph && !automatic),
+                "shared weights require resident shared-arena direct/fused/overlap execution without alternation or native decode graph");
         require(!route_scheduler || !native_decode_graph,"current-route search is not supported by fixed native decode branch");
         require(!native_decode_graph || (mapped_experts && shared_activations && activation_lifetimes),"native decode graph requires mapped CPU/shared lifetime buffers");
         require(custom || mode=="capture" || mode=="cpu" || mode=="npu" || mode=="gpu","invalid mode");
