@@ -1,0 +1,17 @@
+{
+  "comparison": ["cpu", "custom"],
+  "user_scope": "Only native CPU and current scheduler; no formal NPU baseline",
+  "prefix_lengths": [128, 1024],
+  "prompts": ["wetland", "foundry"],
+  "decode_steps": 32,
+  "processes_per_configuration": 2,
+  "warmup_sequences": 2,
+  "timed_sequences": 4,
+  "cooldown_seconds": 20,
+  "teacher_source": "Previously generated NPU diagnostic continuations; same input tokens for CPU and current scheduler, no expert route replay",
+  "refit_cost_model": false,
+  "host_threads": 4,
+  "expert_cpu_threads": 4,
+  "preserve_resident_availability": true,
+  "shared_scratch": "common"
+}
