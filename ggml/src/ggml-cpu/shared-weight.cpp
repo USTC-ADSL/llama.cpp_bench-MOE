@@ -136,6 +136,10 @@ static bool supported(const ggml_tensor * op) {
     if(op->op!=GGML_OP_MUL_MAT || !w || !x || !w->buffer ||
         w->buffer->buft!=ggml_backend_cpu_shared_weight_buffer_type()) { return false; }
     const auto * d=static_cast<const ggml_shared_weight_desc *>(w->buffer->context);
+    // Model loading probes buffer types with zero-sized, context-free buffers.
+    // This import-only type needs a real descriptor; canonical weights must
+    // fall through to the regular CPU buffer types during that probe.
+    if(!d) { return false; }
     return w->ne[0]==d->k && w->ne[1]==d->m &&
         w->data==static_cast<const char *>(d->storage.host_ptr)+d->offset &&
         w->type==GGML_TYPE_Q4_0 && w->ne[0]%32==0 && w->ne[1]%32==0 &&
