@@ -1014,14 +1014,16 @@ static int execute_op(struct htp_ops_context * octx) {
     return HTP_STATUS_NO_SUPPORT;
 }
 
-static inline bool reuse_buf(struct htp_context *ctx, uint32_t *m_reuse, struct htp_buf_desc *b) {
+_Static_assert(HTP_MAX_MMAPS <= 64, "mapping reuse bitmap must cover every slot");
+
+static inline bool reuse_buf(struct htp_context *ctx, uint64_t *m_reuse, struct htp_buf_desc *b) {
     b->base = NULL;
 
     for (uint32_t i=0; i<HTP_MAX_MMAPS; i++) {
         struct htp_mmap *m = ctx->mmap + i;
         if (m->size && m->fd == b->fd && m->flags == b->flags) {
             b->base   = m->base;
-            *m_reuse |= (1 << i);
+            *m_reuse |= (UINT64_C(1) << i);
             return true;
         }
     }
@@ -1068,7 +1070,7 @@ static inline bool mmap_buf(struct htp_context *ctx, struct htp_buf_desc *b) {
 }
 
 static void prep_op_bufs(struct htp_context *ctx, struct htp_buf_desc *bufs, uint32_t n_bufs) {
-    uint32_t m_reuse = 0; // mmap reuse mask (index from ctx->mmap array)
+    uint64_t m_reuse = 0; // mmap reuse mask (index from ctx->mmap array)
     uint32_t b_reuse = 0; // buf reuse count
 
     uint64_t m_vmem  = 0; // mapped vmem
@@ -1100,7 +1102,7 @@ static void prep_op_bufs(struct htp_context *ctx, struct htp_buf_desc *bufs, uin
     if ((m_vmem + e_vmem) > ctx->max_vmem) {
         // Drop unused mappings
         for (uint32_t i=0; i < HTP_MAX_MMAPS; i++) {
-            bool used = m_reuse & (1<<i);
+            bool used = m_reuse & (UINT64_C(1) << i);
             if (!used && !(ctx->mmap[i].flags & HTP_BUF_EXTENDED)) {
                 drop_mmap(ctx, ctx->mmap + i);
             }
