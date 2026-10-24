@@ -2953,6 +2953,23 @@ bool llama_model_set_moe_graph_callback(llama_model * model, llama_moe_graph_cal
     return true;
 }
 
+bool llama_model_set_moe_input_callback(llama_model * model, llama_moe_input_callback callback, void * user_data) {
+    if (!model || model->arch != LLM_ARCH_QWEN2MOE) {
+        return false;
+    }
+    model->moe_input_callback = callback;
+    model->moe_input_user_data = user_data;
+    return true;
+}
+
+bool llama_model_set_moe_router_cpu(llama_model * model, bool enabled) {
+    if (!model || model->arch != LLM_ARCH_QWEN2MOE) {
+        return false;
+    }
+    model->moe_router_cpu = enabled;
+    return true;
+}
+
 int32_t llama_model_n_ctx_train(const llama_model * model) {
     return model->hparams.n_ctx_train;
 }

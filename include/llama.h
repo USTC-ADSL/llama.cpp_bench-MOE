@@ -561,6 +561,19 @@ extern "C" {
     LLAMA_API bool llama_model_set_moe_graph_callback(
             struct llama_model * model, llama_moe_graph_callback callback, void * user_data);
 
+    // Optional input dependency before the router in the replacement FFN path.
+    // Return a same-shape F32 tensor preserving the normalized input values.
+    // An asynchronous consumer must retain its own input and complete before the
+    // FFN output callback returns. Install before creating contexts.
+    typedef struct ggml_tensor * (*llama_moe_input_callback)(
+            struct ggml_context * ctx, struct ggml_tensor * input,
+            int32_t layer, void * user_data);
+    LLAMA_API bool llama_model_set_moe_input_callback(
+            struct llama_model * model, llama_moe_input_callback callback, void * user_data);
+    // Keep projection, probabilities and expert selection on CPU in the
+    // replacement graph. Weight placement alone does not pin non-matmul ops.
+    LLAMA_API bool llama_model_set_moe_router_cpu(struct llama_model * model, bool enabled);
+
     LLAMA_API struct llama_context * llama_init_from_model(
                      struct llama_model * model,
             struct llama_context_params   params);

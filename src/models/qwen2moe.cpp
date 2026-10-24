@@ -129,12 +129,24 @@ llama_model_qwen2moe::graph::graph(const llama_model & model, const llm_graph_pa
         cb(cur, "ffn_norm", il);
 
         if (model.moe_graph_callback) {
-            auto * probs = ggml_soft_max(ctx0, build_lora_mm(model.layers[il].ffn_gate_inp, cur));
+            if (model.moe_input_callback) {
+                auto * input = model.moe_input_callback(ctx0, cur, il, model.moe_input_user_data);
+                GGML_ASSERT(input && input->type == GGML_TYPE_F32 && ggml_are_same_shape(input, cur));
+                cur = input; // Router and final FFN both depend on input-side launch.
+                cb(cur, "ffn_moe_input", il);
+            }
+            auto * router = build_lora_mm(model.layers[il].ffn_gate_inp, cur);
+            cb(router, "ffn_moe_router", il);
+            auto * probs = ggml_soft_max(ctx0, router);
             cb(probs, "ffn_moe_probs", il);
             auto * ids = ggml_argsort_top_k(ctx0, probs, n_expert_used);
+            if (ids->op == GGML_OP_VIEW && ids->src[0]->op == GGML_OP_ARGSORT) {
+                cb(ids->src[0], "ffn_moe_argsort", il);
+            }
             cb(ids, "ffn_moe_topk", il);
             if (hparams.expert_weights_scale != 0.0f && hparams.expert_weights_scale != 1.0f) {
                 probs = ggml_scale(ctx0, probs, hparams.expert_weights_scale);
+                cb(probs, "ffn_moe_probs_scaled", il);
             }
             cur = model.moe_graph_callback(ctx0, cur, probs, ids, il, model.moe_graph_user_data);
             GGML_ASSERT(cur && cur->type == GGML_TYPE_F32 && ggml_are_same_shape(cur, ffn_inp));

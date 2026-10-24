@@ -51,9 +51,10 @@ struct router_placement_trace {
     static bool callback(ggml_tensor * t,bool ask,void * user) {
         auto & self=*static_cast<router_placement_trace *>(user);
         const std::string name=t->name;
-        if(ask && name.find("ffn_moe_")!=std::string::npos && self.nodes.count(name)==0) {
+        const std::string key=name+"/n"+std::to_string(t->ne[1]);
+        if(ask && name.find("ffn_moe_")!=std::string::npos && self.nodes.count(key)==0) {
             auto buffer_name=[](ggml_tensor * v) { return v && v->buffer?std::string(ggml_backend_buffer_name(v->buffer)):std::string("unbound/view"); };
-            self.nodes[name]={{"op",ggml_op_name(t->op)},{"buffer",buffer_name(t)},{"src0_buffer",buffer_name(t->src[0])}};
+            self.nodes[key]={{"op",ggml_op_name(t->op)},{"buffer",buffer_name(t)},{"src0_buffer",buffer_name(t->src[0])},{"rows",t->ne[1]}};
         }
         return false;
     }
@@ -292,6 +293,7 @@ struct partitioned_ffn {
 };
 
 #include "moe-decode-branch.h"
+#include "moe-early-shared.h"
 
 struct full_engine {
     std::unique_ptr<moe_token_workers> reduce_workers;
@@ -301,12 +303,15 @@ struct full_engine {
     std::shared_ptr<shared_activation_buffer> shared_scratch;
     std::unique_ptr<moe_branch_worker> shared_worker;
     std::vector<std::unique_ptr<moe_decode_branch>> decode_branches;
+    std::vector<std::unique_ptr<moe_early_shared>> early_shared_branches;
+    bool decode_active=false;
     bool record=false;
     ~full_engine() {
         // Also drain on exceptions between launch and finish: worker closures
         // reference decode_branches, whose state must remain alive until join.
         shared_worker.reset();
         decode_branches.clear();
+        early_shared_branches.clear();
     }
     void prepare_arenas(device * devs[3]) {
         std::array<size_t,3> capacities{};
@@ -413,8 +418,17 @@ struct full_engine {
     static ggml_tensor * build(ggml_context * ctx,ggml_tensor * input,ggml_tensor * probs,ggml_tensor * ids,int32_t il,void * opaque) {
         auto & engine=*static_cast<full_engine *>(opaque);
         require(il>=0 && size_t(il)<engine.layers.size(),"invalid custom layer");
+        if(!engine.early_shared_branches.empty() && input->ne[1]==1) {
+            return ggml_map_custom3(ctx,input,probs,ids,moe_early_shared::finish,1,engine.early_shared_branches[il].get());
+        }
         if(!engine.decode_branches.empty() && input->ne[1]==1) { return engine.decode_branches[il]->build(ctx,input,probs,ids); }
         return ggml_map_custom3(ctx,input,probs,ids,compute,1,engine.layers[il].get());
+    }
+    static ggml_tensor * build_input(ggml_context * ctx,ggml_tensor * input,int32_t il,void * opaque) {
+        auto & engine=*static_cast<full_engine *>(opaque);
+        if(input->ne[1]!=1) { return input; }
+        require(il>=0 && size_t(il)<engine.early_shared_branches.size(),"invalid early shared layer");
+        return ggml_map_custom1(ctx,input,moe_early_shared::input,1,engine.early_shared_branches[il].get());
     }
 };
 
@@ -708,6 +722,11 @@ int main(int argc,char ** argv) {
         bool mapped_experts=std::getenv("MOE_CPU_MAPPED_EXPERTS") && std::string(std::getenv("MOE_CPU_MAPPED_EXPERTS"))=="1";
         require(!mapped_experts || (custom && !automatic && dense_backend=="cpu"),"mapped experts require custom CPU dense");
         bool native_decode_graph=std::getenv("MOE_NATIVE_DECODE_GRAPH") && std::string(std::getenv("MOE_NATIVE_DECODE_GRAPH"))=="1";
+        const std::string decode_shared_launch=std::getenv("MOE_DECODE_SHARED_LAUNCH")?std::getenv("MOE_DECODE_SHARED_LAUNCH"):"off";
+        require(decode_shared_launch=="off" || decode_shared_launch=="early" || decode_shared_launch=="late" ||
+                decode_shared_launch=="cpu" || decode_shared_launch=="regular","unknown decode shared launch policy");
+        require(decode_shared_launch=="off" || (single_layout && quality_steps && route_scheduler && !native_decode_graph),
+                "decode shared launch requires shared layout, resident route model and decode steps");
         require(!single_layout || (shared_activations && activation_arena && activation_lifetimes && direct_callback_io &&
                 fused_host_reduce && overlap_gather && reduce_threads==1 && !native_decode_graph && !automatic),
                 "shared weights require resident shared-arena direct/fused/overlap execution without alternation or native decode graph");
@@ -725,7 +744,11 @@ int main(int argc,char ** argv) {
             std::ifstream in(std::getenv("MOE_FEEDBACK_MODEL")); json parameters; in>>parameters;
             feedback=std::make_unique<fullmodel_context_model>(parameters,nt);
         }
-        bool gpu_router=std::getenv("MOE_ROUTER_BACKEND") && std::string(std::getenv("MOE_ROUTER_BACKEND"))=="gpu";
+        const std::string router_backend=std::getenv("MOE_ROUTER_BACKEND")?std::getenv("MOE_ROUTER_BACKEND"):"default";
+        require(router_backend=="default" || router_backend=="cpu" || router_backend=="gpu","unknown router backend");
+        bool gpu_router=router_backend=="gpu",cpu_router=router_backend=="cpu";
+        require(!cpu_router || (custom && !automatic),"CPU router requires explicit custom mode");
+        require(decode_shared_launch=="off" || cpu_router,"early shared experiment requires explicit CPU router");
         require(!gpu_router || (custom && !automatic && dense_backend=="npu"),"GPU router requires explicit custom HTP dense mode");
         ggml_backend_dev_t target[]={ggml_backend_dev_by_name(mode=="gpu"?"GPUOpenCL":"HTP0"),gpu_router?ggml_backend_dev_by_name("GPUOpenCL"):nullptr,nullptr};
         require(!gpu_router || target[1],"router GPU unavailable");
@@ -751,6 +774,7 @@ int main(int argc,char ** argv) {
             {"blk\\.[0-9]+\\.ffn_(gate|up|down)_exps\\.weight",ggml_backend_dev_buffer_type(ggml_backend_dev_by_name("CPU"))},
             {"blk\\.[0-9]+\\.ffn_(gate|up|down|gate_inp)_shexp\\.weight",ggml_backend_dev_buffer_type(ggml_backend_dev_by_name("CPU"))},
             {nullptr,nullptr},
+            {nullptr,nullptr},
             {nullptr,nullptr}};
         if(custom && dense_backend=="cpu") {
             // A plain CPU override otherwise re-selects CPU_REPACK globally,
@@ -764,9 +788,14 @@ int main(int argc,char ** argv) {
             require(overrides[2].pattern!=nullptr,"CPU_REPACK unavailable");
         }
         if(gpu_router) { overrides[2]={"blk\\.[0-9]+\\.ffn_gate_inp\\.weight",ggml_backend_dev_buffer_type(target[1])}; }
+        if(cpu_router) {
+            const int slot=overrides[2].pattern?3:2;
+            overrides[slot]={"blk\\.[0-9]+\\.ffn_gate_inp\\.weight",ggml_backend_dev_buffer_type(ggml_backend_dev_by_name("CPU"))};
+        }
         if(custom) { mp.tensor_buft_overrides=overrides; mp.use_extra_bufts=false; mp.load_mode=LLAMA_LOAD_MODE_MMAP; }
         std::unique_ptr<llama_model,decltype(&llama_model_free)> model(llama_model_load_from_file(argv[1],mp),llama_model_free);
         require(model!=nullptr,"native model load failed");
+        if(cpu_router) { require(llama_model_set_moe_router_cpu(model.get(),true),"model rejected CPU router policy"); }
         std::ifstream prompt_file(argv[2]); std::string prompt((std::istreambuf_iterator<char>(prompt_file)),{});
         auto * vocab=llama_model_get_vocab(model.get()); std::vector<llama_token> tokens(prompt.size()+32);
         int count=llama_tokenize(vocab,prompt.data(),prompt.size(),tokens.data(),tokens.size(),true,true);
@@ -800,7 +829,12 @@ int main(int argc,char ** argv) {
                 int layer_tokens=transfer_placement?(il==23?1:prefill_chunk):plans["layers"][il]["tokens"].get<int>();
                 resident_placement_model::availability prepared;
                 if(route_scheduler) { prepared=parse_resident(plans.at("layers").at(il).at("resident")); }
+                const auto prefill_resident=prepared;
+                // Decoder may use NPU shared in the final layer, while its
+                // single-row prefill still obeys the original CPU-only policy.
+                if(decode_shared_launch!="off") { prepared.shared[1]=true; }
                 engine.layers.push_back(std::make_unique<partitioned_ffn>(devs,src,il,layer_tokens,p,true,shared_activations,route_scheduler?&prepared:nullptr));
+                if(decode_shared_launch!="off") { engine.layers.back()->resident=prefill_resident; }
                 engine.layers.back()->scheduler=route_scheduler.get();
                 engine.layers.back()->direct_callback_io=direct_callback_io;
                 engine.layers.back()->fused_host_reduce=fused_host_reduce;
@@ -816,6 +850,13 @@ int main(int argc,char ** argv) {
             if(native_decode_graph) {
                 engine.shared_worker=std::make_unique<moe_branch_worker>();
                 for(auto & l:engine.layers) { engine.decode_branches.push_back(std::make_unique<moe_decode_branch>(*l,*engine.shared_worker)); }
+            }
+            if(decode_shared_launch!="off") {
+                engine.shared_worker=std::make_unique<moe_branch_worker>();
+                for(auto & l:engine.layers) {
+                    engine.early_shared_branches.push_back(std::make_unique<moe_early_shared>(*l,*engine.shared_worker,engine.decode_active,decode_shared_launch));
+                }
+                require(llama_model_set_moe_input_callback(model.get(),full_engine::build_input,&engine),"model rejected pre-router callback");
             }
             require(llama_model_set_moe_graph_callback(model.get(),full_engine::build,&engine),"model rejected FFN callback");
             resident_preparation_us=elapsed(preparation_start);
@@ -860,7 +901,8 @@ int main(int argc,char ** argv) {
         report["transfer_placement"]=transfer_placement;
         report["requested_mode"]=argv[5];
         report["dense_backend"]=dense_backend;
-        report["router_backend_requested"]=gpu_router?"gpu":"default";
+        report["router_backend_requested"]=router_backend;
+        report["decode_shared_launch"]=decode_shared_launch;
         report["cpu_mapped_experts"]=mapped_experts;
         report["model_extra_bufts"]=mp.use_extra_bufts;
         report["native_decode_graph"]=native_decode_graph;
@@ -1080,6 +1122,7 @@ int main(int argc,char ** argv) {
         std::ofstream logits_file(std::string(argv[4])+".logits.bin",std::ios::binary); binary_write(logits_file,logits);
         report["top1"]=std::max_element(logits.begin(),logits.end())-logits.begin();
         if(quality_steps) {
+            fprintf(stderr,"QUALITY_BEGIN steps=%d shared_launch=%s\n",quality_steps,decode_shared_launch.c_str());
             // Retain the final prefill KV and resident banks. Only activation
             // graphs change shape; these diagnostic calls are outside timing.
             std::ofstream quality_file(std::string(argv[4])+".quality.bin",std::ios::binary);
@@ -1087,6 +1130,7 @@ int main(int argc,char ** argv) {
                           {"scope","same resident weights; fixed-length diagnostic continuation, including EOG tokens"}};
             std::vector<float> qlogits=logits;
             for(auto & l:engine.layers) { l->expected_ids.clear(); }
+            engine.decode_active=true;
             for(int step=0;step<=quality_steps;++step) {
                 for(float v:qlogits) { require(std::isfinite(v),"nonfinite quality logits"); }
                 binary_write(quality_file,qlogits);
@@ -1109,6 +1153,7 @@ int main(int argc,char ** argv) {
             report["quality"]=quality;
         }
         if(decode_reps) {
+            fprintf(stderr,"DECODE_BEGIN reps=%d shared_launch=%s\n",decode_reps,decode_shared_launch.c_str());
             // Freeze the initial diagnostic sequence, including for the CPU
             // teacher. Rebuild identical KV prefixes outside each timed sequence.
             std::vector<llama_token> teacher;
@@ -1120,11 +1165,13 @@ int main(int argc,char ** argv) {
             std::ofstream decode_file(std::string(argv[4])+".decode.bin",std::ios::binary);
             size_t warm_allocations=0;
             for(int repetition=-2;repetition<decode_reps;++repetition) {
+                engine.decode_active=false;
                 llama_memory_clear(llama_get_memory(ctx.get()),true);
                 auto prefix_batch=llama_batch_get_one(tokens.data(),nt);
                 auto prefix_start=timer::now();
                 require(llama_decode(ctx.get(),prefix_batch)==0,"decode benchmark prefix failed"); llama_synchronize(ctx.get());
                 double prefix_us=elapsed(prefix_start);
+                engine.decode_active=true;
                 json sequence={{"round",repetition},{"prefix_rebuild_us",prefix_us},{"steps",json::array()}};
                 double total=0;
                 for(int position=0;position<=quality_steps;++position) {
@@ -1161,6 +1208,7 @@ int main(int argc,char ** argv) {
             fprintf(stderr,"DECODE_RESULT %s median_sequence_ms=%.3f tokens_s=%.3f\n",mode.c_str(),decode["sequence_timing"]["median_us"].get<double>()/1000,decode["sequence_timing"]["expert_tokens_per_second"].get<double>());
         }
         if(alternate_callback_io || alternate_host_reduce || alternate_reduce_threads || alternate_overlap_gather || activation_arena) { report["all_round_logits_bitwise_equal"]=true; }
+        if(std::getenv("MOE_ROUTER_TRACE")) { report["router_placement_trace"]=router_trace.nodes; }
         size_t activation_bytes=0;
         size_t logical_activation_bytes=0;
         std::set<const shared_activation_buffer *> seen;
@@ -1181,7 +1229,7 @@ int main(int argc,char ** argv) {
         std::ofstream out(argv[4]); out<<report.dump(2)<<'\n'; require(out.good(),"full-model report write failed");
         if(mode!="capture") { fprintf(stderr,"FULL_RESULT %s nt=%d median_ms=%.3f tokens_s=%.3f\n",mode.c_str(),nt,report["timing"]["median_us"].get<double>()/1000,report["timing"]["expert_tokens_per_second"].get<double>()); }
         // Backend-owned banks must be released before the devices themselves.
-        ctx.reset(); engine.shared_worker.reset(); engine.decode_branches.clear(); engine.layers.clear();
+        ctx.reset(); engine.shared_worker.reset(); engine.decode_branches.clear(); engine.early_shared_branches.clear(); engine.layers.clear();
         return 0;
     } catch(const std::exception & e) { fprintf(stderr,"ERROR: %s\n",e.what()); return 1; }
 }

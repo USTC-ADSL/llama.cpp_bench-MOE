@@ -634,6 +634,9 @@ struct llama_model {
 
     llama_moe_graph_callback moe_graph_callback = nullptr;
     void * moe_graph_user_data = nullptr;
+    llama_moe_input_callback moe_input_callback = nullptr;
+    void * moe_input_user_data = nullptr;
+    bool moe_router_cpu = false;
     // per-tensor activation precision policy
     llama_prec_policy prec_policy;
 

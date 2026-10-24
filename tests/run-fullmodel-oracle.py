@@ -41,7 +41,8 @@ def main():
     p.add_argument("--tokens", type=int, default=128)
     p.add_argument("--host-threads", type=int, choices=range(1,9), help="Outer llama CPU graph threads; expert CPU backend remains at four")
     p.add_argument("--prefill-chunk", type=int, help="Fixed-placement prefill: retain full context and process equal chunks")
-    p.add_argument("--router-backend", choices=["gpu"], help="Custom HTP dense path: place router projection weights on GPU")
+    p.add_argument("--router-backend", choices=["cpu", "gpu"], help="Custom path: explicitly place router projection weights")
+    p.add_argument("--decode-shared-launch", choices=["early", "late", "cpu", "regular"], help="N=1 experiment: fixed CPU routed, NPU shared launch before/after CPU router, or CPU/regular controls")
     p.add_argument("--router-trace", action="store_true", help="Diagnostic scheduler buffer trace; not for formal timing")
     p.add_argument("--tag", required=True)
     p.add_argument("--reference", default="-")
@@ -142,8 +143,11 @@ def main():
     if args.host_threads is not None:
         env.append(f"MOE_HOST_THREADS={args.host_threads}")
     if args.router_backend:
-        assert args.mode == "custom" and not args.dense_backend
+        assert args.mode == "custom" and (args.router_backend == "cpu" or not args.dense_backend)
         env.append("MOE_ROUTER_BACKEND=" + args.router_backend)
+    if args.decode_shared_launch:
+        assert args.shared_weights == "cpu4x8" and args.router_backend == "cpu" and args.route_model and args.quality_steps
+        env.append("MOE_DECODE_SHARED_LAUNCH=" + args.decode_shared_launch)
     if args.router_trace:
         assert args.mode == "custom"
         env.append("MOE_ROUTER_TRACE=1")

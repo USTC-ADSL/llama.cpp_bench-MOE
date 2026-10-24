@@ -1,0 +1,26 @@
+[
+  [
+    "cmake",
+    "--build",
+    "build-android-opencl-hexagon",
+    "--target",
+    "llama",
+    "-j",
+    "8"
+  ],
+  [
+    "/home/miog/pzw/download/pzw/HeteroCompute/android-ndk-r27d/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android34-clang++",
+    "-std=c++17",
+    "-O2",
+    "-Iggml/include",
+    "-Iinclude",
+    "-Ivendor/nlohmann",
+    "tests/fullmodel-oracle.cpp",
+    "-Lbuild-android-opencl-hexagon/bin",
+    "-lllama",
+    "-lggml",
+    "-lggml-base",
+    "-o",
+    "build-android-opencl-hexagon/bin/fullmodel-oracle"
+  ]
+]

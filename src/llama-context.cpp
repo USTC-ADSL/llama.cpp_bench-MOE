@@ -2642,6 +2642,20 @@ llm_graph_cb llama_context::graph_get_cb() const {
             ggml_set_name(cur, name);
         }
 
+        if (model.moe_graph_callback && model.moe_router_cpu &&
+                (strcmp(name, "ffn_moe_router") == 0 || strcmp(name, "ffn_moe_probs") == 0 ||
+                 strcmp(name, "ffn_moe_probs_scaled") == 0 || strcmp(name, "ffn_moe_argsort") == 0 ||
+                 strcmp(name, "ffn_moe_topk") == 0)) {
+            for (const auto & backend : backends) {
+                if (ggml_backend_dev_type(ggml_backend_get_device(backend.get())) == GGML_BACKEND_DEVICE_TYPE_CPU) {
+                    GGML_ASSERT(ggml_backend_supports_op(backend.get(), cur));
+                    ggml_backend_sched_set_tensor_backend(sched.get(), cur, backend.get());
+                    return;
+                }
+            }
+            GGML_ABORT("CPU backend unavailable for MoE router");
+        }
+
         // - norm may be automatically assigned to the backend of the previous layer, increasing data transfer between backends
         // - force the last op of the layer on the specified backend to avoid running it on the backend of the next layer due to scheduling
         // FIXME: fix in ggml_backend_sched
