@@ -1,0 +1,20 @@
+{
+  "failed": "diagnostic-v4-late-trace",
+  "passed": "diagnostic-v5-late-mapfix",
+  "failed_snapshot": "frozen-v4-failed.json",
+  "passed_snapshot": "frozen-v5-mapfix.json",
+  "changed_frozen_files": [
+    "build-android-opencl-hexagon/ggml/src/ggml-hexagon/libggml-htp-v79.so"
+  ],
+  "build_command": [
+    "cmake",
+    "--build",
+    "build-android-opencl-hexagon",
+    "--target",
+    "htp-v79",
+    "-j",
+    "8"
+  ],
+  "regression": "same executor, model, command options and teacher inputs; only DSP binary replaced",
+  "formal_snapshot": "frozen.json"
+}

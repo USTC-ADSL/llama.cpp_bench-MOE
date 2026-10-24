@@ -90,6 +90,14 @@ def formal():
             arena_capacity=d['arena_capacity_bytes'],shared_scratch_capacity=d['shared_scratch_capacity_bytes'],
             router_window_us_per_layer=st.median(l['router_window_us'] for l in layers),
             total_router_window_us_per_token=st.mean(sum(l['router_window_us'] for l in s['layers']) for s in steps))
+        def ffn_span(l):
+            if r['policy'] in ('early','late'):
+                return l['pre_router_to_join_us']+l['combine_us']
+            return l['input_hook_us']+l['router_window_us']+l['gather_us']+l['expert_wall_us']+l['combine_us']
+        item.update(mean_router_and_ffn_us_per_token=st.mean(sum(ffn_span(l) for l in s['layers']) for s in steps),
+            input_hook_us_per_layer=st.median(l['input_hook_us'] for l in layers),
+            combine_us_per_layer=st.median(l['combine_us'] for l in layers),
+            cpu_backend_compute_us_per_layer=st.median(l['backend_phases_us'][0][1] for l in layers))
         if r['policy'] in ('early','late'):
             item.update(shared_start_us=st.median(l['intervals_us'][1][0] for l in layers),
                 router_ready_us=st.median(l['router_ready_us'] for l in layers),
@@ -97,6 +105,9 @@ def formal():
                 shared_compute_us=st.median(l['backend_phases_us'][1][1] for l in layers),
                 cpu_compute_us=st.median(l['backend_phases_us'][0][1] for l in layers),
                 pre_router_to_join_us=st.median(l['pre_router_to_join_us'] for l in layers),
+                shared_lead_us=st.median(l['router_ready_us']-l['intervals_us'][1][0] for l in layers),
+                compute_overlap_us=st.median(max(0,min(l['intervals_us'][0][1],l['intervals_us'][1][1])-
+                    max(l['intervals_us'][0][0],l['intervals_us'][1][0])) for l in layers),
                 fraction_shared_started_before_router_ready=st.mean(l['shared_started_before_router_ready'] for l in layers))
         details.append(item)
         groups[(r['name'],r['tokens'])].setdefault(r['policy'],[]).append(item)
@@ -110,6 +121,7 @@ def formal():
         prefills=[(OUT/(v['tag']+'.json.logits.bin')).read_bytes() for vs in policies.values() for v in vs]
         assert all(b==prefills[0] for b in prefills)
         rows.append(dict(name=name,tokens=nt,ms_per_token=times,
+            process_ms_per_token={p:[v['ms_per_token'] for v in vs] for p,vs in policies.items()},
             early_vs_late_throughput=times['late']/times['early']-1,
             early_vs_cpu_experts_throughput=times['cpu']/times['early']-1,
             npu_shared_vs_cpu_shared=compare(values['early'],values['cpu']),

@@ -23,3 +23,5 @@ DSP logcat 为 TLBMISS RW，PC 相对 libggml-htp-v79.so 的偏移 0x93644，经
 ## 限制
 
 此时验证的是 K80 Pro / v79 的原始失败路径；其他 DSP 架构未进行设备验证。带临时阶段 trace 的成功样本只作为回归证据，不用于性能结论。完整提前/晚启动正确性与正式性能对比继续在同任务中执行。
+
+后续完成：去掉临时分支 trace 后，五组 pilot 和 24 个正式进程全部通过（128/1024 上下文，3072 个计时 decode token，包含反复 decode → prefill 切换）。源码/二进制冻结为任务目录的 frozen.json。early/late 的输出文件经 SHA256 核对完全相同；性能结果与精度限制见该任务 results.md。修复前后 v4/v5 冻结文件对比确认唯一变化为 libggml-htp-v79.so，详见 mapping-regression.json。

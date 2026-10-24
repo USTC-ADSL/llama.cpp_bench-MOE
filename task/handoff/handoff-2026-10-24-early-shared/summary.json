@@ -1,0 +1,793 @@
+{
+  "complete": true,
+  "processes": 24,
+  "timed_tokens": 3072,
+  "rows": [
+    {
+      "name": "wetland",
+      "tokens": 128,
+      "ms_per_token": {
+        "cpu": 49.2051595234375,
+        "late": 62.804446210937506,
+        "early": 61.507322945312495
+      },
+      "process_ms_per_token": {
+        "cpu": [
+          47.6568969375,
+          50.753422109374995
+        ],
+        "late": [
+          62.19701990625001,
+          63.411872515625
+        ],
+        "early": [
+          61.21826576562499,
+          61.796380125
+        ]
+      },
+      "early_vs_late_throughput": 0.021088924107106832,
+      "early_vs_cpu_experts_throughput": -0.20001136178228918,
+      "npu_shared_vs_cpu_shared": {
+        "bitwise_equal": false,
+        "mean_nrmse": 0.03230795588160917,
+        "max_nrmse": 0.11468687878081259,
+        "top1_equal": 33,
+        "positions": 33
+      },
+      "early_late_bitwise_equal": true,
+      "prefill_bitwise_equal": true
+    },
+    {
+      "name": "foundry",
+      "tokens": 128,
+      "ms_per_token": {
+        "early": 63.32026975000001,
+        "late": 63.6883679453125,
+        "cpu": 49.4744595625
+      },
+      "process_ms_per_token": {
+        "early": [
+          62.882157375000006,
+          63.75838212500002
+        ],
+        "late": [
+          63.650608734375,
+          63.72612715625
+        ],
+        "cpu": [
+          49.0340315,
+          49.914887625000006
+        ]
+      },
+      "early_vs_late_throughput": 0.005813275855674815,
+      "early_vs_cpu_experts_throughput": -0.21866315860885932,
+      "npu_shared_vs_cpu_shared": {
+        "bitwise_equal": false,
+        "mean_nrmse": 0.02443460208824643,
+        "max_nrmse": 0.05143730669882772,
+        "top1_equal": 32,
+        "positions": 33
+      },
+      "early_late_bitwise_equal": true,
+      "prefill_bitwise_equal": true
+    },
+    {
+      "name": "wetland",
+      "tokens": 1024,
+      "ms_per_token": {
+        "cpu": 59.602720859375005,
+        "late": 74.82491575,
+        "early": 75.38213169531248
+      },
+      "process_ms_per_token": {
+        "cpu": [
+          55.56563956250001,
+          63.63980215625
+        ],
+        "late": [
+          73.2537784375,
+          76.3960530625
+        ],
+        "early": [
+          74.99099599999998,
+          75.77326739062498
+        ]
+      },
+      "early_vs_late_throughput": -0.007391883630522567,
+      "early_vs_cpu_experts_throughput": -0.20932561180037168,
+      "npu_shared_vs_cpu_shared": {
+        "bitwise_equal": false,
+        "mean_nrmse": 0.030712273298762395,
+        "max_nrmse": 0.07039153676585266,
+        "top1_equal": 33,
+        "positions": 33
+      },
+      "early_late_bitwise_equal": true,
+      "prefill_bitwise_equal": true
+    },
+    {
+      "name": "foundry",
+      "tokens": 1024,
+      "ms_per_token": {
+        "early": 70.17704749218751,
+        "late": 70.1398515,
+        "cpu": 55.845406117187494
+      },
+      "process_ms_per_token": {
+        "early": [
+          73.026181625,
+          67.327913359375
+        ],
+        "late": [
+          73.82739500000002,
+          66.45230799999999
+        ],
+        "cpu": [
+          56.491675656249996,
+          55.19913657812499
+        ]
+      },
+      "early_vs_late_throughput": -0.000530030736782483,
+      "early_vs_cpu_experts_throughput": -0.20422120746238992,
+      "npu_shared_vs_cpu_shared": {
+        "bitwise_equal": false,
+        "mean_nrmse": 0.03145756652374838,
+        "max_nrmse": 0.06935542322362333,
+        "top1_equal": 33,
+        "positions": 33
+      },
+      "early_late_bitwise_equal": true,
+      "prefill_bitwise_equal": true
+    }
+  ],
+  "details": [
+    {
+      "tag": "formal-wetland-128-cpu-0",
+      "name": "wetland",
+      "tokens": 128,
+      "policy": "cpu",
+      "ms_per_token": 47.6568969375,
+      "major_faults": 0,
+      "max_major_faults": 0,
+      "arena_capacity": [
+        18087936,
+        19138560,
+        18087936
+      ],
+      "shared_scratch_capacity": 12849152,
+      "router_window_us_per_layer": 26.146,
+      "total_router_window_us_per_token": 961.7147421875,
+      "mean_router_and_ffn_us_per_token": 22195.1934609375,
+      "input_hook_us_per_layer": 0.417,
+      "combine_us_per_layer": 2.656,
+      "cpu_backend_compute_us_per_layer": 886.745
+    },
+    {
+      "tag": "formal-wetland-128-late-1",
+      "name": "wetland",
+      "tokens": 128,
+      "policy": "late",
+      "ms_per_token": 62.19701990625001,
+      "major_faults": 2,
+      "max_major_faults": 2,
+      "arena_capacity": [
+        18087936,
+        19138560,
+        18087936
+      ],
+      "shared_scratch_capacity": 12849152,
+      "router_window_us_per_layer": 29.8955,
+      "total_router_window_us_per_token": 1192.2681171875001,
+      "mean_router_and_ffn_us_per_token": 35782.2726875,
+      "input_hook_us_per_layer": 0.468,
+      "combine_us_per_layer": 1.563,
+      "cpu_backend_compute_us_per_layer": 500.1825,
+      "shared_start_us": 45.468,
+      "router_ready_us": 30.313,
+      "shared_join_wait_us": 565.912,
+      "shared_compute_us": 1043.437,
+      "cpu_compute_us": 500.1825,
+      "pre_router_to_join_us": 1107.344,
+      "shared_lead_us": -14.895999999999997,
+      "compute_overlap_us": 497.73400000000004,
+      "fraction_shared_started_before_router_ready": 0
+    },
+    {
+      "tag": "formal-wetland-128-early-2",
+      "name": "wetland",
+      "tokens": 128,
+      "policy": "early",
+      "ms_per_token": 61.21826576562499,
+      "major_faults": 2,
+      "max_major_faults": 2,
+      "arena_capacity": [
+        18087936,
+        19138560,
+        18087936
+      ],
+      "shared_scratch_capacity": 12849152,
+      "router_window_us_per_layer": 20.104,
+      "total_router_window_us_per_token": 784.5247734375,
+      "mean_router_and_ffn_us_per_token": 35171.179546875,
+      "input_hook_us_per_layer": 8.75,
+      "combine_us_per_layer": 1.563,
+      "cpu_backend_compute_us_per_layer": 454.688,
+      "shared_start_us": 14.375,
+      "router_ready_us": 28.75,
+      "shared_join_wait_us": 612.5,
+      "shared_compute_us": 1069.271,
+      "cpu_compute_us": 454.688,
+      "pre_router_to_join_us": 1102.8385,
+      "shared_lead_us": 14.219000000000001,
+      "compute_overlap_us": 456.823,
+      "fraction_shared_started_before_router_ready": 0.9342447916666666
+    },
+    {
+      "tag": "formal-wetland-128-early-3",
+      "name": "wetland",
+      "tokens": 128,
+      "policy": "early",
+      "ms_per_token": 61.796380125,
+      "major_faults": 1,
+      "max_major_faults": 1,
+      "arena_capacity": [
+        18087936,
+        19138560,
+        18087936
+      ],
+      "shared_scratch_capacity": 12849152,
+      "router_window_us_per_layer": 20.104,
+      "total_router_window_us_per_token": 750.215078125,
+      "mean_router_and_ffn_us_per_token": 35862.2305,
+      "input_hook_us_per_layer": 8.802,
+      "combine_us_per_layer": 1.563,
+      "cpu_backend_compute_us_per_layer": 462.969,
+      "shared_start_us": 14.531,
+      "router_ready_us": 28.906,
+      "shared_join_wait_us": 612.812,
+      "shared_compute_us": 1076.25,
+      "cpu_compute_us": 462.969,
+      "pre_router_to_join_us": 1112.24,
+      "shared_lead_us": 14.167,
+      "compute_overlap_us": 464.427,
+      "fraction_shared_started_before_router_ready": 0.9134114583333334
+    },
+    {
+      "tag": "formal-wetland-128-late-4",
+      "name": "wetland",
+      "tokens": 128,
+      "policy": "late",
+      "ms_per_token": 63.411872515625,
+      "major_faults": 1,
+      "max_major_faults": 1,
+      "arena_capacity": [
+        18087936,
+        19138560,
+        18087936
+      ],
+      "shared_scratch_capacity": 12849152,
+      "router_window_us_per_layer": 28.229,
+      "total_router_window_us_per_token": 1842.4851328125,
+      "mean_router_and_ffn_us_per_token": 38340.949875,
+      "input_hook_us_per_layer": 0.468,
+      "combine_us_per_layer": 1.563,
+      "cpu_backend_compute_us_per_layer": 469.062,
+      "shared_start_us": 43.802,
+      "router_ready_us": 28.698,
+      "shared_join_wait_us": 609.4010000000001,
+      "shared_compute_us": 1046.407,
+      "cpu_compute_us": 469.062,
+      "pre_router_to_join_us": 1112.657,
+      "shared_lead_us": -14.896000000000004,
+      "compute_overlap_us": 459.7395,
+      "fraction_shared_started_before_router_ready": 0
+    },
+    {
+      "tag": "formal-wetland-128-cpu-5",
+      "name": "wetland",
+      "tokens": 128,
+      "policy": "cpu",
+      "ms_per_token": 50.753422109374995,
+      "major_faults": 0,
+      "max_major_faults": 0,
+      "arena_capacity": [
+        18087936,
+        19138560,
+        18087936
+      ],
+      "shared_scratch_capacity": 12849152,
+      "router_window_us_per_layer": 28.75,
+      "total_router_window_us_per_token": 3023.0194296875,
+      "mean_router_and_ffn_us_per_token": 25325.30190625,
+      "input_hook_us_per_layer": 0.469,
+      "combine_us_per_layer": 2.968,
+      "cpu_backend_compute_us_per_layer": 875.3905
+    },
+    {
+      "tag": "formal-foundry-128-early-0",
+      "name": "foundry",
+      "tokens": 128,
+      "policy": "early",
+      "ms_per_token": 62.882157375000006,
+      "major_faults": 1,
+      "max_major_faults": 1,
+      "arena_capacity": [
+        18087936,
+        19138560,
+        18087936
+      ],
+      "shared_scratch_capacity": 12849152,
+      "router_window_us_per_layer": 21.823,
+      "total_router_window_us_per_token": 954.1295078125,
+      "mean_router_and_ffn_us_per_token": 36109.5283125,
+      "input_hook_us_per_layer": 9.687,
+      "combine_us_per_layer": 1.823,
+      "cpu_backend_compute_us_per_layer": 542.3435,
+      "shared_start_us": 16.25,
+      "router_ready_us": 31.407,
+      "shared_join_wait_us": 549.2185,
+      "shared_compute_us": 1073.906,
+      "cpu_compute_us": 542.3435,
+      "pre_router_to_join_us": 1112.266,
+      "shared_lead_us": 15.0,
+      "compute_overlap_us": 527.6564999999999,
+      "fraction_shared_started_before_router_ready": 0.8984375
+    },
+    {
+      "tag": "formal-foundry-128-late-1",
+      "name": "foundry",
+      "tokens": 128,
+      "policy": "late",
+      "ms_per_token": 63.650608734375,
+      "major_faults": 0,
+      "max_major_faults": 0,
+      "arena_capacity": [
+        18087936,
+        19138560,
+        18087936
+      ],
+      "shared_scratch_capacity": 12849152,
+      "router_window_us_per_layer": 31.562999999999995,
+      "total_router_window_us_per_token": 1097.262796875,
+      "mean_router_and_ffn_us_per_token": 36227.8701171875,
+      "input_hook_us_per_layer": 0.521,
+      "combine_us_per_layer": 1.875,
+      "cpu_backend_compute_us_per_layer": 583.203,
+      "shared_start_us": 48.75,
+      "router_ready_us": 32.083,
+      "shared_join_wait_us": 478.386,
+      "shared_compute_us": 1044.7915,
+      "cpu_compute_us": 583.203,
+      "pre_router_to_join_us": 1114.74,
+      "shared_lead_us": -16.562,
+      "compute_overlap_us": 582.031,
+      "fraction_shared_started_before_router_ready": 0
+    },
+    {
+      "tag": "formal-foundry-128-cpu-2",
+      "name": "foundry",
+      "tokens": 128,
+      "policy": "cpu",
+      "ms_per_token": 49.0340315,
+      "major_faults": 0,
+      "max_major_faults": 0,
+      "arena_capacity": [
+        18087936,
+        19138560,
+        18087936
+      ],
+      "shared_scratch_capacity": 12849152,
+      "router_window_us_per_layer": 30.677,
+      "total_router_window_us_per_token": 1059.937234375,
+      "mean_router_and_ffn_us_per_token": 22876.5505234375,
+      "input_hook_us_per_layer": 0.521,
+      "combine_us_per_layer": 3.125,
+      "cpu_backend_compute_us_per_layer": 889.167
+    },
+    {
+      "tag": "formal-foundry-128-cpu-3",
+      "name": "foundry",
+      "tokens": 128,
+      "policy": "cpu",
+      "ms_per_token": 49.914887625000006,
+      "major_faults": 0,
+      "max_major_faults": 0,
+      "arena_capacity": [
+        18087936,
+        19138560,
+        18087936
+      ],
+      "shared_scratch_capacity": 12849152,
+      "router_window_us_per_layer": 30.936999999999998,
+      "total_router_window_us_per_token": 1410.064546875,
+      "mean_router_and_ffn_us_per_token": 23365.1743125,
+      "input_hook_us_per_layer": 0.521,
+      "combine_us_per_layer": 3.2035,
+      "cpu_backend_compute_us_per_layer": 891.771
+    },
+    {
+      "tag": "formal-foundry-128-late-4",
+      "name": "foundry",
+      "tokens": 128,
+      "policy": "late",
+      "ms_per_token": 63.72612715625,
+      "major_faults": 0,
+      "max_major_faults": 0,
+      "arena_capacity": [
+        18087936,
+        19138560,
+        18087936
+      ],
+      "shared_scratch_capacity": 12849152,
+      "router_window_us_per_layer": 31.25,
+      "total_router_window_us_per_token": 946.714296875,
+      "mean_router_and_ffn_us_per_token": 35465.611671875,
+      "input_hook_us_per_layer": 0.521,
+      "combine_us_per_layer": 1.875,
+      "cpu_backend_compute_us_per_layer": 587.604,
+      "shared_start_us": 48.438,
+      "router_ready_us": 31.823,
+      "shared_join_wait_us": 472.5,
+      "shared_compute_us": 1046.3020000000001,
+      "cpu_compute_us": 587.604,
+      "pre_router_to_join_us": 1114.922,
+      "shared_lead_us": -16.613999999999997,
+      "compute_overlap_us": 586.719,
+      "fraction_shared_started_before_router_ready": 0
+    },
+    {
+      "tag": "formal-foundry-128-early-5",
+      "name": "foundry",
+      "tokens": 128,
+      "policy": "early",
+      "ms_per_token": 63.75838212500002,
+      "major_faults": 2,
+      "max_major_faults": 2,
+      "arena_capacity": [
+        18087936,
+        19138560,
+        18087936
+      ],
+      "shared_scratch_capacity": 12849152,
+      "router_window_us_per_layer": 22.5,
+      "total_router_window_us_per_token": 2169.0856171875,
+      "mean_router_and_ffn_us_per_token": 37955.7404375,
+      "input_hook_us_per_layer": 9.791,
+      "combine_us_per_layer": 1.875,
+      "cpu_backend_compute_us_per_layer": 589.531,
+      "shared_start_us": 16.407,
+      "router_ready_us": 32.188,
+      "shared_join_wait_us": 469.68699999999995,
+      "shared_compute_us": 1067.344,
+      "cpu_compute_us": 589.531,
+      "pre_router_to_join_us": 1106.0414999999998,
+      "shared_lead_us": 15.624999999999998,
+      "compute_overlap_us": 590.99,
+      "fraction_shared_started_before_router_ready": 0.8990885416666666
+    },
+    {
+      "tag": "formal-wetland-1024-cpu-0",
+      "name": "wetland",
+      "tokens": 1024,
+      "policy": "cpu",
+      "ms_per_token": 55.56563956250001,
+      "major_faults": 0,
+      "max_major_faults": 0,
+      "arena_capacity": [
+        137363456,
+        145768448,
+        137363456
+      ],
+      "shared_scratch_capacity": 95453184,
+      "router_window_us_per_layer": 31.093,
+      "total_router_window_us_per_token": 1379.432359375,
+      "mean_router_and_ffn_us_per_token": 23347.162078125,
+      "input_hook_us_per_layer": 0.521,
+      "combine_us_per_layer": 3.177,
+      "cpu_backend_compute_us_per_layer": 892.969
+    },
+    {
+      "tag": "formal-wetland-1024-late-1",
+      "name": "wetland",
+      "tokens": 1024,
+      "policy": "late",
+      "ms_per_token": 73.2537784375,
+      "major_faults": 0,
+      "max_major_faults": 0,
+      "arena_capacity": [
+        137363456,
+        145768448,
+        137363456
+      ],
+      "shared_scratch_capacity": 95453184,
+      "router_window_us_per_layer": 31.5365,
+      "total_router_window_us_per_token": 972.225203125,
+      "mean_router_and_ffn_us_per_token": 39571.301828125,
+      "input_hook_us_per_layer": 0.573,
+      "combine_us_per_layer": 1.875,
+      "cpu_backend_compute_us_per_layer": 507.916,
+      "shared_start_us": 49.063,
+      "router_ready_us": 32.032,
+      "shared_join_wait_us": 680.5464999999999,
+      "shared_compute_us": 1157.344,
+      "cpu_compute_us": 507.916,
+      "pre_router_to_join_us": 1229.3490000000002,
+      "shared_lead_us": -16.875000000000004,
+      "compute_overlap_us": 505.8589999999999,
+      "fraction_shared_started_before_router_ready": 0
+    },
+    {
+      "tag": "formal-wetland-1024-early-2",
+      "name": "wetland",
+      "tokens": 1024,
+      "policy": "early",
+      "ms_per_token": 74.99099599999998,
+      "major_faults": 0,
+      "max_major_faults": 0,
+      "arena_capacity": [
+        137363456,
+        145768448,
+        137363456
+      ],
+      "shared_scratch_capacity": 95453184,
+      "router_window_us_per_layer": 26.146,
+      "total_router_window_us_per_token": 1160.1109609375,
+      "mean_router_and_ffn_us_per_token": 40135.33846875,
+      "input_hook_us_per_layer": 11.562,
+      "combine_us_per_layer": 2.292,
+      "cpu_backend_compute_us_per_layer": 697.969,
+      "shared_start_us": 19.531,
+      "router_ready_us": 37.968,
+      "shared_join_wait_us": 494.1669999999999,
+      "shared_compute_us": 1178.307,
+      "cpu_compute_us": 697.969,
+      "pre_router_to_join_us": 1223.5675,
+      "shared_lead_us": 18.125000000000004,
+      "compute_overlap_us": 699.8175,
+      "fraction_shared_started_before_router_ready": 0.94140625
+    },
+    {
+      "tag": "formal-wetland-1024-early-3",
+      "name": "wetland",
+      "tokens": 1024,
+      "policy": "early",
+      "ms_per_token": 75.77326739062498,
+      "major_faults": 0,
+      "max_major_faults": 0,
+      "arena_capacity": [
+        137363456,
+        145768448,
+        137363456
+      ],
+      "shared_scratch_capacity": 95453184,
+      "router_window_us_per_layer": 27.396,
+      "total_router_window_us_per_token": 1424.0991093750001,
+      "mean_router_and_ffn_us_per_token": 41176.8985234375,
+      "input_hook_us_per_layer": 11.849,
+      "combine_us_per_layer": 2.396,
+      "cpu_backend_compute_us_per_layer": 779.271,
+      "shared_start_us": 20.0,
+      "router_ready_us": 39.323,
+      "shared_join_wait_us": 402.0830000000001,
+      "shared_compute_us": 1188.672,
+      "cpu_compute_us": 779.271,
+      "pre_router_to_join_us": 1234.4270000000001,
+      "shared_lead_us": 18.959,
+      "compute_overlap_us": 782.7350000000001,
+      "fraction_shared_started_before_router_ready": 0.9222005208333334
+    },
+    {
+      "tag": "formal-wetland-1024-late-4",
+      "name": "wetland",
+      "tokens": 1024,
+      "policy": "late",
+      "ms_per_token": 76.3960530625,
+      "major_faults": 0,
+      "max_major_faults": 0,
+      "arena_capacity": [
+        137363456,
+        145768448,
+        137363456
+      ],
+      "shared_scratch_capacity": 95453184,
+      "router_window_us_per_layer": 39.375,
+      "total_router_window_us_per_token": 1127.2837421875,
+      "mean_router_and_ffn_us_per_token": 40833.994984375,
+      "input_hook_us_per_layer": 0.625,
+      "combine_us_per_layer": 2.344,
+      "cpu_backend_compute_us_per_layer": 686.5364999999999,
+      "shared_start_us": 60.313,
+      "router_ready_us": 40.104,
+      "shared_join_wait_us": 520.625,
+      "shared_compute_us": 1182.292,
+      "cpu_compute_us": 686.5364999999999,
+      "pre_router_to_join_us": 1267.604,
+      "shared_lead_us": -20.104,
+      "compute_overlap_us": 685.0,
+      "fraction_shared_started_before_router_ready": 0
+    },
+    {
+      "tag": "formal-wetland-1024-cpu-5",
+      "name": "wetland",
+      "tokens": 1024,
+      "policy": "cpu",
+      "ms_per_token": 63.63980215625,
+      "major_faults": 0,
+      "max_major_faults": 0,
+      "arena_capacity": [
+        137363456,
+        145768448,
+        137363456
+      ],
+      "shared_scratch_capacity": 95453184,
+      "router_window_us_per_layer": 37.969,
+      "total_router_window_us_per_token": 1567.1432031250001,
+      "mean_router_and_ffn_us_per_token": 28888.1526484375,
+      "input_hook_us_per_layer": 0.677,
+      "combine_us_per_layer": 3.958,
+      "cpu_backend_compute_us_per_layer": 1101.0414999999998
+    },
+    {
+      "tag": "formal-foundry-1024-early-0",
+      "name": "foundry",
+      "tokens": 1024,
+      "policy": "early",
+      "ms_per_token": 73.026181625,
+      "major_faults": 0,
+      "max_major_faults": 0,
+      "arena_capacity": [
+        137363456,
+        145768448,
+        137363456
+      ],
+      "shared_scratch_capacity": 95453184,
+      "router_window_us_per_layer": 23.073,
+      "total_router_window_us_per_token": 853.864453125,
+      "mean_router_and_ffn_us_per_token": 39584.76775,
+      "input_hook_us_per_layer": 9.844,
+      "combine_us_per_layer": 1.875,
+      "cpu_backend_compute_us_per_layer": 525.2605000000001,
+      "shared_start_us": 16.406,
+      "router_ready_us": 32.813,
+      "shared_join_wait_us": 636.8230000000001,
+      "shared_compute_us": 1159.531,
+      "cpu_compute_us": 525.2605000000001,
+      "pre_router_to_join_us": 1196.4325,
+      "shared_lead_us": 16.146,
+      "compute_overlap_us": 520.4165,
+      "fraction_shared_started_before_router_ready": 0.9345703125
+    },
+    {
+      "tag": "formal-foundry-1024-late-1",
+      "name": "foundry",
+      "tokens": 1024,
+      "policy": "late",
+      "ms_per_token": 73.82739500000002,
+      "major_faults": 0,
+      "max_major_faults": 0,
+      "arena_capacity": [
+        137363456,
+        145768448,
+        137363456
+      ],
+      "shared_scratch_capacity": 95453184,
+      "router_window_us_per_layer": 30.729,
+      "total_router_window_us_per_token": 1487.571765625,
+      "mean_router_and_ffn_us_per_token": 41730.40378125,
+      "input_hook_us_per_layer": 0.469,
+      "combine_us_per_layer": 1.77,
+      "cpu_backend_compute_us_per_layer": 486.6145,
+      "shared_start_us": 48.646,
+      "router_ready_us": 31.25,
+      "shared_join_wait_us": 696.9794999999999,
+      "shared_compute_us": 1147.3175,
+      "cpu_compute_us": 486.6145,
+      "pre_router_to_join_us": 1225.911,
+      "shared_lead_us": -16.719,
+      "compute_overlap_us": 479.5835,
+      "fraction_shared_started_before_router_ready": 0
+    },
+    {
+      "tag": "formal-foundry-1024-cpu-2",
+      "name": "foundry",
+      "tokens": 1024,
+      "policy": "cpu",
+      "ms_per_token": 56.491675656249996,
+      "major_faults": 0,
+      "max_major_faults": 0,
+      "arena_capacity": [
+        137363456,
+        145768448,
+        137363456
+      ],
+      "shared_scratch_capacity": 95453184,
+      "router_window_us_per_layer": 29.323,
+      "total_router_window_us_per_token": 3103.7501953125,
+      "mean_router_and_ffn_us_per_token": 25943.4395625,
+      "input_hook_us_per_layer": 0.468,
+      "combine_us_per_layer": 2.969,
+      "cpu_backend_compute_us_per_layer": 976.407
+    },
+    {
+      "tag": "formal-foundry-1024-cpu-3",
+      "name": "foundry",
+      "tokens": 1024,
+      "policy": "cpu",
+      "ms_per_token": 55.19913657812499,
+      "major_faults": 0,
+      "max_major_faults": 0,
+      "arena_capacity": [
+        137363456,
+        145768448,
+        137363456
+      ],
+      "shared_scratch_capacity": 95453184,
+      "router_window_us_per_layer": 28.333,
+      "total_router_window_us_per_token": 2614.15425,
+      "mean_router_and_ffn_us_per_token": 24337.8023828125,
+      "input_hook_us_per_layer": 0.468,
+      "combine_us_per_layer": 2.812,
+      "cpu_backend_compute_us_per_layer": 854.062
+    },
+    {
+      "tag": "formal-foundry-1024-late-4",
+      "name": "foundry",
+      "tokens": 1024,
+      "policy": "late",
+      "ms_per_token": 66.45230799999999,
+      "major_faults": 0,
+      "max_major_faults": 0,
+      "arena_capacity": [
+        137363456,
+        145768448,
+        137363456
+      ],
+      "shared_scratch_capacity": 95453184,
+      "router_window_us_per_layer": 28.593999999999998,
+      "total_router_window_us_per_token": 1951.5147421875,
+      "mean_router_and_ffn_us_per_token": 38575.994765625,
+      "input_hook_us_per_layer": 0.417,
+      "combine_us_per_layer": 1.562,
+      "cpu_backend_compute_us_per_layer": 462.187,
+      "shared_start_us": 44.218,
+      "router_ready_us": 29.062,
+      "shared_join_wait_us": 615.833,
+      "shared_compute_us": 1043.255,
+      "cpu_compute_us": 462.187,
+      "pre_router_to_join_us": 1110.8335000000002,
+      "shared_lead_us": -14.792000000000002,
+      "compute_overlap_us": 455.026,
+      "fraction_shared_started_before_router_ready": 0
+    },
+    {
+      "tag": "formal-foundry-1024-early-5",
+      "name": "foundry",
+      "tokens": 1024,
+      "policy": "early",
+      "ms_per_token": 67.327913359375,
+      "major_faults": 1,
+      "max_major_faults": 1,
+      "arena_capacity": [
+        137363456,
+        145768448,
+        137363456
+      ],
+      "shared_scratch_capacity": 95453184,
+      "router_window_us_per_layer": 20.104,
+      "total_router_window_us_per_token": 2016.3285234375,
+      "mean_router_and_ffn_us_per_token": 38482.7075234375,
+      "input_hook_us_per_layer": 8.75,
+      "combine_us_per_layer": 1.563,
+      "cpu_backend_compute_us_per_layer": 474.974,
+      "shared_start_us": 14.687,
+      "router_ready_us": 28.75,
+      "shared_join_wait_us": 610.3385000000001,
+      "shared_compute_us": 1063.3335000000002,
+      "cpu_compute_us": 474.974,
+      "pre_router_to_join_us": 1104.531,
+      "shared_lead_us": 13.854,
+      "compute_overlap_us": 460.964,
+      "fraction_shared_started_before_router_ready": 0.865234375
+    }
+  ]
+}
