@@ -1,0 +1,109 @@
+--------- beginning of main
+10-26 19:28:18.522 23052 23052 I llama-bench: vendor/qcom/proprietary/adsprpc/src/rpcmem_android.c:650: rpcmem_dma_alloc: DMA buffer allocation completed for heap system, size 18886656, flags 0x1, fd:8, time 569 us
+10-26 19:28:18.524 23052 23052 I llama-bench: vendor/qcom/proprietary/adsprpc/src/rpcmem_android.c:650: rpcmem_dma_alloc: DMA buffer allocation completed for heap system, size 16789504, flags 0x1, fd:55, time 136 us
+10-26 19:28:18.526 23052 23052 I llama-bench: vendor/qcom/proprietary/adsprpc/src/rpcmem_android.c:650: rpcmem_dma_alloc: DMA buffer allocation completed for heap system, size 14692352, flags 0x1, fd:56, time 280 us
+10-26 19:28:18.540 23052 23052 I llama-bench: vendor/qcom/proprietary/adsprpc/src/rpcmem_android.c:650: rpcmem_dma_alloc: DMA buffer allocation completed for heap system, size 19832832, flags 0x1, fd:57, time 2433 us
+10-26 19:28:18.544 23052 23052 I llama-bench: vendor/qcom/proprietary/adsprpc/src/rpcmem_android.c:650: rpcmem_dma_alloc: DMA buffer allocation completed for heap system, size 19587072, flags 0x1, fd:58, time 2759 us
+10-26 19:28:18.547 23052 23052 I llama-bench: vendor/qcom/proprietary/adsprpc/src/rpcmem_android.c:650: rpcmem_dma_alloc: DMA buffer allocation completed for heap system, size 19341312, flags 0x1, fd:59, time 2083 us
+10-26 19:28:18.658 23052 23078 I llama-bench: vendor/qcom/proprietary/adsprpc/src/fastrpc_apps_user.c:3938: get_remote_notif_response: received status notification 3 for domain 1000, session 0 (effec dom 100000)
+10-26 19:28:18.658 23052 23078 I llama-bench: vendor/qcom/proprietary/adsprpc/src/dspqueue/dspqueue_cpu.c:2773: dspqueue_notif_callback for domain 1000, effec_domain_id 100000, session 0, status 3
+10-26 19:28:18.658 23052 23052 E llama-bench: vendor/qcom/proprietary/adsprpc/src/dspqueue/dspqueue_cpu.c:1338::error: 0x2e: (nErr = dspsignal_wait(q->domain, QUEUE_SIGNAL(q->id, signal_no), to_now)) == 0
+10-26 19:28:18.658 23052 23052 E llama-bench: vendor/qcom/proprietary/adsprpc/src/dspqueue/dspqueue_cpu.c:1389: Error 0x2e: wait_signal_locked failed for queue 0xb400007011aad640 signal 2
+10-26 19:28:18.658 23052 23052 E llama-bench: vendor/qcom/proprietary/adsprpc/src/dspqueue/dspqueue_cpu.c:2380::error: 0x2e: (nErr = wait_signal_locked(q, DSPQUEUE_SIGNAL_RESP_PACKET, timeout_ts)) == 0
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: ############################### Process on cDSP0 CRASHED!!!!!!! ########################################
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: --------------------- Crash Details are furnished below ------------------------------------
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: Process "/frpc/f05ab890 llama-bench" crashed in thread "work-queue:2" due to TLBMISS RW occurrence
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: Crashed Shared Object "./libggml-htp-v81.so" load address : 0xFDE3B000
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: fastrpc_shell_unsigned_3 load address : 100000  and size : 163F64
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: Fault PC   :    0xFDE59AB0
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: LR         :    0xFDE66E74
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: SP         :    0x29B800
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: Bad VA     :    0x80
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: FP         :    0x29BF10
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: SSR        :    0x21F70570
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: Error code :    0x7003
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: Call trace :
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: [<FDE59AB0>] op_matmul+0x16900:     (./libggml-htp-v81.so)
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: [<FDE66E74>] op_matmul_nx+0x4944:     (./libggml-htp-v81.so)
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: [<FDE66E74>] op_matmul_nx+0x4944:     (./libggml-htp-v81.so)
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: ----------------------------- End of Crash Report --------------------------------------------------
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: Please refer to Hexagon SDK documentation "<HEXAGON_SDK_ROOT>/docs/tools/debug.html" for debugging the user PD exceptions.
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]:
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: ############################### /frpc/f05ab890 llama-bench state dump ###############################
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: pidA: 1000004, cpu pid: 23052, dsp pid: 0x6, sess id: 0, pd type: 7, exit: 3
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: total threads: 25, total mappings: 161, attrs: 0x20008, client handle: 0x259
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]:
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: ------------------------------- List of rpc threads -------------------------------
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: name: /frpc/f05ab890 , hlos tid: 0, dsp tid: 0x33c, exit: 0, priority: 64, stack ptr: 0x00222020 (size 65536), group id: 0
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: msg: pending: 0, pid: 0, tid: 23052, handle: 0x1, sc: 0xa030100, ctx: 0xac2b01, hdr va: 0x0 (user-copy 0x0034F290), size: 0
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]:
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: name: fr/23052/23052/, hlos tid: 23052, dsp tid: 0x333, exit: 0, priority: 192, stack ptr: 0x00360BE0 (size 16384), group id: 7
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: msg: pending: 0, pid: 1000004, tid: 469785100, handle: 0x2ceaf0, sc: 0x2010000, ctx: 0x7f1fc1, hdr va: 0x0 (user-copy 0x00365800), size: 0
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]:
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: name: fr/23052/23076/, hlos tid: 23076, dsp tid: 0x335, exit: 0, priority: 64, stack ptr: 0x00355ED0 (size 16384), group id: 0
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: msg: pending: 1, pid: 1000004, tid: 23076, handle: 0x7, sc: 0x6020200, ctx: 0x812041, hdr va: 0xfdefb000 (user-copy 0x00000000), size: 4096
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]:
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: name: fr/23052/23052/, hlos tid: 23052, dsp tid: 0x336, exit: 0, priority: 75, stack ptr: 0x003502A0 (size 16384), group id: 0
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: msg: pending: 0, pid: 1000004, tid: 23052, handle: 0x4, sc: 0xa000000, ctx: 0x791e41, hdr va: 0x0 (user-copy 0x00354EC0), size: 0
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]:
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: name: fr/23052/23079/, hlos tid: 23079, dsp tid: 0x331, exit: 0, priority: 75, stack ptr: 0x00367CD0 (size 16384), group id: 0
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: msg: pending: 1, pid: 1000004, tid: 23079, handle: 0x5, sc: 0x5000100, ctx: 0x731cc1, hdr va: 0xfdef1000 (user-copy 0x00000000), size: 4096
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]:
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: name: fr/23052/23077/, hlos tid: 23077, dsp tid: 0x334, exit: 0, priority: 75, stack ptr: 0x0035AEF0 (size 16384), group id: 0
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: msg: pending: 0, pid: 1000004, tid: 23077, handle: 0x5, sc: 0x4010100, ctx: 0x6a1a81, hdr va: 0x0 (user-copy 0x0035FBD0), size: 0
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]:
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: ------------------------------- User-heap info -------------------------------
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: total blocks: 7, total bytes: 1310720, used bytes: 778116, num sections: 2, largest free block: 524160
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: max used: 778404, max requested: 524576, last freed block: 0xFDD80090
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]:
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: List of sections (total 2):
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]:
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]:     section[0]: start addr: 0x002869C0, size: 262144, used 253872
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]:     section[1]: start addr: 0xFDD00000, size: 1048576, used 524304
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]:
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: ------------------------------- RPC heap info -------------------------------
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: total blocks: 86, total bytes: 524288, used bytes: 36369, num sections: 1, largest free block: 485376
+10-26 19:28:18.659  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: max used: 36369, max requested: 12288, last freed block: 0x002CEA60
+10-26 19:28:18.660  2909  3101 V adsprpc : 0338:06: CDSP0:[R]:
+10-26 19:28:18.660  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: List of sections (total 1):
+10-26 19:28:18.660  2909  3101 V adsprpc : 0338:06: CDSP0:[R]:
+10-26 19:28:18.660  2909  3101 V adsprpc : 0338:06: CDSP0:[R]:     section[0]: start addr: 0x002C69C0, size: 524288, used 38016
+10-26 19:28:18.660  2909  3101 V adsprpc : 0338:06: CDSP0:[R]:
+10-26 19:28:18.660  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: ------------------------------- Thread stack heap info -------------------------------
+10-26 19:28:18.660  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: total blocks: 106, total bytes: 524288, used bytes: 194110, num sections: 1, largest free block: 325632
+10-26 19:28:18.660  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: max used: 194110, max requested: 16384, last freed block: 0x00366810
+10-26 19:28:18.660  2909  3101 V adsprpc : 0338:06: CDSP0:[R]:
+10-26 19:28:18.660  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: List of sections (total 1):
+10-26 19:28:18.660  2909  3101 V adsprpc : 0338:06: CDSP0:[R]:
+10-26 19:28:18.660  2909  3101 V adsprpc : 0338:06: CDSP0:[R]:     section[0]: start addr: 0x003469C0, size: 524288, used 196160
+10-26 19:28:18.660  2909  3101 V adsprpc : 0338:06: CDSP0:[R]:
+10-26 19:28:18.660  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: ------------------- List of power contexts (total 1) -------------------
+10-26 19:28:18.660  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: context 0x0034F270, hlos pid 1000004, refs 0, skel ./libggml-htp-v81.so (lr 0xFDE3FB90)
+10-26 19:28:18.660  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: requests: power 1, hvx 0, hmx 0, streamer 0, vapss 0, line-lock 0
+10-26 19:28:18.660  2909  3101 V adsprpc : 0338:06: CDSP0:[R]:
+10-26 19:28:18.660  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: ----------------------- sfd list -----------------------
+10-26 19:28:18.660  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: fd 30, len 4096, VA 0xfdef7000, flags 0x2 (is-dmahandle 0)
+10-26 19:28:18.660  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: fd 31, len 12288, VA 0xfdef8000, flags 0x2 (is-dmahandle 0)
+10-26 19:28:18.660  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: fd 32, len 43593728, VA 0xfac00000, flags 0x2 (is-dmahandle 0)
+10-26 19:28:18.660  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: fd 46, len 1071505408, VA 0xb0200000, flags 0x3 (is-dmahandle 0)
+10-26 19:28:18.660  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: fd 47, len 1061535744, VA 0x0, flags 0x3 (is-dmahandle 0)
+10-26 19:28:18.660  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: fd 48, len 759603200, VA 0x0, flags 0x3 (is-dmahandle 0)
+10-26 19:28:18.660  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: fd 8, len 18886656, VA 0xf1e00000, flags 0x3 (is-dmahandle 0)
+10-26 19:28:18.660  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: fd 57, len 19832832, VA 0xf0000000, flags 0x3 (is-dmahandle 0)
+10-26 19:28:18.660  2909  3101 V adsprpc : 0338:06: CDSP0:[R]:
+10-26 19:28:18.660  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: ----------------------- pool list -----------------------
+10-26 19:28:18.660  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: fd -1, size 1048576, addr 0x8000000fdd00000 (heap VA 0xfdd00000), flags 0x1000 (in-pool 0)
+10-26 19:28:18.660  2909  3101 V adsprpc : 0338:06: CDSP0:[R]:
+10-26 19:28:18.660  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: ----------------------- smap list -----------------------
+10-26 19:28:18.660  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: fd -1, size 262144, addr 0xfdfc0000 (heap VA 0x0), flags 0x0 (in-pool 0)
+10-26 19:28:18.660  2909  3101 V adsprpc : 0338:06: CDSP0:[R]:
+10-26 19:28:18.660  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: ############################### /frpc/f05ab890 llama-bench END ###############################
+10-26 19:28:18.660  2909  3101 V adsprpc : 0338:06: CDSP0:[R]:
+10-26 19:28:18.660  2909  3101 V adsprpc : 0338:06: CDSP0:[R]: Error 0x8000040d(QuRT error: 0x0): FTQ driver invoke method (273) failed
+10-26 19:28:18.682 23052 23076 E llama-bench: vendor/qcom/proprietary/adsprpc/src/fastrpc_apps_user.c:2980: Error 0x8000040d: remote_handle64_invoke failed for handle 0xb400006f7fe0e100, interface NA method 6 on domain 100000 (sc 0x6020200) (errno Success) (user err 0x8000040d)
+10-26 19:28:18.682 23052 23076 E llama-bench: vendor/qcom/proprietary/adsprpc/src/listener_android.c:275:Error 0x8000040d: listener response with result 0x0 for ctx 0x333, handle 0x811e1078, sc 0xffffffff failed : listener thread exited (errno Success)
+10-26 19:28:18.682 23052 23079 E llama-bench: vendor/qcom/proprietary/adsprpc/src/fastrpc_apps_user.c:2980: Error 0x27: remote_handle64_invoke failed for handle 0xb400006f7ce60580, interface NA method 5 on domain 100000 (sc 0x5000100) (errno Success) (user err 0x27)
+10-26 19:28:18.682 23052 23079 E llama-bench: vendor/qcom/proprietary/adsprpc/src/adspmsgd.c:104::error: 0x27: AEE_SUCCESS == (nErr = adspmsgd_adsp1_wait(handle, &bytesToRead))
+10-26 19:28:18.682 23052 23079 E llama-bench: vendor/qcom/proprietary/adsprpc/src/adspmsgd.c:114:Error 0x27: adspmsgd_reader thread of domain 100000 for handle 0x7ce60580 exiting (errno Success)
+10-26 19:28:18.682 23052 23079 E llama-bench: vendor/qcom/proprietary/adsprpc/src/fastrpc_apps_user.c:2980: Error 0x27: remote_handle64_invoke failed for handle 0xb400006f7ce60480, interface NA method 3 on domain 100000 (sc 0x3000000) (errno Success) (user err 0x27)
+10-26 19:28:18.682 23052 23076 E llama-bench: vendor/qcom/proprietary/adsprpc/src/fastrpc_apps_user.c:2980: Error 0x27: remote_handle64_invoke failed for handle 0xb400006f7ce60480, interface NA method 3 on domain 100000 (sc 0x3000000) (errno Success) (user err 0x27)

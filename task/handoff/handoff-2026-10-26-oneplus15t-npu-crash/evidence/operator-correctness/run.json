@@ -1,0 +1,12 @@
+{
+  "command": [
+    "adb",
+    "-s",
+    "3B162U00GZY00000",
+    "shell",
+    "su -c 'timeout 300 sh -c '\"'\"'cd /data/local/tmp/llama-moe-bench/diagnostic-20261026 && LD_LIBRARY_PATH=.:/system/lib64:/vendor/lib64 ADSP_LIBRARY_PATH=/data/local/tmp/llama-moe-bench/diagnostic-20261026 GGML_HEXAGON_DEVICES=HTP0:0 GGML_HEXAGON_MM_SELECT=2 ./test-backend-ops test -b HTP0:0 -o MUL_MAT,MUL_MAT_ID -p '\"'\"'\"'\"'\"'\"'\"'\"'type_a=q4_0,type_b=f32,.*(m=16,n=(1|16),k=256,bs=\\[1,1\\],nr=\\[1,1\\]|m=2880,n=32,k=2880|n_mats=8,n_used=2,)'\"'\"'\"'\"'\"'\"'\"'\"''\"'\"''"
+  ],
+  "started_utc": "2026-10-26T11:53:17.991956+00:00",
+  "returncode": 0,
+  "elapsed_seconds": 4.27928676083684
+}

@@ -1,0 +1,13 @@
+{
+  "serial": "3B162U00GZY00000",
+  "command": [
+    "adb",
+    "-s",
+    "3B162U00GZY00000",
+    "shell",
+    "su -c 'timeout 900 sh -c '\"'\"'cd /data/local/tmp/llama-moe-bench/diagnostic-20261026 && LD_LIBRARY_PATH=.:/system/lib64:/vendor/lib64 ADSP_LIBRARY_PATH=/data/local/tmp/llama-moe-bench/diagnostic-20261026 GGML_HEXAGON_DEVICES=HTP0:0,HTP0:1,HTP0:2 GGML_HEXAGON_NHMX=1 GGML_HEXAGON_MM_SELECT=2 ./llama-bench -m /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf -dev HTP0:0/HTP0:1/HTP0:2 -ngl 99 -ts 1/1/1 -t 4 -p 128,512 -n 128 -b 512 -ub 512 -fa on -lm mmap -lzm off -r 3 -o json -v --progress'\"'\"''"
+  ],
+  "started_utc": "2026-10-26T11:49:21.670342+00:00",
+  "returncode": 0,
+  "elapsed_seconds": 35.95897626131773
+}

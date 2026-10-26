@@ -1,0 +1,334 @@
+[0/1] Re-running CMake...
+-- llama.cpp version: 0.5.0-dev
+CMAKE_BUILD_TYPE=Release
+-- Setting GGML_NATIVE_DEFAULT to OFF
+-- ccache found, compilation results will be cached. Disable with GGML_CCACHE=OFF.
+-- CMAKE_SYSTEM_PROCESSOR: aarch64
+-- GGML_SYSTEM_ARCH: ARM
+-- Including CPU backend
+-- ARM detected
+-- Checking for ARM features using flags:
+-- Adding CPU backend variant ggml-cpu:
+-- OpenCL profiling enabled (increases CPU overhead)
+-- OpenCL will use matmul kernels optimized for Adreno
+-- opencl: embedding kernel add
+-- opencl: embedding kernel add_id
+-- opencl: embedding kernel moe_add_id_glu
+-- opencl: embedding kernel argsort
+-- opencl: embedding kernel tri
+-- opencl: embedding kernel fill
+-- opencl: embedding kernel clamp
+-- opencl: embedding kernel cpy
+-- opencl: embedding kernel cvt
+-- opencl: embedding kernel shared_q4_0
+-- opencl: embedding kernel diag_mask_inf
+-- opencl: embedding kernel diag
+-- opencl: embedding kernel div
+-- opencl: embedding kernel gelu
+-- opencl: embedding kernel get_rows
+-- opencl: embedding kernel glu
+-- opencl: embedding kernel group_norm
+-- opencl: embedding kernel solve_tri
+-- opencl: embedding kernel im2col_f32
+-- opencl: embedding kernel im2col_f16
+-- opencl: embedding kernel mean
+-- opencl: embedding kernel mul_mv_f16_f16
+-- opencl: embedding kernel mul_mv_f16_f32_1row
+-- opencl: embedding kernel mul_mv_f16_f32_l4
+-- opencl: embedding kernel mul_mv_f16_f32
+-- opencl: embedding kernel mul_mv_f16_f32_mrow
+-- opencl: embedding kernel mul_mv_f32_f32
+-- opencl: embedding kernel mul_mv_q1_0_f32
+-- opencl: embedding kernel mul_mv_q1_0_f32_flat
+-- opencl: embedding kernel mul_mv_q4_0_f32
+-- opencl: embedding kernel mul_mv_q4_0_f32_v
+-- opencl: embedding kernel mul_mv_q4_0_f32_8x_flat
+-- opencl: embedding kernel mul_mv_q4_0_f32_1d_8x_flat
+-- opencl: embedding kernel mul_mv_q4_0_f32_1d_16x_flat
+-- opencl: embedding kernel mul_mv_q4_1_f32
+-- opencl: embedding kernel mul_mv_q4_1_f32_flat
+-- opencl: embedding kernel mul_mv_q4_k_f32
+-- opencl: embedding kernel mul_mv_q4_k_f32_flat
+-- opencl: embedding kernel mul_mv_q5_0_f32
+-- opencl: embedding kernel mul_mv_q5_0_f32_flat
+-- opencl: embedding kernel mul_mv_q5_1_f32
+-- opencl: embedding kernel mul_mv_q5_1_f32_flat
+-- opencl: embedding kernel mul_mv_q5_k_f32
+-- opencl: embedding kernel mul_mv_q5_k_f32_flat
+-- opencl: embedding kernel mul_mv_q6_k_f32
+-- opencl: embedding kernel mul_mv_q6_k_f32_flat
+-- opencl: embedding kernel mul_mv_q8_0_f32
+-- opencl: embedding kernel mul_mv_q8_0_f32_flat
+-- opencl: embedding kernel mul_mv_iq4_nl_f32
+-- opencl: embedding kernel mul_mv_iq4_nl_f32_flat
+-- opencl: embedding kernel mul_mv_mxfp4_f32
+-- opencl: embedding kernel mul_mv_mxfp4_f32_flat
+-- opencl: embedding kernel mul_mv_id_q4_0_f32_8x_flat
+-- opencl: embedding kernel mul_mv_id_q8_0_f32
+-- opencl: embedding kernel mul_mv_id_q8_0_f32_flat
+-- opencl: embedding kernel mul_mv_id_mxfp4_f32
+-- opencl: embedding kernel mul_mv_id_mxfp4_f32_flat
+-- opencl: embedding kernel gemm_moe_q4_0_f32_ns
+-- opencl: embedding kernel gemm_moe_q4_0_q8_1_dp4a
+-- opencl: embedding kernel gemv_moe_q4_0_f32_ns
+-- opencl: embedding kernel gemm_moe_q8_0_f32_ns
+-- opencl: embedding kernel gemm_moe_q4_1_f32_ns
+-- opencl: embedding kernel gemv_moe_q4_1_f32_ns
+-- opencl: embedding kernel gemm_moe_q5_0_f32_ns
+-- opencl: embedding kernel gemv_moe_q5_0_f32_ns
+-- opencl: embedding kernel gemm_moe_q5_1_f32_ns
+-- opencl: embedding kernel gemv_moe_q5_1_f32_ns
+-- opencl: embedding kernel gemm_moe_q4_k_f32_ns
+-- opencl: embedding kernel gemm_moe_q4_k_q8_1_dp4a
+-- opencl: embedding kernel gemm_moe_q6_k_q8_1_dp4a
+-- opencl: embedding kernel gemm_moe_q8_1_dp4a
+-- opencl: embedding kernel moe_reorder_quant_a_q8_1
+-- opencl: embedding kernel gemm_noshuffle_q4_k_q8_1_dp4a
+-- opencl: embedding kernel gemm_noshuffle_q5_k_q8_1_dp4a
+-- opencl: embedding kernel gemm_noshuffle_q6_k_q8_1_dp4a
+-- opencl: embedding kernel gemm_noshuffle_q8_0_q8_1_dp4a
+-- opencl: embedding kernel gemm_noshuffle_q5_0_q8_1_dp4a
+-- opencl: embedding kernel gemm_noshuffle_iq4_nl_q8_1_dp4a
+-- opencl: embedding kernel gemm_noshuffle_q4_0_q8_1_dp4a
+-- opencl: embedding kernel quant_a_q8_1
+-- opencl: embedding kernel gemv_moe_q4_k_f32_ns
+-- opencl: embedding kernel gemm_moe_q5_k_f32_ns
+-- opencl: embedding kernel gemv_moe_q5_k_f32_ns
+-- opencl: embedding kernel gemm_moe_q6_k_f32_ns
+-- opencl: embedding kernel gemv_moe_q6_k_f32_ns
+-- opencl: embedding kernel gemm_moe_mxfp4_f32
+-- opencl: embedding kernel gemv_moe_mxfp4_f32
+-- opencl: embedding kernel gemm_moe_mxfp4_f32_ns
+-- opencl: embedding kernel gemm_moe_mxfp4_q8_1_dp4a
+-- opencl: embedding kernel gemv_moe_mxfp4_f32_ns
+-- opencl: embedding kernel moe_reorder_b
+-- opencl: embedding kernel moe_combine
+-- opencl: embedding kernel moe_sort_by_expert
+-- opencl: embedding kernel mul_mm_f32_f32_l4_lm
+-- opencl: embedding kernel mul_mm_f16_f32_l4_lm
+-- opencl: embedding kernel mul_mm_q1_0_f32_l4_lm
+-- opencl: embedding kernel mul_mm_q4_0_f32_l4_lm
+-- opencl: embedding kernel mul_mm_q4_1_f32_l4_lm
+-- opencl: embedding kernel mul_mm_q5_0_f32_l4_lm
+-- opencl: embedding kernel mul_mm_q5_1_f32_l4_lm
+-- opencl: embedding kernel mul_mm_q8_0_f32_l4_lm
+-- opencl: embedding kernel mul_mm_iq4_nl_f32_l4_lm
+-- opencl: embedding kernel mul_mm_q4_k_f32_l4_lm
+-- opencl: embedding kernel mul_mm_q5_k_f32_l4_lm
+-- opencl: embedding kernel mul_mm_q6_k_f32_l4_lm
+-- opencl: embedding kernel gemv_noshuffle_q1_0_f32
+-- opencl: embedding kernel gemm_noshuffle_q1_0_f32
+-- opencl: embedding kernel gemv_noshuffle_q4_0_f32
+-- opencl: embedding kernel gemv_noshuffle_q4_0_f32_spec
+-- opencl: embedding kernel gemm_noshuffle_q4_0_f32
+-- opencl: embedding kernel gemv_noshuffle_q4_0_f32_32b_trans
+-- opencl: embedding kernel gemv_noshuffle_q4_1_f32
+-- opencl: embedding kernel gemm_noshuffle_q4_1_f32
+-- opencl: embedding kernel gemv_noshuffle_q5_0_f32
+-- opencl: embedding kernel gemm_noshuffle_q5_0_f32
+-- opencl: embedding kernel gemv_noshuffle_q5_1_f32
+-- opencl: embedding kernel gemm_noshuffle_q5_1_f32
+-- opencl: embedding kernel gemv_noshuffle_iq4_nl_f32
+-- opencl: embedding kernel gemm_noshuffle_iq4_nl_f32
+-- opencl: embedding kernel gemv_noshuffle_q8_0_f32
+-- opencl: embedding kernel gemm_noshuffle_q8_0_f32
+-- opencl: embedding kernel gemv_noshuffle_q4_k_f32
+-- opencl: embedding kernel gemv_noshuffle_q4_k_f32_o4
+-- opencl: embedding kernel gemv_noshuffle_q4_k_f32_tiled
+-- opencl: embedding kernel gemm_noshuffle_q4_k_f32
+-- opencl: embedding kernel gemv_noshuffle_q4_k_f32_32b_trans
+-- opencl: embedding kernel gemv_noshuffle_q6_k_f32
+-- opencl: embedding kernel gemv_noshuffle_q6_k_f32_o4
+-- opencl: embedding kernel gemv_noshuffle_q6_k_f32_tiled
+-- opencl: embedding kernel gemm_noshuffle_q6_k_f32
+-- opencl: embedding kernel gemm_noshuffle_q6_k_f32_tiled
+-- opencl: embedding kernel gemv_noshuffle_q6_k_f32_32b_trans
+-- opencl: embedding kernel gemv_noshuffle_q5_k_f32
+-- opencl: embedding kernel gemm_noshuffle_q5_k_f32
+-- opencl: embedding kernel gemv_noshuffle_q5_k_f32_32b_trans
+-- opencl: embedding kernel mul
+-- opencl: embedding kernel neg
+-- opencl: embedding kernel norm
+-- opencl: embedding kernel relu
+-- opencl: embedding kernel l2_norm
+-- opencl: embedding kernel rms_norm
+-- opencl: embedding kernel rope
+-- opencl: embedding kernel scale
+-- opencl: embedding kernel set_rows
+-- opencl: embedding kernel sigmoid
+-- opencl: embedding kernel silu
+-- opencl: embedding kernel softmax_4_f32
+-- opencl: embedding kernel softmax_4_f16
+-- opencl: embedding kernel softmax_f32
+-- opencl: embedding kernel softmax_f16
+-- opencl: embedding kernel sqr
+-- opencl: embedding kernel sqrt
+-- opencl: embedding kernel ssm_conv
+-- opencl: embedding kernel ssm_scan
+-- opencl: embedding kernel gated_delta_net
+-- opencl: embedding kernel sub
+-- opencl: embedding kernel sum_rows
+-- opencl: embedding kernel cumsum
+-- opencl: embedding kernel transpose
+-- opencl: embedding kernel concat
+-- opencl: embedding kernel tsembd
+-- opencl: embedding kernel upscale
+-- opencl: embedding kernel tanh
+-- opencl: embedding kernel exp
+-- opencl: embedding kernel expm1
+-- opencl: embedding kernel abs
+-- opencl: embedding kernel unary_ext
+-- opencl: embedding kernel softplus
+-- opencl: embedding kernel pad
+-- opencl: embedding kernel repeat
+-- opencl: embedding kernel mul_mat_f16_f32
+-- opencl: embedding kernel mul_mm_f16_f32_kq_kqv
+-- opencl: embedding kernel conv2d
+-- opencl: embedding kernel conv2d_f16_f32
+-- opencl: embedding kernel flash_attn_repack
+-- opencl: embedding kernel flash_attn_pre_f16
+-- opencl: embedding kernel flash_attn_f32_f16
+-- opencl: embedding kernel flash_attn_f32_q8_0
+-- opencl: embedding kernel flash_attn_f32_q4_0
+-- opencl: embedding kernel flash_attn_f16
+-- opencl: embedding kernel flash_attn_f32
+-- opencl: embedding kernel gemm_xmem_f16_f32_os8
+-- opencl: embedding kernel sdpa_xmem_f32_f16_os8
+-- Including OpenCL backend
+-- hexagon: using /mnt/sda1/pzw/HeteroCompute/hexagon-sdk-temp and /mnt/sda1/pzw/HeteroCompute/hexagon-sdk-temp/tools/HEXAGON_Tools/19.0.04 for building libggml-htp skels
+-- Including Hexagon backend
+-- ggml version: 0.25.3
+-- ggml commit:  aa5f2d811
+-- Generating embedded license file for target: llama-app
+-- Configuring done (0.8s)
+-- Generating done (0.2s)
+-- Build files have been written to: /mnt/sda1/pzw/moe/llama.cpp_bench-MOE/build-android-opencl-hexagon
+[1/78] Creating directories for 'htp-v81'
+[2/78] No download step for 'htp-v81'
+[3/78] No update step for 'htp-v81'
+[4/78] No patch step for 'htp-v81'
+[5/78] Building CXX object common/CMakeFiles/llama-common-base.dir/build-info.cpp.o
+[6/78] Building C object ggml/src/CMakeFiles/ggml-base.dir/ggml.c.o
+[7/78] Linking CXX static library common/libllama-common-base.a
+[8/78] Performing configure step for 'htp-v81'
+-- The ASM compiler identification is unknown
+-- Found assembler: /mnt/sda1/pzw/HeteroCompute/hexagon-sdk-temp/tools/HEXAGON_Tools/19.0.04/Tools/bin/hexagon-clang++
+System is unknown to cmake, create:
+Platform/QURT to use this system, please post your config file on discourse.cmake.org so it can be added to cmake
+Your CMakeCache.txt file was copied to CopyOfCMakeCache.txt. Please post that file on discourse.cmake.org.
+-- Warning: Did not find file Compiler/-ASM
+-- Warning: Did not find file Compiler/-ASM
+-- Configuring done (4.7s)
+-- Generating done (0.0s)
+CMake Warning:
+  Manually-specified variables were not used by the project:
+
+    CMAKE_TOOLCHAIN_FILE
+
+
+-- Build files have been written to: /mnt/sda1/pzw/moe/llama.cpp_bench-MOE/build-android-opencl-hexagon/ggml/src/ggml-hexagon/htp-v81-prefix/src/htp-v81-build
+[9/78] Linking CXX shared library bin/libggml-base.so
+[10/78] Building CXX object src/CMakeFiles/llama.dir/llama.cpp.o
+[11/78] Building CXX object common/CMakeFiles/llama-common.dir/parsers/parsers.cpp.o
+[12/78] Building CXX object common/CMakeFiles/llama-common.dir/parsers/cohere2moe.cpp.o
+[13/78] Building CXX object common/CMakeFiles/llama-common.dir/parsers/deepseek.cpp.o
+[14/78] Building CXX object common/CMakeFiles/llama-common.dir/parsers/functionary-v3-2.cpp.o
+[15/78] Building CXX object vendor/cpp-httplib/CMakeFiles/cpp-httplib.dir/httplib.cpp.o
+[16/78] Linking CXX static library vendor/cpp-httplib/libcpp-httplib.a
+[17/78] Building CXX object common/CMakeFiles/llama-common.dir/parsers/gemma4.cpp.o
+[18/78] Linking CXX shared library bin/libggml-hexagon.so
+[19/78] Building CXX object common/CMakeFiles/llama-common.dir/parsers/gigachat-v3.cpp.o
+[20/78] Building CXX object common/CMakeFiles/llama-common.dir/parsers/gpt-oss.cpp.o
+[21/78] Building CXX object common/CMakeFiles/llama-common.dir/parsers/kimi-k2.cpp.o
+[22/78] Building CXX object common/CMakeFiles/llama-common.dir/parsers/kimi-k3.cpp.o
+[23/78] Building CXX object common/CMakeFiles/llama-common.dir/parsers/lfm2.cpp.o
+[24/78] Building CXX object common/CMakeFiles/llama-common.dir/parsers/ling3.cpp.o
+[25/78] Building CXX object common/CMakeFiles/llama-common.dir/parsers/minicpm5.cpp.o
+[26/78] Building CXX object common/CMakeFiles/llama-common.dir/parsers/ministral3.cpp.o
+[27/78] Building CXX object common/CMakeFiles/llama-common.dir/parsers/minimax-m3.cpp.o
+[28/78] Building CXX object common/CMakeFiles/llama-common.dir/parsers/muse-glimmer.cpp.o
+[29/78] Building CXX object common/CMakeFiles/llama-common.dir/parsers/qwen3-coder.cpp.o
+[30/78] Linking CXX shared library bin/libggml-opencl.so
+[31/78] Building CXX object common/CMakeFiles/llama-common.dir/chat-auto-parser-helpers.cpp.o
+[32/78] Linking CXX shared library bin/libggml-cpu.so
+[33/78] Linking CXX shared library bin/libggml.so
+[34/78] Building CXX object common/CMakeFiles/llama-common.dir/chat-auto-parser-generator.cpp.o
+[35/78] Building CXX object common/CMakeFiles/llama-common.dir/console.cpp.o
+[36/78] Building CXX object common/CMakeFiles/llama-common.dir/chat-peg-parser.cpp.o
+[37/78] Building CXX object common/CMakeFiles/llama-common.dir/chat.cpp.o
+[38/78] Building CXX object common/CMakeFiles/llama-common.dir/common.cpp.o
+[39/78] Building CXX object common/CMakeFiles/llama-common.dir/debug.cpp.o
+[40/78] Building CXX object common/CMakeFiles/llama-common.dir/fit.cpp.o
+[41/78] Building CXX object common/CMakeFiles/llama-common.dir/imatrix-loader.cpp.o
+[42/78] Building CXX object common/CMakeFiles/llama-common.dir/hf-cache.cpp.o
+[43/78] Building CXX object common/CMakeFiles/llama-common.dir/arg.cpp.o
+[44/78] Building CXX object common/CMakeFiles/llama-common.dir/chat-diff-analyzer.cpp.o
+[45/78] Building CXX object common/CMakeFiles/llama-common.dir/llguidance.cpp.o
+[46/78] Building CXX object common/CMakeFiles/llama-common.dir/download.cpp.o
+[47/78] Building CXX object common/CMakeFiles/llama-common.dir/json-schema.cpp.o
+[48/78] Building CXX object common/CMakeFiles/llama-common.dir/log.cpp.o
+[49/78] Building CXX object common/CMakeFiles/llama-common.dir/ngram-mod.cpp.o
+[50/78] Building CXX object common/CMakeFiles/llama-common.dir/ngram-cache.cpp.o
+[51/78] Building CXX object common/CMakeFiles/llama-common.dir/ngram-map.cpp.o
+[52/78] Building CXX object common/CMakeFiles/llama-common.dir/reasoning-budget.cpp.o
+[53/78] Building CXX object common/CMakeFiles/llama-common.dir/json-schema-to-grammar.cpp.o
+[54/78] Building CXX object common/CMakeFiles/llama-common.dir/json.cpp.o
+[55/78] Building CXX object common/CMakeFiles/llama-common.dir/subproc.cpp.o
+[56/78] Building CXX object common/CMakeFiles/llama-common.dir/sampling.cpp.o
+[57/78] Building CXX object common/CMakeFiles/llama-common.dir/unicode.cpp.o
+[58/78] Building CXX object common/CMakeFiles/llama-common.dir/trie.cpp.o
+[59/78] Building CXX object common/CMakeFiles/llama-common.dir/jinja/lexer.cpp.o
+[60/78] Building CXX object common/CMakeFiles/llama-common.dir/preset.cpp.o
+[61/78] Building CXX object common/CMakeFiles/llama-common.dir/jinja/parser.cpp.o
+[62/78] Building CXX object common/CMakeFiles/llama-common.dir/jinja/string.cpp.o
+[63/78] Building CXX object common/CMakeFiles/llama-common.dir/speculative.cpp.o
+[64/78] Building CXX object common/CMakeFiles/llama-common.dir/jinja/runtime.cpp.o
+[65/78] Building CXX object tools/llama-bench/CMakeFiles/llama-bench.dir/main.cpp.o
+[66/78] Building CXX object common/CMakeFiles/llama-common.dir/peg-parser.cpp.o
+[67/78] Building CXX object common/CMakeFiles/llama-common.dir/jinja/caps.cpp.o
+[68/78] Building CXX object tools/llama-bench/CMakeFiles/llama-bench-impl.dir/llama-bench.cpp.o
+[69/78] Building CXX object common/CMakeFiles/llama-common.dir/jinja/value.cpp.o
+[70/78] Building CXX object tests/CMakeFiles/test-backend-ops.dir/test-backend-ops.cpp.o
+[71/78] Performing build step for 'htp-v81'
+[1/32] Generating htp_iface_skel.c, htp_iface_stub.c, htp_iface.h
+[2/32] Building C object CMakeFiles/ggml-htp-v81.dir/fill-ops.c.obj
+[3/32] Building C object CMakeFiles/ggml-htp-v81.dir/htp_iface_skel.c.obj
+[4/32] Building C object CMakeFiles/ggml-htp-v81.dir/work-queue.c.obj
+[5/32] Building C object CMakeFiles/ggml-htp-v81.dir/dma-queue.c.obj
+[6/32] Building C object CMakeFiles/ggml-htp-v81.dir/hmx-queue.c.obj
+[7/32] Building C object CMakeFiles/ggml-htp-v81.dir/repeat-ops.c.obj
+[8/32] Building C object CMakeFiles/ggml-htp-v81.dir/diag-ops.c.obj
+[9/32] Building C object CMakeFiles/ggml-htp-v81.dir/solve-tri-ops.c.obj
+[10/32] Building C object CMakeFiles/ggml-htp-v81.dir/main.c.obj
+[11/32] Building C object CMakeFiles/ggml-htp-v81.dir/htp-tensor.c.obj
+[12/32] Building C object CMakeFiles/ggml-htp-v81.dir/sum-rows-ops.c.obj
+[13/32] Building C object CMakeFiles/ggml-htp-v81.dir/ssm-conv.c.obj
+[14/32] Building C object CMakeFiles/ggml-htp-v81.dir/cumsum-ops.c.obj
+[15/32] Building C object CMakeFiles/ggml-htp-v81.dir/concat-ops.c.obj
+[16/32] Building C object CMakeFiles/ggml-htp-v81.dir/pad-ops.c.obj
+[17/32] Building C object CMakeFiles/ggml-htp-v81.dir/softmax-ops.c.obj
+[18/32] Building C object CMakeFiles/ggml-htp-v81.dir/roll-ops.c.obj
+[19/32] Building C object CMakeFiles/ggml-htp-v81.dir/rope-ops.c.obj
+[20/32] Building C object CMakeFiles/ggml-htp-v81.dir/cpy-ops.c.obj
+[21/32] Building C object CMakeFiles/ggml-htp-v81.dir/act-ops.c.obj
+[22/32] Building C object CMakeFiles/ggml-htp-v81.dir/set-rows-ops.c.obj
+[23/32] Building C object CMakeFiles/ggml-htp-v81.dir/get-rows-ops.c.obj
+[24/32] Building C object CMakeFiles/ggml-htp-v81.dir/argsort-ops.c.obj
+[25/32] Building C object CMakeFiles/ggml-htp-v81.dir/im2col-ops.c.obj
+[26/32] Building C object CMakeFiles/ggml-htp-v81.dir/allreduce-ops.c.obj
+[27/32] Building C object CMakeFiles/ggml-htp-v81.dir/unary-ops.c.obj
+[28/32] Building C object CMakeFiles/ggml-htp-v81.dir/gated-delta-net-ops.c.obj
+[29/32] Building C object CMakeFiles/ggml-htp-v81.dir/flash-attn-ops.c.obj
+[30/32] Building C object CMakeFiles/ggml-htp-v81.dir/binary-ops.c.obj
+[31/32] Building C object CMakeFiles/ggml-htp-v81.dir/matmul-ops.c.obj
+[32/32] Linking C shared library libggml-htp-v81.so
+[72/78] Performing install step for 'htp-v81'
+[0/1] Install the project...
+-- Install configuration: "Release"
+-- Installing: /mnt/sda1/pzw/moe/llama.cpp_bench-MOE/build-android-opencl-hexagon/ggml/src/ggml-hexagon/libggml-htp-v81.so
+[73/78] Completed 'htp-v81'
+[74/78] Linking CXX shared library bin/libllama.so
+[75/78] Linking CXX shared library bin/libllama-common.so
+[76/78] Linking CXX shared library bin/libllama-bench-impl.so
+[77/78] Linking CXX executable bin/llama-bench
+[78/78] Linking CXX executable bin/test-backend-ops
