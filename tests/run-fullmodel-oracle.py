@@ -38,6 +38,7 @@ def main():
     p.add_argument("--gpu-clock-sampling", action="store_true", help="Independent root read-only sysfs observer; inference stays shell uid")
     p.add_argument("--gpu-sample-period-us", type=int, default=10000)
     p.add_argument("--profile-layers", help="Comma-separated layer indices for optimized compact candidate profiling")
+    p.add_argument("--capture-layers", help="Capture only these layer indices; preserve all layer shape metadata")
     p.add_argument("--tokens", type=int, default=128)
     p.add_argument("--host-threads", type=int, choices=range(1,9), help="Outer llama CPU graph threads; expert CPU backend remains at four")
     p.add_argument("--prefill-chunk", type=int, help="Fixed-placement prefill: retain full context and process equal chunks")
@@ -243,6 +244,12 @@ def main():
         assert adb("shell", f"sha256sum {REMOTE}/feedback-model.json").stdout.split()[0] == digest
         record["feedback_model_sha256"] = digest
         env.append(f"MOE_FEEDBACK_MODEL={REMOTE}/feedback-model.json")
+    capture_layers = list(range(24))
+    if args.capture_layers:
+        assert args.mode == "capture"
+        capture_layers = sorted(set(int(i) for i in args.capture_layers.split(",")))
+        assert capture_layers and all(0 <= i < 24 for i in capture_layers)
+        env.append("MOE_CAPTURE_LAYERS=" + ",".join(map(str, capture_layers)))
     if args.profile_layers:
         assert args.mode == "profile"
         layers = [int(i) for i in args.profile_layers.split(",")]
@@ -341,7 +348,7 @@ def main():
     if args.runtime_state_model:
         filenames.append(f"{args.tag}.json.plan.json")
     if args.mode == "capture":
-        filenames += [f"{args.tag}.json.layer{i}.bin" for i in range(24)]
+        filenames += [f"{args.tag}.json.layer{i}.bin" for i in capture_layers]
     if args.mode not in ("search", "profile", "predict"):
         filenames += [f"{args.tag}.json.logits.bin"]
     if args.quality_steps:

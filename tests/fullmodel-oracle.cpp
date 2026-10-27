@@ -62,6 +62,8 @@ struct router_placement_trace {
 
 struct capture_all {
     std::array<captured_layer,24> layers;
+    std::set<int> selected;
+    bool includes(int il) const { return selected.empty() || selected.count(il); }
     static bool callback(ggml_tensor * t,bool ask,void * opaque) {
         std::string name=t->name;
         auto dash=name.rfind('-');
@@ -69,11 +71,13 @@ struct capture_all {
         if(name.find_first_not_of("0123456789",dash+1)!=std::string::npos) { return ask ? false : true; }
         std::string prefix=name.substr(0,dash);
         bool wanted=prefix=="ffn_norm" || prefix=="ffn_moe_probs" || prefix=="ffn_moe_topk" || prefix=="ffn_out";
-        if(ask) { return wanted; }
-        if(!wanted) { return true; }
+        if(!wanted) { return !ask; }
         int il=std::stoi(name.substr(dash+1)); require(il>=0 && il<24,"invalid capture layer");
-        auto & l=static_cast<capture_all *>(opaque)->layers[il];
+        auto & capture=*static_cast<capture_all *>(opaque);
+        auto & l=capture.layers[il];
         l.nt=t->ne[1];
+        if(ask) { return capture.includes(il); }
+        if(!capture.includes(il)) { return true; }
         if(prefix=="ffn_norm") { l.input=dense_read<float>(t); }
         if(prefix=="ffn_moe_probs") { l.probs=dense_read<float>(t); }
         if(prefix=="ffn_moe_topk") { l.ids=dense_read<int32_t>(t); }
@@ -894,6 +898,15 @@ int main(int argc,char ** argv) {
             resident_preparation_us=elapsed(preparation_start);
         }
         capture_all capture;
+        if(std::getenv("MOE_CAPTURE_LAYERS")) {
+            require(mode=="capture","capture layer selection requires capture mode");
+            std::istringstream list(std::getenv("MOE_CAPTURE_LAYERS")); std::string value;
+            while(std::getline(list,value,',')) {
+                int il=std::stoi(value); require(il>=0 && il<24,"invalid capture layer selection");
+                capture.selected.insert(il);
+            }
+            require(!capture.selected.empty(),"empty capture layer selection");
+        }
         router_placement_trace router_trace;
         auto cp=llama_context_default_params(); cp.n_ctx=quality_steps?nt+quality_steps+32:nt; cp.n_batch=prefill_chunk; cp.n_ubatch=prefill_chunk;
         int host_threads=std::getenv("MOE_HOST_THREADS")?std::stoi(std::getenv("MOE_HOST_THREADS")):4;
@@ -1140,6 +1153,11 @@ int main(int argc,char ** argv) {
             report["layers"]=json::array();
             for(int il=0;il<24;++il) {
                 auto & l=capture.layers[il];
+                require(l.nt>0,"missing capture layer shape");
+                if(!capture.includes(il)) {
+                    report["layers"].push_back({{"layer",il},{"tokens",l.nt},{"captured",false}});
+                    continue;
+                }
                 require(l.input.size()==size_t(2048*l.nt) && l.probs.size()==size_t(60*l.nt) && l.ids.size()==size_t(4*l.nt) && l.output.size()==l.input.size(),"incomplete layer capture");
                 std::ofstream out(std::string(argv[4])+".layer"+std::to_string(il)+".bin",std::ios::binary);
                 binary_write(out,l.input); binary_write(out,l.probs); binary_write(out,l.ids); binary_write(out,l.output);
