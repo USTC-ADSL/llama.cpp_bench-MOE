@@ -54,6 +54,7 @@ def main():
     p.add_argument("--shared-dispatch", choices=["async","pool"], help="Shared-layout branch dispatch: per-layer async or two persistent workers")
     p.add_argument("--shared-gather", choices=["host","htp"], help="Shared-layout input: host row copies or one HTP input plus device GET_ROWS")
     p.add_argument("--shared-scratch", choices=["private","common"], help="Shared expert activations: per-backend capacity or one exclusive physical arena")
+    p.add_argument("--shared-arena", choices=["private","pooled"], help="Expert activations: independent backend budgets or one pool partitioned by the current route")
     p.add_argument("--shared-fused-gather", action="store_true", help="Fuse retained CPU4x8 GET_ROWS into HMX input tile preparation")
     p.add_argument("--output-dir", type=pathlib.Path, default=OUT)
     p.add_argument("--plan-file", type=pathlib.Path)
@@ -166,6 +167,9 @@ def main():
     if args.shared_scratch:
         assert args.shared_weights
         env.append("MOE_SHARED_SCRATCH=" + args.shared_scratch)
+    if args.shared_arena:
+        assert args.shared_weights and not args.decode_shared_launch
+        env.append("MOE_SHARED_ARENA=" + args.shared_arena)
     if args.shared_fused_gather:
         assert args.shared_weights and args.shared_gather == "htp"
         env.append("GGML_HEXAGON_FUSE_CPU4X8_GATHER=1")

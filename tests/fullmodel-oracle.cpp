@@ -306,6 +306,11 @@ struct full_engine {
     std::vector<std::unique_ptr<moe_early_shared>> early_shared_branches;
     bool decode_active=false;
     bool record=false;
+    json physical_arena_sizes() const {
+        json sizes=json::array(); std::set<const shared_activation_buffer *> seen;
+        for(auto & arena:arenas) { if(arena && seen.insert(arena.get()).second) { sizes.push_back(arena->desc.size); } }
+        return sizes;
+    }
     ~full_engine() {
         // Also drain on exceptions between launch and finish: worker closures
         // reference decode_branches, whose state must remain alive until join.
@@ -318,6 +323,14 @@ struct full_engine {
         if(!layers.empty() && layers[0]->single_layout) {
             const std::string scratch=std::getenv("MOE_SHARED_SCRATCH")?std::getenv("MOE_SHARED_SCRATCH"):"private";
             require(scratch=="private" || scratch=="common","unknown shared scratch mode");
+            const std::string policy=std::getenv("MOE_SHARED_ARENA")?std::getenv("MOE_SHARED_ARENA"):"private";
+            require(policy=="private" || policy=="pooled","unknown shared arena mode");
+            const bool pooled=policy=="pooled";
+            require(!pooled || !std::getenv("MOE_DECODE_SHARED_LAUNCH"),"pooled arena requires the synchronous layer dispatcher");
+            size_t pool_capacity=0,alignment=128;
+            for(auto * dev:std::array<device *,3>{devs[0],devs[1],devs[2]}) {
+                alignment=std::max(alignment,ggml_backend_buft_get_alignment(ggml_backend_dev_buffer_type(dev->dev)));
+            }
             size_t shared_capacity=0;
             const std::string dispatch=std::getenv("MOE_SHARED_DISPATCH")?std::getenv("MOE_SHARED_DISPATCH"):"async";
             require(dispatch=="async" || dispatch=="pool","unknown shared branch dispatch");
@@ -342,8 +355,27 @@ struct full_engine {
                 }
                 capacities[b]=std::max(capacities[b],bytes);
             } }
+            if(pooled) {
+                for(auto & l:layers) {
+                    auto & exec=*l->single_layout;
+                    // Across all three concurrent branches there are only 4N
+                    // routed pairs and one shared expert, independent of owner.
+                    size_t bytes=3*(1024*1024+alignment)+exec.routed_budget(size_t(4*l->nt));
+                    if(scratch=="private") { bytes+=exec.shared_budget(l->nt); }
+                    if(exec.npu_gather && l->resident_width[1] && l->nt>1) {
+                        bytes+=size_t(4*l->nt)*sizeof(int32_t);
+                        if(scratch=="common" || l->resident.shared[0] || l->resident.shared[2]) {
+                            bytes+=size_t(l->nt)*2048*sizeof(float);
+                        }
+                    }
+                    pool_capacity=std::max(pool_capacity,shared_activation_buffer::align(bytes,alignment));
+                    exec.pooled_arena=true; exec.arena_alignment=alignment;
+                }
+                arenas[0]=std::make_shared<shared_activation_buffer>(*devs[1],pool_capacity);
+            }
             for(int b=0;b<3;++b) {
-                arenas[b]=std::make_shared<shared_activation_buffer>(*devs[b],capacities[b]);
+                arenas[b]=pooled?arenas[0]:std::make_shared<shared_activation_buffer>(*devs[b],capacities[b]);
+                if(pooled) { arenas[b]->view(*devs[b]); }
                 for(auto & l:layers) { l->single_layout->arenas[b]=arenas[b]; }
             }
             if(scratch=="common") {
@@ -955,8 +987,9 @@ int main(int argc,char ** argv) {
             }
         }
         if(custom) {
-            report["activation_arena_bytes"]=json::array();
-            for(auto & arena:engine.arenas) { report["activation_arena_bytes"].push_back(arena?arena->desc.size:0); }
+            report["activation_arena_bytes"]=engine.physical_arena_sizes();
+            report["activation_arena_accounting"]="unique physical backings; backend aliases counted once";
+            report["activation_arena_policy"]=engine.layers[0]->single_layout && engine.layers[0]->single_layout->pooled_arena?"pooled":"private";
         }
         std::vector<double> times; std::vector<float> logits,paired_reference;
         if(runtime_state.enabled) {
@@ -1221,8 +1254,7 @@ int main(int argc,char ** argv) {
         } } }
         report["expert_activation_buffer_bytes"]=activation_bytes;
         report["expert_activation_graph_bytes"]=logical_activation_bytes;
-        report["arena_capacity_bytes"]=json::array();
-        for(auto & arena:engine.arenas) { report["arena_capacity_bytes"].push_back(arena?arena->desc.size:0); }
+        report["arena_capacity_bytes"]=engine.physical_arena_sizes();
         report["shared_scratch_capacity_bytes"]=engine.shared_scratch?engine.shared_scratch->desc.size:0;
         report["shared_scratch_physical_backings"]=engine.shared_scratch?1:0;
         std::ifstream status("/proc/self/status"); report["process_status"]=std::string((std::istreambuf_iterator<char>(status)),{});

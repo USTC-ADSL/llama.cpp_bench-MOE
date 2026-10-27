@@ -139,12 +139,12 @@ struct shared_activation_buffer {
         }
         return buffer.get();
     }
-    void bind_layout(device & dev,const shared_activation_layout & layout) {
-        require(layout.bytes<=desc.size,"partitioned activation capacity exceeded");
+    void bind_layout(device & dev,const shared_activation_layout & layout,size_t base_offset=0) {
+        require(base_offset<=desc.size && layout.bytes<=desc.size-base_offset,"partitioned activation capacity exceeded");
         auto buffer=view(dev);
         for(const auto & slot:layout.slots) {
             require(!slot.tensor->data,"activation root bound twice");
-            require(ggml_backend_tensor_alloc(buffer,slot.tensor,static_cast<uint8_t *>(desc.host_ptr)+slot.offset)==GGML_STATUS_SUCCESS,
+            require(ggml_backend_tensor_alloc(buffer,slot.tensor,static_cast<uint8_t *>(desc.host_ptr)+base_offset+slot.offset)==GGML_STATUS_SUCCESS,
                     "partitioned activation allocation failed");
         }
     }
