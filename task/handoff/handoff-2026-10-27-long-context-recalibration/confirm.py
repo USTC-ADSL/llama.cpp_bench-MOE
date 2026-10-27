@@ -17,11 +17,11 @@ def main():
     if freeze.exists():
         assert json.loads(freeze.read_text())['model_sha256']==digest
     else:
-        freeze.write_text(json.dumps({'model_sha256':digest,'model':str(model),'tokens':[2048,4096],
+        freeze.write_text(json.dumps({'model_sha256':digest,'model':str(model),'tokens':[a.tokens],
             'sequence':{'wetland':['npu','old','new','new','old','npu'],
                         'foundry':['new','npu','old','old','npu','new']},
             'warmups':2,'reps':6,'interval_seconds':30,
-            'note':'Freeze before evaluation; no model edits using wetland/foundry results'},indent=2)+'\n')
+            'note':'Freeze before evaluation; no model edits using wetland/foundry results. 4096 full-model calibration rebooted device; no 4096 evaluation in this cohort. Context scales measured only at 1024/2048.'},indent=2)+'\n')
     sequence=[(prompt,policy) for prompt,policies in [('wetland',['npu','old','new','new','old','npu']),
         ('foundry',['new','npu','old','old','npu','new'])] for policy in policies]
     for index,(prompt,policy) in enumerate(sequence,1):

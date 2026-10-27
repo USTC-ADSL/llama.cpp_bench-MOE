@@ -615,5 +615,366 @@
       }
     },
     "boot_after": "f3665dc6-f63f-4aec-8777-8fd2ef58f997"
+  },
+  {
+    "tag": "technical-context-2048",
+    "kind": "custom",
+    "tokens": 2048,
+    "prompt": "technical",
+    "policy": "new",
+    "command": [
+      "/home/miog/miniconda3/bin/python3",
+      "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/tests/run-fullmodel-oracle.py",
+      "--mode",
+      "custom",
+      "--tokens",
+      "2048",
+      "--reps",
+      "4",
+      "--tag",
+      "technical-context-2048",
+      "--remote-dir",
+      "/data/local/tmp/llama-long-calibration-20261027",
+      "--output-dir",
+      "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-10-27-long-context-recalibration/evidence",
+      "--prompt-file",
+      "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-10-27-long-context-recalibration/inputs/technical-long.txt",
+      "--hexagon-timing",
+      "--prefill-chunk",
+      "2048",
+      "--plan-file",
+      "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-10-27-long-context-recalibration/inputs/resident-plan.json",
+      "--route-model",
+      "task/handoff/handoff-2026-10-27-long-context-recalibration/runtime-isolated.json",
+      "--transfer-placement",
+      "--shared-weights",
+      "cpu4x8",
+      "--shared-reduce",
+      "neon",
+      "--shared-activations",
+      "--direct-callback-io",
+      "--activation-arena",
+      "--activation-lifetimes",
+      "--fused-host-reduce",
+      "--overlap-gather",
+      "--shared-gather",
+      "htp",
+      "--shared-fused-gather",
+      "--shared-arena",
+      "pooled"
+    ],
+    "start": 1793111620.8541522,
+    "prompt_sha256": "38212715085dded3705bad2a854a76da8efd86527ed5b2c5b282d61caaf44007",
+    "snapshot_before_status": {
+      "boot": {
+        "exit": 0,
+        "file": "technical-context-2048-before-boot.txt.gz"
+      },
+      "memory": {
+        "exit": 1,
+        "file": "technical-context-2048-before-memory.txt.gz"
+      },
+      "dmesg": {
+        "exit": 0,
+        "file": "technical-context-2048-before-dmesg.txt.gz"
+      },
+      "logcat": {
+        "exit": 0,
+        "file": "technical-context-2048-before-logcat.txt.gz"
+      }
+    },
+    "route_model_sha256": "9a6b11b7e1ed787e8cc930d2b59fed13e02a9e7dfbeaafbcb95460c42d4b1786",
+    "exit": 0,
+    "end": 1793111656.91756,
+    "concurrent_inference": [],
+    "snapshot_after_status": {
+      "boot": {
+        "exit": 0,
+        "file": "technical-context-2048-after-boot.txt.gz"
+      },
+      "memory": {
+        "exit": 1,
+        "file": "technical-context-2048-after-memory.txt.gz"
+      },
+      "dmesg": {
+        "exit": 0,
+        "file": "technical-context-2048-after-dmesg.txt.gz"
+      },
+      "logcat": {
+        "exit": 0,
+        "file": "technical-context-2048-after-logcat.txt.gz"
+      }
+    },
+    "boot_after": "f3665dc6-f63f-4aec-8777-8fd2ef58f997"
+  },
+  {
+    "tag": "technical-context-4096",
+    "kind": "custom",
+    "tokens": 4096,
+    "prompt": "technical",
+    "policy": "new",
+    "exit": 255,
+    "boot_before": "f3665dc6-f63f-4aec-8777-8fd2ef58f997",
+    "boot_after": null,
+    "recovered_boot_id": "27fd07ca-ca1f-4134-8c0a-1e1a8ce46c6d",
+    "concurrent_inference": [],
+    "route_model_sha256": "9a6b11b7e1ed787e8cc930d2b59fed13e02a9e7dfbeaafbcb95460c42d4b1786",
+    "recovery_note": "driver failed after ADB disconnect before recording run; recovered manifest exit 255, no result; after snapshots failed; later boot ID changed"
+  },
+  {
+    "tag": "technical-calibrated-2048",
+    "kind": "custom",
+    "tokens": 2048,
+    "prompt": "technical",
+    "policy": "new",
+    "command": [
+      "/home/miog/miniconda3/bin/python3",
+      "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/tests/run-fullmodel-oracle.py",
+      "--mode",
+      "custom",
+      "--tokens",
+      "2048",
+      "--reps",
+      "4",
+      "--tag",
+      "technical-calibrated-2048",
+      "--remote-dir",
+      "/data/local/tmp/llama-long-calibration-20261027",
+      "--output-dir",
+      "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-10-27-long-context-recalibration/evidence",
+      "--prompt-file",
+      "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-10-27-long-context-recalibration/inputs/technical-long.txt",
+      "--hexagon-timing",
+      "--prefill-chunk",
+      "2048",
+      "--plan-file",
+      "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-10-27-long-context-recalibration/inputs/resident-plan.json",
+      "--route-model",
+      "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-10-27-long-context-recalibration/runtime-calibrated.json",
+      "--transfer-placement",
+      "--shared-weights",
+      "cpu4x8",
+      "--shared-reduce",
+      "neon",
+      "--shared-activations",
+      "--direct-callback-io",
+      "--activation-arena",
+      "--activation-lifetimes",
+      "--fused-host-reduce",
+      "--overlap-gather",
+      "--shared-gather",
+      "htp",
+      "--shared-fused-gather",
+      "--shared-arena",
+      "pooled"
+    ],
+    "start": 1793111960.1235778,
+    "prompt_sha256": "38212715085dded3705bad2a854a76da8efd86527ed5b2c5b282d61caaf44007",
+    "snapshot_before_status": {
+      "boot": {
+        "exit": 0,
+        "file": "technical-calibrated-2048-before-boot.txt.gz"
+      },
+      "memory": {
+        "exit": 1,
+        "file": "technical-calibrated-2048-before-memory.txt.gz"
+      },
+      "dmesg": {
+        "exit": 0,
+        "file": "technical-calibrated-2048-before-dmesg.txt.gz"
+      },
+      "logcat": {
+        "exit": 0,
+        "file": "technical-calibrated-2048-before-logcat.txt.gz"
+      }
+    },
+    "boot_before": "27fd07ca-ca1f-4134-8c0a-1e1a8ce46c6d",
+    "route_model_sha256": "11bc3f17cf2aeb10f73b95de8619d91c7be449ade84fee739b9a189892a7a02b",
+    "exit": 0,
+    "end": 1793111996.7443008,
+    "concurrent_inference": [],
+    "snapshot_after_status": {
+      "boot": {
+        "exit": 0,
+        "file": "technical-calibrated-2048-after-boot.txt.gz"
+      },
+      "memory": {
+        "exit": 1,
+        "file": "technical-calibrated-2048-after-memory.txt.gz"
+      },
+      "dmesg": {
+        "exit": 0,
+        "file": "technical-calibrated-2048-after-dmesg.txt.gz"
+      },
+      "logcat": {
+        "exit": 0,
+        "file": "technical-calibrated-2048-after-logcat.txt.gz"
+      }
+    },
+    "boot_after": "27fd07ca-ca1f-4134-8c0a-1e1a8ce46c6d",
+    "boot_after_status": 0
+  },
+  {
+    "tag": "eval-n2048-01-wetland-npu",
+    "kind": "npu",
+    "tokens": 2048,
+    "prompt": "wetland",
+    "policy": "npu",
+    "command": [
+      "/home/miog/miniconda3/bin/python3",
+      "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/tests/run-fullmodel-oracle.py",
+      "--mode",
+      "npu",
+      "--tokens",
+      "2048",
+      "--reps",
+      "6",
+      "--tag",
+      "eval-n2048-01-wetland-npu",
+      "--remote-dir",
+      "/data/local/tmp/llama-long-calibration-20261027",
+      "--output-dir",
+      "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-10-27-long-context-recalibration/evidence",
+      "--prompt-file",
+      "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-10-21-shared-weight-4k/inputs/wetland-4k.txt",
+      "--hexagon-timing"
+    ],
+    "start": 1793112117.2490485,
+    "prompt_sha256": "045c63c680da721ef78d81742685a41f5c82996b68d0294492c4457cdec72629",
+    "snapshot_before_status": {
+      "boot": {
+        "exit": 0,
+        "file": "eval-n2048-01-wetland-npu-before-boot.txt.gz"
+      },
+      "memory": {
+        "exit": 1,
+        "file": "eval-n2048-01-wetland-npu-before-memory.txt.gz"
+      },
+      "dmesg": {
+        "exit": 0,
+        "file": "eval-n2048-01-wetland-npu-before-dmesg.txt.gz"
+      },
+      "logcat": {
+        "exit": 0,
+        "file": "eval-n2048-01-wetland-npu-before-logcat.txt.gz"
+      }
+    },
+    "boot_before": "27fd07ca-ca1f-4134-8c0a-1e1a8ce46c6d",
+    "exit": 0,
+    "end": 1793112153.8713953,
+    "concurrent_inference": [],
+    "snapshot_after_status": {
+      "boot": {
+        "exit": 0,
+        "file": "eval-n2048-01-wetland-npu-after-boot.txt.gz"
+      },
+      "memory": {
+        "exit": 1,
+        "file": "eval-n2048-01-wetland-npu-after-memory.txt.gz"
+      },
+      "dmesg": {
+        "exit": 0,
+        "file": "eval-n2048-01-wetland-npu-after-dmesg.txt.gz"
+      },
+      "logcat": {
+        "exit": 0,
+        "file": "eval-n2048-01-wetland-npu-after-logcat.txt.gz"
+      }
+    },
+    "boot_after": "27fd07ca-ca1f-4134-8c0a-1e1a8ce46c6d",
+    "boot_after_status": 0
+  },
+  {
+    "tag": "eval-n2048-02-wetland-old",
+    "kind": "custom",
+    "tokens": 2048,
+    "prompt": "wetland",
+    "policy": "old",
+    "command": [
+      "/home/miog/miniconda3/bin/python3",
+      "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/tests/run-fullmodel-oracle.py",
+      "--mode",
+      "custom",
+      "--tokens",
+      "2048",
+      "--reps",
+      "6",
+      "--tag",
+      "eval-n2048-02-wetland-old",
+      "--remote-dir",
+      "/data/local/tmp/llama-long-calibration-20261027",
+      "--output-dir",
+      "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-10-27-long-context-recalibration/evidence",
+      "--prompt-file",
+      "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-10-21-shared-weight-4k/inputs/wetland-4k.txt",
+      "--hexagon-timing",
+      "--prefill-chunk",
+      "2048",
+      "--plan-file",
+      "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-10-27-long-context-recalibration/inputs/resident-plan.json",
+      "--route-model",
+      "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-10-21-cost-placement/runtime-fast-cpu150.json",
+      "--transfer-placement",
+      "--shared-weights",
+      "cpu4x8",
+      "--shared-reduce",
+      "neon",
+      "--shared-activations",
+      "--direct-callback-io",
+      "--activation-arena",
+      "--activation-lifetimes",
+      "--fused-host-reduce",
+      "--overlap-gather",
+      "--shared-gather",
+      "htp",
+      "--shared-fused-gather",
+      "--shared-arena",
+      "pooled"
+    ],
+    "start": 1793112192.8829632,
+    "prompt_sha256": "045c63c680da721ef78d81742685a41f5c82996b68d0294492c4457cdec72629",
+    "snapshot_before_status": {
+      "boot": {
+        "exit": 0,
+        "file": "eval-n2048-02-wetland-old-before-boot.txt.gz"
+      },
+      "memory": {
+        "exit": 1,
+        "file": "eval-n2048-02-wetland-old-before-memory.txt.gz"
+      },
+      "dmesg": {
+        "exit": 0,
+        "file": "eval-n2048-02-wetland-old-before-dmesg.txt.gz"
+      },
+      "logcat": {
+        "exit": 0,
+        "file": "eval-n2048-02-wetland-old-before-logcat.txt.gz"
+      }
+    },
+    "boot_before": "27fd07ca-ca1f-4134-8c0a-1e1a8ce46c6d",
+    "route_model_sha256": "da9a498c53e81febfa8302f145e2490d10d695b24b06292c917176ef20b0398f",
+    "exit": 0,
+    "end": 1793112234.4725356,
+    "concurrent_inference": [],
+    "snapshot_after_status": {
+      "boot": {
+        "exit": 0,
+        "file": "eval-n2048-02-wetland-old-after-boot.txt.gz"
+      },
+      "memory": {
+        "exit": 1,
+        "file": "eval-n2048-02-wetland-old-after-memory.txt.gz"
+      },
+      "dmesg": {
+        "exit": 0,
+        "file": "eval-n2048-02-wetland-old-after-dmesg.txt.gz"
+      },
+      "logcat": {
+        "exit": 0,
+        "file": "eval-n2048-02-wetland-old-after-logcat.txt.gz"
+      }
+    },
+    "boot_after": "27fd07ca-ca1f-4134-8c0a-1e1a8ce46c6d",
+    "boot_after_status": 0
   }
 ]

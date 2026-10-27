@@ -63,7 +63,13 @@ def check():
     assert adb('get-state').stdout.strip() == 'device'
     busy=adb('shell', 'pidof fullmodel-oracle llama-bench', check=False)
     assert not busy.stdout.strip(), f'Existing inference process: {busy.stdout.strip()!r}, status {busy.returncode}'
-    frozen = base.check_frozen()
+    frozen = json.loads((TASK/'frozen.json').read_text())
+    epoch = TASK/'execution-epoch.json'
+    expected_boot = json.loads(epoch.read_text())['boot_id'] if epoch.exists() else frozen['boot_id']
+    assert adb('shell','cat /proc/sys/kernel/random/boot_id').stdout.strip()==expected_boot
+    for rel,digest in frozen['hashes'].items():
+        assert base.sha(ROOT/rel)==digest,rel
+    frozen = {**frozen, 'boot_id':expected_boot}
     assert adb('shell', f"stat -c '%n %s %Y' {base.MODEL}").stdout == frozen['model_stat']
     for rel, digest in frozen.get('source_hashes', {}).items():
         assert base.sha(ROOT / rel) == digest, rel
@@ -97,7 +103,7 @@ def execute(tag, kind, nt, extra, prompt='technical', reps=5, policy=None):
     before_status=snapshot(tag + '-before')
     record = {'tag':tag, 'kind':kind, 'tokens':nt, 'prompt':prompt, 'policy':policy,
               'command':command, 'start':time.time(), 'prompt_sha256':base.sha(prompt_path),
-              'snapshot_before_status':before_status}
+              'snapshot_before_status':before_status, 'boot_before':frozen['boot_id']}
     if '--route-model' in extra:
         path = Path(extra[extra.index('--route-model')+1])
         record['route_model_sha256'] = base.sha(path)
@@ -117,7 +123,9 @@ def execute(tag, kind, nt, extra, prompt='technical', reps=5, policy=None):
             except subprocess.TimeoutExpired: pass
     record.update(exit=proc.returncode, end=time.time(),concurrent_inference=concurrent)
     record['snapshot_after_status']=snapshot(tag+'-after')
-    record['boot_after'] = adb('shell','cat /proc/sys/kernel/random/boot_id').stdout.strip()
+    boot = observe('cat /proc/sys/kernel/random/boot_id')
+    record['boot_after'] = boot['text'].strip() if boot['exit']==0 else None
+    record['boot_after_status'] = boot['exit']
     path = TASK / 'runs.json'; runs = json.loads(path.read_text()) if path.exists() else []
     runs.append(record); path.write_text(json.dumps(runs,indent=2)+'\n')
     print('END',tag,'exit',proc.returncode,'seconds',record['end']-record['start'],flush=True)

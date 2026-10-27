@@ -26,7 +26,9 @@ def digest(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 def isolated(validation_profile=None):
     rows=[];sources={}
     for nt in [1024,1536,2048,3072,4096]:
-        p=Path(validation_profile) if nt==1536 and validation_profile else TASK/f'evidence/technical-{nt}-profile.json'
+        p=(Path(validation_profile).resolve() if validation_profile else TASK/'evidence/technical-1536-profile-clean.json') if nt==1536 else TASK/f'evidence/technical-{nt}-profile.json'
+        run=next(r for r in json.loads((TASK/'runs.json').read_text()) if r['tag']==p.stem)
+        assert run['exit']==0 and not run.get('concurrent_inference') and not run.get('delayed_after_snapshot')
         d=json.loads(p.read_text());sources[str(p.relative_to(ROOT))]=digest(p)
         assert d['tokens']==nt and len(d['layers'])==3
         for layer in d['layers']:
@@ -81,6 +83,7 @@ def context(tags,output):
         p=TASK/f'evidence/{tag}.json';d=json.loads(p.read_text())
         run=next(r for r in json.loads((TASK/'runs.json').read_text()) if r['tag']==tag)
         assert run['prompt']=='technical' and run['route_model_sha256']==digest(model_path)
+        assert run['exit']==0 and not run.get('concurrent_inference') and not run.get('delayed_after_snapshot')
         nt=d['tokens'];ratios=[[] for _ in range(3)]
         for sample in d['samples']:
             for layer in sample['layers']:
@@ -89,11 +92,12 @@ def context(tags,output):
                     x=features(nt,layer['expert_token_counts'],layer['scheduling']['owner'],layer['scheduling']['shared'],b)
                     predicted=float(x@coefficients[b]);observed=layer['backend_gather_us'][b]+layer['backend_phases_us'][b][1]
                     if predicted>0 and observed>0:ratios[b].append(observed/predicted)
+        assert all(ratios), 'Each backend must have active observations'
         factors=[float(np.median(v)) for v in ratios]
         assert all(.25<f<4 for f in factors),factors
         knots.append({'tokens':nt,'backends':factors})
         sources[str(p.relative_to(ROOT))]=digest(p)
-        diagnostics.append({'tag':tag,'tokens':nt,'factors':factors,
+        diagnostics.append({'tag':tag,'tokens':nt,'factors':factors,'backend_observations':[len(v) for v in ratios],
             'major_faults':[s['major_faults'] for s in d['samples']],
             'ratio_p10': [float(np.percentile(v,10)) for v in ratios],
             'ratio_p90': [float(np.percentile(v,90)) for v in ratios]})

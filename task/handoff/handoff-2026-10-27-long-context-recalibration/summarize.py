@@ -20,9 +20,11 @@ def main():
     for run in runs:
         tag=run['tag'];p=OUT/(tag+'.json')
         row={k:run[k] for k in ('tag','kind','tokens','prompt','policy','exit')}
+        row['concurrent_inference']=run.get('concurrent_inference',[])
         statuses=[json.loads((OUT/f'{tag}-{phase}-snapshot.json').read_text()) for phase in ('before','after')]
         row['snapshot_commands_complete']=all(v['exit']==0 for status in statuses for v in status.values())
         row['delayed_after_snapshot']=run.get('delayed_after_snapshot',False)
+        row['event_logs_complete']=all(status[k]['exit']==0 for status in statuses for k in ('boot','dmesg','logcat'))
         matched=[]
         for kind in ('dmesg','logcat'):
             def read(phase):return gzip.decompress((OUT/f'{tag}-{phase}-{kind}.txt.gz').read_bytes()).decode().splitlines()
@@ -40,10 +42,11 @@ def main():
             min_available_mib=min((v['MemAvailable'] for v in observations),default=0)/1024 if observations else None,
             max_process_swap_mib=max((v.get('VmSwap',0) for v in observations),default=0)/1024 if observations else None,
             monitoring_gaps=gaps)
+        row['eligible_for_comparison']=not row['concurrent_inference'] and not gaps and not row['delayed_after_snapshot'] and row['event_logs_complete']
         if run['exit']!=0 or not p.exists():
             row['complete']=False;rows.append(row);continue
         d=json.loads(p.read_text());manifest=json.loads((OUT/(tag+'.run.json')).read_text())
-        assert run['boot_after']==frozen['boot_id'] and manifest['exit']==0
+        assert run['boot_after']==run.get('boot_before',frozen['boot_id']) and manifest['exit']==0
         assert d['tokens']==run['tokens'] and manifest['model']==frozen['model_stat']
         hashes={Path(s.split()[-1]).name:s.split()[0] for s in manifest['hashes'].splitlines()}
         for name,digest in frozen['hashes'].items():
@@ -83,7 +86,7 @@ def main():
     comparisons=[]
     for nt in (2048,4096):
         for prompt in ('wetland','foundry'):
-            group=[r for r in rows if r['tag'].startswith('eval-') and r['tokens']==nt and r['prompt']==prompt and r['complete']]
+            group=[r for r in rows if r['tag'].startswith('eval-') and r['tokens']==nt and r['prompt']==prompt and r['complete'] and r['eligible_for_comparison']]
             if not group:continue
             by_policy={}
             for policy in ('old','new','npu'):
