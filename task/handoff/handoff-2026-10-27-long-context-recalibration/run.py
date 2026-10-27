@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Device calibration and frozen comparisons; refuse overwrites and failed-run retries."""
 import argparse
+import gzip
 import hashlib
 import importlib.util
 import json
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -23,13 +25,44 @@ base = module('base', ROOT / 'task/handoff/handoff-2026-10-27-pooled-activation/
 base.TASK, base.OUT, base.REMOTE = TASK, OUT, REMOTE
 base.observer.TASK, base.observer.OUT, base.observer.REMOTE = TASK, OUT, REMOTE
 placement = module('old_profile', PRIOR / 'profile.py').placement
-adb = base.adb
+def adb(*args, check=True):
+    # Full logcat currently exposes >40 MiB across buffers. Keep the complete
+    # evidence, but allow its read-only dump longer than short control commands.
+    timeout = 120 if len(args)>1 and args[0]=='shell' and args[1].startswith('logcat ') else 30
+    return subprocess.run(['adb','-s','fd8657d6',*args],capture_output=True,text=True,
+        errors='backslashreplace',check=check,timeout=timeout)
+base.adb = base.observer.adb = adb
 LAYERS = [0, 12, 22]
+SAMPLE = base.observer.SAMPLE.replace('cat /proc/$p/stat;', 'cat /proc/$p/stat; echo COMMAND:$p; cat /proc/$p/cmdline; echo;')
+
+
+def observe(command):
+    try:
+        r=adb('shell',command,check=False)
+        return {'exit':r.returncode,'text':r.stdout,'stderr':r.stderr}
+    except subprocess.TimeoutExpired as error:
+        def decode(value):return value.decode(errors='backslashreplace') if isinstance(value,bytes) else value or ''
+        return {'exit':None,'text':decode(error.stdout),'stderr':decode(error.stderr),
+                'error':'diagnostic_timeout','timeout_seconds':error.timeout}
+
+
+def snapshot(tag):
+    status={}
+    for name,command in {'boot':'cat /proc/sys/kernel/random/boot_id; cat /proc/uptime',
+        'memory':'cat /proc/meminfo; cat /proc/vmstat; cat /proc/pressure/memory',
+        'dmesg':'su -c dmesg','logcat':'logcat -b all -d -v epoch'}.items():
+        r=observe(command);path=OUT/f'{tag}-{name}.txt.gz';assert not path.exists()
+        path.write_bytes(gzip.compress((r['text']+r['stderr']).encode(),mtime=0))
+        status[name]={k:v for k,v in r.items() if k not in ('text','stderr')};status[name]['file']=path.name
+        if 'error' in r:print('DIAGNOSTIC GAP',tag,name,r['error'],flush=True)
+    (OUT/f'{tag}-snapshot.json').write_text(json.dumps(status,indent=2)+'\n')
+    return status
 
 
 def check():
     assert adb('get-state').stdout.strip() == 'device'
-    assert not adb('shell', 'pidof fullmodel-oracle llama-bench', check=False).stdout.strip()
+    busy=adb('shell', 'pidof fullmodel-oracle llama-bench', check=False)
+    assert not busy.stdout.strip(), f'Existing inference process: {busy.stdout.strip()!r}, status {busy.returncode}'
     frozen = base.check_frozen()
     assert adb('shell', f"stat -c '%n %s %Y' {base.MODEL}").stdout == frozen['model_stat']
     for rel, digest in frozen.get('source_hashes', {}).items():
@@ -61,32 +94,40 @@ def execute(tag, kind, nt, extra, prompt='technical', reps=5, policy=None):
     command = [sys.executable, str(ROOT / 'tests/run-fullmodel-oracle.py'), '--mode', kind,
         '--tokens', str(nt), '--reps', str(reps), '--tag', tag, '--remote-dir', REMOTE,
         '--output-dir', str(OUT), '--prompt-file', str(prompt_path)] + extra
-    base.observer.snapshot(tag + '-before')
+    before_status=snapshot(tag + '-before')
     record = {'tag':tag, 'kind':kind, 'tokens':nt, 'prompt':prompt, 'policy':policy,
-              'command':command, 'start':time.time(), 'prompt_sha256':base.sha(prompt_path)}
+              'command':command, 'start':time.time(), 'prompt_sha256':base.sha(prompt_path),
+              'snapshot_before_status':before_status}
     if '--route-model' in extra:
         path = Path(extra[extra.index('--route-model')+1])
         record['route_model_sha256'] = base.sha(path)
     print('START', tag, flush=True)
+    concurrent=[]
     with (OUT / (tag+'-driver.log')).open('w') as log, (OUT / (tag+'-memory.jsonl')).open('w') as memory:
         proc = subprocess.Popen(command, cwd=ROOT, stdout=log, stderr=subprocess.STDOUT)
         while proc.poll() is None:
-            result = adb('shell', base.observer.SAMPLE, check=False)
-            memory.write(json.dumps({'time':time.time(), 'exit':result.returncode, 'text':result.stdout, 'stderr':result.stderr})+'\n'); memory.flush()
+            result = observe(SAMPLE)
+            memory.write(json.dumps({'time':time.time(), **result})+'\n'); memory.flush()
+            if 'error' in result:print('DIAGNOSTIC GAP',tag,'memory',result['error'],flush=True)
+            pids=re.findall(r'^PROCESS:(\d+)',result['text'],re.M)
+            if len(pids)>1:
+                concurrent.append({'time':time.time(),'pids':pids})
+                print('CONCURRENT INFERENCE',tag,pids,'result will be excluded from calibration/comparison',flush=True)
             try: proc.wait(timeout=5)
             except subprocess.TimeoutExpired: pass
-    record.update(exit=proc.returncode, end=time.time())
-    base.observer.snapshot(tag+'-after')
+    record.update(exit=proc.returncode, end=time.time(),concurrent_inference=concurrent)
+    record['snapshot_after_status']=snapshot(tag+'-after')
     record['boot_after'] = adb('shell','cat /proc/sys/kernel/random/boot_id').stdout.strip()
     path = TASK / 'runs.json'; runs = json.loads(path.read_text()) if path.exists() else []
     runs.append(record); path.write_text(json.dumps(runs,indent=2)+'\n')
     print('END',tag,'exit',proc.returncode,'seconds',record['end']-record['start'],flush=True)
     assert proc.returncode == 0 and record['boot_after'] == frozen['boot_id'], 'Failure preserved; do not retry automatically'
+    assert not concurrent, 'Concurrent inference contaminated run; evidence retained, no automatic retry'
     return json.loads((OUT / (tag+'.json')).read_text())
 
 
-def calibration():
-    for nt in [1024,2048,4096,1536,3072]:
+def calibration(lengths):
+    for nt in lengths:
         cap = f'technical-{nt}-capture'
         data = execute(cap, 'capture', nt, ['--capture-layers', ','.join(map(str,LAYERS))], reps=1)
         assert len(data['token_ids']) == nt and len(data['layers']) == 24
@@ -152,9 +193,10 @@ if __name__ == '__main__':
     p=argparse.ArgumentParser();p.add_argument('stage',choices=['deploy','calibration','fullmodel'])
     p.add_argument('--tokens',type=int,default=2048);p.add_argument('--prompt',choices=['technical','wetland','foundry'],default='technical')
     p.add_argument('--policy',choices=['old','new','npu'],default='new');p.add_argument('--tag');p.add_argument('--reps',type=int,default=6)
+    p.add_argument('--lengths',type=int,nargs='+',choices=[1024,1536,2048,3072,4096],default=[1024,2048,4096,1536,3072])
     p.add_argument('--model',default=str(TASK/'runtime-calibrated.json'));a=p.parse_args()
     if a.stage=='deploy':deploy()
-    elif a.stage=='calibration':calibration()
+    elif a.stage=='calibration':calibration(a.lengths)
     else:
         assert a.tag
         fullmodel(a.tokens,a.prompt,a.policy,a.tag,a.reps,a.model)

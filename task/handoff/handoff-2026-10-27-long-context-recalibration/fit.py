@@ -23,10 +23,11 @@ def features(nt,counts,owners,shared,b):
 def digest(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 
 
-def isolated():
+def isolated(validation_profile=None):
     rows=[];sources={}
     for nt in [1024,1536,2048,3072,4096]:
-        p=TASK/f'evidence/technical-{nt}-profile.json';d=json.loads(p.read_text());sources[str(p.relative_to(ROOT))]=digest(p)
+        p=Path(validation_profile) if nt==1536 and validation_profile else TASK/f'evidence/technical-{nt}-profile.json'
+        d=json.loads(p.read_text());sources[str(p.relative_to(ROOT))]=digest(p)
         assert d['tokens']==nt and len(d['layers'])==3
         for layer in d['layers']:
             assert layer['tokens']==nt and sum(layer['counts'])==4*nt
@@ -45,7 +46,8 @@ def isolated():
         c=legacy.fit_nonnegative(np.array([r['x'] for r in train]),np.array([r['y'] for r in train]))
         coefficients.append(c.tolist())
         for label,selection in [('train',[r for r in rows if r['backend']==b and r['train']]),
-                ('held_out_lengths',[r for r in rows if r['backend']==b and r['nt'] in (1536,3072)]),
+                ('held_out_lengths',[r for r in rows if r['backend']==b and r['nt'] in (1536,3072) and r['layer'] in (0,12)]),
+                ('held_out_length_and_layer',[r for r in rows if r['backend']==b and r['nt'] in (1536,3072) and r['layer']==22]),
                 ('held_out_layer',[r for r in rows if r['backend']==b and r['layer']==22 and r['nt'] in (1024,2048,4096)])]:
             ratios=np.array([float(r['x']@c)/r['y'] for r in selection])
             metrics.append({'backend':b,'set':label,'rows':len(selection),'mape':float(np.mean(abs(ratios-1))),
@@ -104,8 +106,8 @@ def context(tags,output):
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('stage',choices=['isolated','context']);p.add_argument('--tags',nargs='+');p.add_argument('--output',default=str(TASK/'runtime-calibrated.json'));a=p.parse_args()
-    if a.stage=='isolated':isolated()
+    p=argparse.ArgumentParser();p.add_argument('stage',choices=['isolated','context']);p.add_argument('--tags',nargs='+');p.add_argument('--validation-profile');p.add_argument('--output',default=str(TASK/'runtime-calibrated.json'));a=p.parse_args()
+    if a.stage=='isolated':isolated(a.validation_profile)
     else:
         assert a.tags
         context(a.tags,a.output)

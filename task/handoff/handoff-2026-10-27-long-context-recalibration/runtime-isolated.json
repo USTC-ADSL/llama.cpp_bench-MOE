@@ -1,0 +1,263 @@
+{
+  "version": 1,
+  "backends": [
+    [
+      1843.5267862451112,
+      25300.264137865124,
+      0.0,
+      0.0,
+      2540.0046272567006,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      51506.79090048407,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      4984.080852676971,
+      1269.2247567223712,
+      4464.344593578142,
+      0.0,
+      1319.049774579972,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      3711.9741774326726,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      3213.542986889774,
+      1913.2370646528343,
+      3352.002772432112,
+      0.0,
+      9092.67388903954,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1180.670381802284,
+      16340.431136278243,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  ],
+  "host": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "algorithm": "shared_additive",
+  "search_budget": 2048,
+  "cpu_penalty": 1.0,
+  "calibration_tokens_range": [
+    1024,
+    4096
+  ],
+  "source_model": {
+    "features": [
+      "active_branch",
+      "active_experts",
+      "routed_pairs_over_128",
+      "tiles_32",
+      "shared_expert",
+      "shared_tokens_over_1024"
+    ],
+    "coefficients_us": [
+      [
+        1843.5267862451112,
+        0.0,
+        3162.5330172331405,
+        79.3751446017719,
+        0.0,
+        103013.58180096814
+      ],
+      [
+        4984.080852676971,
+        74.40574322630236,
+        158.6530945902964,
+        41.22030545562413,
+        0.0,
+        7423.948354865345
+      ],
+      [
+        3213.542986889774,
+        55.866712873868536,
+        239.1546330816043,
+        284.14605903248565,
+        1180.670381802284,
+        32680.862272556486
+      ]
+    ],
+    "sources": {
+      "task/handoff/handoff-2026-10-27-long-context-recalibration/evidence/technical-1024-profile.json": "63c7a91b6fdaf1570ef201dc893efef6428a2280a967ddc97e7c27d235f634b6",
+      "task/handoff/handoff-2026-10-27-long-context-recalibration/evidence/technical-1536-profile-clean.json": "8af8e9c2ec9675ef7f7cc693e33907514bdaa3fd5fcb614c1a23054be8bd2b44",
+      "task/handoff/handoff-2026-10-27-long-context-recalibration/evidence/technical-2048-profile.json": "381f0cfe6a48af5c4f948e20c902b1d6cc3ac98dd852ece5925fbd36ecd7ce14",
+      "task/handoff/handoff-2026-10-27-long-context-recalibration/evidence/technical-3072-profile.json": "dc25415538defa6b44e4796889beee139605c11af1540722e1fda4defe3975b5",
+      "task/handoff/handoff-2026-10-27-long-context-recalibration/evidence/technical-4096-profile.json": "d01c02e97c0f825fe964bbaef7fba578842ffd6bff42ae790589cf58bbf3efa7"
+    },
+    "training_lengths": [
+      1024,
+      2048,
+      4096
+    ],
+    "training_layers": [
+      0,
+      12
+    ],
+    "held_out_lengths": [
+      1536,
+      3072
+    ],
+    "held_out_layer": 22,
+    "validation": [
+      {
+        "backend": 0,
+        "set": "train",
+        "rows": 96,
+        "mape": 0.04474117650599549,
+        "median_predicted_over_measured": 1.0054480806899466,
+        "p95_ape": 0.1756695766274076
+      },
+      {
+        "backend": 0,
+        "set": "held_out_lengths",
+        "rows": 64,
+        "mape": 0.05197415999463295,
+        "median_predicted_over_measured": 1.0147677471499643,
+        "p95_ape": 0.23881771163948484
+      },
+      {
+        "backend": 0,
+        "set": "held_out_length_and_layer",
+        "rows": 32,
+        "mape": 0.045665194713352335,
+        "median_predicted_over_measured": 1.0117867153600348,
+        "p95_ape": 0.12264379373849668
+      },
+      {
+        "backend": 0,
+        "set": "held_out_layer",
+        "rows": 48,
+        "mape": 0.04174778235397394,
+        "median_predicted_over_measured": 1.0084369332754766,
+        "p95_ape": 0.10951447527042588
+      },
+      {
+        "backend": 1,
+        "set": "train",
+        "rows": 108,
+        "mape": 0.03526418392717422,
+        "median_predicted_over_measured": 1.0118557748054475,
+        "p95_ape": 0.09518264454916854
+      },
+      {
+        "backend": 1,
+        "set": "held_out_lengths",
+        "rows": 72,
+        "mape": 0.05600503194600689,
+        "median_predicted_over_measured": 0.9549973116647632,
+        "p95_ape": 0.1208852426631568
+      },
+      {
+        "backend": 1,
+        "set": "held_out_length_and_layer",
+        "rows": 36,
+        "mape": 0.054078278534173053,
+        "median_predicted_over_measured": 0.9551713508791496,
+        "p95_ape": 0.11813065270862855
+      },
+      {
+        "backend": 1,
+        "set": "held_out_layer",
+        "rows": 54,
+        "mape": 0.03816622186452813,
+        "median_predicted_over_measured": 1.0146100358582575,
+        "p95_ape": 0.09565206007003753
+      },
+      {
+        "backend": 2,
+        "set": "train",
+        "rows": 96,
+        "mape": 0.06159472751051288,
+        "median_predicted_over_measured": 1.0103624354236227,
+        "p95_ape": 0.1516933235053103
+      },
+      {
+        "backend": 2,
+        "set": "held_out_lengths",
+        "rows": 64,
+        "mape": 0.05213279008862594,
+        "median_predicted_over_measured": 1.0194861396709287,
+        "p95_ape": 0.1244551933952759
+      },
+      {
+        "backend": 2,
+        "set": "held_out_length_and_layer",
+        "rows": 32,
+        "mape": 0.050822153774403814,
+        "median_predicted_over_measured": 1.0255783338924678,
+        "p95_ape": 0.1278218554065585
+      },
+      {
+        "backend": 2,
+        "set": "held_out_layer",
+        "rows": 48,
+        "mape": 0.060751827886032124,
+        "median_predicted_over_measured": 0.9998566218041471,
+        "p95_ape": 0.16838720694312942
+      }
+    ],
+    "objective": "minimize max(concurrent host gather + backend compute); shared length included",
+    "cpu_penalty_note": "Fit measured CPU cost; no inherited 1.5 multiplier. Full-model correction is calibrated separately."
+  }
+}

@@ -1,0 +1,19 @@
+[
+  {
+    "stage": "technical-1536-capture",
+    "inference_launched": false,
+    "reason": "Full logcat -b all dump exceeded 30 s; adb device online, same boot, no model process; readable buffers exceed 40 MiB.",
+    "preserved_files": [
+      "evidence/prelaunch-logcat-timeout/technical-1536-capture-before-dmesg.txt.gz",
+      "evidence/prelaunch-logcat-timeout/technical-1536-capture-before-memory.txt.gz",
+      "evidence/prelaunch-logcat-timeout/technical-1536-capture-before-boot.txt.gz"
+    ],
+    "resolution": "Increase only logcat read timeout to 120 s; explicitly run unstarted lengths 1536 and 3072; retain original driver failure log."
+  },
+  {
+    "stage": "technical-1536-profile",
+    "inference_launched": false,
+    "reason": "pidof guard observed nonempty output before starting profile; original guard did not retain PID. Subsequent read-only check found no process; device boot unchanged. Origin not established.",
+    "resolution": "Do not repeat successful capture or any completed profile. Resume only not-yet-started 1536 profile and 3072 capture/profile. Guard now reports PID/status if it recurs."
+  }
+]
