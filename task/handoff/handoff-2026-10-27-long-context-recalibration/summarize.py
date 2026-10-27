@@ -69,11 +69,17 @@ def main():
             if run['kind']=='custom':
                 assert d['all_round_logits_bitwise_equal'] and d['activation_arena_policy']=='pooled'
                 row['arena_bytes']=sum(d['activation_arena_bytes'])+d['shared_scratch_capacity_bytes']
+                row['mean_ffn_components_ms']={k:st.mean(sum(l[k] for l in s['layers']) for s in d['samples'])/1000 for k in ('gather_us','expert_wall_us','combine_us')}
+                row['mean_remaining_ms']=st.mean(times)-sum(row['mean_ffn_components_ms'].values())
                 layers=[l for s in d['samples'] for l in s['layers'] if l['tokens']==d['tokens']]
                 pred=[[l['scheduling']['predicted_backend_us'][b]/1000 for b in range(3)] for l in layers]
                 obs=[[(l['backend_gather_us'][b]+l['backend_phases_us'][b][1])/1000 for b in range(3)] for l in layers]
                 row.update(predicted_branch_ms=[st.mean(v[b] for v in pred) for b in range(3)],
                     observed_branch_ms=[st.mean(v[b] for v in obs) for b in range(3)],
+                    branch_mape=[st.mean(abs(p[b]/o[b]-1) for p,o in zip(pred,obs) if o[b]>0) for b in range(3)],
+                    mean_routed_pairs=[st.mean(sum(n for n,owner in zip(l['expert_token_counts'],l['scheduling']['owner']) if owner==b) for l in layers) for b in range(3)],
+                    mean_search_ms_per_request=sum(l['scheduling']['decision_us'] for l in layers)/len(d['samples'])/1000,
+                    mean_expert_wall_ms_per_request=sum(l['expert_wall_us'] for l in layers)/len(d['samples'])/1000,
                     last_backend_counts=dict(collections.Counter(max(range(3),key=lambda b:l['intervals_us'][b][1]) for l in layers)))
                 for s in d['samples']:
                     for l in s['layers']:
@@ -96,7 +102,10 @@ def main():
                 by_policy[policy]={'processes':len(selected),'samples':len(times),
                     'median_ms':st.median(times),'process_medians_ms':[r['median_ms'] for r in selected],
                     'sample_range_ms':[min(times),max(times)],'kgsl_oom_lines':sum(r['kgsl_oom_lines'] for r in selected),
-                    'lmkd_kill_lines':sum(r['lmkd_kill_lines'] for r in selected)}
+                    'lmkd_kill_lines':sum(r['lmkd_kill_lines'] for r in selected),
+                    'timed_major_faults':sum(sum(r['major_faults']) for r in selected),
+                    'min_available_mib':min(r['min_available_mib'] for r in selected),
+                    'max_process_swap_mib':max(r['max_process_swap_mib'] for r in selected)}
                 assert len({r['token_ids_sha256'] for r in selected})==1
             comp={'tokens':nt,'prompt':prompt,'policies':by_policy,'complete':all(v.get('processes')==2 for v in by_policy.values()) and len(by_policy)==3}
             if all(p in by_policy for p in ('old','new','npu')):

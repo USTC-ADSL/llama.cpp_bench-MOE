@@ -274,6 +274,12 @@
       "token_ids_sha256": "e283e168b5ae0e60c35f7195966aec8b5960330f928504beae48082f17da9c72",
       "logits_sha256": "83b28ce3b53bcc84caf3e8623d3fe5eb9358417a34f4a68be144dfe5c9a58ae5",
       "arena_bytes": 233881984,
+      "mean_ffn_components_ms": {
+        "gather_us": 3.17056,
+        "expert_wall_us": 675.2663552500001,
+        "combine_us": 32.27332125
+      },
+      "mean_remaining_ms": 453.540258,
       "predicted_branch_ms": [
         20.705995910216362,
         20.846813958429266,
@@ -284,6 +290,18 @@
         22.764461619565218,
         21.292470510869567
       ],
+      "branch_mape": [
+        0.2827167381299613,
+        0.08207058635097268,
+        0.03140525548213742
+      ],
+      "mean_routed_pairs": [
+        678.6521739130435,
+        2047.4347826086957,
+        1369.9130434782608
+      ],
+      "mean_search_ms_per_request": 1.19540425,
+      "mean_expert_wall_ms_per_request": 674.331446,
       "last_backend_counts": {
         "0": 90,
         "2": 1,
@@ -325,6 +343,12 @@
       "token_ids_sha256": "e87d51bed4ebfb311838a7cb5abec469fe84843af616b12f910e7d8edab8957c",
       "logits_sha256": "904a855ab34dc1147f3607f7afb55ecfe5245e8f33975243c844ee9d09afd6f3",
       "arena_bytes": 464617856,
+      "mean_ffn_components_ms": {
+        "gather_us": 10.50864675,
+        "expert_wall_us": 935.2876435000001,
+        "combine_us": 67.49575474999999
+      },
+      "mean_remaining_ms": 1085.0678239999997,
       "predicted_branch_ms": [
         34.17877611986463,
         34.33680757277277,
@@ -335,6 +359,18 @@
         39.64556780434783,
         36.19691583695652
       ],
+      "branch_mape": [
+        0.08261853896073187,
+        0.13297146033384846,
+        0.05236310300564136
+      ],
+      "mean_routed_pairs": [
+        1177.4347826086957,
+        4386.869565217391,
+        2627.695652173913
+      ],
+      "mean_search_ms_per_request": 3.3489720000000003,
+      "mean_expert_wall_ms_per_request": 932.4565235,
       "last_backend_counts": {
         "2": 1,
         "1": 75,
@@ -400,6 +436,12 @@
       "token_ids_sha256": "e87d51bed4ebfb311838a7cb5abec469fe84843af616b12f910e7d8edab8957c",
       "logits_sha256": "36cd6b0a049ea60eb0cafeb8abb72fd02ea90e979ca4c7710758da4ed6ea7567",
       "arena_bytes": 464617856,
+      "mean_ffn_components_ms": {
+        "gather_us": 10.99445275,
+        "expert_wall_us": 907.6813147500001,
+        "combine_us": 67.56119925
+      },
+      "mean_remaining_ms": 1024.2217822499997,
       "predicted_branch_ms": [
         38.06821051985248,
         38.268232080691625,
@@ -410,11 +452,964 @@
         35.1344429673913,
         38.72092334782609
       ],
+      "branch_mape": [
+        0.02529749916223336,
+        0.09168089906136737,
+        0.021127956589694175
+      ],
+      "mean_routed_pairs": [
+        1243.0869565217392,
+        4128.173913043478,
+        2820.7391304347825
+      ],
+      "mean_search_ms_per_request": 3.42063825,
+      "mean_expert_wall_ms_per_request": 905.2501040000001,
       "last_backend_counts": {
         "2": 69,
         "0": 23
       }
+    },
+    {
+      "tag": "eval-n2048-01-wetland-npu",
+      "kind": "npu",
+      "tokens": 2048,
+      "prompt": "wetland",
+      "policy": "npu",
+      "exit": 0,
+      "concurrent_inference": [],
+      "snapshot_commands_complete": false,
+      "delayed_after_snapshot": false,
+      "event_logs_complete": true,
+      "kgsl_oom_lines": 0,
+      "lmkd_kill_lines": 0,
+      "min_available_mib": 2161.34375,
+      "max_process_swap_mib": 33.2578125,
+      "monitoring_gaps": [],
+      "eligible_for_comparison": true,
+      "complete": true,
+      "samples_ms": [
+        2287.2499989999997,
+        2277.2953119999997,
+        2260.96427,
+        2299.6407280000003,
+        2291.407968,
+        2294.32927
+      ],
+      "median_ms": 2289.3289834999996,
+      "major_faults": [
+        0,
+        0,
+        0,
+        1,
+        1,
+        0
+      ],
+      "top1": 7402,
+      "token_ids_sha256": "5fcbef48b06527d952d0448f8c403212f364cddfabe325b8b53dbc2a38bf1a4c",
+      "logits_sha256": "415b1dd33973601e676e43a7f2bdfd4f1e043419be25cacb104d8601d2eebfac"
+    },
+    {
+      "tag": "eval-n2048-02-wetland-old",
+      "kind": "custom",
+      "tokens": 2048,
+      "prompt": "wetland",
+      "policy": "old",
+      "exit": 0,
+      "concurrent_inference": [],
+      "snapshot_commands_complete": false,
+      "delayed_after_snapshot": false,
+      "event_logs_complete": true,
+      "kgsl_oom_lines": 0,
+      "lmkd_kill_lines": 2,
+      "min_available_mib": 1216.08203125,
+      "max_process_swap_mib": 801.765625,
+      "monitoring_gaps": [],
+      "eligible_for_comparison": true,
+      "complete": true,
+      "samples_ms": [
+        2004.884739,
+        2030.14828,
+        2102.9707280000002,
+        2149.271874,
+        2116.510936,
+        2116.7432289999997
+      ],
+      "median_ms": 2109.7408320000004,
+      "major_faults": [
+        0,
+        2,
+        0,
+        0,
+        0,
+        2
+      ],
+      "top1": 7402,
+      "token_ids_sha256": "5fcbef48b06527d952d0448f8c403212f364cddfabe325b8b53dbc2a38bf1a4c",
+      "logits_sha256": "8ba4dc038c799423a8d6aee2eec54ffacc7b3a5f82f926ab9c86673714a9c574",
+      "arena_bytes": 464617856,
+      "mean_ffn_components_ms": {
+        "gather_us": 10.492420166666667,
+        "expert_wall_us": 874.7000668333334,
+        "combine_us": 135.16344633333333
+      },
+      "mean_remaining_ms": 1066.399031,
+      "predicted_branch_ms": [
+        30.885541434883258,
+        31.614215000080257,
+        31.52667146833583
+      ],
+      "observed_branch_ms": [
+        24.42484747826087,
+        36.78870663768116,
+        36.467053057971015
+      ],
+      "branch_mape": [
+        0.36469088827578644,
+        0.13898692209713095,
+        0.13360808030157303
+      ],
+      "mean_routed_pairs": [
+        606.695652173913,
+        4966.260869565217,
+        2619.0434782608695
+      ],
+      "mean_search_ms_per_request": 3.2777420000000004,
+      "mean_expert_wall_ms_per_request": 871.9515771666668,
+      "last_backend_counts": {
+        "2": 37,
+        "1": 95,
+        "0": 6
+      }
+    },
+    {
+      "tag": "eval-n2048-03-wetland-new",
+      "kind": "custom",
+      "tokens": 2048,
+      "prompt": "wetland",
+      "policy": "new",
+      "exit": 0,
+      "concurrent_inference": [],
+      "snapshot_commands_complete": false,
+      "delayed_after_snapshot": false,
+      "event_logs_complete": true,
+      "kgsl_oom_lines": 0,
+      "lmkd_kill_lines": 1,
+      "min_available_mib": 1242.3984375,
+      "max_process_swap_mib": 804.30078125,
+      "monitoring_gaps": [],
+      "eligible_for_comparison": true,
+      "complete": true,
+      "samples_ms": [
+        2008.509895,
+        2019.472707,
+        2018.467187,
+        2008.496249,
+        2000.463853,
+        2013.018489
+      ],
+      "median_ms": 2010.764192,
+      "major_faults": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "top1": 7402,
+      "token_ids_sha256": "5fcbef48b06527d952d0448f8c403212f364cddfabe325b8b53dbc2a38bf1a4c",
+      "logits_sha256": "ef994d52f81cb39dae23e0ab56cfedd33494b506e0be0114d0bb3980553967cc",
+      "arena_bytes": 464617856,
+      "mean_ffn_components_ms": {
+        "gather_us": 11.229514,
+        "expert_wall_us": 902.6749658333333,
+        "combine_us": 66.37790933333333
+      },
+      "mean_remaining_ms": 1031.1223408333333,
+      "predicted_branch_ms": [
+        38.21420571041795,
+        38.33668383795985,
+        38.24706884253554
+      ],
+      "observed_branch_ms": [
+        38.02817893478261,
+        35.37470294202899,
+        38.55285363768116
+      ],
+      "branch_mape": [
+        0.01826085879465833,
+        0.08507159443465463,
+        0.018631244137225944
+      ],
+      "mean_routed_pairs": [
+        1247,
+        4129.913043478261,
+        2815.086956521739
+      ],
+      "mean_search_ms_per_request": 3.5228474999999997,
+      "mean_expert_wall_ms_per_request": 899.8215891666667,
+      "last_backend_counts": {
+        "2": 87,
+        "0": 43,
+        "1": 8
+      }
+    },
+    {
+      "tag": "eval-n2048-04-wetland-new",
+      "kind": "custom",
+      "tokens": 2048,
+      "prompt": "wetland",
+      "policy": "new",
+      "exit": 0,
+      "concurrent_inference": [],
+      "snapshot_commands_complete": false,
+      "delayed_after_snapshot": false,
+      "event_logs_complete": true,
+      "kgsl_oom_lines": 0,
+      "lmkd_kill_lines": 0,
+      "min_available_mib": 1256.0625,
+      "max_process_swap_mib": 799.92578125,
+      "monitoring_gaps": [],
+      "eligible_for_comparison": true,
+      "complete": true,
+      "samples_ms": [
+        2141.95302,
+        2072.805832,
+        2065.247864,
+        2073.336874,
+        2070.806614,
+        2045.877291
+      ],
+      "median_ms": 2071.806223,
+      "major_faults": [
+        0,
+        0,
+        0,
+        0,
+        673,
+        20
+      ],
+      "top1": 7402,
+      "token_ids_sha256": "5fcbef48b06527d952d0448f8c403212f364cddfabe325b8b53dbc2a38bf1a4c",
+      "logits_sha256": "ef994d52f81cb39dae23e0ab56cfedd33494b506e0be0114d0bb3980553967cc",
+      "arena_bytes": 464617856,
+      "mean_ffn_components_ms": {
+        "gather_us": 11.013941166666667,
+        "expert_wall_us": 956.2106071666667,
+        "combine_us": 66.61839383333333
+      },
+      "mean_remaining_ms": 1044.4949736666665,
+      "predicted_branch_ms": [
+        38.21420571041795,
+        38.33668383795985,
+        38.24706884253554
+      ],
+      "observed_branch_ms": [
+        40.63342842028985,
+        35.849577673913046,
+        39.09868807971014
+      ],
+      "branch_mape": [
+        0.06797080816344754,
+        0.0737801192253649,
+        0.028576639072450866
+      ],
+      "mean_routed_pairs": [
+        1247,
+        4129.913043478261,
+        2815.086956521739
+      ],
+      "mean_search_ms_per_request": 3.4916836666666664,
+      "mean_expert_wall_ms_per_request": 953.3900863333334,
+      "last_backend_counts": {
+        "0": 72,
+        "2": 63,
+        "1": 3
+      }
+    },
+    {
+      "tag": "eval-n2048-05-wetland-old",
+      "kind": "custom",
+      "tokens": 2048,
+      "prompt": "wetland",
+      "policy": "old",
+      "exit": 0,
+      "concurrent_inference": [],
+      "snapshot_commands_complete": false,
+      "delayed_after_snapshot": false,
+      "event_logs_complete": true,
+      "kgsl_oom_lines": 0,
+      "lmkd_kill_lines": 0,
+      "min_available_mib": 1210.04296875,
+      "max_process_swap_mib": 822.984375,
+      "monitoring_gaps": [],
+      "eligible_for_comparison": true,
+      "complete": true,
+      "samples_ms": [
+        2010.117655,
+        2217.90927,
+        2208.1346869999998,
+        2115.603958,
+        2127.685311,
+        2156.6254160000003
+      ],
+      "median_ms": 2142.1553635,
+      "major_faults": [
+        845,
+        8673,
+        0,
+        0,
+        0,
+        0
+      ],
+      "top1": 7402,
+      "token_ids_sha256": "5fcbef48b06527d952d0448f8c403212f364cddfabe325b8b53dbc2a38bf1a4c",
+      "logits_sha256": "8ba4dc038c799423a8d6aee2eec54ffacc7b3a5f82f926ab9c86673714a9c574",
+      "arena_bytes": 464617856,
+      "mean_ffn_components_ms": {
+        "gather_us": 11.103724166666668,
+        "expert_wall_us": 877.036762,
+        "combine_us": 165.50689183333333
+      },
+      "mean_remaining_ms": 1085.6986715,
+      "predicted_branch_ms": [
+        30.885541434883258,
+        31.614215000080257,
+        31.52667146833583
+      ],
+      "observed_branch_ms": [
+        22.40420822463768,
+        37.08451346376812,
+        36.4885398115942
+      ],
+      "branch_mape": [
+        0.42670069078107525,
+        0.14591255732274244,
+        0.13429829210007474
+      ],
+      "mean_routed_pairs": [
+        606.695652173913,
+        4966.260869565217,
+        2619.0434782608695
+      ],
+      "mean_search_ms_per_request": 3.4450701666666665,
+      "mean_expert_wall_ms_per_request": 874.3616141666666,
+      "last_backend_counts": {
+        "2": 26,
+        "1": 111,
+        "0": 1
+      }
+    },
+    {
+      "tag": "eval-n2048-06-wetland-npu",
+      "kind": "npu",
+      "tokens": 2048,
+      "prompt": "wetland",
+      "policy": "npu",
+      "exit": 0,
+      "concurrent_inference": [],
+      "snapshot_commands_complete": false,
+      "delayed_after_snapshot": false,
+      "event_logs_complete": true,
+      "kgsl_oom_lines": 0,
+      "lmkd_kill_lines": 0,
+      "min_available_mib": 2355.30859375,
+      "max_process_swap_mib": 6.0,
+      "monitoring_gaps": [],
+      "eligible_for_comparison": true,
+      "complete": true,
+      "samples_ms": [
+        2316.250208,
+        2314.449947,
+        2330.139426,
+        2283.7348429999997,
+        2335.2189049999997,
+        2323.058749
+      ],
+      "median_ms": 2319.6544784999996,
+      "major_faults": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "top1": 7402,
+      "token_ids_sha256": "5fcbef48b06527d952d0448f8c403212f364cddfabe325b8b53dbc2a38bf1a4c",
+      "logits_sha256": "415b1dd33973601e676e43a7f2bdfd4f1e043419be25cacb104d8601d2eebfac"
+    },
+    {
+      "tag": "eval-n2048-07-foundry-new",
+      "kind": "custom",
+      "tokens": 2048,
+      "prompt": "foundry",
+      "policy": "new",
+      "exit": 0,
+      "concurrent_inference": [],
+      "snapshot_commands_complete": false,
+      "delayed_after_snapshot": false,
+      "event_logs_complete": true,
+      "kgsl_oom_lines": 0,
+      "lmkd_kill_lines": 5,
+      "min_available_mib": 1211.9375,
+      "max_process_swap_mib": 816.78515625,
+      "monitoring_gaps": [],
+      "eligible_for_comparison": true,
+      "complete": true,
+      "samples_ms": [
+        2144.373332,
+        2069.101718,
+        2048.856874,
+        2071.9315619999998,
+        2050.767707,
+        2021.8260930000001
+      ],
+      "median_ms": 2059.9347125,
+      "major_faults": [
+        0,
+        0,
+        0,
+        3455,
+        147,
+        0
+      ],
+      "top1": 37852,
+      "token_ids_sha256": "df4dda9b6f972c0b1e22bced8fe35b2ec4b27de0b663562db7170fcba6a0333b",
+      "logits_sha256": "58d3260e22286430f2650c35213cb3c07592c666c7fbf6438bef279dccbf9111",
+      "arena_bytes": 464617856,
+      "mean_ffn_components_ms": {
+        "gather_us": 10.690331,
+        "expert_wall_us": 946.4321013333333,
+        "combine_us": 66.63968816666666
+      },
+      "mean_remaining_ms": 1044.0474271666667,
+      "predicted_branch_ms": [
+        38.14031389248368,
+        38.291233943002844,
+        38.20612348495404
+      ],
+      "observed_branch_ms": [
+        40.12403119565217,
+        35.97026672463768,
+        39.414632376811596
+      ],
+      "branch_mape": [
+        0.05956766655698132,
+        0.06910178056453933,
+        0.03287677422534225
+      ],
+      "mean_routed_pairs": [
+        1244.8695652173913,
+        4117.173913043478,
+        2829.9565217391305
+      ],
+      "mean_search_ms_per_request": 3.4249313333333333,
+      "mean_expert_wall_ms_per_request": 943.8272313333334,
+      "last_backend_counts": {
+        "0": 59,
+        "2": 76,
+        "1": 3
+      }
+    },
+    {
+      "tag": "eval-n2048-08-foundry-npu",
+      "kind": "npu",
+      "tokens": 2048,
+      "prompt": "foundry",
+      "policy": "npu",
+      "exit": 0,
+      "concurrent_inference": [],
+      "snapshot_commands_complete": false,
+      "delayed_after_snapshot": false,
+      "event_logs_complete": true,
+      "kgsl_oom_lines": 0,
+      "lmkd_kill_lines": 0,
+      "min_available_mib": 2252.78515625,
+      "max_process_swap_mib": 0.0,
+      "monitoring_gaps": [],
+      "eligible_for_comparison": true,
+      "complete": true,
+      "samples_ms": [
+        2315.6876549999997,
+        2325.059687,
+        2332.920781,
+        2340.292186,
+        2332.650155,
+        2281.049843
+      ],
+      "median_ms": 2328.854921,
+      "major_faults": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "top1": 37852,
+      "token_ids_sha256": "df4dda9b6f972c0b1e22bced8fe35b2ec4b27de0b663562db7170fcba6a0333b",
+      "logits_sha256": "efd9c86da74312e8525b973234e14a56459e159b8f6fe645ff055b16d286b745"
+    },
+    {
+      "tag": "eval-n2048-09-foundry-old",
+      "kind": "custom",
+      "tokens": 2048,
+      "prompt": "foundry",
+      "policy": "old",
+      "exit": 0,
+      "concurrent_inference": [],
+      "snapshot_commands_complete": false,
+      "delayed_after_snapshot": false,
+      "event_logs_complete": true,
+      "kgsl_oom_lines": 0,
+      "lmkd_kill_lines": 2,
+      "min_available_mib": 1187.1015625,
+      "max_process_swap_mib": 831.2265625,
+      "monitoring_gaps": [],
+      "eligible_for_comparison": true,
+      "complete": true,
+      "samples_ms": [
+        2124.285625,
+        2142.7128119999998,
+        2123.681145,
+        2044.9399990000002,
+        2175.288281,
+        2125.820364
+      ],
+      "median_ms": 2125.0529945,
+      "major_faults": [
+        1707,
+        5,
+        0,
+        0,
+        0,
+        0
+      ],
+      "top1": 37852,
+      "token_ids_sha256": "df4dda9b6f972c0b1e22bced8fe35b2ec4b27de0b663562db7170fcba6a0333b",
+      "logits_sha256": "8cff2289f408df0426c5e4c85d68cdb0b41b5cc53f7b7da51ebf46427c637c9f",
+      "arena_bytes": 464617856,
+      "mean_ffn_components_ms": {
+        "gather_us": 10.848246166666666,
+        "expert_wall_us": 869.3636801666667,
+        "combine_us": 162.43546933333334
+      },
+      "mean_remaining_ms": 1080.140642,
+      "predicted_branch_ms": [
+        30.841116432821483,
+        31.565975374951353,
+        31.464830592629234
+      ],
+      "observed_branch_ms": [
+        20.61118165942029,
+        36.70559327536232,
+        36.24382394927536
+      ],
+      "branch_mape": [
+        0.5043906407961466,
+        0.13884050091484101,
+        0.1301898531995595
+      ],
+      "mean_routed_pairs": [
+        605.2173913043479,
+        4977.217391304348,
+        2609.5652173913045
+      ],
+      "mean_search_ms_per_request": 3.4683686666666667,
+      "mean_expert_wall_ms_per_request": 866.2978033333334,
+      "last_backend_counts": {
+        "2": 33,
+        "1": 105
+      }
+    },
+    {
+      "tag": "eval-n2048-10-foundry-old",
+      "kind": "custom",
+      "tokens": 2048,
+      "prompt": "foundry",
+      "policy": "old",
+      "exit": 0,
+      "concurrent_inference": [],
+      "snapshot_commands_complete": false,
+      "delayed_after_snapshot": false,
+      "event_logs_complete": true,
+      "kgsl_oom_lines": 0,
+      "lmkd_kill_lines": 3,
+      "min_available_mib": 1203.7734375,
+      "max_process_swap_mib": 790.9765625,
+      "monitoring_gaps": [],
+      "eligible_for_comparison": true,
+      "complete": true,
+      "samples_ms": [
+        2102.418645,
+        2108.392134,
+        2002.9335930000002,
+        2008.106405,
+        2044.253906,
+        2029.657812
+      ],
+      "median_ms": 2036.955859,
+      "major_faults": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "top1": 37852,
+      "token_ids_sha256": "df4dda9b6f972c0b1e22bced8fe35b2ec4b27de0b663562db7170fcba6a0333b",
+      "logits_sha256": "8cff2289f408df0426c5e4c85d68cdb0b41b5cc53f7b7da51ebf46427c637c9f",
+      "arena_bytes": 464617856,
+      "mean_ffn_components_ms": {
+        "gather_us": 11.215900666666666,
+        "expert_wall_us": 874.8831681666667,
+        "combine_us": 102.04333366666667
+      },
+      "mean_remaining_ms": 1061.1513466666665,
+      "predicted_branch_ms": [
+        30.841116432821483,
+        31.565975374951353,
+        31.464830592629234
+      ],
+      "observed_branch_ms": [
+        21.934112347826087,
+        37.04404089130435,
+        36.438852536231884
+      ],
+      "branch_mape": [
+        0.43107240080909814,
+        0.14606284435285719,
+        0.13512721906557593
+      ],
+      "mean_routed_pairs": [
+        605.2173913043479,
+        4977.217391304348,
+        2609.5652173913045
+      ],
+      "mean_search_ms_per_request": 3.6134103333333334,
+      "mean_expert_wall_ms_per_request": 871.9645918333333,
+      "last_backend_counts": {
+        "2": 32,
+        "1": 106
+      }
+    },
+    {
+      "tag": "eval-n2048-11-foundry-npu",
+      "kind": "npu",
+      "tokens": 2048,
+      "prompt": "foundry",
+      "policy": "npu",
+      "exit": 0,
+      "concurrent_inference": [],
+      "snapshot_commands_complete": false,
+      "delayed_after_snapshot": false,
+      "event_logs_complete": true,
+      "kgsl_oom_lines": 0,
+      "lmkd_kill_lines": 0,
+      "min_available_mib": 2269.8515625,
+      "max_process_swap_mib": 9.09375,
+      "monitoring_gaps": [],
+      "eligible_for_comparison": true,
+      "complete": true,
+      "samples_ms": [
+        2332.88953,
+        2339.787812,
+        2332.071562,
+        2351.1365610000003,
+        2341.0518739999998,
+        2344.087655
+      ],
+      "median_ms": 2340.4198429999997,
+      "major_faults": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "top1": 37852,
+      "token_ids_sha256": "df4dda9b6f972c0b1e22bced8fe35b2ec4b27de0b663562db7170fcba6a0333b",
+      "logits_sha256": "efd9c86da74312e8525b973234e14a56459e159b8f6fe645ff055b16d286b745"
+    },
+    {
+      "tag": "eval-n2048-12-foundry-new",
+      "kind": "custom",
+      "tokens": 2048,
+      "prompt": "foundry",
+      "policy": "new",
+      "exit": 0,
+      "concurrent_inference": [],
+      "snapshot_commands_complete": false,
+      "delayed_after_snapshot": false,
+      "event_logs_complete": true,
+      "kgsl_oom_lines": 0,
+      "lmkd_kill_lines": 10,
+      "min_available_mib": 1163.1875,
+      "max_process_swap_mib": 829.33984375,
+      "monitoring_gaps": [],
+      "eligible_for_comparison": true,
+      "complete": true,
+      "samples_ms": [
+        2217.038332,
+        2086.1158840000003,
+        2036.5448430000001,
+        2033.3104680000001,
+        2030.96354,
+        2049.740832
+      ],
+      "median_ms": 2043.1428375,
+      "major_faults": [
+        8683,
+        9691,
+        0,
+        0,
+        0,
+        0
+      ],
+      "top1": 37852,
+      "token_ids_sha256": "df4dda9b6f972c0b1e22bced8fe35b2ec4b27de0b663562db7170fcba6a0333b",
+      "logits_sha256": "58d3260e22286430f2650c35213cb3c07592c666c7fbf6438bef279dccbf9111",
+      "arena_bytes": 464617856,
+      "mean_ffn_components_ms": {
+        "gather_us": 10.6360325,
+        "expert_wall_us": 937.9385065,
+        "combine_us": 69.67425433333334
+      },
+      "mean_remaining_ms": 1057.3701898333334,
+      "predicted_branch_ms": [
+        38.14031389248368,
+        38.291233943002844,
+        38.20612348495404
+      ],
+      "observed_branch_ms": [
+        39.43041176086957,
+        35.90643452898551,
+        39.48213794927536
+      ],
+      "branch_mape": [
+        0.037358625838362206,
+        0.0729701299774777,
+        0.033827168046757346
+      ],
+      "mean_routed_pairs": [
+        1244.8695652173913,
+        4117.173913043478,
+        2829.9565217391305
+      ],
+      "mean_search_ms_per_request": 3.4341055000000003,
+      "mean_expert_wall_ms_per_request": 935.0281593333334,
+      "last_backend_counts": {
+        "2": 92,
+        "0": 44,
+        "1": 2
+      }
     }
   ],
-  "comparisons": []
+  "comparisons": [
+    {
+      "tokens": 2048,
+      "prompt": "wetland",
+      "policies": {
+        "old": {
+          "processes": 2,
+          "samples": 12,
+          "median_ms": 2116.6270825,
+          "process_medians_ms": [
+            2109.7408320000004,
+            2142.1553635
+          ],
+          "sample_range_ms": [
+            2004.884739,
+            2217.90927
+          ],
+          "kgsl_oom_lines": 0,
+          "lmkd_kill_lines": 2,
+          "timed_major_faults": 9522,
+          "min_available_mib": 1210.04296875,
+          "max_process_swap_mib": 822.984375
+        },
+        "new": {
+          "processes": 2,
+          "samples": 12,
+          "median_ms": 2032.6749989999998,
+          "process_medians_ms": [
+            2010.764192,
+            2071.806223
+          ],
+          "sample_range_ms": [
+            2000.463853,
+            2141.95302
+          ],
+          "kgsl_oom_lines": 0,
+          "lmkd_kill_lines": 1,
+          "timed_major_faults": 693,
+          "min_available_mib": 1242.3984375,
+          "max_process_swap_mib": 804.30078125
+        },
+        "npu": {
+          "processes": 2,
+          "samples": 12,
+          "median_ms": 2296.9849990000002,
+          "process_medians_ms": [
+            2289.3289834999996,
+            2319.6544784999996
+          ],
+          "sample_range_ms": [
+            2260.96427,
+            2335.2189049999997
+          ],
+          "kgsl_oom_lines": 0,
+          "lmkd_kill_lines": 0,
+          "timed_major_faults": 2,
+          "min_available_mib": 2161.34375,
+          "max_process_swap_mib": 33.2578125
+        }
+      },
+      "complete": true,
+      "old_over_new": 1.0413012820747545,
+      "npu_over_new": 1.130030624733433,
+      "numerics": [
+        {
+          "tag": "eval-n2048-01-wetland-npu",
+          "top1_equal_to_npu": true,
+          "nrmse_to_npu": 0.0,
+          "cosine_to_npu": 1.0
+        },
+        {
+          "tag": "eval-n2048-02-wetland-old",
+          "top1_equal_to_npu": true,
+          "nrmse_to_npu": 0.045250358590906,
+          "cosine_to_npu": 0.9989940658830675
+        },
+        {
+          "tag": "eval-n2048-03-wetland-new",
+          "top1_equal_to_npu": true,
+          "nrmse_to_npu": 0.04232579873179267,
+          "cosine_to_npu": 0.9991229114605557
+        },
+        {
+          "tag": "eval-n2048-04-wetland-new",
+          "top1_equal_to_npu": true,
+          "nrmse_to_npu": 0.04232579873179267,
+          "cosine_to_npu": 0.9991229114605557
+        },
+        {
+          "tag": "eval-n2048-05-wetland-old",
+          "top1_equal_to_npu": true,
+          "nrmse_to_npu": 0.045250358590906,
+          "cosine_to_npu": 0.9989940658830675
+        },
+        {
+          "tag": "eval-n2048-06-wetland-npu",
+          "top1_equal_to_npu": true,
+          "nrmse_to_npu": 0.0,
+          "cosine_to_npu": 1.0
+        }
+      ]
+    },
+    {
+      "tokens": 2048,
+      "prompt": "foundry",
+      "policies": {
+        "old": {
+          "processes": 2,
+          "samples": 12,
+          "median_ms": 2105.4053895,
+          "process_medians_ms": [
+            2125.0529945,
+            2036.955859
+          ],
+          "sample_range_ms": [
+            2002.9335930000002,
+            2175.288281
+          ],
+          "kgsl_oom_lines": 0,
+          "lmkd_kill_lines": 5,
+          "timed_major_faults": 1712,
+          "min_available_mib": 1187.1015625,
+          "max_process_swap_mib": 831.2265625
+        },
+        "new": {
+          "processes": 2,
+          "samples": 12,
+          "median_ms": 2050.2542695,
+          "process_medians_ms": [
+            2059.9347125,
+            2043.1428375
+          ],
+          "sample_range_ms": [
+            2021.8260930000001,
+            2217.038332
+          ],
+          "kgsl_oom_lines": 0,
+          "lmkd_kill_lines": 15,
+          "timed_major_faults": 21976,
+          "min_available_mib": 1163.1875,
+          "max_process_swap_mib": 829.33984375
+        },
+        "npu": {
+          "processes": 2,
+          "samples": 12,
+          "median_ms": 2332.9051554999996,
+          "process_medians_ms": [
+            2328.854921,
+            2340.4198429999997
+          ],
+          "sample_range_ms": [
+            2281.049843,
+            2351.1365610000003
+          ],
+          "kgsl_oom_lines": 0,
+          "lmkd_kill_lines": 0,
+          "timed_major_faults": 0,
+          "min_available_mib": 2252.78515625,
+          "max_process_swap_mib": 9.09375
+        }
+      },
+      "complete": true,
+      "old_over_new": 1.0268996488974267,
+      "npu_over_new": 1.1378613814904677,
+      "numerics": [
+        {
+          "tag": "eval-n2048-07-foundry-new",
+          "top1_equal_to_npu": true,
+          "nrmse_to_npu": 0.01609575136669486,
+          "cosine_to_npu": 0.9998711095856011
+        },
+        {
+          "tag": "eval-n2048-08-foundry-npu",
+          "top1_equal_to_npu": true,
+          "nrmse_to_npu": 0.0,
+          "cosine_to_npu": 1.0
+        },
+        {
+          "tag": "eval-n2048-09-foundry-old",
+          "top1_equal_to_npu": true,
+          "nrmse_to_npu": 0.02051099784338705,
+          "cosine_to_npu": 0.9997901831430469
+        },
+        {
+          "tag": "eval-n2048-10-foundry-old",
+          "top1_equal_to_npu": true,
+          "nrmse_to_npu": 0.02051099784338705,
+          "cosine_to_npu": 0.9997901831430469
+        },
+        {
+          "tag": "eval-n2048-11-foundry-npu",
+          "top1_equal_to_npu": true,
+          "nrmse_to_npu": 0.0,
+          "cosine_to_npu": 1.0
+        },
+        {
+          "tag": "eval-n2048-12-foundry-new",
+          "top1_equal_to_npu": true,
+          "nrmse_to_npu": 0.01609575136669486,
+          "cosine_to_npu": 0.9998711095856011
+        }
+      ]
+    }
+  ]
 }
