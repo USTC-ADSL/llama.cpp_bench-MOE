@@ -1,5 +1,7 @@
 # 激活总预算池：实现及定向验证
 
+此为实现阶段的历史记录；完整模型验证及收尾已完成，最终状态见 [handoff-02-final.md](handoff-02-final.md) 和 [results.md](results.md)。
+
 ## 目标与当前状态
 
 用户要求压缩 2K CPU/GPU/NPU 异构总预算，保留单 chunk、动态真实路由和三端并发。起始提交 93a136cda；默认设备 fd8657d6 在线，原有用户未跟踪 TODO.md、paper/、results/ 未改动。
