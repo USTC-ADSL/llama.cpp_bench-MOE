@@ -1,7 +1,7 @@
 # 校准后 1K 回归、1.5K 补测与 2K 收益归因
 
 - [x] 冻结同版构建、旧/新成本模型和对照协议，部署 /data/local/tmp/llama-calibration-regression-20261027；无需重建
-- [ ] 完成 1K old/new/NPU 交错对照，检查性能回退和数值
+- [x] 完成 1K 12 进程/72 计时：wetland 新/旧加速1.044×，foundry耗时回退6.57%；foundry新旧均0 major faults、0 LMKD，不能宣称无回退
 - [ ] 完成 1.5K old/new/NPU 同条件对照
 - [ ] 分析 2K 缺页/分阶段成本；必要时补测同条件 2K，区分观测与因果证据
 - [ ] 汇总、归档、清理本任务设备目录、核验并提交
