@@ -1,0 +1,49 @@
+{
+  "tag": "eval-n1024-01-wetland-npu",
+  "exit": 1,
+  "boot_before": "27fd07ca-ca1f-4134-8c0a-1e1a8ce46c6d",
+  "observed_boot_after": "1ba761f6-5b18-403a-87d1-fcf146ec8fa0",
+  "commands": {
+    "18686": "/data/local/tmp/moe-hetero-lengths/fullmodel-oracle /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf /data/local/tmp/moe-hetero-lengths/prompt.txt 1025 /data/local/tmp/moe-hetero-lengths/b1-n1025-hetero.json custom 3 /data/local/tmp/moe-hetero-lengths/b1-n1025-hetero.plan.json ",
+    "18692": "/data/local/tmp/llama-calibration-regression-20261027/fullmodel-oracle /data/local/tmp/qwen1.5-moe-a2.7b-chat-q4_0.gguf /data/local/tmp/llama-calibration-regression-20261027/prompt.txt 1024 /data/local/tmp/llama-calibration-regression-20261027/eval-n1024-01-wetland-npu.json npu 6 - "
+  },
+  "samples_with_concurrent_inference": [
+    {
+      "time": 1793119119.3499591,
+      "pids": [
+        "18686",
+        "18692"
+      ]
+    },
+    {
+      "time": 1793119124.8825893,
+      "pids": [
+        "18686",
+        "18692"
+      ]
+    },
+    {
+      "time": 1793119131.8452537,
+      "pids": [
+        "18686",
+        "18692"
+      ]
+    },
+    {
+      "time": 1793119138.7127762,
+      "pids": [
+        "18686",
+        "18692"
+      ]
+    },
+    {
+      "time": 1793119156.6977615,
+      "pids": [
+        "18686",
+        "18692"
+      ]
+    }
+  ],
+  "excluded": true,
+  "root_cause": "Concurrent independent workload observed before device reboot; exact reboot mechanism unconfirmed. No valid timing result. Await coordination before new cohort."
+}

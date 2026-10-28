@@ -1,0 +1,70 @@
+{
+  "runs": [
+    {
+      "tag": "eval-n1024-01-wetland-npu",
+      "kind": "npu",
+      "tokens": 1024,
+      "prompt": "wetland",
+      "policy": "npu",
+      "exit": 1,
+      "concurrent_inference": [
+        {
+          "time": 1793119119.3499591,
+          "pids": [
+            "18686",
+            "18692"
+          ]
+        },
+        {
+          "time": 1793119124.8825893,
+          "pids": [
+            "18686",
+            "18692"
+          ]
+        },
+        {
+          "time": 1793119131.8452537,
+          "pids": [
+            "18686",
+            "18692"
+          ]
+        },
+        {
+          "time": 1793119138.7127762,
+          "pids": [
+            "18686",
+            "18692"
+          ]
+        },
+        {
+          "time": 1793119156.6977615,
+          "pids": [
+            "18686",
+            "18692"
+          ]
+        }
+      ],
+      "snapshot_commands_complete": false,
+      "delayed_after_snapshot": false,
+      "event_logs_complete": false,
+      "kgsl_oom_lines": 0,
+      "lmkd_kill_lines": 0,
+      "min_available_mib": 829.01171875,
+      "max_process_swap_mib": 96.91796875,
+      "monitoring_gaps": [
+        {
+          "time": 1793119166.786,
+          "exit": 1
+        }
+      ],
+      "eligible_for_comparison": false,
+      "complete": false
+    }
+  ],
+  "comparisons": [],
+  "interpretation_limits": [
+    "Fault strata are descriptive, not a no-paging intervention; zero major faults does not exclude reclaim or bandwidth contention.",
+    "HTP batch and queue wait overlap; do not add. No native per-op counters: attention/dense/shared cannot be individually attributed.",
+    "Custom serial gather_us precedes branch launch; expert_wall_us includes backend_gather_us when overlap is enabled. Only serial gather + expert_wall + combine is summed."
+  ]
+}

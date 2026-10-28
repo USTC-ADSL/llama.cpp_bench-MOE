@@ -104,5 +104,75 @@
     },
     "boot_after": null,
     "boot_after_status": 1
+  },
+  {
+    "tag": "eval-resumed-n1024-01-wetland-npu",
+    "kind": "npu",
+    "tokens": 1024,
+    "prompt": "wetland",
+    "policy": "npu",
+    "command": [
+      "/home/miog/miniconda3/bin/python3",
+      "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/tests/run-fullmodel-oracle.py",
+      "--mode",
+      "npu",
+      "--tokens",
+      "1024",
+      "--reps",
+      "6",
+      "--tag",
+      "eval-resumed-n1024-01-wetland-npu",
+      "--remote-dir",
+      "/data/local/tmp/llama-calibration-regression-20261027",
+      "--output-dir",
+      "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-10-27-calibration-regression/evidence",
+      "--prompt-file",
+      "/mnt/sda1/pzw/moe/llama.cpp_bench-MOE/task/handoff/handoff-2026-10-21-shared-weight-4k/inputs/wetland-4k.txt",
+      "--hexagon-timing"
+    ],
+    "start": 1793150984.6878457,
+    "prompt_sha256": "045c63c680da721ef78d81742685a41f5c82996b68d0294492c4457cdec72629",
+    "snapshot_before_status": {
+      "boot": {
+        "exit": 0,
+        "file": "eval-resumed-n1024-01-wetland-npu-before-boot.txt.gz"
+      },
+      "memory": {
+        "exit": 1,
+        "file": "eval-resumed-n1024-01-wetland-npu-before-memory.txt.gz"
+      },
+      "dmesg": {
+        "exit": 0,
+        "file": "eval-resumed-n1024-01-wetland-npu-before-dmesg.txt.gz"
+      },
+      "logcat": {
+        "exit": 0,
+        "file": "eval-resumed-n1024-01-wetland-npu-before-logcat.txt.gz"
+      }
+    },
+    "boot_before": "1ba761f6-5b18-403a-87d1-fcf146ec8fa0",
+    "exit": 0,
+    "end": 1793151009.8568509,
+    "concurrent_inference": [],
+    "snapshot_after_status": {
+      "boot": {
+        "exit": 0,
+        "file": "eval-resumed-n1024-01-wetland-npu-after-boot.txt.gz"
+      },
+      "memory": {
+        "exit": 1,
+        "file": "eval-resumed-n1024-01-wetland-npu-after-memory.txt.gz"
+      },
+      "dmesg": {
+        "exit": 0,
+        "file": "eval-resumed-n1024-01-wetland-npu-after-dmesg.txt.gz"
+      },
+      "logcat": {
+        "exit": 0,
+        "file": "eval-resumed-n1024-01-wetland-npu-after-logcat.txt.gz"
+      }
+    },
+    "boot_after": "1ba761f6-5b18-403a-87d1-fcf146ec8fa0",
+    "boot_after_status": 0
   }
 ]
